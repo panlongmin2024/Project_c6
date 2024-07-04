@@ -599,7 +599,7 @@ static int cdc_shell_ats_battery_ad_level(struct device *dev, u8_t *buf, int len
 }
 static int cdc_shell_ats_battery_curr(struct device *dev, u8_t *buf, int len)
 {	
-	int16 battery_volt,src_battery_volt,battery_curr,ext_curr;
+	int16 battery_volt,battery_curr;
 	uint8_t buffer[9+1] = "0000:0000";
 	//pd_mps2760_read_current(&battery_volt,&src_battery_volt,&battery_curr,&ext_curr);
 	pd_manager_get_volt_cur_value(&battery_volt,&battery_curr);
