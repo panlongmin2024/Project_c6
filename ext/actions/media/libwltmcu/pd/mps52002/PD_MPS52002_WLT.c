@@ -1326,7 +1326,7 @@ void pd_src_sink_check(void)
 	   return;
 	 }
 	pd_mps52002->SRC_5OMA_FLAG = pd_mps2760_read_current(&pd_mps52002->volt_value, &pd_mps52002->cur_value,&pd_mps52002->src_cur_value);
-
+	SYS_LOG_INF("------> read vlot %d current %d\n",pd_mps52002->volt_value,pd_mps52002->cur_value);
     if(pd_mps52002->pd_52002_source_flag)
     {
         if(!pd_mps52002->chk_current_flag)
