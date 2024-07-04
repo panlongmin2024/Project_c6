@@ -1739,11 +1739,15 @@ int pd_iid_pop_queue(u8_t *type, u8_t *data)
 
 int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value)
 {
+	union pd_manager_supply_propval val;
+	
     const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
-    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_VOLT_VAULE, volt_value);	
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_VOLT_VAULE, &val);	
+	*volt_value = val.intval;
 
     const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
-    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_CURRENT_VAULE, cur_value);	
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_CURRENT_VAULE, &val);	
+	*volt_value = val.intval;
 	
 	return 0;
 }
