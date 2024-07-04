@@ -603,15 +603,12 @@ static int cdc_shell_ats_battery_curr(struct device *dev, u8_t *buf, int len)
 	uint8_t buffer[9+1] = "0000:0000";
 	//pd_mps2760_read_current(&battery_volt,&src_battery_volt,&battery_curr,&ext_curr);
 	pd_manager_get_volt_cur_value(&battery_volt,&battery_curr);
-	//battery_volt = power_manager_get_battery_vol();
-	//battery_volt /= 1000; // change voltage unit uv to mv
-	//snprintf(&buffer[0], 4, "%10d", battery_volt);
-	//snprintf(&buffer[5], 4, "%10d", battery_curr);
+	hex_to_string_4(battery_volt,buffer);
 	buffer[9] += battery_volt/1000;
 	buffer[8] += battery_volt%1000/100;
 	buffer[7] += battery_volt%100/10;
 	buffer[6] += battery_volt%10;
-
+	hex_to_string_4(battery_curr,buffer+5);
 	buffer[4] += battery_curr/1000;
 	buffer[3] += battery_curr%1000/100;
 	buffer[2] += battery_curr%100/10;
