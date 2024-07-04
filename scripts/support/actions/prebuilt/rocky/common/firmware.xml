@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<firmware>
+	<descirption>Firmware layout for ATS3503</descirption>
+	<disk_size>0x400000</disk_size>
+
+	<partitions>
+		<partition>
+			<type>BOOT</type>
+			<name>fw0_boot</name>
+			<file>mbrec.bin</file>
+			<address>0x0</address>
+			<enable_crc>true</enable_crc>
+			<enable_encryption>false</enable_encryption>
+			<enable_ota>true</enable_ota>
+			<enable_raw>true</enable_raw>
+			<enable_dfu>true</enable_dfu>
+			<fw_id>0</fw_id>
+		</partition>
+
+		<partition>
+			<type>BOOT</type>
+			<name>fw1_boot</name>
+			<file>mbrec.bin</file>
+			<address>0x10002</address>
+			<enable_crc>true</enable_crc>
+			<enable_encryption>false</enable_encryption>
+			<enable_ota>true</enable_ota>
+			<enable_raw>false</enable_raw>
+			<enable_dfu>false</enable_dfu>
+			<fw_id>1</fw_id>
+		</partition>
+
+		<partition>
+			<type>SYSTEM</type>
+			<name>fw0_sys</name>
+			<file>zephyr.bin</file>
+			<address>0x20004</address>
+			<base_virtual_address>0xbf000000</base_virtual_address>
+			<entry_virtual_address>0xbf000000</entry_virtual_address>
+			<enable_crc>true</enable_crc>
+			<enable_encryption>false</enable_encryption>
+			<enable_ota>true</enable_ota>
+			<enable_raw>true</enable_raw>
+			<enable_dfu>true</enable_dfu>
+			<fw_id>0</fw_id>
+		</partition>
+
+		<partition>
+			<type>DATA</type>
+			<name>nvram_factory</name>
+			<file>nvram.bin</file>
+			<address>0x3e0000</address>
+			<size>0x10000</size>			
+			<enable_crc>false</enable_crc>
+			<enable_encryption>false</enable_encryption>
+			<enable_ota>false</enable_ota>
+			<enable_raw>true</enable_raw>
+			<enable_dfu>true</enable_dfu>
+			<fw_id>255</fw_id>
+		</partition>
+
+		<partition>
+			<type>DATA</type>
+			<name>nvram_user</name>
+			<address>0x3f0000</address>
+			<size>0x10000</size>			
+			<enable_crc>false</enable_crc>
+			<enable_encryption>false</enable_encryption>
+			<enable_ota>false</enable_ota>
+			<enable_raw>false</enable_raw>
+			<enable_dfu>false</enable_dfu>
+			<fw_id>255</fw_id>
+		</partition>
+	</partitions>
+</firmware>

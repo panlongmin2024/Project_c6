@@ -1,0 +1,1 @@
+#obj-$(CONFIG_WIFI_RTL8189FTV) += xxx.o

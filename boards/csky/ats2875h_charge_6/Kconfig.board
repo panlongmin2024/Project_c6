@@ -1,0 +1,4 @@
+
+config BOARD_ATS2875H_CHARGE_6
+	bool "ATS2875H Charge 6"
+	depends on SOC_ATS2875H

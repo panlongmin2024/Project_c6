@@ -1,0 +1,7 @@
+
+if BOARD_ATS2875H_CHARGE_6
+
+config BOARD
+	default ats2875h_charge_6
+
+endif

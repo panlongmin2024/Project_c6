@@ -1,0 +1,1 @@
+obj-$(CONFIG_C_AMP_AW85828) += aw85828_driver.o

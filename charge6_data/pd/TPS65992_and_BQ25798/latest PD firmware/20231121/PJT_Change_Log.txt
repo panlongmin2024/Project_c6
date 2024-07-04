@@ -1,0 +1,36 @@
+DPM calculation (%)
+real LSB/bit divide by % (i.e. 90%)
+
+Last Updated: 10/23/2023
+
+TPS65992DBG_Harman_Config_v01.pjt (tested with F809.11.A2)
+-fixed template for Samsung charging issue
+-included UART output from GPIO0
+-set charge voltage to 8.3V
+-set charge current to 3A 
+-set pre-charge current to 240mA 
+-set VINDPM to 91% of PDO voltage 
+-set IINDPM to 100% of PDO current
+
+TPS65992DBG_Harman_Config_v02.pjt (Work In Progress)
+-set GPIO2 as enablesource_port1 (73)
+-set PDO1 power path to PP3
+-disable VCONN (needs to be implemented)
+
+TPS65992DBG_Harman_Config_v03.pjt (tested with TPS65992_ENG_F809.11.A7.bin)
+-minor tweaks, overall same as v02
+-tested for PPHV for all PDOs
+-tested with Samsung charger, no issues occured
+-tested sourcing to S22, no issues occured
+
+TPS65992DBG_Harman_Config_v04.pjt (tested with TPS65992_ENG_F809.11.A7.bin and A9)
+-disable 'Automatic Cap Request' bit in Port Control (0x29) for PD tester issue
+
+TPS65992DBG_Harman_Config_v05.pjt (tested with TPS65992_ENG_F809.11.A7.bin and A9)
+-set number of valid sink PDOs from 5 (5/9/12/15/20) to 3 (5/9/12)
+
+TESTING VERSION
+
+TPS65992DBG_Harman_Config_vT3.pjt (tested with TPS65992_ENG_F809.11.A7.bin)
+-based on v03
+-decrease output voltage on VBUS/PPHV by 100mV (Source 5V is now 4.9V, etc.) by setting Code 0 Voltage to 2800000 uV (2800mV -> -100mV offset)

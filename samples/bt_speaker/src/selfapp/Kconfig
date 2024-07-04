@@ -1,0 +1,31 @@
+config BT_SELF_APP
+    bool "support self_app protocol"
+    default n
+    select BT_BLE
+    select BT_GATT_OVER_BR
+    select BT_SELFAPP_ADV
+    select BT_ADV_MANAGER
+    select FIRMWARE_VERSION
+    help
+    This option support self_app protocol.
+
+config OTA_SELF_APP
+    bool "support ota by self_app"
+    default y
+    depends on OTA_APP
+    depends on BT_SELF_APP
+    help
+    This option would auto enabled only when OTA_APP and BT_SELF_APP are both enabled.
+
+config BT_SELFAPP_ADV
+    bool "BT SELFAPP Advertising Support"
+    default n
+    help
+    This option enables bt selfapp advertising.
+
+config LOGSRV_SELF_APP
+    bool "support log_service by self_app"
+    default y
+    depends on BT_SELF_APP
+    help
+    This option would auto enabled only when logservice and BT_SELF_APP are both enabled.

@@ -1,0 +1,12 @@
+ifeq ($(CONFIG_WIFI_SSV6030P),y)
+LIB_INCLUDE_DIR += -L$(ZEPHYR_BASE)/drivers/wifi/ssv6030p/host/lib
+ALL_LIBS += wifi_lib_core
+endif
+
+ifeq ($(CONFIG_WIFI_RTL8189FTV),y)
+LIB_INCLUDE_DIR += -L$(ZEPHYR_BASE)/drivers/wifi/rtl8189ftv/wlan
+ALL_LIBS += WLAN_LIB_SDIO
+LIB_INCLUDE_DIR += -L$(ZEPHYR_BASE)/drivers/wifi/rtl8189ftv/app
+ALL_LIBS += airkiss
+ALL_LIBS += rt_airkiss_algo
+endif

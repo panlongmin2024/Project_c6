@@ -1,0 +1,19 @@
+config C_LOGIC_MCU_MSPM0L
+    bool
+    prompt "use logic mcu MSPM0L"
+    depends on C_LOGIC_MCU
+    default n
+
+config C_LOGIC_MCU_LS8A10049T
+    bool
+    prompt "use logic IC LS8A10049T"
+    depends on C_LOGIC_MCU
+    default n
+
+config C_LOGIC_MCU_AW9523B
+    bool
+    prompt "use EXTERN IO IC AW9523B"
+    depends on C_LOGIC_MCU
+    default n
+
+

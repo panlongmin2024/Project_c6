@@ -1,0 +1,20 @@
+source "samples/bt_speaker/src/charge_6/src/driver/Kconfig"
+source "samples/bt_speaker/src/charge_6/src/external_dsp/Kconfig"
+#source "samples/bt_speaker/src/charge_6/src/logic_mcu/Kconfig"
+source "samples/bt_speaker/src/charge_6/src/shell/Kconfig"
+source "samples/bt_speaker/src/charge_6/src/pd/Kconfig"
+
+config C_EXTERNAL_DSP
+    bool
+    prompt "use external dsp"
+    default n
+
+config C_LOGIC_MCU
+    bool
+    prompt "use logic mcu"
+    default n
+
+config C_SHELL
+    bool
+    prompt "use shell"
+    default n

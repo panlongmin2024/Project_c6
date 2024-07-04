@@ -1,0 +1,17 @@
+config C_USER_SHELL
+    bool
+    prompt "use user shell"
+    depends on C_SHELL
+    default n
+
+config C_I2C_SHELL
+    bool
+    prompt "use i2c shell"
+    depends on C_SHELL 
+    default n
+
+config C_GPIO_SHELL
+    bool
+    prompt "use gpio shell"
+    depends on C_SHELL 
+    default n

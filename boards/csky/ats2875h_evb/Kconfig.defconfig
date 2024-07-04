@@ -1,0 +1,7 @@
+
+if BOARD_ATS2875H_EVB
+
+config BOARD
+	default ats2875h_evb
+
+endif

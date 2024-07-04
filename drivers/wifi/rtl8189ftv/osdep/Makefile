@@ -1,0 +1,1 @@
+obj-$(CONFIG_WIFI_RTL8189FTV) += zephyr_service.o net_intf.o clib_dep.o zephyr_frame.o

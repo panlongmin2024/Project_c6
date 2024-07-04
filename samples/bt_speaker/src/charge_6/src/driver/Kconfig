@@ -1,0 +1,45 @@
+config C_AMP
+	bool
+	prompt "enable AMP"
+	default n
+
+config C_AMP_TAS5828M
+    bool
+    prompt "enable AMP TAS5828M"
+    depends on C_AMP
+    default n
+
+config C_AMP_TAS5828M_NAME
+    string
+    prompt "AMP_TAS5828M name"
+    depends on C_AMP
+    default "AMP_TAS5828M_NAME"
+
+
+config C_AMP_AW85828
+    bool
+    prompt "enable AMP AW85828"
+    depends on C_AMP
+    default n
+
+config C_AMP_AW85828_NAME
+    string
+    prompt "AMP_AW85828 name"
+    depends on C_AMP
+    default "AMP_AW85828_NAME"    
+
+config C_PD
+    bool
+    prompt "enable PD"
+    default n
+
+config C_PD_TPS65992
+    bool
+    prompt "enable PD TPS65992"
+    depends on C_PD
+    default n
+config C_PD_MPS52002
+    bool
+    prompt "enable PD MPS52002"
+    depends on C_PD
+    default n

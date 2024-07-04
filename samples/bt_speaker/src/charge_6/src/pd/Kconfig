@@ -1,0 +1,4 @@
+config PD_SRV_NAME
+	string
+	default pd_srv
+    

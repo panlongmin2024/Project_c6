@@ -1,0 +1,27 @@
+# Kconfig - Actions ota
+
+#
+# Copyright (c) 2016 Actions Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig OTA
+	bool
+	prompt "ota"
+	default n
+	help
+	This option enables actions ota
+
+if OTA
+	config OTA_LEGACY_REQ_SIZE
+		prompt "ota legacy req size"
+		bool
+		default n
+		help
+			Enable this option to support legracy OTA app.
+endif
+
+
+
+

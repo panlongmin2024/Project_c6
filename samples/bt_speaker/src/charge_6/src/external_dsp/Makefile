@@ -1,0 +1,1 @@
+obj-$(CONFIG_C_EXTERNAL_DSP_ATS3615) += ats3615/

@@ -1,0 +1,8 @@
+source "samples/bt_speaker/src/charge_6/src/Kconfig"
+
+config C_I2STX_KEEP_OPEN
+    bool
+    prompt "enable i2stx keep open"
+    depends on AUDIO_OUTPUT_I2S
+    default n
+    

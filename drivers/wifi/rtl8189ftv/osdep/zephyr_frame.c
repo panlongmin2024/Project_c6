@@ -1,0 +1,43 @@
+#include <zephyr.h>
+#include <stdio.h>
+#include <net/buf.h>
+#include <net/net_if.h>
+#include <net/net_core.h>
+#include <net/ethernet.h>
+#include <logging/sys_log.h>
+#define ACT_LOG_MODEL_ID ALF_MODEL_ZEPHYR_FRAME
+
+void os_frame_free(void *frame)
+{
+	struct net_buf *frag;
+
+	if (frame) {
+		frag = (struct net_buf *)((char *)frame - sizeof(struct net_buf));
+		net_pkt_frag_unref(frag);
+	}
+}
+
+/*
+* timeout: 0: K_NO_WAIT,  -1: K_FOREVER;  other: wait timeout(ms)
+*/
+void* os_frame_alloc(int32_t timeout)
+{
+	u32_t start_time, stop_time;
+	struct net_buf *frag;
+	void *frame;
+
+	start_time = k_uptime_get_32();
+	frag = net_pkt_get_reserve_rx_data(0, timeout);
+	if (!frag) {
+		printk("%s NULL, timeout:%d\n", __func__, timeout);
+		return NULL;
+	}
+
+	stop_time = k_uptime_get_32();
+	if ((stop_time - start_time) >= 20) {
+		ACT_LOG_ID_INF(ALF_STR_os_frame_alloc__ALLOC_TIMEDN, 1, (stop_time - start_time));
+	}
+
+	frame = (void *)frag->data;
+	return frame;
+}

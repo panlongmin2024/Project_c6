@@ -1,0 +1,141 @@
+# Kconfig - Actions media player
+
+#
+# Copyright (c) 2016 Actions Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MEDIA
+	bool
+	prompt "media"
+	select MEDIA_PLAYER
+	default n
+	help
+	This option enables actions media
+
+config MEDIA_PLAYER
+	bool
+	prompt "media player Support"
+	depends on MEDIA
+	select MEDIA_SERVICE
+	select STREAM
+	select RINGBUFF_STREAM
+	default n
+	help
+	This option enables actions media player
+
+config MEDIA_SERVICE
+	bool
+	prompt "Media Service Support"
+	select THREAD_TIMER
+	select AUDIO_SYSTEM
+	default n
+	help
+	This option enables actions Media service.
+
+config MEDIASRV_PRIORITY
+    int
+    prompt "Media Service Thread Priority"
+    default 4
+    depends on MEDIA_SERVICE
+    help
+    This option set audio thread priority
+
+config MEDIASRV_STACKSIZE
+    int
+    prompt "Media Service Thread Stack Size"
+    default 2048
+    depends on MEDIA_SERVICE
+    help
+    This option set stack size for audio service thread
+
+
+config MEDIA_EFFECT
+	bool
+	prompt "media effect Support"
+	depends on MEDIA_PLAYER
+	default n
+	help
+	This option enables actions media effect
+
+config MEDIA_EFFECT_OUTMODE
+	int
+	prompt "media effect output mode Support"
+	depends on MEDIA_PLAYER
+	default 0
+	help
+	This option enables actions media output mode
+
+config MUSIC_EFFECT
+	bool
+	prompt "music effect Support"
+	depends on MEDIA_PLAYER
+	select MEDIA_EFFECT
+	select MUSIC_DAE
+	# select MUSIC_DAE_FADE
+	default n
+	help
+	This option enables actions music effect
+
+config MUSIC_DRC_EFFECT
+	bool
+	prompt "music drc effect Support"
+	depends on MUSIC_EFFECT
+	select MEDIA_EFFECT
+	default n
+	help
+	This option enables actions music drc effect
+
+config MUSIC_EXTERNAL_EFFECT
+	bool
+	prompt "music externl effect Support"
+	depends on MEDIA_PLAYER
+	select MUSIC_EFFECT
+	default n
+	help
+	This option enables external music effect
+
+config MUSIC_EXTERNAL_EFFECT_MIC_STREAM
+	bool
+	prompt "music externl effect mic stream"
+	depends on MEDIA_PLAYER
+	select MUSIC_EXTERNAL_EFFECT
+	default n
+	help
+	This option enables external music effect mic stream
+
+config VOICE_EFFECT
+	bool
+	prompt "voice effect Support"
+	depends on MEDIA_EFFECT
+	default n
+	help
+	This option enables actions voice effect
+
+config AEC_TAIL_LENGTH
+	int
+	prompt "AEC tail length config"
+	depends on VOICE_EFFECT
+	default 48
+	help
+	This option set AEC tail length config
+
+config 3NODS_PRO_EV_HW_2
+    bool
+    prompt "3 nods pre EV hardware 2"
+    depends on C_LOGIC_MCU
+    default n
+config TOLY_EV
+    bool
+    prompt "TOLY EV hardware 1"
+    depends on C_LOGIC_MCU
+    default n	
+config BATTERY_SECURITY
+    bool
+    prompt "HM battry security"
+   depends on C_LOGIC_MCU
+   # depends on BUILD_PROJECT_HM_DEMAND_CODE
+    default n	
+source "ext/actions/media/libal/Kconfig"
+source "ext/actions/media/libwltmcu/Kconfig"

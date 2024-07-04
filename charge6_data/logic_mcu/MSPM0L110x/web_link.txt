@@ -1,0 +1,2 @@
+MSPM0L110x web link:
+    https://dev.ti.com/tirex/explore/node?node=A__ABXTJD25oQAmCtH-kuaJJA__MSPM0-SDK__a3PaaoK__LATEST

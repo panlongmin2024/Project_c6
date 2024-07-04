@@ -1,0 +1,10 @@
+config C_EXTERNAL_DSP_ATS3615
+    bool
+    prompt "use external dsp"
+    depends on C_EXTERNAL_DSP
+    default n
+
+config USE_EXT_DSP_VOLUME_GAIN
+    bool
+    prompt "EXT_DSP_VOLUME_GAIN"
+    default n

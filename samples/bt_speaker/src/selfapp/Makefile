@@ -1,0 +1,13 @@
+obj-y += selfapp_main.o
+obj-y += selfapp_crc16.o
+obj-y += selfapp_cmd_pack.o
+obj-y += selfapp_cmd_handler.o
+obj-y += selfapp_led.o
+obj-y += selfapp_eq.o
+obj-y += selfapp_analytics.o
+obj-y += selfapp_ota.o
+obj-y += selfapp_adaptor.o
+obj-y += selfapp_config.o
+obj-y += selfapp_eq_cmd.o
+obj-y += selfapp_shell.o
+obj-$(CONFIG_LOGSRV_SELF_APP) += selfapp_log.o

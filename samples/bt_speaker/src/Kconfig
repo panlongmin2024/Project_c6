@@ -1,0 +1,116 @@
+# Kconfig - ACTIONS primitive options for sdk version 2.0
+#
+# Copyright (c) 2023 Actions Semiconductor Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "bt_speaker App"
+
+config APP_PRIORITY
+    int
+    prompt "App Thread Priority"
+    default 10
+    help
+    This option set app thread priority
+
+config APP_STACKSIZE
+    int
+    prompt "App Thread Stack Size"
+    default 2048
+    help
+    This option set stack size for app thread
+
+config BT_MUSIC_APP
+	bool
+	prompt "BT MUSIC App Support"
+	default n
+
+config AURACAST
+	bool
+	prompt "Auracast Support"
+	default n
+
+config BT_DISABLE_PAIR_MODE
+	bool
+	prompt "disable pair mode"
+	default n
+
+config DSP_COMPUTE_COMPLEXITY
+	int
+	prompt "DSP compute complexity"
+	default 2
+	help
+	  Set the compute compexity level of DSP, the bigger the higer complexity.
+	  0 - Empty(thirdpart DSP), 1-low, 2-normal, 3-high
+config BUILD_PROJECT_HM_DEMAND_CODE
+	bool
+	prompt "build project hm demand code"
+	depends on BOARD_ATS2875H_CHARGE_6
+	default n
+
+config SPI_SWITCH
+	bool
+	prompt "Switch SPI on/off"
+	default n
+
+config SPI_SWITCH_BY_GPIO
+	bool
+	prompt "Switch SPI on/off"
+	default n
+
+  config C_TEST_BATT_MACRO
+    bool
+    prompt "enable test battery"
+    default n
+config AUARCAST_FILTER_POLICY_H
+  bool
+  prompt "auarcast filter policy H"
+  default n
+
+config BT_LE_AUDIO
+  bool
+  prompt "enable leaudio"
+  default n
+
+config BT_LE_AUDIO_CALL
+  bool
+  prompt "enable leaudio call"
+  default n
+
+config EXTERNAL_DSP_DELAY
+	int
+	prompt "external DSP delay"
+	default 0
+	help
+
+config USER_PAUSE_POLICY
+	bool
+	prompt "different policy when user pause.player will be stopped immediately when user pause if this macro config"
+	default n
+
+config BT_LETWS
+  bool
+  prompt "enable letws"
+  default n	
+  
+	
+menu "App Configuration"
+
+source "samples/bt_speaker/src/main/Kconfig"
+source "samples/bt_speaker/src/tool/Kconfig"
+
+source "samples/bt_speaker/src/ota/Kconfig"
+source "samples/bt_speaker/src/usound/Kconfig"
+source "samples/bt_speaker/src/demo/Kconfig"
+source "samples/bt_speaker/src/audio_input/Kconfig"
+source "samples/bt_speaker/src/charger/Kconfig"
+
+source "samples/bt_speaker/src/charge_6/Kconfig"
+source "samples/bt_speaker/src/selfapp/Kconfig"
+source "samples/bt_speaker/src/data_analy/Kconfig"
+
+endmenu
+
+endmenu
+
+

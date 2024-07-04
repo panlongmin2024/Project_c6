@@ -1,0 +1,1 @@
+obj-y += soft_version.o
