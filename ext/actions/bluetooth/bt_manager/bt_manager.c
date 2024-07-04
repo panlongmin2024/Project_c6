@@ -1555,7 +1555,7 @@ void bt_manager_dump_info(void)
 
 #if 1//pan debug
 	int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
-	static int volt,current;
+	static int16 volt = 0,current = 0;
 	pd_manager_get_volt_cur_value(&volt,&current);
 	printk("------> volt_value is %d  current_value is %d\n",volt,current);
 #endif
