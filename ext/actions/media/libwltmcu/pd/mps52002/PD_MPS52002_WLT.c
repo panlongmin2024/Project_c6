@@ -1502,6 +1502,7 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
     switch(psp)
     {
         case PD_SUPPLY_PROP_SINK_VOLT_VAULE:
+			SYS_LOG_INF("------> sink_volt:%d", pd_mps52002->volt_value);
             val->intval = pd_mps52002->volt_value;
             break;
         case PD_SUPPLY_PROP_PLUG_PRESENT:
@@ -1526,6 +1527,7 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			break;	
 
 		case PD_SUPPLY_PROP_SINK_CURRENT_VAULE:
+			SYS_LOG_INF("------> sink_volt:%d", pd_mps52002->cur_value);
 			val->intval = pd_mps52002->cur_value;
 			break;
 			
