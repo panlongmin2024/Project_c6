@@ -110,7 +110,8 @@ struct wlt_pd_mps52002_info {
 	u32_t   pd_65992_unload_flag:1;
 
    // u32_t   otg_debounce_cnt;
-	int16   volt_value;
+    int16   volt_value;
+	int16   src_volt_value;
     int16   cur_value;
 	int16   src_cur_value;
 	u8_t   	SRC_5OMA_FLAG;
@@ -343,7 +344,7 @@ void pd_mps52002_pd_otg_on(bool flag)
 
 // }
 
-u8_t pd_mps2760_read_current(int16 *volt_val, int16 *cur_val,int16 *src_cur_val)
+u8_t pd_mps2760_read_current(int16 *volt_val, int16 *src_volt_val, int16 *cur_val,int16 *src_cur_val)
 {
 
     u8_t buf[2] = {0},SRC_FLAG = 0;
@@ -364,9 +365,9 @@ u8_t pd_mps2760_read_current(int16 *volt_val, int16 *cur_val,int16 *src_cur_val)
 	
 	k_sleep(1);
   	i2c_burst_read(iic_dev, I2C_PD_DEV_ADDR, 0x2c, buf, 2);
-	*volt_val =(((buf[1]<<8) | buf[0])& 0x03ff)*20;
+	*src_volt_val =(((buf[1]<<8) | buf[0])& 0x03ff)*20;
 	k_sleep(1);
-	SYS_LOG_INF("PD mps2761 source voltage:%d, current:%d", *volt_val, *src_cur_val);
+	SYS_LOG_INF("PD mps2761 source voltage:%d, current:%d", *src_volt_val, *src_cur_val);
 
 	k_sleep(1);
 	i2c_burst_read(iic_dev, I2C_PD_DEV_ADDR, 0x00, buf, 2);
@@ -1325,7 +1326,7 @@ void pd_src_sink_check(void)
 	   SYS_LOG_INF("[%d] waiting Wake_up_times = %d", __LINE__, Wake_up_times);
 	   return;
 	 }
-	pd_mps52002->SRC_5OMA_FLAG = pd_mps2760_read_current(&pd_mps52002->volt_value, &pd_mps52002->cur_value,&pd_mps52002->src_cur_value);
+	pd_mps52002->SRC_5OMA_FLAG = pd_mps2760_read_current(&pd_mps52002->volt_value, &pd_mps52002->src_volt_value, &pd_mps52002->cur_value,&pd_mps52002->src_cur_value);
 	SYS_LOG_INF("------> read vlot %d current %d\n",pd_mps52002->volt_value,pd_mps52002->cur_value);
     if(pd_mps52002->pd_52002_source_flag)
     {
