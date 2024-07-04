@@ -721,11 +721,6 @@ int power_manager_early_init(void)
 
 	SYS_LOG_INF("battery capacity: %d\n", power_manager_get_battery_capacity());
 
-	//if(property_get_int(CFG_AUTO_ENTER_ATS_MODULE, 0)=='6'){
-		/* in module test mode */
-	//	return 0;
-	//}
-		
 	if ((power_manager_get_battery_capacity() <= DEFAULT_NOPOWER_CAP_LEVEL))
 	{
 		if(power_manager_get_dc5v_status())

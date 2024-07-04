@@ -196,7 +196,6 @@ void pd_service_main_loop(void * parama1, void * parama2, void * parama3)
 
 			switch (msg.type) {
 				case MSG_PD_SRV_INIT:
-					SYS_LOG_INF("-------------> need pd init!\n");
 					pd_srv_charger_init();
 					break;
 				case MSG_PD_SRV_EXIT:
