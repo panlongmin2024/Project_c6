@@ -1552,6 +1552,14 @@ void bt_manager_dump_info(void)
     struct bt_manager_context_t *bt_manager = bt_manager_get_context();
 
 	printk("Bt manager info\n");
+
+#if 1//pan debug
+	int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
+	int volt,current;
+	pd_manager_get_volt_cur_value(&volt,&current);
+	printk("------> volt_value is %d  current_value is %d\n",volt,current);
+#endif
+	
 	printk("num %d, tws_mode %d, bt_state 0x%x, playing %d\n", bt_manager->connected_phone_num,
 		bt_manager->tws_mode, bt_manager->bt_state, (bt_manager_a2dp_get_status() == BT_STATUS_PLAYING));
 	for (i = 0; i < MAX_MGR_DEV; i++) {

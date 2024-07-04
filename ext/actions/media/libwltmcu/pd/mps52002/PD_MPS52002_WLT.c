@@ -1524,6 +1524,10 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			// SYS_LOG_INF("PPD_SUPPLY_PROP_UNLOAD_FINISHED:%d", val->intval);
 			break;	
 
+		case PD_SUPPLY_PROP_SINK_CURRENT_VAULE:
+			val->intval = pd_mps52002->cur_value;
+			break;
+			
         default:
             break;	  
     }
