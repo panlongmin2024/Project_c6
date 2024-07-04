@@ -604,16 +604,7 @@ static int cdc_shell_ats_battery_curr(struct device *dev, u8_t *buf, int len)
 	//pd_mps2760_read_current(&battery_volt,&src_battery_volt,&battery_curr,&ext_curr);
 	pd_manager_get_volt_cur_value(&battery_volt,&battery_curr);
 	hex_to_string_4(battery_volt,buffer);
-	buffer[9] += battery_volt/1000;
-	buffer[8] += battery_volt%1000/100;
-	buffer[7] += battery_volt%100/10;
-	buffer[6] += battery_volt%10;
 	hex_to_string_4(battery_curr,buffer+5);
-	buffer[4] += battery_curr/1000;
-	buffer[3] += battery_curr%1000/100;
-	buffer[2] += battery_curr%100/10;
-	buffer[1] += battery_curr%10;
-
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_BATTERY_CUR_VALUE, sizeof(ATS_CMD_RESP_BATTERY_CUR_VALUE)-1, 
 		buffer, sizeof(buffer)-1);
