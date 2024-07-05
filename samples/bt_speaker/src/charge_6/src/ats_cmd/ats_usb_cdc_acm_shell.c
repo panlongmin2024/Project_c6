@@ -42,7 +42,7 @@ extern u8_t PD_version;
 extern void pd_mps52002_sink_charging_disable(bool flag);
 extern bool pd_mps52002_ats_switch_volt(u8_t PDO_index);
 extern int bt_manager_bt_read_rssi(uint16_t handle);
-extern u8_t pd_mps2760_read_current(int16 *volt_val, int16 *src_volt_val, int16 *cur_val,int16 *src_cur_val);
+//extern u8_t pd_mps2760_read_current(int16 *volt_val, int16 *src_volt_val, int16 *cur_val,int16 *src_cur_val);
 extern int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
 
 // 
@@ -1141,12 +1141,12 @@ static int cdc_shell_ats_haman_battery_key_check(struct device *dev, u8_t *buf, 
 {	
 	int16 battery_volt,src_battery_volt,battery_curr,ext_curr;
 	uint8_t buffer[9+1] = "0000:0000";
-	pd_mps2760_read_current(&battery_volt,&src_battery_volt,&battery_curr,&ext_curr);
+	//pd_mps2760_read_current(&battery_volt,&src_battery_volt,&battery_curr,&ext_curr);
 
 	//battery_volt = power_manager_get_battery_vol();
 	//battery_volt /= 1000; // change voltage unit uv to mv
-	snprintf(&buffer[0], 4, "%04d", battery_volt);
-	snprintf(&buffer[5], 4, "%04d", battery_curr);
+	//snprintf(&buffer[0], 4, "%04d", battery_volt);
+	//snprintf(&buffer[5], 4, "%04d", battery_curr);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_BATTERY_CUR_VALUE, sizeof(ATS_CMD_RESP_BATTERY_CUR_VALUE)-1, 
