@@ -344,6 +344,8 @@ static int battery_get_charge_status(struct acts_battery_info *bat, const void *
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	// uint8_t hw_info = ReadODM();
 
+ 
+    
 	//if(!hw_info){
 
 		sink_status = pd_get_sink_charging_state();

@@ -11,7 +11,7 @@
 #include <wltmcu_manager_supply.h>
 
 #define I2C_DEV_ADDR   0x63 // PCBA
-#define PIN_AMP_PDN		13 // AMP_PDN, low to shutdown the amp
+#define PIN_AMP_PDN		(Read_hw_ver() == GGC_EV1_TONLI_EV3 ? 13 : 53)//13 // AMP_PDN, low to shutdown the amp
 #define PIN_BOOST_EN	52 //BOOST EN, high to enable.
 static int amp_tas5828m_enable_flag = 0;
 static os_mutex amp_tas5828m_mutex;

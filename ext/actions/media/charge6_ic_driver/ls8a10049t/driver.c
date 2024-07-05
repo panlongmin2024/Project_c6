@@ -827,7 +827,7 @@ static bool bt_mcu_get_enable_bat_led_code(void)
 {
 
     struct logic_mcu_ls8a10049t_device_data_t *ls8a10049t = p_mcu_ls8a10049t_dev->driver_data;
-   
+	//printk("\n%s, enable_bat_led:%d \n",ls8a10049t->enable_bat_led);
     return ls8a10049t->enable_bat_led;
 }
 
@@ -930,8 +930,14 @@ static void mcu_ls8a10049t_wlt_set_property(struct device *dev,enum mcu_manager_
 			if(!bt_mcu_get_enable_pty_boost_led_code())
 			aw9523b_set_led_status(MCU_SUPPLY_PROP_LED_PTY_BOOST,value);		
             break;
+
+		case MCU_SUPPLY_PROP_LED_POWER:
+			aw9523b_set_led_status(MCU_SUPPLY_PROP_LED_POWER,value);
+			break;	
 		case MCU_SUPPLY_PROP_DSP_DCDC:	
-			io_expend_aw9523b_ctl_20v5_set(value);
+			pd_iic_push_queue(MCU_IIC_TYPE_PROP_DSP_DCDC, (u8_t)value);
+
+			// io_expend_aw9523b_ctl_20v5_set(value);
 		break;
         case MCU_SUPPLY_PROP_UPDATE_FW:
             bt_pd_send_update_fw_code(value);

@@ -74,6 +74,8 @@ struct auto_conn_t {
 	uint8_t hfp_first:1;
 	uint8_t hid:1;
     uint8_t first_reconnect:1;
+    uint8_t remote_connect_req:1;
+    uint8_t profile_connect_wait:1;
 	uint8_t tws_mode;
 	uint8_t strategy;
 	uint8_t base_try;
@@ -564,18 +566,18 @@ void btsrv_connect_auto_connection_stop(int mode)
 	btsrv_scan_update_mode(false);
 }
 
-void btsrv_connect_auto_connection_stop_except_device(bd_address_t *addr)
+void btsrv_connect_remote_connect_stop_except_device(bd_address_t *addr)
 {
 	int i;
 	int ret = 0;
-
-	SYS_LOG_INF("auto_connection_stop_except_device");
+    int req = 0;
 
 	for (i = 0; i < BTSRV_SAVE_AUTOCONN_NUM; i++) {
 		if (p_connect->auto_conn[i].addr_valid
 			&& (p_connect->auto_conn[i].tws_mode == BTSRV_TWS_RECONNECT_NONE)){
 			if(!memcmp(&p_connect->auto_conn[i].addr,addr,sizeof(bd_address_t))) {
 				ret = 1;
+				req = i;
 				continue;
 			}
 
@@ -589,6 +591,7 @@ void btsrv_connect_auto_connection_stop_except_device(bd_address_t *addr)
 		if(p_connect->auto_conn[i].tws_mode != BTSRV_TWS_RECONNECT_NONE){
 			if(!memcmp(&p_connect->auto_conn[i].addr,addr,sizeof(bd_address_t))) {
 				ret = 1;
+				req = i;
 				continue;
 			}
 
@@ -602,6 +605,8 @@ void btsrv_connect_auto_connection_stop_except_device(bd_address_t *addr)
 		}
 	}
 
+	SYS_LOG_INF("ret:%d req:%d",ret,req);
+
 	if(!ret) {
 		p_connect->reconnect_br_connect = false;
         thread_timer_stop(&p_connect->auto_conn_timer);
@@ -610,6 +615,9 @@ void btsrv_connect_auto_connection_stop_except_device(bd_address_t *addr)
 		p_connect->curr_conn = NULL;
 		btsrv_adapter_set_reconnect_state(false);
         btsrv_update_performance_req();
+    }
+    else{
+        p_connect->auto_conn[req].remote_connect_req = 1;
     }
 	btsrv_scan_update_mode(false);
 }
@@ -957,7 +965,11 @@ static void btsrv_update_autoconn_state(uint8_t *addr, uint8_t event)
 
 		if (index == p_connect->connecting_index) {
 		    /* start connect profile quickly */
-			btsrv_connect_auto_connection_restart(1 /*AUTOCONN_START_TIME*/, 0);
+            if(p_connect->auto_conn[index].remote_connect_req){
+                p_connect->auto_conn[index].profile_connect_wait = 1;
+                p_connect->auto_conn[index].state = AUTOCONN_STATE_END;
+            }
+            btsrv_connect_auto_connection_restart(1 /*AUTOCONN_START_TIME*/, 0);
 		}
 		break;
 
@@ -1077,9 +1089,12 @@ static void btsrv_update_autoconn_state(uint8_t *addr, uint8_t event)
 
 			if (p_connect->auto_conn[index].profile_reconnect_times > 0)
 			    p_connect->auto_conn[index].profile_reconnect_times -= 1;
-			
+
 			/* reconnect next profile quickly */
-			btsrv_connect_auto_connection_restart(1 /*AUTOCONN_START_TIME*/, 0);
+            if(p_connect->auto_conn[index].remote_connect_req){
+                p_connect->auto_conn[index].profile_connect_wait = 1;
+            }
+            btsrv_connect_auto_connection_restart(1 /*AUTOCONN_START_TIME*/, 0);
 		}
         else{
             p_connect->auto_conn[index].first_reconnect = 0;
@@ -1224,7 +1239,7 @@ static void btsrv_autoconn_phone_connecting_proc(void)
 		next_time = AUTOCONN_START_TIME;
 	}
 
-	SYS_LOG_INF("PHONE:%s br:%d state:%d try:%d",
+	SYS_LOG_INF("%s br:%d st:%d try:%d",
         addr,
 		p_connect->reconnect_br_connect,
 		auto_conn->state,
@@ -1433,6 +1448,8 @@ static void btsrv_autoconn_profile_connecting_proc(void)
 	struct bt_conn *conn;
     uint16_t profile_interval;
 	conn = btsrv_rdm_find_conn_by_addr(&auto_conn->addr);
+	profile_interval = auto_conn->profile_interval * 100;
+
 	if (conn == NULL) {
 		SYS_LOG_ERR("connecting_proc need to fix!!!");
 		goto try_other_dev;
@@ -1461,19 +1478,23 @@ static void btsrv_autoconn_profile_connecting_proc(void)
 			btsrv_adapter_disconnect(conn);
 
             /* continue retry reconnect after ACL force disconnected */
-            profile_interval = auto_conn->profile_interval * 100;
             btsrv_connect_auto_connection_restart(profile_interval, 0);
             return;
 		}
 		goto try_other_dev;
 	}
 
+    if(auto_conn->profile_connect_wait){
+        auto_conn->profile_connect_wait = 0;
+        btsrv_connect_auto_connection_restart(profile_interval, 0);
+        return;
+    }
+
 	if (btsrv_autoconn_check_connect_profile(conn, auto_conn)) {
 	    SYS_LOG_INF("%d, COMPLETE", index);
 		goto try_other_dev;
 	}
 
-	profile_interval = auto_conn->profile_interval * 100;
 	btsrv_connect_auto_connection_restart(profile_interval, 0);
 	return;
 
@@ -1482,7 +1503,13 @@ try_other_dev:
     auto_conn->state = AUTOCONN_STATE_END;
     
     /* switch reconnect device quickly */
-    btsrv_connect_auto_connection_restart(1 /*AUTOCONN_START_TIME*/, 0);
+    if(auto_conn->remote_connect_req && auto_conn->profile_connect_wait){
+        auto_conn->profile_connect_wait = 0;
+        btsrv_connect_auto_connection_restart(profile_interval ,0);
+    }
+    else{
+        btsrv_connect_auto_connection_restart(1 /*AUTOCONN_START_TIME*/, 0);
+    }
 }
 
 static void btsrv_autoconn_timer_handler(struct thread_timer *ttimer, void *expiry_fn_arg)
@@ -1675,7 +1702,7 @@ void btsrv_proc_link_change(uint8_t *mac, uint8_t type)
 	bool    scan_update = false;
 	bool    is_pending  = false;
 
-	SYS_LOG_INF("event:%s %x:%x:%x:%x:%x:%x", 
+	SYS_LOG_INF("ev:%s %x%x%x%x%x%x",
 		btsrv_link_evt2str(type),
 		mac[5],mac[4],mac[3],
 		mac[2],mac[1],mac[0]);
@@ -2717,7 +2744,7 @@ int btsrv_connect_process(struct app_msg *msg)
 		btsrv_connect_auto_connection_stop_device(msg->ptr);
 		break;
 	case MSG_BTSRV_AUTO_RECONNECT_STOP_EXCEPT_DEVICE:
-		btsrv_connect_auto_connection_stop_except_device(msg->ptr);
+		btsrv_connect_remote_connect_stop_except_device(msg->ptr);
 		break;
 	case MSG_BTSRV_DISCONNECT_DEVICE:
 		btsrv_connect_disconnect_device((int)(_btsrv_get_msg_param_ptr(msg)));

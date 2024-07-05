@@ -436,11 +436,13 @@ static int _sys_standby_process_normal(void)
 {
 	u32_t wakelocks = sys_wakelocks_check();
 	static uint8_t refresh_flag = 0x00;
+	static int tmp_test_idle_cnt = 0;
 
 	if((refresh_flag != sys_pm_get_power_5v_status()))
 	{	
 		refresh_flag = sys_pm_get_power_5v_status();
 		sys_wakelocks_free_time_reset();
+		SYS_LOG_INF("refresh_flag: %d", refresh_flag);
 	}
 	/**have sys wake lock*/
 	if (wakelocks) {
@@ -472,8 +474,8 @@ static int _sys_standby_process_normal(void)
 		goto disable_s1;
 	}
 #endif
-
-	SYS_LOG_DBG("idle time %d", sys_wakelocks_get_free_time());
+	if((++tmp_test_idle_cnt%10) == 0)
+		SYS_LOG_INF("idle time %d", sys_wakelocks_get_free_time());
 
 	if (sys_wakelocks_get_free_time() > standby_context->auto_standby_time)
 		_sys_standby_enter_s1();

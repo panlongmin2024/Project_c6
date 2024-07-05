@@ -90,13 +90,22 @@ extern bool run_mode_is_demo(void);
 extern void battery_charging_remaincap_is_full(void);
 extern void battery_charging_LED_on_all(void);
 extern void battery_remaincap_low_poweroff(void);
+extern void power_manager_battery_display_reset(void);
 void batt_led_manager_set_display(int led_status)
 {
-   if(run_mode_is_demo())
+
+   int temp_status = power_manager_get_charge_status();
+
+   if(temp_status == POWER_SUPPLY_STATUS_DISCHARGE
+		   ||temp_status == POWER_SUPPLY_STATUS_FULL
+		  )
    	{
-   	  //printk("batt_led_manager_set_display led_status = %d\n",led_status);
-   	 led_status = DOME_MODE_LED_STATUS;
-   	}
+	   if(run_mode_is_demo())
+	   	{
+	   	 // printk("batt_led_manager_set_display led_status = %d\n",led_status);
+	   	 led_status = BATT_LED_NORMAL_OFF;
+	   	}
+   }
   printk("batt_led_manager_set_display led_status = %d\n",led_status);
   switch(led_status)
   	{
@@ -125,6 +134,10 @@ void batt_led_manager_set_display(int led_status)
     case DOME_MODE_LED_STATUS:
 		 battery_charging_LED_on_all();
 		break;
+
+	case BATT_LED_RESET:
+		power_manager_battery_display_reset();
+	break;
 	default:
 			break;	
     }
@@ -199,7 +212,7 @@ void pd_service_main_loop(void * parama1, void * parama2, void * parama3)
 					pd_srv_charger_init();
 					break;
 				case MSG_PD_SRV_EXIT:
-					pd_manager_deinit();
+					pd_manager_deinit(0);
 					break;
 
 				case MSG_PD_SRV_EVENT:

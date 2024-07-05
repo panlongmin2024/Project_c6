@@ -236,7 +236,9 @@ static void main_app_view_deal(u32_t ui_event)
 			input_dev_enable(dev);	
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,REMOVE_CHARGING_WARNING);
 		bt_manager_update_led_display();
-
+		#ifdef CONFIG_LED_MANAGER
+		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+		#endif
 		break;	
 
 	case UI_EVENT_MCU_FW_SUCESS:

@@ -14,6 +14,7 @@
 
 struct ota_image;
 struct ota_backend;
+struct ota_storage;
 
 struct ota_image *ota_image_init(void);
 void ota_image_exit(struct ota_image *img);
@@ -44,5 +45,7 @@ int ota_image_read_complete(struct ota_image *img, int offset, uint8_t *buf, int
 
 void ota_image_read_cancel(struct ota_image *img);
 uint32_t ota_image_get_checksum(struct ota_image *img);
+
+int ota_storage_image_check(struct ota_storage *storage, uint32_t file_offset, uint8_t *buf, int buf_size);
 
 #endif /* __OTA_IMAGE_H__ */

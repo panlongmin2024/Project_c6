@@ -90,6 +90,8 @@ static const bt_mgr_event_strmap_t bt_manager_service_event_map[] =
 	{BTSRV_CHECK_STREAMING_AUDIO_STATUS, 	STRINGIFY(BTSRV_CHECK_STREAMING_AUDIO_STATUS)},
 };
 
+static void dev_connect_notify(bd_address_t* addr, uint8_t flag);
+
 const char *bt_manager_evt2str(int num, int max_num, const bt_mgr_event_strmap_t *strmap)
 {
 	int low = 0;
@@ -388,23 +390,35 @@ static void bt_manager_control_role_check(struct bt_mgr_dev_info *info)
 static void bt_manager_notify_connected(struct bt_mgr_dev_info *info)
 {
 	uint8_t tmp_flag = 1;
-	if (info->is_tws || info->notify_connected) {
-		/* Tws not notify in here, or already notify */
+
+	if (info->is_tws) {
+		/* Tws not notify in here*/
 		return;
 	}
 
 	SYS_LOG_INF("%s,%d\n", (char *)info->name,info->timeout_disconnected);
+#ifdef ABNORMAL_OFFLINE_SHIELDING_SYSTEM_NOTIFICATION
+    if (info->timeout_disconnected == 1 && !info->phone_connect_request) {
+	   tmp_flag = 0;
+	}
+#endif
+
+	if (!info->notified_tts) {
+		info->notified_tts = 1;
+		dev_connect_notify(&info->addr, tmp_flag);
+	}
+
+	if (info->notify_connected) {
+		/* already notify */
+		return;
+	}
+
 	info->notify_connected = 1;
 	
 	if (bt_manager_get_connected_dev_num() == 0) {
 		bt_manager_update_phone_volume(info->hdl,1);
 	}
 
- #ifdef ABNORMAL_OFFLINE_SHIELDING_SYSTEM_NOTIFICATION
-    if (info->timeout_disconnected == 1 && !info->phone_connect_request) {
-	   tmp_flag = 0;
-	}
-#endif	
 	bt_manager_set_status_ext(BT_STATUS_CONNECTED, tmp_flag, &info->addr);
 
 	if (info->snoop_role != BTSRV_SNOOP_SLAVE) {
@@ -447,6 +461,7 @@ static void bt_manager_check_disconnect_notify(struct bt_mgr_dev_info *info, uin
 
 	if (info->notify_connected) {
 		SYS_LOG_INF("btsrv disconnected reason %d\n", reason);
+		info->notified_tts = 0;
 		info->notify_connected = 0;
 		bt_manager->dis_reason = reason;		/* Transfer to BT_STATUS_DISCONNECTED */
 #ifdef ABNORMAL_OFFLINE_SHIELDING_SYSTEM_NOTIFICATION
@@ -660,6 +675,10 @@ static int bt_manager_link_event(void *param)
         info->a2dp_singnaling_connected = 0;
 		SYS_EVENT_INF(EVENT_BT_LINK_A2DP_DISCONNECTED, info->hdl,
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
+		if (info->notified_tts) {
+			SYS_LOG_INF("Deemed to be disconnected\n");
+			info->notified_tts = 0;
+		}
 		break;
 	case BT_LINK_EV_AVRCP_CONNECTED:
 		info->avrcp_connected = 1;
@@ -939,7 +958,6 @@ int bt_manager_set_status_ext(int state,uint8_t flag, bd_address_t* addr)
 	{
 		bt_manager->connected_phone_num++;
 		bt_manager_check_phone_connected();
-		dev_connect_notify(addr, flag);
 		break;
 	}
 	case BT_STATUS_DISCONNECTED:

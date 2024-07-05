@@ -254,7 +254,7 @@ static u16_t gpiokey_acts_get_keycode(const struct acts_adckey_config *cfg,
     }
 	else if (key_vol_up_status_read() && key_vol_down_status_read())
     {
-		ret = KEY_TWS_DEMO_MODE;
+		//ret = KEY_TWS_DEMO_MODE;
     }
 	else if (key_bt_status_read() && key_play_pause_status_read())
     {

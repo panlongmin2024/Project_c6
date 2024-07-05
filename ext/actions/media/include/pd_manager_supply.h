@@ -231,6 +231,9 @@ typedef enum {
     MCU_IIC_TYPE_PROP_LED_BT,
     MCU_IIC_TYPE_PROP_LED_AURACAST,
 
+    MCU_IIC_TYPE_PROP_DSP_DCDC,
+
+
 } pd_manager_iic_send_para_t;
 
 

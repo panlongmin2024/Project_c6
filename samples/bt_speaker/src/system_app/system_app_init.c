@@ -130,12 +130,29 @@ bool main_system_is_enter_bqb(void)
 #endif
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+static bool tts_is_play_warning_tone = false;
+void main_system_tts_set_play_warning_tone_flag(bool flag)
+{
+	tts_is_play_warning_tone = flag;
+	SYS_LOG_INF("tts_is_play_warning_tone:%d \n",tts_is_play_warning_tone);
+}
+
+bool main_system_tts_get_play_warning_tone_flag(void)
+{
+	SYS_LOG_INF("tts_is_play_warning_tone:%d \n",tts_is_play_warning_tone);
+
+	return tts_is_play_warning_tone;
+}
+
 extern int btdrv_get_bqb_mode(void);
 static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 {
 	switch (event) {
 	case TTS_EVENT_START_PLAY:
 		SYS_LOG_INF("%s start \n",tts_id);
+		if(!memcmp(tts_id,"c_err.mp3",9)){
+			main_system_tts_set_play_warning_tone_flag(true);
+		}
 		break;
 	case TTS_EVENT_STOP_PLAY:
 		SYS_LOG_INF("%s end \n", tts_id);
@@ -144,6 +161,9 @@ static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 			if(btdrv_get_bqb_mode()){
 				sys_pm_reboot(7);
 			}
+		}
+		if(!memcmp(tts_id,"c_err.mp3",9)){
+			main_system_tts_set_play_warning_tone_flag(false);
 		}
 		break;
 	default:

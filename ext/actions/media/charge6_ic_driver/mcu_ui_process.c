@@ -101,7 +101,7 @@ static const  bt_mcu_pair_led_map_t bt_mcu_pair_ledmap[] = {
 #define BATTERY_CHARGING_REMAIN_CAP_LEVEL4        75
 #define BATTERY_CHARGING_REMAIN_CAP_LEVEL5        100
 #define DISCHARGE_LED_DISPLAY_TIME_10s            100
-#define DISCHARGE_LED_DISPLAY_TIME_2s            20
+#define DISCHARGE_LED_DISPLAY_TIME_2s            10
 
 //static battery_manage_info_t global_bat_namager;
 
@@ -373,17 +373,9 @@ int get_batt_led_display_timer(void)
 static void battery_status_discharge_handle(u16_t cap)
 {
     if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1){
-        if(!run_mode_is_demo())
-        {
+    
             battery_discharge_remaincap_low_15();
-            set_batt_led_display_timer(-1);
-            //thread_timer_stop(&battery_led_timer);
-        }
-
-        battery_discharge_remaincap_low_15();
-		set_batt_led_display_timer(-1);
-        //thread_timer_stop(&battery_led_timer);
-
+            set_batt_led_display_timer(-1); 
     }
     else{
         if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL2){
@@ -421,7 +413,7 @@ void batt_led_display_timeout(void)
 
 extern int check_is_wait_adfu(void);
 
-void battery_status_remaincap_display_handle(uint8_t status, u16_t cap,bool key_flag, int time)
+void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_status)
 {
     printf("zth debug remaincap_display_handle,status ,cap: %d ,0x%x \n", status,cap);
 
@@ -450,7 +442,7 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap,bool key_
                 }
                 else*/ 
               
-              if(time == BATT_LED_ON_2S)
+              if(led_status == BATT_LED_ON_2S)
 			  {
 			    if(get_batt_led_display_timer() > 0)
 				 {
@@ -557,7 +549,8 @@ void bt_ui_charging_warning_handle(uint8_t status)
     mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_4,status);
     mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_5,status);     
     mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_BT,status);
-    mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_PTY_BOOST,status);       
+    mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_PTY_BOOST,status);   
+    mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_POWER,status);    
 	printk("[%s/%d],%d on\n\n",__func__,__LINE__,status);	
 }
 
@@ -641,6 +634,7 @@ bool mcu_ui_get_enable_bat_led_state(void)
 
 void mcu_ui_set_led_enable_state(int state)
 {
+    printk("\n%s,state:0x%x \n",__func__,state);
     if(BT_LED_STATE_MASK(state) != 0xFF){
         mcu_ui_set_enable_bt_led_state(BT_LED_STATE_MASK(state));
     }
@@ -845,6 +839,7 @@ extern bool bt_mcu_get_pw_cmd_exit_standy(void);
 extern void bt_mcu_set_first_power_on_flag(bool flag);
 extern bool bt_mcu_get_first_power_on_flag(void);
 extern void bt_mcu_set_bt_warning_poweroff_flag(bool flag);
+extern uint8_t bt_mcu_get_bt_warning_poweroff_flag(void);
 extern void bt_mcu_set_bt_wake_up_flag(bool flag);
 extern bool bt_mcu_get_bt_wake_up_flag(void);
 extern void pd_manager_set_poweron_filte_battery_led(uint8_t flag);
@@ -866,6 +861,8 @@ int check_battery_low_cap_level5()
 }
 
 extern int pd_manager_get_power_key_debounce(void);
+extern bool main_system_tts_get_play_warning_tone_flag(void);
+static bool bt_is_charge_warnning_flag = false;
 
 void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t *para)
 {
@@ -885,6 +882,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
 
             if(pd_manager_get_power_key_debounce())  
             {
+                bt_mcu_send_pw_cmd_poweron();
                 break;
             }  
 
@@ -911,6 +909,11 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                         
                    //}
                 }
+				else if (bt_mcu_get_bt_wake_up_flag() == 1)
+				{
+				   printk("POWER KEY wake up \n");
+				   pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+				}
                 bt_mcu_send_pw_cmd_poweron();
                 bt_mcu_set_first_power_on_flag(1);
                 printk("POWER KEY first power on\n");
@@ -951,7 +954,12 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 printk("POWER KEY exit charge app\n");
             }else{
                 
-            
+                if(bt_is_charge_warnning_flag)
+                {
+                    printk("BT IS CHARGING WARNING!!!\n");
+                    bt_mcu_send_pw_cmd_poweron();
+                    break;
+                }
 /* 				if(!run_mode_is_demo())
 				  led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL); */
                 if(!ReadODM())
@@ -1072,9 +1080,18 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                     {
                         pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 1);
                     }
-                    sys_event_notify(SYS_EVENT_CHARGING_WARNING);
+                    if(!main_system_tts_get_play_warning_tone_flag())
+                    {
+                        sys_event_notify(SYS_EVENT_CHARGING_WARNING);    
+                    }
+                    bt_mcu_set_bt_warning_poweroff_flag(1);
+                    bt_is_charge_warnning_flag = true;
                 }
-                sys_event_notify(SYS_EVENT_CHARGING_WARNING);
+                else
+                {
+                    bt_is_charge_warnning_flag = false;
+                }
+                //sys_event_notify(SYS_EVENT_CHARGING_WARNING);
                 pd_manager_set_poweron_filte_battery_led(WLT_FILTER_CHARGINE_WARNING);
             }
             else
@@ -1090,10 +1107,15 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 pd_set_source_refrest();
                 sys_event_notify(SYS_EVENT_REMOVE_CHARGING_WARNING);
                 pd_manager_set_poweron_filte_battery_led(WLT_FILTER_NOTHING);
+                if(sys_pm_get_power_5v_status())
+                {
+                   bt_mcu_set_bt_warning_poweroff_flag(0);     
+                }
+                bt_is_charge_warnning_flag = false;
             }  
 
-            if(sys_pm_get_power_5v_status() == 0){
-                bt_mcu_set_bt_warning_poweroff_flag(1);
+            if(sys_pm_get_power_5v_status() == 0 && (bt_mcu_get_bt_warning_poweroff_flag() == 1)){
+                bt_mcu_set_bt_warning_poweroff_flag(2);
             } 
             break;
 
@@ -1124,8 +1146,23 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                     {
                         pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 1);
                     }
-                    sys_event_notify(SYS_EVENT_CHARGING_WARNING);
+                    if(!main_system_tts_get_play_warning_tone_flag())
+                    {
+                        sys_event_notify(SYS_EVENT_CHARGING_WARNING);    
+                    }
+                    
                     pd_manager_set_poweron_filte_battery_led(WLT_FILTER_CHARGINE_WARNING);
+                    bt_is_charge_warnning_flag = true;
+                }
+                else
+                {
+
+                    //pd_manager_disable_charging(false);
+                    pd_set_source_refrest();
+
+                    sys_event_notify(SYS_EVENT_REMOVE_CHARGING_WARNING);
+                    pd_manager_set_poweron_filte_battery_led(WLT_FILTER_NOTHING);
+                    bt_is_charge_warnning_flag = false;
                 }
             }
             else
@@ -1138,11 +1175,12 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 //         pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 0);
                 //     }
                 // }
-                pd_manager_disable_charging(false);
+                //pd_manager_disable_charging(false);
                 pd_set_source_refrest();
 
                 sys_event_notify(SYS_EVENT_REMOVE_CHARGING_WARNING);
                 pd_manager_set_poweron_filte_battery_led(WLT_FILTER_NOTHING);
+                bt_is_charge_warnning_flag = false;
             }
             break;
         case MCU_INT_TYPE_HW_RESET:
@@ -1154,7 +1192,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
             else
             {
                 printk("mcu hw reset!!! \n");
-                pd_manager_deinit();
+                pd_manager_deinit(0);
                 sys_pm_poweroff();    
             }
             break;
@@ -1170,5 +1208,63 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
         //    bt_mcu_set_bt_wake_up_flag(0);
         //}
     }
+
+}
+
+
+///////////////////////////////////////hw version/////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include <adc.h>
+#include <misc/byteorder.h>
+
+
+struct hw_ver_detect_info {
+	struct device *adc_dev;
+	struct adc_seq_table seq_tbl;
+	struct adc_seq_entry seq_entrys;
+	u8_t adcval[4];
+};
+
+uint8_t Read_hw_ver(void)
+{
+    uint8_t hw_info;
+
+#define HW_VER_PIN		22 // TONLI:0 PRE-EV3,3.3 DV1; ggec 0 PRE-EV1,3.3 PRE-EV2; 
+    struct hw_ver_detect_info hw_ver;  
+    int adc_val; 
+	/* LRADC2: GPIO22  */
+
+	hw_ver.adc_dev = device_get_binding(CONFIG_INPUT_DEV_ACTS_ADCKEY_ADC_NAME);
+	if (!hw_ver.adc_dev) {
+		SYS_LOG_ERR("cannot found ADC device %s\n", CONFIG_INPUT_DEV_ACTS_ADCKEY_ADC_NAME);
+		return 0;
+	}
+
+	hw_ver.seq_entrys.sampling_delay = 0;
+	hw_ver.seq_entrys.buffer = (u8_t *)&hw_ver.adcval;
+	hw_ver.seq_entrys.buffer_length = sizeof(hw_ver.adcval);
+	hw_ver.seq_entrys.channel_id = ADC_ID_CH2;
+
+	hw_ver.seq_tbl.entries = &hw_ver.seq_entrys;
+	hw_ver.seq_tbl.num_entries = 1;
+
+	adc_enable(hw_ver.adc_dev);  
+	/* wait 10ms */
+	//k_busy_wait(20000);
+
+	adc_read(hw_ver.adc_dev, &hw_ver.seq_tbl);
+	adc_val = sys_get_le16(hw_ver.seq_entrys.buffer);
+
+    printk("\n %s,%d , hw_ver : %x !!!\n",__func__,__LINE__,adc_val);
+	
+    if(adc_val < 0x0f)
+    {
+        hw_info = GGC_EV1_TONLI_EV3;
+    }
+    else{
+        hw_info = GGC_EV2_TONLI_DV1;
+    }
+
+    return hw_info;    
 
 }

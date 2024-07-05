@@ -374,8 +374,17 @@ static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 	}else{
 		ota->temp_image_offset = file->offset;
 		if(ota_use_secure_boot(ota)) {
-			return ota_secure_data_verify(ota, file);
+			crc_calc = ota_secure_data_verify(ota, file);
+		}else{
+			crc_calc = ota_storage_image_check(ota->storage, file->offset, ota->data_buf, ota->data_buf_size);
 		}
+
+		if(crc_calc != 0){
+			//erase temp image
+			ota_storage_erase(ota->storage, file->offset, OTA_ERASE_ALIGN_SIZE);
+		}
+		
+		return crc_calc;
 	}
 
 	return 0;
@@ -1257,8 +1266,6 @@ static int ota_write_temp_img(struct ota_upgrade_info *ota)
 	err = ota_write_and_verify_file(ota, temp_part, file, true);
 	if (err) {
 		SYS_LOG_ERR("failed to write ota image");
-		//erase temp image
-		ota_storage_erase(ota->storage, file->offset, OTA_ERASE_ALIGN_SIZE);
 		return err;
 	}
 

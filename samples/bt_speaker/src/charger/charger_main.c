@@ -155,7 +155,7 @@ int charger_mode_check(void)
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 							//extern int pd_manager_deinit(void);
-								pd_manager_deinit();
+								pd_manager_deinit(0);
 #endif							
 								sys_pm_poweroff();
 							}
@@ -196,7 +196,7 @@ extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
 		
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 				//extern int pd_manager_deinit(void);
-				pd_manager_deinit();
+				pd_manager_deinit(1);
 #endif							
 				sys_pm_poweroff();
 				

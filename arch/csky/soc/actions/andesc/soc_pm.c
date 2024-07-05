@@ -78,7 +78,13 @@ int sys_pm_get_power_5v_status(void)
    {
 		if(pd_manager_get_source_status())
 		{
-			ret = 2;
+			if(pd_manager_get_source_status() == 2)				// SOURCE: LOW CURRENT
+			{
+				ret = 0;
+			}else{
+				ret = 2;
+			}
+			
 		}
 		else if(pd_get_plug_present_state())
 		{

@@ -17,7 +17,7 @@
 #include "app_defines.h"
 #include "system_app_att.h"
 #include "system_app.h"
-#include "ats_cmd/ats.h"
+
 static struct device *stub_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
 #ifdef CONFIG_ATT_USB_STUB

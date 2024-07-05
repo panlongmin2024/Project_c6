@@ -100,7 +100,7 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 			hotplug_charger_init();	
 			charge_app_state = CHARGING_APP_OK;
 			if(charge_app_force_power_off == 1){
-				pd_manager_deinit();		
+				pd_manager_deinit(0);		
 				sys_pm_poweroff();
 			}	
 		}
@@ -118,7 +118,7 @@ int charge_app_real_exit_deal(void)
 	int app_id = desktop_manager_get_plugin_id();
 	if (((app_id == DESKTOP_PLUGIN_ID_CHARGER) && (charge_app_state == CHARGING_APP_OK)) || sys_check_standby_state()) {
 		SYS_LOG_INF("real power off\n");
-		extern int pd_manager_deinit(void);
+		extern int pd_manager_deinit(int value);
 		tts_manager_wait_finished(1);
 		pd_srv_sync_exit();		
 	}
@@ -239,7 +239,7 @@ static int charge_app_msg_pro(struct app_msg *msg)
 		//_charge_app_exit();
 		charge_app_force_power_off = 1;
 		if(charge_app_state == CHARGING_APP_OK){
-			pd_manager_deinit();		
+			pd_manager_deinit(0);		
 			sys_pm_poweroff();
 		}
 		break;

@@ -36,15 +36,12 @@
 
 #include <os_common_api.h>
 #include <thread_timer.h>
-
-
-#define     PIN_AMP_PDN		13 // AMP_PDN, low to shutdown the amp
-#define     PIN_BOOST_EN	    52 //BOOST EN, high to enable.
-
+#include <wltmcu_manager_supply.h>
 
 #define    AW_FAIL        (-1)
 #define    AW_OK        (0)
-#define PIN_AMP_PDN		13 // AMP_PDN, low to shutdown the amp
+
+#define PIN_AMP_PDN		(Read_hw_ver() == GGC_EV1_TONLI_EV3 ? 13 : 53)//13 // AMP_PDN, low to shutdown the amp
 #define PIN_BOOST_EN	52 //BOOST EN, high to enable.
 
 struct reg_tab {

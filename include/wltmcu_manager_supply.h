@@ -111,6 +111,11 @@ enum hw_factory_info_t{
     HW_GUOGUANG_BOARD,
 };
 
+enum hw_board_info_t{
+    GGC_EV1_TONLI_EV3 = 0,
+    GGC_EV2_TONLI_DV1,
+};
+
 #define ODM_ADC_MAPPINGS	\
 	{HW_3NOD_BOARD,                0x0f},	\
 	{HW_GUOGUANG_BOARD,              0x1F0},	\
@@ -135,7 +140,7 @@ void pd_set_app_mode_state(u8_t status);
 void pd_manager_send_disc(void);
 bool pd_set_source_refrest(void);
 void pd_manager_init(bool flag);
-int pd_manager_deinit(void);	
+int pd_manager_deinit(int value);	
 void pd_manager_disable_charging(bool flag);
 bool pd_get_plug_present_state(void);
 bool pd_set_plug_present_state(bool flag);
@@ -333,11 +338,12 @@ typedef enum{
     REBOOT_LED_STATUS,
     LOW_POWER_OFF_LED_STATUS,
     DOME_MODE_LED_STATUS,
+    BATT_LED_RESET,
 }batt_led_status;
 
 #define BT_LED_STATE(STATE)    (STATE & 0XFF)
-#define AC_LED_STATE(STATE)    ((STATE << 8) & 0XFF)
-#define BAT_LED_STATE(STATE)    ((STATE << 16) & 0XFF)
+#define AC_LED_STATE(STATE)    ((STATE << 8) & 0XFFFF)
+#define BAT_LED_STATE(STATE)    ((STATE << 16) & 0XFFFFFF)
 
 #define BT_LED_STATE_MASK(STATE)    (STATE & 0XFF)
 #define AC_LED_STATE_MASK(STATE)    ((STATE >> 8) & 0XFF)
@@ -346,4 +352,6 @@ void mcu_ui_set_led_enable_state(int state);
 extern void pd_srv_sync_init(void);
 extern int pd_srv_sync_exit(void);
 extern int pd_srv_event_notify(int event ,int value);
+
+extern uint8_t Read_hw_ver(void);
 #endif

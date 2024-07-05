@@ -89,6 +89,7 @@ uint8_t power_first_get_cap_flag = 0;
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
 extern bool sys_check_standby_state(void);
 extern void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_status);
+extern void battery_charging_remaincap_is_full(void);
 int power_manager_get_charge_status(void);
 int power_manager_get_battery_capacity(void);
 
@@ -130,22 +131,33 @@ void power_manager_battery_display_handle(int led_status ,bool key_flag)
 		){
 			key_flag = 1;
 
-			// if(!run_mode_is_demo())
-
-			{
-
 				if((temp_status == POWER_SUPPLY_STATUS_FULL)
 					&& (pd_get_app_mode_state() != CHARGING_APP_MODE))
 				{
 					temp_status = POWER_SUPPLY_STATUS_DISCHARGE;
 				}
-			}
+			
 		}
 		else{	
 			key_flag = 0;
 		}	
 	}
 	battery_status_remaincap_display_handle(temp_status,current_cap,led_status);
+}
+
+void power_manager_battery_display_reset(void)
+{
+	int temp_status = power_manager_get_charge_status();
+	int current_cap = power_manager_get_battery_capacity();
+	if(temp_status == POWER_SUPPLY_STATUS_DISCHARGE
+	&& current_cap > BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
+	{
+		battery_charging_remaincap_is_full();
+	}
+	else
+	{
+		battery_status_remaincap_display_handle(temp_status,current_cap,0);
+	}	
 }
 #endif
 
@@ -385,6 +397,7 @@ static void power_manager_battery_led_fn(void)
 			else
 			{
 				{
+				    extern u8_t get_otg_mobile_flag(void);
 					//add buglist
 					printk("charge_status is %d / %d /%d !!!\n\n",charge_status,temp_status,pd_get_app_mode_state());
 					if(temp_status == POWER_SUPPLY_STATUS_CHARGING && !dc_power_in_status_read()){
@@ -406,7 +419,14 @@ static void power_manager_battery_led_fn(void)
 					}
 					else
 					{
-						pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);
+					if(pd_get_app_mode_state() == CHARGING_APP_MODE && get_otg_mobile_flag())
+					{
+					   printk("[%s/%d], charge mode otg mobile!!!\n\n",__func__,__LINE__);
+					}
+					else
+					{
+					  pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);
+					}
 					}
 					
 
@@ -623,11 +643,11 @@ static int _power_manager_work_handle(void)
 _POWER_OFF_:			
 			SYS_LOG_INF("%d %d too low", power_manager->current_cap, power_manager->current_vol);
 			power_manager->report_timestamp = 0;
-			if(pd_get_app_mode_state() == CHARGING_APP_MODE
-				&& power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE){
+			if((pd_get_app_mode_state() == CHARGING_APP_MODE && power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE)
+				|| (pd_get_app_mode_state() != CHARGING_APP_MODE && bt_manager_a2dp_get_status() == BT_STATUS_PLAYING)){
 
 				printk("\n %s,charge mode do not charge  \n",__func__);
-				pd_manager_deinit();
+				pd_manager_deinit(0);
 				sys_pm_poweroff(); 
 			} 
 			else		
@@ -712,8 +732,7 @@ int power_manager_init(void)
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 extern bool pd_manager_check_mobile(void);
-extern int pd_manager_deinit(void);	
-extern bool sys_uuid_verify_is_ok(void);
+extern int pd_manager_deinit(int value);	
 int power_manager_early_init(void)
 {
 	if (!power_manager)
@@ -735,8 +754,9 @@ int power_manager_early_init(void)
 
 		k_sleep(50);
 
-		pd_manager_deinit();	
+		pd_manager_deinit(0);		
 		sys_pm_poweroff();
+
 	}
 		
 	return 0;

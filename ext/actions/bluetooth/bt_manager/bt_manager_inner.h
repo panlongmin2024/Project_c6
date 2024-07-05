@@ -34,7 +34,7 @@ extern uint8_t phone_controler_role;
 #define POWEROFF_WAIT_MIN_TIME			(1)			/* Just for change to process next state */
 #define POWEROFF_WAIT_TIMEOUT			(3000)		/* 3s */
 
-#define ACL_DISCONNECTED_DELAY_TIME		500
+#define ACL_DISCONNECTED_DELAY_TIME		5000
 enum {
 	POFF_STATE_NONE                   = 0,
 	POFF_STATE_START                  = 1,
@@ -223,6 +223,7 @@ typedef struct bt_mgr_dev_info {
 	os_delayed_work profile_disconnected_delay_work;
 
 	uint32_t a2dp_connect_time;
+	uint8_t notified_tts;
 	
 }bt_mgr_dev_info_t;
 

@@ -36,6 +36,9 @@
 #define SYS_LOG_DOMAIN "io_expend_aw9523b"
 #include <logging/sys_log.h>
 #endif
+#ifdef CONFIG_LED_MANAGER
+#include <led_manager.h>
+#endif
 
 #define AW9523B_I2C_ADDR   			0x5B
 
@@ -229,8 +232,14 @@ int io_expend_aw9523b_registers_init(void)
 	}
 
 	harman_flip7_aw9523b_init();
-	io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, 0);
-
+    if(Read_hw_ver() == GGC_EV1_TONLI_EV3)
+    {
+        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, 0);
+    }
+    else
+    {
+        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_2, 0);
+    }
     return 0;
 }
 
@@ -239,7 +248,18 @@ void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff)
     if(i2c_dev == NULL){
         return;
     }
-    io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, onoff);
+
+
+    SYS_LOG_INF("[%d] on0ff=%d\n", __LINE__, onoff);
+
+    if(Read_hw_ver() == GGC_EV1_TONLI_EV3)
+    {
+        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, onoff);
+    }
+    else
+    {
+        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_2, onoff);
+    }
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -266,7 +286,7 @@ typedef struct {
 #define GUICK_FLASH_LOW_LEVEL_TIME                  3*10-4   
 
 #define MCU_UI_PROCESS_TIME_PERIOD				10//100
-#define LED_NUMBLE          8
+#define LED_NUMBLE          (8+1)
 static led_manage_info_t led_dev[LED_NUMBLE];
 static struct thread_timer aw9523b_ui_timer;
 
@@ -475,14 +495,30 @@ void led_status_manger_handle(void)
                 if(led_dev[i].pin_state == false){
                     led_dev[i].pin_state = true;
                     //mcu_ui_send_led_code(i,true);
-                    io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_0, i, false);
+                    if(i == (LED_NUMBLE - 1))
+                    {
+                        #ifdef CONFIG_LED_MANAGER
+                        led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+                        #endif
+                    }
+                    else{
+                        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_0, i, false);
+                    }
 				}
             }
             else{
                 if(led_dev[i].pin_state == true){
                     led_dev[i].pin_state = false;
                     //mcu_ui_send_led_code(i,false);
-                    io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_0, i, true);
+                    if(i == (LED_NUMBLE - 1))
+                    {
+                        #ifdef CONFIG_LED_MANAGER
+                        led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);  
+                        #endif  
+                    }
+                    else{
+                        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_0, i, true);
+                    }
                 }               
             }
         } 
@@ -568,7 +604,6 @@ bool  aw9523b_ui_process_init(void)
 		led_dev[i].pin_state = 0;
 
 	}
-    //io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, AW8523B_LEVEL_HIGH);
 
      thread_timer_init(&aw9523b_ui_timer, aw9523b_ui_handle_timer_fn, NULL);
 	// thread_timer_start(&aw9523b_ui_timer, MCU_UI_PROCESS_TIME_PERIOD,MCU_UI_PROCESS_TIME_PERIOD);

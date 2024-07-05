@@ -94,6 +94,7 @@ enum mcu_manager_supply_property {
     MCU_SUPPLY_PROP_LED_5,
     MCU_SUPPLY_PROP_LED_BT,
     MCU_SUPPLY_PROP_LED_PTY_BOOST,
+    MCU_SUPPLY_PROP_LED_POWER,
     /// /*上面是灯的序号不能加东西，往下添加*////////////////////////////////
     MCU_SUPPLY_PROP_DSP_DCDC = 0x10,
     MCU_SUPPLY_PROP_UPDATE_FW,

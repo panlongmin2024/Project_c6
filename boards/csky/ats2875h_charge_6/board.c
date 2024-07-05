@@ -97,12 +97,13 @@ static const struct acts_pin_config board_pin_config[] = {
 	/* aout */
 	{50,  GPIO_CTL_AD_SELECT},  /* aoutl/aoutlp */
 	{52,  GPIO_CTL_AD_SELECT},  /* aoutr/aoutrp */
-#endif
+
 
 	//直驱or  差分需要设置vro & vro_s
 #if ((CONFIG_AUDIO_OUT_DD_MODE == 1) || (CONFIG_AUDIO_OUT_SE_DF == 1))
 	{51,  GPIO_CTL_AD_SELECT},	/* vro */
 	{53,  GPIO_CTL_AD_SELECT},	/* vros */
+#endif
 #endif
 	/* external pa */
 #ifdef CONFIG_BOARD_EXTERNAL_PA_ENABLE

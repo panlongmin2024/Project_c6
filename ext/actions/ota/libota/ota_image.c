@@ -562,3 +562,67 @@ void ota_image_exit(struct ota_image *img)
 {
 	SYS_LOG_INF("exit");
 }
+
+
+int ota_storage_check_image_data_crc(struct ota_storage *storage, struct ota_fw_head *fw_head, uint32_t file_offset, uint8_t *buf, int buf_size)
+{
+	struct ota_fw_hdr *hdr = &fw_head->hdr;
+	uint32_t crc;
+
+	crc = ota_storage_calc_crc(storage, file_offset + hdr->data_offset, hdr->data_size - hdr->data_offset, buf, buf_size);
+	if (crc == 0 || crc != hdr->data_checksum) {
+		SYS_LOG_INF("crc error, calc 0x%x, head_checksum 0x%x", crc, hdr->data_checksum);
+		return -1;
+	}
+
+	SYS_LOG_INF("pass");
+	return 0;
+}
+
+int ota_storage_image_check(struct ota_storage *storage, uint32_t file_offset, uint8_t *buf, int buf_size)
+{
+	struct ota_fw_head fw_head;
+	struct ota_fw_hdr *hdr = &fw_head.hdr;
+	int err;
+
+	SYS_LOG_INF("checking image %x\n", file_offset);
+
+	/* read image header */
+	err = ota_storage_read(storage, file_offset, (uint8_t *)&fw_head, sizeof(struct ota_fw_head));
+	if (err) {
+		SYS_LOG_INF("read head err, return %d", err);
+		return -1;
+	}
+
+	if (hdr->magic != OTA_FW_HDR_MAGIC) {
+		SYS_LOG_ERR("wrong maigc");
+		return -1;
+	}
+
+	if (hdr->header_size != sizeof(struct ota_fw_head)) {
+		SYS_LOG_ERR("invalid header size %d", hdr->header_size);
+		return -1;
+	}
+
+	if (hdr->data_size > OTA_IMAGE_MAX_LENGTH) {
+		return -1;
+	}
+
+	err = ota_image_check_head_crc(&fw_head);
+	if (err) {
+		SYS_LOG_ERR("bad head crc");
+		return -1;
+	}
+
+	/* only check data in recovery app to save time */
+	err = ota_storage_check_image_data_crc(storage, &fw_head, file_offset, buf, buf_size);
+	if (err) {
+		SYS_LOG_ERR("bad data crc");
+		return -1;
+	}
+
+	SYS_LOG_INF("pass");
+
+	return 0;
+}
+
