@@ -1139,7 +1139,7 @@ static int cdc_shell_ats_power_on_run_time_dump(struct device *dev, u8_t *buf, i
 }
 static int cdc_shell_ats_haman_battery_key_check(struct device *dev, u8_t *buf, int len)
 {	
-	int16 battery_volt,src_battery_volt,battery_curr,ext_curr;
+	//int16 battery_volt,src_battery_volt,battery_curr,ext_curr;
 	uint8_t buffer[9+1] = "0000:0000";
 	//pd_mps2760_read_current(&battery_volt,&src_battery_volt,&battery_curr,&ext_curr);
 
