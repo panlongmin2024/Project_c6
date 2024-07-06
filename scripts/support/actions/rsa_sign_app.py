@@ -28,7 +28,7 @@ if (signature_box_version == 1):
 #server_url = 'http://192.168.1.77:8001/sign-firmware-development'  # server url
 elif (signature_box_version == 2):
     #server_url = 'http://121.15.135.186:8001/sign-firmware-production'  # server url
-    server_url = 'https://harman-ten-wlts-1/sign-firmware-production'  # server url
+    server_url = 'https://harman-ten-wlts-2/sign-firmware-production'  # server url
 
 def get_sha256_hash(file_path):
     cmd = ['openssl', 'dgst', '-sha256', file_path]
@@ -58,7 +58,8 @@ def send_file_for_signing(server_url, file_path):
             response = requests.post(server_url, json=data)
         elif (signature_box_version == 2):
             response = requests.post(server_url, json=data,
-                                    auth=('admin', 'dbmyddWg9jSC6wO8MUO5cnf9GAxVLA4x'),
+                                    #auth=('admin', 'dbmyddWg9jSC6wO8MUO5cnf9GAxVLA4x'),
+                                    auth=('admin', 'Jly29342Y1oWdNiu0ZP4YwrPMheYsyTC'),
                                     verify=False
                                     )
 
