@@ -1575,7 +1575,7 @@ void bt_manager_dump_info(void)
 	int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
 	static int16 volt = 0,current = 0;
 	pd_manager_get_volt_cur_value(&volt,&current);
-	printk("------> volt_value is %d  current_value is %d\n",volt,current);
+	printk("------> volt_value is %d  current_value is %d %d\n",volt,current,CONFIG_UART_STUB_BAUD_RATE);
 #endif
 	
 	printk("num %d, tws_mode %d, bt_state 0x%x, playing %d\n", bt_manager->connected_phone_num,
