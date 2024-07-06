@@ -207,7 +207,10 @@ static int _sys_standby_enter_s1(void)
 {
 	pwm_breath_ctrl_t ctrl;
 	void *t;
-
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	bt_manager_event_notify(BT_MSG_AURACAST_EXIT, NULL, 0);
+	bt_manager_broadcast_scan_stop();
+#endif
 	standby_context->standby_state = STANDBY_S1;
 	
 	t = app_manager_get_apptid(CONFIG_FRONT_APP_NAME);
@@ -297,8 +300,8 @@ static int _sys_standby_exit_s1(void)
 
 		bt_manager_update_led_display();
 
-		if(system_app_get_auracast_mode())
-			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);
+		//if(system_app_get_auracast_mode())
+			//pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);
 	}
 #endif	
 #endif

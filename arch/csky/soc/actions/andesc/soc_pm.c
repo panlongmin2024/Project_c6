@@ -84,7 +84,6 @@ int sys_pm_get_power_5v_status(void)
 			}else{
 				ret = 2;
 			}
-			
 		}
 		else if(pd_get_plug_present_state())
 		{

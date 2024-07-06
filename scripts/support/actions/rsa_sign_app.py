@@ -12,9 +12,23 @@ import sys
 import requests
 import base64
 import json
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+global signature_box_version
 global server_url
-server_url = 'http://121.15.135.186:8001/sign-firmware-development'  # server url
+
+# version: 1 for EV signature box;  2 for DV signature box
+signature_box_version = 2
+
+if (signature_box_version == 1):
+    server_url = 'http://121.15.135.186:8001/sign-firmware-development'  # server url 192.168.17.80
+#server_url = 'http://192.168.17.80:8001/sign-firmware-development'  # server url
+#server_url = 'http://121.15.135.186:8001/sign-firmware-development'  # server url 192.168.17.80
+#server_url = 'http://192.168.1.77:8001/sign-firmware-development'  # server url
+elif (signature_box_version == 2):
+    #server_url = 'http://121.15.135.186:8001/sign-firmware-production'  # server url
+    server_url = 'https://harman-ten-wlts-1/sign-firmware-production'  # server url
 
 def get_sha256_hash(file_path):
     cmd = ['openssl', 'dgst', '-sha256', file_path]
@@ -35,12 +49,18 @@ def send_file_for_signing(server_url, file_path):
 
         data = {
             "hashOfFirmwareImage": hash_string,
-            "productModelName": "JBL Test Speaker"
+            "productModelName": "JBL Charge 6"
         }
 
         #print(data)
-
-        response = requests.post(server_url, json=data)
+        # print('signature_box_version = ', signature_box_version)
+        if (signature_box_version == 1):
+            response = requests.post(server_url, json=data)
+        elif (signature_box_version == 2):
+            response = requests.post(server_url, json=data,
+                                    auth=('admin', 'dbmyddWg9jSC6wO8MUO5cnf9GAxVLA4x'),
+                                    verify=False
+                                    )
 
         if response.status_code == 200:
             #print("request ok\n")

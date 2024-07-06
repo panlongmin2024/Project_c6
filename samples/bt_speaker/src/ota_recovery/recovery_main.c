@@ -217,7 +217,7 @@ static void _ota_mcu_power_hold_fn(void)
     printk("\n%s,power has hold !! \n",__func__);
 }
 
-static void _ota_mcu_int_timer_hander(struct thread_timer *ttimer, void *expiry_fn_arg)
+void _ota_mcu_int_timer_hander(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
 	if(!key_water_status_read())
 	{
@@ -411,7 +411,7 @@ void main(void)
 #endif
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	thread_timer_init(&mcu_timer, _ota_mcu_int_timer_hander, NULL);
-	thread_timer_start(&mcu_timer, 20, 20);
+	//thread_timer_start(&mcu_timer, 20, 20);
 #endif
 	param.data_buf = ota_data_buf;
 	param.data_buf_size = sizeof(ota_data_buf);

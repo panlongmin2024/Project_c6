@@ -10,7 +10,7 @@
 	<partitions>
 		<partition>
 			<address>0x0</address>
-			<size>0x2000</size>
+			<size>0x4000</size>
 			<type>BOOT</type>
 			<name>fw0_boot</name>
 			<file_id>1</file_id>
@@ -26,7 +26,7 @@
 
 		<partition>
 			<address>0x10000</address>
-			<size>0x2000</size>
+			<size>0x4000</size>
 			<type>BOOT</type>
 			<name>fw0_boot</name>
 			<file_id>1</file_id>
@@ -40,13 +40,13 @@
 		</partition>
 
 		<partition>
-			<address>0x2000</address>
+			<address>0x4000</address>
 			<size>0x1000</size>
 			<type>SYS_PARAM</type>
 			<name>sys_param0</name>
 			<file_id>2</file_id>
 			<file_name>param.bin</file_name>
-			<file_address>0x2000</file_address>
+			<file_address>0x4000</file_address>
 			<enable_crc>false</enable_crc>
 			<enable_encryption>true</enable_encryption>
 			<enable_ota>true</enable_ota>
@@ -56,12 +56,12 @@
 		</partition>
 
 		<partition>
-			<address>0x3000</address>
+			<address>0x5000</address>
 			<size>0x1000</size>
 			<type>SYS_PARAM</type>
 			<name>sys_param1</name>
 			<file_id>2</file_id>
-			<file_address>0x3000</file_address>
+			<file_address>0x5000</file_address>
 			<enable_crc>false</enable_crc>
 			<enable_encryption>true</enable_encryption>
 			<enable_ota>true</enable_ota>

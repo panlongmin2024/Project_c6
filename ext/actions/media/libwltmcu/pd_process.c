@@ -1453,11 +1453,11 @@ uint8_t ReadODM(void)
 
    // printk("\n %s,%d , odm : %x !!!\n",__func__,__LINE__,adc_val);
 	
-    if(adc_val < 0x0f)
+    if(adc_val < 0xde)
     {
         hw_info = HW_3NOD_BOARD;
     }
-    else if(adc_val < 0x1ff)
+    else if(adc_val < 0x29a)
     {
         hw_info = HW_GUOGUANG_BOARD;
     }

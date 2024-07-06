@@ -42,8 +42,7 @@ extern u8_t PD_version;
 extern void pd_mps52002_sink_charging_disable(bool flag);
 extern bool pd_mps52002_ats_switch_volt(u8_t PDO_index);
 extern int bt_manager_bt_read_rssi(uint16_t handle);
-//extern u8_t pd_mps2760_read_current(int16 *volt_val, int16 *src_volt_val, int16 *cur_val,int16 *src_cur_val);
-extern int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
+extern u8_t pd_mps2760_read_current(int16 *volt_val, int16 *cur_val,int16 *src_cur_val);
 
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {

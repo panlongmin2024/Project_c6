@@ -164,6 +164,7 @@ static void mps_ota_get_status(u8_t *status);
 
 #define WLT_OTG_DEBOUNCE_TIMEOUT        8
 #define MAX_SOURCE_DISC_COUNT           13
+#define MAX_SINK_CHECK_MOBILE_TIME		2
 
 enum ti_pd_reg_address_t{
 
@@ -259,6 +260,7 @@ static int pd_tps52002_read_reg_value(uint8_t addr, u8_t *buf, int len)
 	if(i2c_burst_read(iic_dev, I2C_PD_DEV_ADDR, addr, buf, len)<0)
 	{
 		k_sleep(50);
+		SYS_LOG_ERR("[%d] IIC first read %d Error!\n", __LINE__, addr);
 		if(i2c_burst_read(iic_dev, I2C_PD_DEV_ADDR, addr, buf, 2)<0)
 		{
 			SYS_LOG_ERR("[%d] IIC read %d Error!\n", __LINE__, addr);
@@ -296,6 +298,8 @@ static int pd_mps52002_write_reg_value(uint8_t addr, u8_t *buf, int len)
 	if(i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, addr, buf, len) <0)
 	{
 		k_sleep(50);
+
+		SYS_LOG_ERR("[%d] IIC first write %d Error!\n", __LINE__, addr);
 
 		if(i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, addr, buf, len) <0)
 		{
@@ -360,8 +364,13 @@ void pd_mps52002_pd_otg_on(bool flag)
 		pd_mps52002->pd_source_otg_disable_flag = false; 
 	}
 
-	 pd_mps52002_write_reg_value(PD_DISABLE_SOURCE, buf,2);
-	 printf(" pd_tps52002_pd_otg_on PD_DISABLE_SOURCE write = %d \n",buf[0]);
+	pd_mps52002_write_reg_value(PD_DISABLE_SOURCE, buf,2);
+	printf(" pd_tps52002_pd_otg_on PD_DISABLE_SOURCE write = %d \n",buf[0]);
+
+	k_sleep(10);
+	pd_tps52002_read_reg_value(PD_DISABLE_SOURCE, buf, 2);
+
+
     
 }
 
@@ -837,40 +846,6 @@ void pd_detect_event_report_MPS52002(void){
 	}
 
 
-	// if(!pd_mps_source_pin_read())
-	// {
-	//     if(pd_mps52002->pd_52002_sink_flag || pd_mps52002->pd_52002_source_flag)
-	//       {
-	//         if(pd_mps52002->volt_value >= 6500)
-	//          {
-	//            pd_set_G2_Low();
-	//          }
-
-	// 		 pd_mps52002->volt_value = 0x00;
-	//          pd_mps52002->pd_52002_source_flag = 0;
-	// 		 pd_mps52002->sink_charging_flag = 1;
-	// 		 if(dc_power_in_status_read())
-	// 		 {
-	// 			pd_mps52002->pd_52002_HIZ_flag = 1;
-	// 		 }
-	// 		 else
-	// 		 {
-	// 			pd_mps52002->pd_52002_HIZ_flag = 0;
-	// 		 }
-			 	
-			 
-	// 		  pd_mps52002->pd_52002_sink_flag = 0;
-	// 		  fisrtreadtimes = 0;
-	// 		  para.pd_event_val = pd_mps52002->pd_52002_source_flag;
-	// 		  pd_mps52002->notify(PD_EVENT_SOURCE_STATUS_CHG, &para);
-	//    	      pd_mps52002->charge_full_flag = false;
-    //           para.pd_event_val = 0;
-	//           pd_mps52002->notify(PD_EVENT_SINK_FULL, &para); 
-	//     }
-	// 	return;
-	// }
-
-
 	if(dc_power_in_status_read() != p_dc_power_in_flag)							//only for debug; Totti 2024/6/26
 	{
 		p_dc_power_in_flag = dc_power_in_status_read();
@@ -891,46 +866,6 @@ void pd_detect_event_report_MPS52002(void){
 	   return;
 	}
 
-	if((!pin_dc_power_in_debunce_count) && !dc_power_in_status_read())
-	{
-		// SYS_LOG_INF("%d \n", __LINE__);
-	 
-		if(pd_mps52002->pd_52002_source_flag)
-		{
-			pd_mps52002->pd_52002_source_flag = 0;
-		
-			SYS_LOG_INF("[%d] source_flag=%d \n", __LINE__, pd_mps52002->pd_52002_source_flag  );
-			
-			pd_mps52002->sink_charging_flag = 1;
-			pd_mps52002->pd_52002_HIZ_flag = 0;
-			pd_mps52002->pd_52002_sink_flag = 0;
-			para.pd_event_val = pd_mps52002->pd_52002_source_flag;
-			pd_mps52002->notify(PD_EVENT_SOURCE_STATUS_CHG, &para);
-		}
-		 
-	
-
-		if(pd_mps52002->pd_52002_sink_flag)
-		{
-			pd_mps52002->pd_52002_sink_flag = 0;
-			SYS_LOG_INF("[%d] sink_flag:%d \n", __LINE__, pd_mps52002->pd_52002_sink_flag);
-			pd_mps52002->sink_charging_flag = 0;
-			pd_mps52002->pd_52002_source_flag = 0;	
-			pd_mps52002->pd_52002_HIZ_flag = 0;
-
-			if(pd_mps52002->pd_source_otg_disable_flag)
-			{
-				pd_mps52002_pd_otg_on(true); 
-			}
-			
-			para.pd_event_val = pd_mps52002->pd_52002_sink_flag;
-			pd_mps52002->notify(PD_EVENT_SINK_STATUS_CHG, &para);
-		}
-		pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
-		pd_mps52002->pd_sink_debounce_time = 0x00;
-		return;
-	}
-
 	if(dc_power_in_status_read())
 	{
 		pin_dc_power_in_debunce_count = MAX_DC_POWER_IN_TIMER;
@@ -940,18 +875,61 @@ void pd_detect_event_report_MPS52002(void){
 		{
 			SYS_LOG_INF("%d pin_dc_power_in_debunce_count:%d \n", __LINE__, pin_dc_power_in_debunce_count);
 			pin_dc_power_in_debunce_count--;
+
+			if(pin_dc_power_in_debunce_count == 0x00)
+			{
+				SYS_LOG_INF("%d \n", __LINE__);
+			
+				if(pd_mps52002->pd_52002_source_flag)
+				{
+					pd_mps52002->pd_52002_source_flag = 0;
+		
+			SYS_LOG_INF("[%d] source_flag=%d \n", __LINE__, pd_mps52002->pd_52002_source_flag  );
+			
+					pd_mps52002->sink_charging_flag = 1;
+					pd_mps52002->pd_52002_HIZ_flag = 0;
+					pd_mps52002->pd_52002_sink_flag = 0;
+					para.pd_event_val = pd_mps52002->pd_52002_source_flag;
+					pd_mps52002->notify(PD_EVENT_SOURCE_STATUS_CHG, &para);
+				}
+		 
+				if(pd_mps52002->pd_52002_sink_flag)
+				{
+					pd_mps52002->pd_52002_sink_flag = 0;
+					SYS_LOG_INF("[%d] sink_flag:%d \n", __LINE__, pd_mps52002->pd_52002_sink_flag);
+					pd_mps52002->sink_charging_flag = 0;
+					pd_mps52002->pd_52002_source_flag = 0;	
+					pd_mps52002->pd_52002_HIZ_flag = 0;
+
+					if(pd_mps52002->pd_source_otg_disable_flag)
+					{
+						pd_mps52002_pd_otg_on(true); 
+					}
+					
+					para.pd_event_val = pd_mps52002->pd_52002_sink_flag;
+					pd_mps52002->notify(PD_EVENT_SINK_STATUS_CHG, &para);
+				}
+				pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
+				pd_mps52002->pd_sink_debounce_time = 0x00;
+			}
 		}
 	}
 
     pd_tps52002_read_reg_value(PD_PD_STATUS, buf, 2);
+
 	
 	if(readresult != buf[0])
 	{
+		if((readresult & 0x3) != (buf[0] & 0x3))
+		{
+			source_sink_debunce = 0x00;
+		}
+
 		SYS_LOG_INF("[%d] PD_PD_STATUS(0x3):0%x \n", __LINE__, buf[0]);	
 	}
 	
 	readresult = buf[0];
-    
+
 	if(readresult & 0x04)													// check OTG mobile
 	{
 
@@ -989,40 +967,39 @@ void pd_detect_event_report_MPS52002(void){
 	
 	if(!pd_mps52002->pd_52002_source_flag)
 	{
+		
+		if((readresult&0x01) != pd_mps52002->pd_52002_sink_flag)
 		{
 
-			if((readresult&0x01) != pd_mps52002->pd_52002_sink_flag)
+			if(source_sink_debunce < 2 )
 			{
-
-				if(source_sink_debunce < 2 )
-				{
-					source_sink_debunce++ ;
-					SYS_LOG_INF("[%d] source_sink_debunce:%d \n", __LINE__, source_sink_debunce);
-					return;
-				}
-
-				source_sink_debunce = 0x00;
-				pd_mps52002->sink_charging_flag = 1;
-				pd_mps52002->pd_52002_source_flag = 0;	
-				pd_mps52002->pd_52002_HIZ_flag = 0;
-				pd_mps52002->pd_52002_sink_flag ^= 1;
-				pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
-				pd_mps52002->pd_sink_debounce_time = 0;
-				if(pd_mps52002->pd_52002_sink_flag)
-				{
-					pd_mps52002->pd_sink_debounce_time = 12;
-				}else{
-					if(pd_mps52002->pd_source_otg_disable_flag)
-					{
-						pd_mps52002_pd_otg_on(true); 
-					}
-				}
-				SYS_LOG_INF("[%d] sink_flag:%d \n", __LINE__, pd_mps52002->pd_52002_sink_flag);
-				para.pd_event_val = pd_mps52002->pd_52002_sink_flag;
-				pd_mps52002->notify(PD_EVENT_SINK_STATUS_CHG, &para);
-
+				source_sink_debunce++ ;
+				SYS_LOG_INF("[%d] source_sink_debunce:%d \n", __LINE__, source_sink_debunce);
+				return;
 			}
+
+			source_sink_debunce = 0x00;
+			pd_mps52002->sink_charging_flag = 1;
+			pd_mps52002->pd_52002_source_flag = 0;	
+			pd_mps52002->pd_52002_HIZ_flag = 0;
+			pd_mps52002->pd_52002_sink_flag ^= 1;
+			pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
+			pd_mps52002->pd_sink_debounce_time = 0;
+			if(pd_mps52002->pd_52002_sink_flag)
+			{
+				pd_mps52002->pd_sink_debounce_time = MAX_SINK_CHECK_MOBILE_TIME;
+			}else{
+				if(pd_mps52002->pd_source_otg_disable_flag)
+				{
+					pd_mps52002_pd_otg_on(true); 
+				}
+			}
+			SYS_LOG_INF("[%d] sink_flag:%d \n", __LINE__, pd_mps52002->pd_52002_sink_flag);
+			para.pd_event_val = pd_mps52002->pd_52002_sink_flag;
+			pd_mps52002->notify(PD_EVENT_SINK_STATUS_CHG, &para);
+
 		}
+	
 
 		if(pd_mps52002->pd_sink_debounce_time)
 		{
@@ -1081,8 +1058,6 @@ void pd_detect_event_report_MPS52002(void){
 			}
 		}
 	}
-
-		source_sink_debunce = 0x00;
 	
 }
 
@@ -1832,7 +1807,7 @@ void wake_up_pd(void)
 		gpio_pin_write(gpio_dev, GPIO_PIN_PA6, 1);
 		k_sleep(10);
 	  	gpio_pin_write(gpio_dev, GPIO_PIN_PA6, 0);
-		k_sleep(50);
+		k_sleep(80);
 	}
 }
 struct device *wlt_device_get_pd_mps52002(void)

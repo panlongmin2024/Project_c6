@@ -654,8 +654,9 @@ void bt_manager_ble_init(void)
 	int result = 0;
 	int gfp_model_id_convert_index;
 	u8_t model_id[3] = {0x49,0x32,0x7D};
-
-	//result = get_gfp_model_id_from_ats(model_id);
+	
+	extern int get_gfp_model_id_from_ats(u8_t *model_id);
+	result = get_gfp_model_id_from_ats(model_id);
 
 	if (!result)
 	{

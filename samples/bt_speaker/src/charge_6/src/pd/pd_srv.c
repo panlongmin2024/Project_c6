@@ -137,7 +137,7 @@ void batt_led_manager_set_display(int led_status)
 
 	case BATT_LED_RESET:
 		power_manager_battery_display_reset();
-	break;
+		break;
 	default:
 			break;	
     }

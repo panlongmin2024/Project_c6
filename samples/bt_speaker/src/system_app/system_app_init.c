@@ -172,6 +172,7 @@ static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 }
 
 static struct thread_timer check_adfu_timer;
+static u32_t  adfu_wait_time;
 static void main_system_check_adfu_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
 	static u8_t power_led_cnt = 0;
@@ -187,6 +188,10 @@ static void main_system_check_adfu_timer(struct thread_timer *ttimer, void *expi
 
 	if(dc_power_in_status_read())
 		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	
+	if((os_uptime_get_32() - adfu_wait_time)>1200000){
+		pd_srv_sync_exit();
+	}
 }
 #endif
 
@@ -237,6 +242,7 @@ static void system_wait_exit_charger_mode(void)
 		thread_timer_init(&check_adfu_timer, main_system_check_adfu_timer, NULL);
 		thread_timer_start(&check_adfu_timer,500,500);
 		wait_adfu = 1;
+		adfu_wait_time = os_uptime_get_32();
 	}
 
 	while (!terminaltion) {

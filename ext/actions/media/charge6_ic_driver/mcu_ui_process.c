@@ -1257,7 +1257,7 @@ uint8_t Read_hw_ver(void)
 
     printk("\n %s,%d , hw_ver : %x !!!\n",__func__,__LINE__,adc_val);
 	
-    if(adc_val < 0x0f)
+    if(adc_val < 0xdd)
     {
         hw_info = GGC_EV1_TONLI_EV3;
     }

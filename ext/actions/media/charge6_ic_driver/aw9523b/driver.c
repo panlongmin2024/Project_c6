@@ -232,14 +232,9 @@ int io_expend_aw9523b_registers_init(void)
 	}
 
 	harman_flip7_aw9523b_init();
-    if(Read_hw_ver() == GGC_EV1_TONLI_EV3)
-    {
-        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, 0);
-    }
-    else
-    {
-        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_2, 0);
-    }
+    io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, 0);
+    
+    io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_2, 0);
     return 0;
 }
 
@@ -252,14 +247,7 @@ void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff)
 
     SYS_LOG_INF("[%d] on0ff=%d\n", __LINE__, onoff);
 
-    if(Read_hw_ver() == GGC_EV1_TONLI_EV3)
-    {
-        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, onoff);
-    }
-    else
-    {
-        io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_2, onoff);
-    }
+    io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, onoff);
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////

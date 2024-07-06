@@ -32,7 +32,7 @@
 #include <os_common_api.h>
 #include <logging/sys_log.h>
 #include <acts_ringbuf.h>
-
+#include <thread_timer.h>
 #define OTA_ERASE_ALIGN_SIZE		4096
 #define OTA_DATA_BUFFER_SIZE		1024
 
@@ -841,6 +841,11 @@ static int ota_write_and_verify_file(struct ota_upgrade_info *ota,
 	bp_file_state = ota_breakpoint_get_file_state(bp, file->file_id);
 
 	SYS_LOG_INF("%s: file_id %d, bp_file_state %d", file->name, file->file_id, bp_file_state);
+	
+	#if defined(CONFIG_BUILD_PROJECT_HM_DEMAND_CODE) && defined(CONFIG_ACTIONS_SDK_RECOVERY_MODE)
+	extern void _ota_mcu_int_timer_hander(struct thread_timer *ttimer, void *expiry_fn_arg);
+	_ota_mcu_int_timer_hander(NULL,NULL);
+	#endif
 
 	switch (bp_file_state) {
 	case OTA_BP_FILE_STATE_WRITE_DONE:

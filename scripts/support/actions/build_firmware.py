@@ -1124,7 +1124,7 @@ class firmware(object):
                 print('FW: Build test origin OTA image \'' +  ota_fw_name + '\'')
                 self.generate_ota_image_internal(os.path.join(test_ota_fws, ota_fw_name), ota_temp_dir_orig, os.path.join(ota_temp_dir, 'ota.xml'))
 
-    def image_add_checksum(self, img_bin):
+    def image_add_checksum(self, img_bin, secure_mode):
         img_bin_file = os.path.join(self.bin_dir, img_bin)
         if os.path.exists(img_bin_file) == False:
             return
@@ -1138,51 +1138,23 @@ class firmware(object):
 
         print("FW: Post build %s"%img_bin)
         script_firmware_path = os.path.join(script_path, 'add_cksum.py')
-        cmd = ['python', '-B', script_firmware_path, img_bin_file]
-        print("build cmd : %s\n" %(cmd))
+        cmd = ['python', '-B', script_firmware_path, '-c', img_bin_file, '-m', str(secure_mode)]
+        #print("build cmd : %s\n" %(cmd))
         (outmsg, exit_code) = run_cmd(cmd)
         if exit_code !=0:
             print("pack %s error\n"%img_bin)
             print(outmsg)
             sys.exit(1)
 
-    def image_add_secure_header(self, img_bin):
-        img_bin_file = os.path.join(self.bin_dir, img_bin)
-
-        img_len = os.path.getsize(img_bin_file)
-        #print('img  origin length 0x%x' %(img_len))
-        if img_len % 32:
-            pad_file(img_bin_file, 32)
-            img_len = os.path.getsize(img_bin_file)
-            #print('img  align 32 length 0x%x' %(img_len))
-
-        with open(img_bin_file, 'rb+') as f:
-            f.seek(0, 0)
-            data = f.read(32)
-            h_magic0,h_magic1,h_load_addr,h_name,h_version, \
-            h_header_size,h_header_chksm,h_data_chksm,\
-            h_body_size,h_tail_size \
-            = struct.unpack('III4sHHHHII',data)
-
-            if(h_magic0 != 0x48544341 or h_magic1 != 0x41435448):
-                print('boot loader header check fail.')
-                sys.exit(1)
-
-            h_body_size = img_len - h_header_size
-            f.seek(0x18, 0)
-            f.write(struct.pack('<I', h_body_size))
-            f.seek(0x1c, 0)
-            f.write(struct.pack('<I', 256))
-            f.close()
 
     def add_image_header(self):
         if secure_boot:
-            self.image_add_secure_header('zephyr.bin')
-            self.image_add_checksum('recovery.bin')
+            self.image_add_checksum('zephyr.bin', True)
+            self.image_add_checksum('recovery.bin', False)
             self.generate_app_cert_image(self.bin_dir, 'zephyr.bin', 'zephyr_cert.bin', 'zephyr.bin', self.publick_key_path)
         else:
-            self.image_add_checksum('zephyr.bin')
-            self.image_add_checksum('recovery.bin')
+            self.image_add_checksum('zephyr.bin', False)
+            self.image_add_checksum('recovery.bin', False)
 
     def calculate_checksum(self, data, seed=0xA5A5):
         checksum = seed

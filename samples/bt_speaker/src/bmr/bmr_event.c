@@ -683,7 +683,7 @@ static int bmr_handle_volume(bool up)
 	}
 
 	SYS_LOG_INF("vol=%d/%d\n", vol, max);
-	if((synced_vol != 0) || (get_pawr_enable()))
+	//if((synced_vol != 0) || (get_pawr_enable()))
 		system_volume_set(stream_type, vol, true);
 
 #ifdef ENABLE_PAWR_APP

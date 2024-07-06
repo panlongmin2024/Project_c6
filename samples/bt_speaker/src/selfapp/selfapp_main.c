@@ -420,7 +420,7 @@ int selfapp_init(p_logsrv_callback_t cb)
 {
 	selfapp_context_t *selfctx = self_get_context();
 	struct sppble_stream_init_param stream_param;
-
+	u8_t color_id = 1;
 	if (selfctx) {
 		selfapp_log_inf("already inited\n");
 		return 0;
@@ -459,7 +459,9 @@ int selfapp_init(p_logsrv_callback_t cb)
 #ifdef CONFIG_LOGSRV_SELF_APP
 	selfctx->log_cb = cb;
 #endif
-	// selfapp_set_model_id(0x2);
+	extern int get_color_id_from_ats(u8_t *color_id);
+	get_color_id_from_ats(&color_id);
+	selfapp_set_model_id(color_id);
 	self_set_context(selfctx);
 	selfapp_log_inf("inited\n");
 
