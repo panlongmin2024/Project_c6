@@ -25,7 +25,7 @@
 #define UUID_HASH_DATA_LEN      (32)
 #define UUID_SIGN_MSG_NAME "uuid_msg"
 
-#define	TIMEOUT_UUID_VERIFY_FAIL_POWEROFF		10000
+#define	TIMEOUT_UUID_VERIFY_FAIL_POWEROFF		1000000
 
 struct uuid_ctx{
     uint32_t uuid[4];
@@ -33,7 +33,7 @@ struct uuid_ctx{
     uint8_t uuid_sig_data[UUID_MSG_SIGNATURE_LEN];
 	uint8_t uuid_str[UUID_STR_DATA_LEN + 1];
 };
-static bool isUUIDverifyOk = false;
+
 extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
 extern char *bin2hex(char *dst, const void *src, unsigned long count);
 
@@ -93,7 +93,6 @@ static void enter_verify_fail_func(void)
 static void enter_verify_ok_func(void)
 {
 	//nothinf to do
-	isUUIDverifyOk = true;
 	printk("----> %s %d\n",__func__,__LINE__);
 }
 static uint8_t* sys_get_uuid_hash(struct uuid_ctx *ctx)
@@ -224,7 +223,7 @@ void user_uuid_init(void)
 	sys_uuid_verify();
 }
 
-bool sys_uuid_verify_is_ok(void)
+int user_uuid_verify(void)
 {
-	return isUUIDverifyOk;
+	return sys_uuid_verify();
 }

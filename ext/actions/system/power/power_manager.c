@@ -320,6 +320,7 @@ int power_manager_set_battery_cap(u16_t vol)
 	power_supply_set_property(power_manager->dev, POWER_SUPPLY_PROP_CAPACITY, &val);
 	if(power_first_get_cap_flag == 0){
 		power_first_get_cap_flag = 1;
+		SYS_LOG_INF("power_first_get_cap_flag = %d\n",power_first_get_cap_flag);
 	}
 	return true;
 }
@@ -391,23 +392,27 @@ static void power_manager_battery_led_fn(void)
 
                  pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S); //display 10s
 			}
+			else if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_DISCHARGE_POWERON){
+                 printk("[%s/%d], WLT_FILTER_DISCHARGE_POWERON !!!\n\n",__func__,__LINE__);
+                 pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S); //display 10s
+			}
 			else if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_CHARGINE_WARNING){
 				printk("[%s/%d], charging WARNING!!!\n\n",__func__,__LINE__);
 			}
 			else
 			{
 				{
-				    extern u8_t get_otg_mobile_flag(void);
 					//add buglist
 					printk("charge_status is %d / %d /%d !!!\n\n",charge_status,temp_status,pd_get_app_mode_state());
 					if(temp_status == POWER_SUPPLY_STATUS_CHARGING && !dc_power_in_status_read()){
 						printk("[%s/%d], charging , but usb no insert!!!\n\n",__func__,__LINE__);
 					}
 					else if(charge_status > POWER_SUPPLY_STATUS_DISCHARGE
-					&& temp_status == POWER_SUPPLY_STATUS_DISCHARGE
-					&& (pd_get_app_mode_state() == CHARGING_APP_MODE || pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_STANDBY_POWEROFF)
-					){
-					   // no use
+					&& temp_status == POWER_SUPPLY_STATUS_DISCHARGE ){
+
+					   if(pd_get_app_mode_state() == CHARGING_APP_MODE || pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_STANDBY_POWEROFF)
+					  {
+					    // no use
 						#ifdef CONFIG_BATTERYLED_POWEROFF_DELAY_10S
 						printk("[%s/%d], poweroff , display 10s !!!\n\n",__func__,__LINE__);
 						#ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY   
@@ -416,17 +421,20 @@ static void power_manager_battery_led_fn(void)
 						#else
 						pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
 						#endif
+					   }
+					   else
+					   {
+					      printk("[%s/%d], bt mode, display 10s !!!\n\n",__func__,__LINE__);
+                          pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+					   }
+					}
+					else if(temp_status == POWER_SUPPLY_STATUS_CHARGING){
+						printk("[%s/%d], POWER_SUPPLY_STATUS_CHARGING !!!\n\n",__func__,__LINE__);
+					   pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);	
 					}
 					else
 					{
-					if(pd_get_app_mode_state() == CHARGING_APP_MODE && get_otg_mobile_flag())
-					{
-					   printk("[%s/%d], charge mode otg mobile!!!\n\n",__func__,__LINE__);
-					}
-					else
-					{
-					  pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);
-					}
+						 //pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);
 					}
 					
 
@@ -447,12 +455,7 @@ static void power_manager_battery_led_fn(void)
 		}
 #endif		
 	}
-	else if(power_first_get_cap_flag == 1){
-		power_first_get_cap_flag = 0xff;
-
-		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
-
-	}
+	
 #endif
 }
 #ifdef CONFIG_POWER_SMART_CONTROL
@@ -733,6 +736,8 @@ int power_manager_init(void)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 extern bool pd_manager_check_mobile(void);
 extern int pd_manager_deinit(int value);	
+extern void battery_remaincap_low_poweroff(void);
+
 int power_manager_early_init(void)
 {
 	if (!power_manager)
@@ -750,10 +755,10 @@ int power_manager_early_init(void)
 		}
 
 		SYS_LOG_INF("no power ,shundown: %d\n", power_manager_get_battery_capacity());
-		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
-
+		//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
+       battery_remaincap_low_poweroff();
 		k_sleep(50);
-
+        
 		pd_manager_deinit(0);		
 		sys_pm_poweroff();
 

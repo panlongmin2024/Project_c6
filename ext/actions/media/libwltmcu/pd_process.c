@@ -98,7 +98,7 @@ extern void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event
 #ifdef CONFIG_C_TEST_BATT_MACRO
 
 static uint8_t test_id = 0;
-static int battery_cap=16;
+static int battery_cap= 5;
 static int battery_temperature=250;
 
 void set_battery_cap(bool flag)
@@ -297,6 +297,7 @@ void battery_read_iic_value(void)
         power_manager_set_battery_cap(battery_cap);
     #else
         power_manager_set_battery_cap((u16_t)current_cap);
+	    printf("power_manager_set_battery_cap: %d\n", current_cap);
     #endif
         //printf("zth debug battery_remain_cap: %d%% \n", current_cap);
     }
@@ -1159,6 +1160,75 @@ bool pd_get_sink_charging_state(void)
 
 }
 
+u32_t pd_get_sink_charge_volt(void)
+{
+    union pd_manager_supply_propval val;
+
+    if(wlt_pd_manager == NULL)
+        return 0;
+
+    const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_VOLT_VAULE, &val);
+
+    return val.intval;
+
+}
+
+u32_t pd_get_sink_charge_current(void)
+{
+    union pd_manager_supply_propval val;
+
+    if(wlt_pd_manager == NULL)
+        return 0;
+
+    const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_CURRENT_VAULE, &val);
+
+    return val.intval;
+
+}
+
+u32_t pd_get_source_volt(void)
+{
+    union pd_manager_supply_propval val;
+
+    if(wlt_pd_manager == NULL)
+        return 0;
+
+    const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SOURCE_VOLT_VAULE, &val);
+
+    return val.intval;
+
+}
+
+u32_t pd_get_source_current(void)
+{
+    union pd_manager_supply_propval val;
+
+    if(wlt_pd_manager == NULL)
+        return 0;
+
+    const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SOURCE_CURRENT_VAULE, &val);
+
+    return val.intval;
+
+}
+
+u8_t pd_get_pd_version(void)
+{
+    union pd_manager_supply_propval val;
+
+    if(wlt_pd_manager == NULL)
+        return 0;
+
+    const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_PD_VERSION, &val);
+
+    return val.intval;
+}
+
 // bool pd_get_unload_state(void)
 // {
 //     union pd_manager_supply_propval val;
@@ -1764,14 +1834,8 @@ int pd_iid_pop_queue(u8_t *type, u8_t *data)
 
 int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value)
 {
-	union pd_manager_supply_propval val;
-	
-    const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
-    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_VOLT_VAULE, &val);	
-	*volt_value = val.intval;
-
-    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_CURRENT_VAULE, &val);	
-	*cur_value = val.intval;
+    *volt_value = pd_get_sink_charge_volt();
+    *cur_value = pd_get_sink_charge_current();
 	
 	return 0;
 }

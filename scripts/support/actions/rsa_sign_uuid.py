@@ -12,56 +12,30 @@ import sys
 import requests
 import base64
 import json
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import hashlib
+import binascii
 
-global signature_box_version
 global server_url
+server_url = 'http://192.168.4.208:8001/sign-firmware-development'  # server url
 
-# version: 1 for EV signature box;  2 for DV signature box
-signature_box_version = 2
+def get_sha256_hash(uuid_str):
+    hash_cmd = hashlib.sha256()
+    hash_cmd.update(uuid_str.encode(encoding='UTF-8'))
+    return hash_cmd.hexdigest()
 
-if (signature_box_version == 1):
-    server_url = 'http://121.15.135.186:8001/sign-firmware-development'  # server url 192.168.17.80
-#server_url = 'http://192.168.17.80:8001/sign-firmware-development'  # server url
-#server_url = 'http://121.15.135.186:8001/sign-firmware-development'  # server url 192.168.17.80
-#server_url = 'http://192.168.1.77:8001/sign-firmware-development'  # server url
-elif (signature_box_version == 2):
-    #server_url = 'http://121.15.135.186:8001/sign-firmware-production'  # server url
-    server_url = 'https://harman-ten-wltd-1/sign-firmware-production'  # server url
-
-def get_sha256_hash(file_path):
-    cmd = ['openssl', 'dgst', '-sha256', file_path]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    stdout, stderr = process.communicate()
-
-    if process.returncode != 0:
-        raise subprocess.CalledProcessError(process.returncode, cmd, output=stdout, stderr=stderr)
-
-    hash_str = stdout.strip().split('\n')[0]
-    hash_value = hash_str.split('=')[1].strip()
-    return hash_value
-
-def send_file_for_signing(server_url, file_path):
+def send_file_for_signing(server_url, uuid_str):
     try:
-        hash_string = get_sha256_hash(file_path)
+        hash_string = get_sha256_hash(uuid_str)
         #print(hash_string)
 
         data = {
             "hashOfFirmwareImage": hash_string,
-            "productModelName": "JBL Charge 6"
+            "productModelName": "JBL Test Speaker"
         }
 
-        #print(data)
-        # print('signature_box_version = ', signature_box_version)
-        if (signature_box_version == 1):
-            response = requests.post(server_url, json=data)
-        elif (signature_box_version == 2):
-            response = requests.post(server_url, json=data,
-                                    #auth=('admin', 'dbmyddWg9jSC6wO8MUO5cnf9GAxVLA4x'),
-                                    auth=('admin', 'Jly29342Y1oWdNiu0ZP4YwrPMheYsyTC'),
-                                    verify=False
-                                    )
+        print(data)
+
+        response = requests.post(server_url, json=data)
 
         if response.status_code == 200:
             #print("request ok\n")
@@ -85,65 +59,18 @@ def send_file_for_signing(server_url, file_path):
         print("An error occurred while sending data for signing: %s" % e)
         return None
 
-def sign_file(file_path, output_path):
+def sign_uuid(uuid_str):
 	#if os.path.exists(output_path):
     #    print(f"sign file %s existed" %(output_path))
     #    return
 
-    signature = send_file_for_signing(server_url, file_path)
-
-    if signature is not None:
-        with open(output_path, 'wb') as signature_file:
-            signature_file.write(signature)
-            return 0
-    return 1
-
-
-def verify_signature(public_key_path, file_path, signature_path):
-    try:
-        if not os.path.exists(public_key_path):
-            print("key file %s not existed" % public_key_path)
-            return
-
-        with open(file_path, 'rb') as file_to_verify, open(signature_path, 'rb') as signature_file:
-            cmd = ['openssl', 'dgst', '-sha256', '-verify', public_key_path, '-signature', signature_path]
-            process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = process.communicate(file_to_verify.read())
-
-        if process.returncode != 0:
-            print("Signature of %s is invalid." % (file_path))
-        else:
-            print("Signature of %s is valid." % (file_path))
-        return process.returncode
-    except Exception as e:
-        raise Exception("An error occurred while verifying the signature: %s" % e)
-        return 1
-
-def merge_app_file(original_file, cert_file, file_to_sign):
-    with open(original_file, 'rb') as file1:
-        data1 = file1.read()
-
-    with open(cert_file, 'rb') as file2:
-        data2 = file2.read()
-
-    with open(file_to_sign, 'wb') as merged_file:
-        merged_file.write(data1)
-        merged_file.write(data2)
-
-def rsa_sign_app_file(original_file, cert_file, file_to_sign, key_path):
-    return_code = sign_file(original_file, cert_file)
-    if return_code != 0:
-        sys.exit(return_code)
-
-    return_code = verify_signature(key_path, original_file, cert_file)
-    if return_code != 0:
-        sys.exit(return_code)
-
-    merge_app_file(original_file, cert_file, file_to_sign)
-    sys.exit(0)
+    signature = send_file_for_signing(server_url, uuid_str)
+    print(binascii.hexlify(signature))
+    with open("uuid_cert.bin", 'wb') as file:
+        file.write(signature)
 
 def main(argv):
-    rsa_sign_app_file(argv[1], argv[2], argv[3], argv[4])
+    sign_uuid(argv[1])
 
 if __name__ == "__main__":
     main(sys.argv)

@@ -119,6 +119,7 @@ struct wlt_pd_mps52002_info {
 	int16   src_volt_value;
 	int16   src_cur_value;
 	u8_t   	SRC_5OMA_FLAG;
+	u8_t   	pd_version;
 	u8_t	pd_sink_debounce_time;
 	u8_t    pd_source_disc_debunce_cnt;
 
@@ -255,8 +256,7 @@ static int pd_tps52002_read_reg_value(uint8_t addr, u8_t *buf, int len)
     config.bits.speed = I2C_SPEED_STANDARD;
     i2c_configure(iic_dev, config.raw);
 	
-     k_sleep(10);  
-    
+    k_sleep(1);  
 	if(i2c_burst_read(iic_dev, I2C_PD_DEV_ADDR, addr, buf, len)<0)
 	{
 		k_sleep(50);
@@ -404,11 +404,6 @@ static void mps_ota_get_status(u8_t *status)
 		*status = 0;
 
 	SYS_LOG_INF("  %x\n", *status);
-}
-static u8_t otg_mobile_flag = 0;
-u8_t get_otg_mobile_flag(void)
-{
-  return otg_mobile_flag;
 }
 int OTA_PD(void)
 {
@@ -576,14 +571,12 @@ int OTA_PD(void)
 	return 1;
 }	
 
-
-u8_t PD_version;
-
 static void pd_mps52002_status_value(void)
 {
     u8_t buf[4] = {0};
 	u8_t buf1[2] = {0x01,0x00};
 	u8_t buf2[2] = {0x02,0x00};
+	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
     // union dev_config config = {0};
     // struct device *iic_dev;
 	mps_ota_get_status(&ota_flag);
@@ -595,9 +588,9 @@ static void pd_mps52002_status_value(void)
 
    
 	pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2);
-	PD_version = buf[0];
+	pd_mps52002->pd_version = buf[0];
 
-    if(ota_flag == 0x55 ||(PD_version < mps_pd_current_version))
+    if(ota_flag == 0x55 ||(pd_mps52002->pd_version < mps_pd_current_version))
 	{
 	  	OTA_PD();
 	 	k_sleep(100);
@@ -621,14 +614,7 @@ static void pd_mps52002_status_value(void)
 	k_sleep(10);
 	pd_tps52002_read_reg_value(PD_PD_STATUS, buf, 2);
     printf("live debug PD status:0x%x 0x%x \n",buf[0], buf[1]);
-	
-	otg_mobile_flag = 0;
-	if((buf[0]>>2)&0x01)
-	{
-	   otg_mobile_flag = 1;
-	}
 
-	printf("otg_mobile_flag :0x%x \n", otg_mobile_flag);
 	k_sleep(10);
    
 }
@@ -884,7 +870,7 @@ void pd_detect_event_report_MPS52002(void){
 				{
 					pd_mps52002->pd_52002_source_flag = 0;
 		
-			SYS_LOG_INF("[%d] source_flag=%d \n", __LINE__, pd_mps52002->pd_52002_source_flag  );
+					SYS_LOG_INF("[%d] source_flag=%d \n", __LINE__, pd_mps52002->pd_52002_source_flag  );
 			
 					pd_mps52002->sink_charging_flag = 1;
 					pd_mps52002->pd_52002_HIZ_flag = 0;
@@ -900,6 +886,7 @@ void pd_detect_event_report_MPS52002(void){
 					pd_mps52002->sink_charging_flag = 0;
 					pd_mps52002->pd_52002_source_flag = 0;	
 					pd_mps52002->pd_52002_HIZ_flag = 0;
+					pd_mps52002->charge_full_flag = 0;
 
 					if(pd_mps52002->pd_source_otg_disable_flag)
 					{
@@ -985,6 +972,7 @@ void pd_detect_event_report_MPS52002(void){
 			pd_mps52002->pd_52002_sink_flag ^= 1;
 			pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
 			pd_mps52002->pd_sink_debounce_time = 0;
+			pd_mps52002->charge_full_flag = 0;
 			if(pd_mps52002->pd_52002_sink_flag)
 			{
 				pd_mps52002->pd_sink_debounce_time = MAX_SINK_CHECK_MOBILE_TIME;
@@ -1096,7 +1084,18 @@ void	pd_src_sink_full_check(void)
 	       		pd_mps52002->notify(PD_EVENT_SINK_FULL, &para); 
 		   		SYS_LOG_INF("[%d] charer full =  %d", __LINE__, pd_mps52002->charge_full_flag);
 	     	}
-	    }
+	    }else{
+			if(pd_mps52002->charge_full_flag)
+			{
+				pd_mps52002->charge_full_flag = false;	
+				para.pd_event_val = 0;
+	       		pd_mps52002->notify(PD_EVENT_SINK_FULL, &para); 
+		   		SYS_LOG_INF("[%d] charer full =  %d", __LINE__, pd_mps52002->charge_full_flag);
+
+			}
+
+			
+		}
     }
 
 }	
@@ -1373,21 +1372,33 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
         case PD_SUPPLY_PROP_SINK_VOLT_VAULE:
             val->intval = pd_mps52002->volt_value;
             break;
+		case PD_SUPPLY_PROP_SINK_CURRENT_VAULE:
+			 val->intval = pd_mps52002->cur_value; 
+            break;
         case PD_SUPPLY_PROP_PLUG_PRESENT:
-            val->intval = dc_power_in_status_read();
+            val->intval = pd_mps52002->pd_52002_sink_flag; // dc_power_in_status_read();
             break;
 		case PD_SUPPLY_PROP_SINK_HIGH_Z_STATE:
             val->intval = 0x00;  
 		  	if(pd_mps52002->pd_52002_sink_flag &&(!pd_mps52002->sink_charging_flag))
 		     	val->intval = 0x01;
             break;
-
-		case PD_SUPPLY_PROP_OTG_MOBILE:
-			pd_tps52002_read_reg_value(PD_PD_STATUS, buf, 2);
-			val->intval = (buf[0]>>2) & 0x01;
-			SYS_LOG_INF("PD mobile status:%d", buf[0]);
+		case PD_SUPPLY_PROP_PD_VERSION:
+			val->intval = pd_mps52002->pd_version;
 			break;
+		case PD_SUPPLY_PROP_OTG_MOBILE:		
+			  pd_tps52002_read_reg_value(PD_PD_STATUS, buf, 2);
+			  val->intval = (buf[0]>>2) & 0x01;
+			  SYS_LOG_INF("PD mobile status:%d", buf[0]);
 
+			break;	
+		case PD_SUPPLY_PROP_SOURCE_CURRENT_VAULE:
+			 val->intval = pd_mps52002->src_cur_value; 
+            break;	
+		case PD_SUPPLY_PROP_SOURCE_VOLT_VAULE:
+			 val->intval = pd_mps52002->src_volt_value; 
+            break;	
+		
 		case PD_SUPPLY_PROP_UNLOAD_FINISHED:
 
 			val->intval = pd_mps52002->pd_65992_unload_flag;
@@ -1401,6 +1412,7 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 
     return 0;
 }
+
 
 void mps_set_source_disc(void)
 {

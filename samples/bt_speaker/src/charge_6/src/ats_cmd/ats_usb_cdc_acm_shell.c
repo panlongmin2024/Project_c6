@@ -32,18 +32,19 @@
 #include <logging/sys_log.h>
 
 #include <app_launch.h>
+#include <wltmcu_manager_supply.h>
+
 #define CFG_USER_INFO_0   			"USER_INFO_0"
 #define CFG_USER_INFO_1   			"USER_INFO_1"
 #define	FAC_TEST_USER_DATA0			"TEST"//"WLT_CUSTOM_DATA_FOR_READ_WRITE"
 
 static uint8_t *ats_cmd_resp_buf;
 static  int ats_cmd_resp_buf_size = 50;
-extern u8_t PD_version;
-extern void pd_mps52002_sink_charging_disable(bool flag);
+
 extern bool pd_mps52002_ats_switch_volt(u8_t PDO_index);
 extern int bt_manager_bt_read_rssi(uint16_t handle);
-extern u8_t pd_mps2760_read_current(int16 *volt_val, int16 *cur_val,int16 *src_cur_val);
-
+extern int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
+extern int user_uuid_verify(void);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -563,7 +564,7 @@ static int cdc_shell_ats_pd_version_info_dump(struct device *dev, u8_t *buf, int
 	uint8_t buffer[2] = {0};
 
 	//snprintf(buffer, sizeof(buffer), "%02d", PD_version);
-	hex_to_string_2(PD_version,buffer);
+	hex_to_string_2(pd_get_pd_version(),buffer);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_PD_VERSION_INFO_DUMP, sizeof(ATS_CMD_RESP_PD_VERSION_INFO_DUMP)-1, 
 		buffer, sizeof(buffer));
@@ -573,7 +574,7 @@ static int cdc_shell_ats_pd_version_info_dump(struct device *dev, u8_t *buf, int
 }
 static int cdc_shell_ats_disable_charger(struct device *dev, u8_t *buf, int len)
 {	
-	pd_mps52002_sink_charging_disable(true);
+	 pd_manager_disable_charging(true);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_DISABLE_CHARGER, sizeof(ATS_CMD_RESP_DISABLE_CHARGER)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
@@ -801,12 +802,24 @@ static int cdc_shell_write_hash_uuid(struct device *dev, u8_t *buf, int len)
        goto exit;
 	
 	memcpy(hash_uuid, &buf[sizeof(ATS_AT_CMD_WRITE_HASH_UUID)-1], 513);
-	//ats_usb_cdc_acm_write_data(hash_uuid, 513);
-    rlen = hex2bin(sign_msg, hash_uuid, UUID_MSG_SIGNATURE_LEN);		
+    rlen = hex2bin(sign_msg, hash_uuid, UUID_MSG_SIGNATURE_LEN);	
+
 	if(rlen == 0){
-	  nvram_config_set_factory(UUID_SIGN_MSG_NAME, sign_msg , UUID_MSG_SIGNATURE_LEN);
-	  	 ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+		nvram_config_set_factory(UUID_SIGN_MSG_NAME, sign_msg , UUID_MSG_SIGNATURE_LEN);
 	}
+	else{
+		goto exit;
+	}
+
+	if(!user_uuid_verify()){
+		/* uuid verify OK! */
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	}
+	else{
+		/* uuid verify NG! */
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+	}
+
 	mem_free(sign_msg);
 	mem_free(hash_uuid);
     return 0;
@@ -1138,14 +1151,14 @@ static int cdc_shell_ats_power_on_run_time_dump(struct device *dev, u8_t *buf, i
 }
 static int cdc_shell_ats_haman_battery_key_check(struct device *dev, u8_t *buf, int len)
 {	
-	//int16 battery_volt,src_battery_volt,battery_curr,ext_curr;
+	int16 battery_volt = 0x00,battery_curr=0x00;
 	uint8_t buffer[9+1] = "0000:0000";
-	//pd_mps2760_read_current(&battery_volt,&src_battery_volt,&battery_curr,&ext_curr);
+	// pd_mps2760_read_current(&battery_volt,&battery_curr,&ext_curr);
 
 	//battery_volt = power_manager_get_battery_vol();
 	//battery_volt /= 1000; // change voltage unit uv to mv
-	//snprintf(&buffer[0], 4, "%04d", battery_volt);
-	//snprintf(&buffer[5], 4, "%04d", battery_curr);
+	snprintf(&buffer[0], 4, "%04d", battery_volt);
+	snprintf(&buffer[5], 4, "%04d", battery_curr);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_BATTERY_CUR_VALUE, sizeof(ATS_CMD_RESP_BATTERY_CUR_VALUE)-1, 
@@ -1245,14 +1258,13 @@ static int cdc_shell_ats_exit_auracast(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_nosignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
 	int result;
+	u8_t buffer[1+1] = "6";
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_NOSIGTESTMODE_IN, sizeof(ATS_CMD_RESP_NOSIGTESTMODE_IN)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
-	result = property_set_int(CFG_BT_TEST_MODE, 2);
-
-	property_flush(CFG_BT_TEST_MODE);
+    result = property_set_factory(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
 	
 	if (result != 0)
 	{

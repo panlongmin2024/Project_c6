@@ -26,6 +26,14 @@ static void pd_srv_sync_init_callback(struct app_msg *msg, int result, void *rep
 	}
 }
 
+static void pd_srv_sync_msg_callback(struct app_msg *msg, int result, void *reply)
+{
+	if (msg->sync_sem) {
+		os_sem_give((os_sem *)msg->sync_sem);
+	}
+}
+
+
 void pd_srv_sync_init(void)
 {
 	struct app_msg msg = {0};
@@ -86,6 +94,39 @@ int pd_srv_event_notify(int event ,int value)
 	}
 	return 0;
 }
+
+
+int pd_srv_sync_send_msg(int event, int value)
+{
+
+	struct app_msg msg = {0};
+	os_sem pd_sem_sync_msg;
+
+	printk("pd_srv_event_send_msg %d %d\n", event, value);
+
+	os_sem_init(&pd_sem_sync_msg, 0, 1);
+	msg.type = MSG_PD_SRV_SYNC_MSG;
+	msg.cmd = event;
+	msg.value = value;
+	msg.callback = pd_srv_sync_msg_callback;
+	msg.sync_sem = &pd_sem_sync_msg;
+
+	if (!send_async_msg(CONFIG_PD_SRV_NAME, &msg)) {
+		return -1;
+	}
+
+	if (os_sem_take(&pd_sem_sync_msg, OS_SECONDS(10)) != 0) {
+		printk("pd_srv_event_send_msg timerout %d %d\n", event, value);
+		return -2;
+	}
+	
+	printk("pd_srv_event_send_msg OK %d %d\n", event, value);
+	return 0;
+}
+
+
+
+
 extern bool run_mode_is_demo(void);
 extern void battery_charging_remaincap_is_full(void);
 extern void battery_charging_LED_on_all(void);
@@ -152,6 +193,26 @@ void pd_srv_charger_init(void)
 	os_thread_priority_set(os_current_get(), prio);
 }
 
+extern void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);
+
+void pd_srv_sync_msg_process(struct app_msg *msg)
+{
+	printk("pd srv sync msg %d %d\n",msg->cmd,msg->value);
+
+	switch (msg->cmd){
+		case PA_EVENT_AW_20V5_CTL:
+			io_expend_aw9523b_ctl_20v5_set(msg->value);
+		break;
+
+
+		default:
+		break;
+	}
+
+
+
+}
+
 void pd_srv_event_process(struct app_msg *msg)
 {
 	printk("pd srv event %d %d\n",msg->cmd,msg->value);
@@ -190,11 +251,13 @@ void pd_srv_event_process(struct app_msg *msg)
 			mcu_ui_set_led_enable_state(msg->value);
 		break;
 
+
 		default:
 			break;
 	}
 
 }
+
 
 
 void pd_service_main_loop(void * parama1, void * parama2, void * parama3)
@@ -220,6 +283,10 @@ void pd_service_main_loop(void * parama1, void * parama2, void * parama3)
 					pd_srv_event_process(&msg);
 					break;
 				}
+
+				case MSG_PD_SRV_SYNC_MSG:
+					pd_srv_sync_msg_process(&msg);
+					break;
 
 				default:
 					break;

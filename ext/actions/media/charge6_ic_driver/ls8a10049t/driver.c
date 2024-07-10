@@ -935,9 +935,7 @@ static void mcu_ls8a10049t_wlt_set_property(struct device *dev,enum mcu_manager_
 			aw9523b_set_led_status(MCU_SUPPLY_PROP_LED_POWER,value);
 			break;	
 		case MCU_SUPPLY_PROP_DSP_DCDC:	
-			pd_iic_push_queue(MCU_IIC_TYPE_PROP_DSP_DCDC, (u8_t)value);
-
-			// io_expend_aw9523b_ctl_20v5_set(value);
+			io_expend_aw9523b_ctl_20v5_set(value);
 		break;
         case MCU_SUPPLY_PROP_UPDATE_FW:
             bt_pd_send_update_fw_code(value);

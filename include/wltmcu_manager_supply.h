@@ -74,6 +74,7 @@ enum pd_manager_supply_property {
     PD_SUPPLY_PROP_SOURCE_CURRENT_VAULE,
     PD_SUPPLY_PROP_SOURCE_VOLT_VAULE,
     PD_SUPPLY_PROP_SINK_VOLT_VAULE,
+    PD_SUPPLY_PROP_SINK_CURRENT_VAULE,
     PD_SUPPLY_PROP_SINK_HIGH_Z_STATE,
     PD_SUPPLY_PROP_SOURCE_SSRC,
     PD_SUPPLY_PROP_PLUG_PRESENT,
@@ -83,7 +84,7 @@ enum pd_manager_supply_property {
     PD_SUPPLY_PROP_UNLOAD_FINISHED,
     PD_SUPPLY_PROP_OTG_MOBILE,
     PD_SUPPLY_PROP_SOURCE_DISC,
-    PD_SUPPLY_PROP_SINK_CURRENT_VAULE,
+    PD_SUPPLY_PROP_PD_VERSION,
 };
 
 typedef enum
@@ -92,6 +93,7 @@ typedef enum
     WLT_FILTER_CHARGINE_POWERON,
     WLT_FILTER_CHARGINE_WARNING,
     WLT_FILTER_STANDBY_POWEROFF,
+    WLT_FILTER_DISCHARGE_POWERON,
   
 } wlt_filter_led_t;
 
@@ -167,6 +169,12 @@ void pd_init_and_disable_charge(bool flag);
  * @return 1 charging , 0 discharging
  */
 bool pd_get_sink_charging_state(void);
+u32_t pd_get_sink_charge_volt(void);
+u32_t pd_get_sink_charge_current(void);
+u32_t pd_get_source_volt(void);
+u32_t pd_get_source_current(void);
+u8_t pd_get_pd_version(void);
+
 
 /**
  * @brief Set the status of BT light
@@ -325,6 +333,14 @@ typedef enum{
     PD_EVENT_MUC_UPDATA,
 
 }pd_event;
+
+
+
+typedef enum{
+
+    PA_EVENT_AW_20V5_CTL = 1,
+
+}pd_sync_event;
 	
 typedef enum{
     BATT_LED_NORMAL_ON = 1,
@@ -351,6 +367,7 @@ typedef enum{
 void mcu_ui_set_led_enable_state(int state);
 extern void pd_srv_sync_init(void);
 extern int pd_srv_sync_exit(void);
+extern int pd_srv_sync_send_msg(int event, int value);
 extern int pd_srv_event_notify(int event ,int value);
 
 extern uint8_t Read_hw_ver(void);

@@ -18,6 +18,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 global signature_box_version
 global server_url
 
+
 # version: 1 for EV signature box;  2 for DV signature box
 signature_box_version = 2
 
@@ -28,7 +29,8 @@ if (signature_box_version == 1):
 #server_url = 'http://192.168.1.77:8001/sign-firmware-development'  # server url
 elif (signature_box_version == 2):
     #server_url = 'http://121.15.135.186:8001/sign-firmware-production'  # server url
-    server_url = 'https://harman-ten-wlts-2/sign-firmware-production'  # server url
+    server_url = 'https://harman-ten-wltd-1/sign-firmware-production'  # server url
+
 
 def get_sha256_hash(file_path):
     cmd = ['openssl', 'dgst', '-sha256', file_path]

@@ -343,10 +343,25 @@ void battery_charging_LED_on_all(void)
     mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_5,BT_LED_STATUS_ON);      
 }
 
+
+
+
+
 void mcu_ui_set_dsp_dcdc(uint8_t onoff)
 {
     SYS_LOG_INF("[%d],onoff =%d\n", __LINE__, onoff);
-    mcu_ui_send_led_code(MCU_SUPPLY_PROP_DSP_DCDC,onoff); 
+
+
+    if(pd_srv_sync_send_msg(PA_EVENT_AW_20V5_CTL, (int)onoff) == -1)
+     {
+        SYS_LOG_INF("[%d],msg fail reinstall MCU_SUPPLY_PROP_DSP_DCDC \n", __LINE__);
+        mcu_ui_send_led_code(MCU_SUPPLY_PROP_DSP_DCDC,onoff); 
+     }
+
+    SYS_LOG_INF("[%d],onoff =%d\n", __LINE__, onoff);
+
+
+    // mcu_ui_send_led_code(MCU_SUPPLY_PROP_DSP_DCDC,onoff); 
 }
 #if 0
 static void battery_led_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)
@@ -895,6 +910,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                             msg.type = MSG_POWER_KEY;
                             send_async_msg(APP_ID_MAIN, &msg);
 							 printk("POWER KEY first MSG_POWER_KEY\n");
+							pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
     /* 
                             k_sleep(10);
                             msg.type = MSG_CHARGER_MODE;
@@ -1005,14 +1021,14 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 else{
                     printk("POWER KEY!!! %d \n",sys_pm_get_power_5v_status());
                     #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
-                    if(power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
-                    {
-                      pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
-                    }
-                    else
-                     {
+                   // if(power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
+                    //{
+                    //  pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
+                    //}
+                   // else
+                    // {
                        pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_2S);
-					  }// power_manager_battery_display_handle(1, POWER_MANAGER_BATTER_2_SECOUND);
+					 // }// power_manager_battery_display_handle(1, POWER_MANAGER_BATTER_2_SECOUND);
                     #endif      
                     // pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);
                     bt_mcu_send_pw_cmd_poweron();
@@ -1239,7 +1255,7 @@ uint8_t Read_hw_ver(void)
 		SYS_LOG_ERR("cannot found ADC device %s\n", CONFIG_INPUT_DEV_ACTS_ADCKEY_ADC_NAME);
 		return 0;
 	}
-
+    sys_write32((sys_read32(GPIO_CTL(HW_VER_PIN)) & ~(GPIO_CTL_MFP_MASK))  | (0x1 << 3), GPIO_CTL(HW_VER_PIN));
 	hw_ver.seq_entrys.sampling_delay = 0;
 	hw_ver.seq_entrys.buffer = (u8_t *)&hw_ver.adcval;
 	hw_ver.seq_entrys.buffer_length = sizeof(hw_ver.adcval);
