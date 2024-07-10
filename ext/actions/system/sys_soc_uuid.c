@@ -25,7 +25,7 @@
 #define UUID_HASH_DATA_LEN      (32)
 #define UUID_SIGN_MSG_NAME "uuid_msg"
 
-#define	TIMEOUT_UUID_VERIFY_FAIL_POWEROFF		1000000
+#define	TIMEOUT_UUID_VERIFY_FAIL_POWEROFF		5000
 
 struct uuid_ctx{
     uint32_t uuid[4];
