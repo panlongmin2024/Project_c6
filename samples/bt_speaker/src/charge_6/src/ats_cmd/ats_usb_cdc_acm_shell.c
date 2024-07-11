@@ -335,8 +335,7 @@ static int cdc_shell_ats_gfps_model_id_write(struct device *dev, u8_t *buf, int 
 			dev, ATS_CMD_RESP_SET_MODEID, sizeof(ATS_CMD_RESP_SET_MODEID)-1, 
 			buf, len);
 
-	memcpy(gfps_model_id_str, buf, len);
-	result = ats_gfps_model_id_write(gfps_model_id_str, strlen(gfps_model_id_str));
+	result = ats_gfps_model_id_write(buf, len);
 	if(result<0){
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 	}
