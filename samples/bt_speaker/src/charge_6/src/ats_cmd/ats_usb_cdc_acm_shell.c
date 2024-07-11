@@ -355,17 +355,17 @@ static int cdc_shell_ats_gfps_model_id_read(struct device *dev, u8_t *buf, int l
 static int cdc_shell_ats_dsn_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
-	char dsn_id_str[30+1] = {0};
-	int lenght;
 
-	memcpy(dsn_id_str, buf, len);
-	lenght = strlen(dsn_id_str)-8;
-	//ats_usb_cdc_acm_cmd_response(dev, buf, len);//
+	if(len>30 || len<1){
+		/* limit length 1-30 */
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+		return 0;
+	}
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev,ATS_CMD_RESP_DSN_SET_ID,sizeof(ATS_CMD_RESP_DSN_SET_ID)-1,
-		dsn_id_str,lenght);
+		buf,len);
 
-	result = ats_dsn_write(dsn_id_str, lenght);
+	result = ats_dsn_write(buf, len);
 	if(result<0){
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 	}
@@ -399,16 +399,18 @@ static int cdc_shell_ats_dsn_read(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_psn_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
-	char psn_id_str[30+1] = {0};
-	int lenght;
-	memcpy(psn_id_str, buf, 30);
-	lenght = strlen(psn_id_str)-8;
-	//ats_usb_cdc_acm_cmd_response(dev, buf, len);
+
+	if(len>30 || len<1){
+		/* limit length 1-30 */
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+		return 0;
+	}
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev,ATS_CMD_RESP_PSN_SET_ID,sizeof(ATS_CMD_RESP_PSN_SET_ID)-1,
-		psn_id_str,lenght);
+		buf,len);
 
-	result = ats_psn_write(psn_id_str, lenght);
+	result = ats_dsn_write(buf, len);
+
 	if(result<0){
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 	}
@@ -1424,7 +1426,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
         index += sizeof(ATS_AT_CMD_GFPS_MODEL_ID_WRITE)-1;
 		target_index = index;
-		cdc_shell_ats_gfps_model_id_write(dev, &buf[target_index], 6);
+		cdc_shell_ats_gfps_model_id_write(dev, &buf[target_index], size-target_index);
 	}
 	else if(!memcmp(&buf[index], ATS_AT_CMD_GFPS_MODEL_ID_READ, sizeof(ATS_AT_CMD_GFPS_MODEL_ID_READ)-1))
 	{
@@ -1443,7 +1445,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
         index += sizeof(ATS_AT_CMD_DSN_WRITE)-1;
 		target_index = index;
-		cdc_shell_ats_dsn_write(dev, &buf[target_index], 30);
+		cdc_shell_ats_dsn_write(dev, &buf[target_index], size-target_index-8);
 	}
 	else if(!memcmp(&buf[index], ATS_AT_CMD_DSN_READ, sizeof(ATS_AT_CMD_DSN_READ)-1))
 	{
@@ -1455,7 +1457,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
         index += sizeof(ATS_AT_CMD_PSN_WRITE)-1;
 		target_index = index;
-		cdc_shell_ats_psn_write(dev, &buf[target_index], 30);
+		cdc_shell_ats_psn_write(dev, &buf[target_index], size-target_index-8);
 	}
 	else if(!memcmp(&buf[index], ATS_AT_CMD_PSN_READ, sizeof(ATS_AT_CMD_PSN_READ)-1))
 	{
