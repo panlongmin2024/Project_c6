@@ -140,7 +140,12 @@ static int i2c_gpio_init(struct device *dev)
 		context->sda_pin = config->sda_pin;
 		context->scl_pin = config->scl_pin;
 	}
+#else
+	//init context pin,else detault pin is 0 
+	context->sda_pin = config->sda_pin;
+	context->scl_pin = config->scl_pin;
 #endif
+
 	/* init gpio initial status */
 #ifdef CONFIG_I2C_GPIO_RESISTOR_PULL_UP
 	gpio_pin_configure(context->gpio, context->sda_pin,

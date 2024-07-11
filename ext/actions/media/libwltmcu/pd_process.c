@@ -428,7 +428,7 @@ uint8_t pd_manager_get_poweron_filte_battery_led(void)
     SYS_LOG_INF("[%d],flag =%d\n", __LINE__, poweron_filte_battery_led_flag);
     return poweron_filte_battery_led_flag;
 }
-
+#if 0
 static void pd_manger_poweron_filte_battery_led_handle(void)
 {
     static uint8_t filter_cnt = 0;
@@ -445,7 +445,7 @@ static void pd_manger_poweron_filte_battery_led_handle(void)
         filter_cnt = 0;
     }
 }
-
+#endif
 static void bt_warning_poweroff_handle_fn(void)
 {
     //bt_mcu_send_pw_cmd_powerdown();
@@ -1447,7 +1447,7 @@ static void pd_manager_time_hander(struct thread_timer *ttimer, void *expiry_fn_
     }
     one_second_cnt = 0;
 
-    pd_manger_poweron_filte_battery_led_handle();
+    //pd_manger_poweron_filte_battery_led_handle();
     pd_managet_typec_high_temp_protect();
 
 

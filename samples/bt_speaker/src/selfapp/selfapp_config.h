@@ -5,6 +5,7 @@
 #include "selfapp_internal.h"
 
 #define SELFAPP_CONFIG_VERSION 0xAC000001
+#define DEDAULT_STEREO_GROUP_NAME    "My Stereo Group"
 
 int selfapp_config_set_ac_group(const struct AURACAST_GROUP* group);
 int selfapp_config_get_ac_group(struct AURACAST_GROUP* group);

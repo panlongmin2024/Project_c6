@@ -9,7 +9,7 @@ struct AURACAST_GROUP {
 	u8_t mode;// 0x01-stereo mode; 0x02-party mode.
 	u8_t role;// 0x01-Primary device; 0x02-Secondary device.
 	u32_t id;
-	u8_t name[30];
+	u8_t name[32];
 	u8_t addr[6];
 };
 
@@ -115,4 +115,10 @@ primary device sets the stereo group info to secondary device
 */
 void selfapp_set_lasting_stereo_group_info(struct AURACAST_GROUP *group);
 
+/*
+Return:
+	<0 - fail
+	0  - Success
+*/
+void selfapp_notify_lasting_stereo_status(void);
 #endif

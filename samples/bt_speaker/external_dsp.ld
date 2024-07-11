@@ -108,9 +108,9 @@ MEMORY
 	ram_trace_hexbuf      (wx) : ORIGIN = 0x00037f00, LENGTH = 0x100
 
 	/* DSP, 32K+128K */
-	ram_dsp1              (wx) : ORIGIN = 0x00040000, LENGTH = 0x9000
+	ram_dsp1              (wx) : ORIGIN = 0x00040000, LENGTH = 0x9600
 #ifdef CONFIG_SOC_SERIES_ANDESC_P2
-	ram_bt                (wx) : ORIGIN = 0x0004FA00, LENGTH = 0xF200
+	ram_bt                (wx) : ORIGIN = 0x0004E800, LENGTH = 0x10400
 	ram_bt_bss            (wx) : ORIGIN = 0x0005ec00, LENGTH = 0x1400
 #else
 	ram_bt                (wx) : ORIGIN = 0x00048000, LENGTH = 96k

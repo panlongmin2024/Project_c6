@@ -26,7 +26,7 @@
 
 OS_MUTEX_DEFINE(srv_manager_mutex);
 
-static sys_slist_t	global_srv_list;
+static sys_slist_t global_srv_list = {NULL, NULL};
 
 extern struct service_entry_t __service_entry_table[];
 
@@ -109,6 +109,7 @@ static bool srv_manager_init_service(struct service_entry_t *srv)
 
 		os_thread_priority_set(srvinfo->tid, srv->priority);
 
+		SYS_LOG_INF("HENRY %p", global_srv_list.head);
 		sys_slist_append(&global_srv_list, (sys_snode_t *)srvinfo);
 
 		if (!msg_manager_add_listener(srvinfo->name, srvinfo->tid)) {
@@ -274,11 +275,3 @@ bool srv_manager_check_service_is_actived(char *srv_name)
 	return result;
 
 }
-
-bool srv_manager_init(void)
-{
-	sys_slist_init(&global_srv_list);
-	return true;
-}
-
-

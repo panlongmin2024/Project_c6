@@ -7,6 +7,10 @@
 #include "bmr.h"
 #include <audio_track.h>
 #include "app_common.h"
+#ifdef CONFIG_BT_SELF_APP
+#include "selfapp_api.h"
+#endif
+
 #include <app_launch.h>
 
 #ifdef CONFIG_ACT_EVENT
@@ -325,6 +329,7 @@ static int bmr_handle_sink_config(struct bt_braodcast_configured *rep)
 {
     struct bmr_app_t *bmr = bmr_get_app();
 	struct bt_broadcast_chan *chan;
+	struct bt_broadcast_chan_info chan_info;
 
     chan = find_broad_chan(rep->handle,rep->id);
 	if (!chan) {
@@ -345,8 +350,23 @@ static int bmr_handle_sink_config(struct bt_braodcast_configured *rep)
 		SYS_EVENT_INF(EVENT_BMR_SINK_CONFIG,chan->handle,chan->id);
 	    //bt_manager_broadcast_stream_cb_register(chan, bmr_rx_start, NULL);
 	    //2000 for media effect , 1000 for audio dma,32 sample for resample lib
-	    bt_manager_broadcast_stream_set_media_delay(chan, 2000 + 1000 + 32 * 1000 / 48
-	    + EXTERNAL_DSP_DELAY);
+		int ret = bt_manager_broadcast_stream_info(chan, &chan_info);
+		int output_sample_rate = audio_system_get_output_sample_rate();
+		if (!output_sample_rate)
+			output_sample_rate = 48;
+		if (!ret && chan_info.sample != output_sample_rate){
+			//res_s 2x 75 3x 114
+			int ext = 75;
+			if (output_sample_rate == chan_info.sample * 2)
+				ext = 75;
+			else if (output_sample_rate == chan_info.sample * 3)
+				ext = 114;
+			bt_manager_broadcast_stream_set_media_delay(chan, 2000 + 1000 + 32 * 1000 / chan_info.sample + ext * 1000 / output_sample_rate
+			+ EXTERNAL_DSP_DELAY);
+		} else {
+			bt_manager_broadcast_stream_set_media_delay(chan, 2000 + 1000 + 32 * 1000 / 48
+			+ EXTERNAL_DSP_DELAY);
+		}
 	    bmr->chan = chan;
 	}
 #if !BIS_SYNC_LOCATIONS
@@ -453,7 +473,7 @@ static int bmr_handle_sink_disable(struct bt_broadcast_report *rep)
 #endif
    ret = bmr_delete_broad_dev(rep->handle);
    if ((bmr->use_past)&&(!ret)) {
-      bmr_past_subscribe_restore();      
+      bmr_past_subscribe_restore();
    }
 	return 0;
 }
@@ -551,7 +571,7 @@ static int bmr_handle_letws_disconnected(uint8_t *reason)
 #ifdef CONFIG_BT_LETWS
 	struct bmr_app_t *bmr = bmr_get_app();
 
-	if(*reason == 0x8){
+	if(*reason == 0x8 || *reason == 0x15 || !selfapp_get_group_id()){
 		tts_manager_disable_filter();
 		//system_app_set_auracast_mode(0);
 		bmr->broadcast_mode_reset = 1;
@@ -767,7 +787,7 @@ void bmr_input_event_proc(struct app_msg *msg)
 		break;
 	default:
 		break;
-	}    
+	}
 
 
 }

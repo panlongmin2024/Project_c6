@@ -27,6 +27,9 @@
 
 #define DEFAULT_PIN_CODE		"0000"
 
+#define BT_SSP_AUTH_DEDICATED_BOND_MASK    0x02
+#define BT_SSP_AUTH_GENERAL_BOND_MASK      0x04
+
 /* Actions add end */
 
 enum pairing_method {
@@ -44,6 +47,8 @@ static const uint8_t ssp_method[4 /* remote */][4 /* local */] = {
 	      { PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS },
 	      { JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS },
 };
+
+static bool ssp_bondable = IS_ENABLED(CONFIG_BT_BONDABLE);
 
 static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 {
@@ -657,6 +662,11 @@ void hci_evt_io_capa_resp(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+void bt_ssp_set_bondable(bool enable)
+{
+	ssp_bondable = enable;
+}
+
 void hci_evt_io_capa_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_io_capa_req *evt = (void *)buf->data;
@@ -675,22 +685,25 @@ void hci_evt_io_capa_req(struct net_buf *buf)
     BT_DBG("io_capa_req:%p, 0x%x, %d, %d\n",conn->br.link_key,conn->br.link_key->flags,bt_inner_value.link_miss_reject_conn,conn->br.active_connect);
 
 	// Todo, UE releated, it's better move to the uplayer.
-	if (( (conn->br.link_key == NULL) || (conn->br.link_key->flags & BT_LINK_KEY_REPLY)) &&
- 		bt_inner_value.link_miss_reject_conn && conn->br.active_connect) {
-		BT_ERR("Remote without linkkey");
-		acts_bt_keys_link_key_clear_store(&evt->bdaddr);
-		notify_remote_linkkey_miss(conn);
-		bt_conn_disconnect(conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
-		bt_conn_unref(conn);
-		return;
-	} else {
-		ret = notify_remote_linkkey_miss(conn);
-		if(!ret){
-			bt_conn_disconnect(conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
-			bt_conn_unref(conn);
-			return;
-		}
-	}
+    if(!bt_internal_is_pts_test()){
+        if (((conn->br.link_key == NULL) || (conn->br.link_key->flags & BT_LINK_KEY_REPLY)) &&
+            bt_inner_value.link_miss_reject_conn && conn->br.active_connect) {
+            BT_ERR("Remote without linkkey");
+            acts_bt_keys_link_key_clear_store(&evt->bdaddr);
+            notify_remote_linkkey_miss(conn);
+            bt_conn_disconnect(conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+            bt_conn_unref(conn);
+            return;
+        }
+        else {
+            ret = notify_remote_linkkey_miss(conn);
+            if(!ret){
+                bt_conn_disconnect(conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+                bt_conn_unref(conn);
+                return;
+            }
+        }
+    }
 
 	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY,
 				     sizeof(*cp));
@@ -708,13 +721,27 @@ void hci_evt_io_capa_req(struct net_buf *buf)
 	 */
 	if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR)) {
 		if (get_io_capa() != BT_IO_NO_INPUT_OUTPUT) {
-			auth = BT_HCI_GENERAL_BONDING_MITM; //BT_HCI_DEDICATED_BONDING_MITM;
+			auth = BT_HCI_GENERAL_BONDING_MITM; //BT_HCI_DEDICATED_BONDING_MITM
 		} else {
-			auth = BT_HCI_DEDICATED_BONDING;
+			auth = BT_HCI_DEDICATED_BONDING; //BT_HCI_GENERAL_BONDING
 		}
 	} else {
 		auth = ssp_get_auth(conn);
 	}
+
+#if 0  //TODO:for gap bqb authentication case.
+	if (ssp_bondable) {
+		if ((auth == BT_HCI_NO_BONDING) || (auth == BT_HCI_NO_BONDING_MITM)) {
+			auth |= BT_SSP_AUTH_GENERAL_BOND_MASK;
+		}
+	} else {
+		if ((auth == BT_HCI_DEDICATED_BONDING) || (auth == BT_HCI_DEDICATED_BONDING_MITM)) {
+			auth &= ~BT_SSP_AUTH_DEDICATED_BOND_MASK;
+		} else if ((auth == BT_HCI_GENERAL_BONDING) || (auth == BT_HCI_GENERAL_BONDING_MITM)) {
+			auth &= ~BT_SSP_AUTH_GENERAL_BOND_MASK;
+		}
+	}
+#endif
 
 	cp = net_buf_add(resp_buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);

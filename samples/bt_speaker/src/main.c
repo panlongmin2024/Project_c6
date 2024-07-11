@@ -59,20 +59,9 @@ static void main_pre_init(void)
 	int terminaltion = false;
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #ifdef CONFIG_ACTIONS_IMG_LOAD
-	int property_nosignal_test_get = property_get_int(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, 0);
-	printf("------> property_nosignal_test_get %d\n",property_nosignal_test_get);
-	if(property_nosignal_test_get == 6){
-		/* clear enter nosignale flag! */
-		u8_t buffer[1+1] = "0";
-		int result = property_set_factory(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
-		if(result!=0){
-			result = property_set_factory(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
-		}
-
-		mcu_ui_power_hold_fn();
-		extern int run_test_image(void);
-		run_test_image();
-	}
+	mcu_ui_power_hold_fn();
+    extern int run_test_image(void);
+    run_test_image();
 #endif
 	enter_att_flag = false;
 	main_is_enter_att();

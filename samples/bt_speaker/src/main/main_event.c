@@ -86,6 +86,7 @@ static void main_input_enter_pairing_mode(void)
 
 	if (bt_link_num < max_dev_num || le_link_num < max_dev_num) {
 		sys_event_notify(SYS_EVENT_ENTER_PAIR_MODE);
+		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_ENTER_PAIR_MODE);
 #ifdef CONFIG_AURACAST
 /* 		if(1 == system_app_get_auracast_mode()
 			|| 2 == system_app_get_auracast_mode()){
@@ -261,7 +262,7 @@ void main_input_event_handle(struct app_msg *msg)
 		}	*/	
 /*  		if (dc_power_in_status_read() 
 		|| (sys_pm_get_power_5v_status() == 2)){  */
-		//从充电模式关�?		
+		//从充电模式关�?		
 		if(1){
 			u8_t name[33];
 			int ret;

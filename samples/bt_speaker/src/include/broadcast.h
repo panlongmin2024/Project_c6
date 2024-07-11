@@ -76,6 +76,8 @@ long lasting stereo protocol
 #define COMMAND_SETUSEREQ          0x93
 #define COMMAND_REQ_PASTINFO       0xf1
 #define COMMAND_SENDSYSEVENT       0xf2
+#define COMMAND_SENDINDICATION     0xf3
+
 
 enum {
     KEY_EVENT_NONE = 0,
@@ -91,7 +93,7 @@ enum {
 struct lasting_stereo_device_info {
 	uint8_t ch; // 0x00-full channel; 0x01-Left channel, 0x02-right channel.
 	uint32_t id;
-	uint8_t name[30];
+	uint8_t name[32];
 	uint8_t addr[6];
 };
 
@@ -249,6 +251,57 @@ struct broadcast_param_t {
 #define BROADCAST_ISO_INTERVAL	16
 #define BROADCAST_SDU_INTERVAL	10000
 #define BROADCAST_PDU	100
+#define BROADCAST_NSE	8
+#define BROADCAST_BN	2
+#define BROADCAST_IRC	4
+#define BROADCAST_PTO	0
+#define BROADCAST_LAT	20
+#define BROADCAST_DURATION	BT_FRAME_DURATION_10MS
+#define PA_INTERVAL	80	// 100ms
+
+#ifdef CONFIG_BT_PAWR
+#define PAwR_INTERVAL	80	// 100ms
+#define PAwR_SUB_INTERVAL	32	// 40ms
+#define PAwR_RSP_DELAY	9	// 11.25ms
+
+#endif
+#endif
+
+
+/* 32kbp 1ch 10ms iso_interval */
+#if 0
+#define BROADCAST_KBPS	32
+#define BROADCAST_SDU	40
+#define BROADCAST_OCTETS	40
+#define BROADCAST_CH	1
+#define BROADCAST_ISO_INTERVAL	16
+#define BROADCAST_SDU_INTERVAL	10000
+#define BROADCAST_PDU	40
+#define BROADCAST_NSE	8
+#define BROADCAST_BN	2
+#define BROADCAST_IRC	4
+#define BROADCAST_PTO	0
+#define BROADCAST_LAT	20
+#define BROADCAST_DURATION	BT_FRAME_DURATION_10MS
+#define PA_INTERVAL	80	// 100ms
+
+#ifdef CONFIG_BT_PAWR
+#define PAwR_INTERVAL	80	// 100ms
+#define PAwR_SUB_INTERVAL	32	// 40ms
+#define PAwR_RSP_DELAY	9	// 11.25ms
+
+#endif
+#endif
+
+/* 48kbp 1ch 20ms iso_interval */
+#if 0
+#define BROADCAST_KBPS	48
+#define BROADCAST_SDU	60
+#define BROADCAST_OCTETS	60
+#define BROADCAST_CH	1
+#define BROADCAST_ISO_INTERVAL	16
+#define BROADCAST_SDU_INTERVAL	10000
+#define BROADCAST_PDU	60
 #define BROADCAST_NSE	8
 #define BROADCAST_BN	2
 #define BROADCAST_IRC	4
@@ -440,4 +493,5 @@ int broadcast_tws_vnd_rx_cb(const uint8_t *buf, uint16_t len);
 void broadcast_tws_vnd_request_past_info(void);
 void broadcast_tws_vnd_send_sys_event(uint8_t event);
 void broadcast_tws_vnd_set_dev_info(struct lasting_stereo_device_info *info);
+void broadcast_tws_vnd_send_indication(void);
 #endif

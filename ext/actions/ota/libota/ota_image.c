@@ -196,6 +196,11 @@ int ota_image_report_progress(struct ota_image *img, uint32_t pre_xfer_size, boo
 	struct ota_progress *progress = &img->progress;
 	uint32_t next;
 
+	#if defined(CONFIG_BUILD_PROJECT_HM_DEMAND_CODE) && defined(CONFIG_ACTIONS_SDK_RECOVERY_MODE)
+	extern void _ota_mcu_int_timer_hander(void);
+	_ota_mcu_int_timer_hander();
+	#endif
+	
 	if (img && progress->on) {
 		if (progress->total_size < pre_xfer_size) {
 			SYS_LOG_ERR("exceed total_size %d_%d", progress->total_size, pre_xfer_size);

@@ -24,7 +24,6 @@
 #include <acts_bluetooth/host_interface.h>
 #include <acts_bluetooth/addr.h>
 #include "bqb_gatt.h"
-#include <acts_bluetooth/pts_test.h>
 #include "hex_str.h"
 #include "gatt_internal.h"
 

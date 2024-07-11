@@ -1695,8 +1695,9 @@ int audio_out_init(struct device *dev)
 	data->cur_asrc_out0_ramindex = 0xff;
 	data->cur_asrc_out1_ramindex = 0xff;
 
-	// init asrc buffer
+#ifdef CONFIG_AUDIO_ASRC_ENABLE
 	asrc_buf_init();
+#endif
 
 	// audio global reset
 	acts_reset_peripheral(RESET_ID_AUDIO);

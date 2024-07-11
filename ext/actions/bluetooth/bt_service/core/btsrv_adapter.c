@@ -88,7 +88,7 @@ static void _btsrv_adapter_connected_remote_name_cb(bt_addr_t *addr, uint8_t *na
 
 	hostif_bt_addr_to_str(addr, addr_str, BT_ADDR_STR_LEN);
 	role = btsrv_adapter_tws_check_role(addr, name);
-	SYS_LOG_INF("name_cb %s %s %d", name, addr_str, role);
+	SYS_LOG_INF("%s %s %d", name, addr_str, role);
 
 	memset(&info, 0, sizeof(info));
 	memcpy(info.mac.val, addr->val, sizeof(bd_address_t));
@@ -154,7 +154,7 @@ static void _btsrv_adapter_connected_cb(struct bt_conn *conn, uint8_t err)
 
 	bt_addr = (bt_addr_t *)GET_CONN_BT_ADDR(conn);
 	hostif_bt_addr_to_str(bt_addr, addr_str, BT_ADDR_STR_LEN);
-	SYS_LOG_INF("connected_cb %s hdl 0x%x err 0x%x", addr_str, hostif_bt_conn_get_handle(conn), err);
+	SYS_LOG_INF("%s hdl 0x%x err 0x%x", addr_str, hostif_bt_conn_get_handle(conn), err);
 
 	if (err) {
 		btsrv_remove_connreq_info(bt_addr);

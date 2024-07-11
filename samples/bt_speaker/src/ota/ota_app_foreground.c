@@ -447,7 +447,8 @@ static int _ota_app_init(void *p1, void *p2, void *p3)
 	ota_view_init();
 
 	is_ota_need_poweroff = false;
-	input_manager_lock();
+
+
 #ifdef CONFIG_OTA_APP_AUTO_START
 	//app_switch_lock(1);
 	ota_app_start_ota_upgrade();
@@ -466,7 +467,7 @@ static int _ota_exit(void)
 		return 0;
 
 	ota_view_deinit();
-	input_manager_unlock();
+
 	return 0;
 }
 
@@ -491,8 +492,8 @@ static void ota_thread_deal(void *p1, void *p2, void *p3)
 	param.data_buf_size = media_mem_get_cache_pool_size(OTA_UPGRADE_BUF,  AUDIO_STREAM_TTS);
 
 #ifdef CONFIG_PLAYTTS
-	tts_manager_wait_finished(true);
 	tts_manager_lock();
+	tts_manager_wait_finished(true);
 #endif
 
 	desktop_manager_lock();
@@ -527,6 +528,10 @@ static void _ota_create_sub_thread(void)
 {
 	uint8_t *thread_stack;
 	uint32_t thread_stack_size;
+
+#ifdef CONFIG_PLAYTTS
+	tts_manager_wait_finished(true);
+#endif
 
 	thread_stack = media_mem_get_cache_pool(OTA_THREAD_STACK,  AUDIO_STREAM_TTS);
 	thread_stack_size = media_mem_get_cache_pool_size(OTA_THREAD_STACK,  AUDIO_STREAM_TTS);

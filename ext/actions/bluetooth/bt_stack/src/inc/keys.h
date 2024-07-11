@@ -136,8 +136,6 @@ struct bt_keys_link_key *acts_bt_keys_find_link_key_store(const bt_addr_t *addr)
 void acts_bt_keys_link_key_clear(struct bt_keys_link_key *link_key);
 void acts_bt_keys_link_key_store(struct bt_keys_link_key *link_key);
 void acts_bt_keys_link_key_clear_store(const bt_addr_t *addr);
-/* for le keys clear */
-uint8_t acts_bt_keys_clear_by_addr(void *addr);
 
 /* BLE LTK manager */
 int acts_le_keys_find_link_key(const bt_addr_le_t *addr);

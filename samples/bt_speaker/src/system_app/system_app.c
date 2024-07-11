@@ -336,8 +336,12 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 					if(SELFAPP_CMD_CALLBACK == msg.cmd) {
 						selfapp_on_connect_event((msg.reserve >> 4)&0xF, msg.reserve&0xF, msg.value);
 					} else if(SELFAPP_CMD_ROLE_UPDATE == msg.cmd) {
-						selfapp_eq_cmd_switch_auracast(msg.value);
+						if(msg.value == 1 || msg.value == 2 || !msg.value){
+							selfapp_eq_cmd_switch_auracast(msg.value);
+						}
 						selfapp_notify_role();
+					}else if(SELFAPP_CMD_LASTING_STEREO_MODE_UPDATE == msg.cmd) {
+						selfapp_notify_lasting_stereo_status();
 					}
 				break;
 #endif

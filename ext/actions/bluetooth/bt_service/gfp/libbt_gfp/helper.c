@@ -369,6 +369,8 @@ void personalized_name_response(void)
         return;
     }
 
+	SYS_LOG_INF("%d %s",name_len,device_name);
+
     counter = (u8_t *)mem_malloc(COUNTER_SIZE);
     hamc_data = (u8_t *)mem_malloc(HMAC_SHA256_SIZE);
     nonce_aes = (u8_t *)mem_malloc(AES_NONCEZ_SIZE + PERSONALIZED_NAME_SIZE);
@@ -383,10 +385,6 @@ void personalized_name_response(void)
 	//ramdon = random();
 	bt_rand(&ramdon, 4);
 	memcpy(counter + 12,&ramdon,4);
-
-	name_len = bluetooth_provider->get_personalized_name(device_name);
-	//name_len = strlen(device_name);
-	SYS_LOG_INF("name_len %d",name_len);
 
 	memcpy(nonce_aes,counter + 8,AES_NONCEZ_SIZE);
 	tc_aes128_set_encrypt_key(ctx,ble_account_info.current_shared_key);

@@ -91,6 +91,7 @@ static void set_player_effect_output_mode(media_player_t *player)
 }
 
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
+#ifdef CONFIG_MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
 void bmr_mute_handler(struct thread_timer *ttimer,
 					     void *expiry_fn_arg)
 {
@@ -116,6 +117,7 @@ void bmr_mute_handler(struct thread_timer *ttimer,
 		}
 	}
 }
+#endif
 #endif
 
 int bmr_init_playback(void)
@@ -192,6 +194,7 @@ int bmr_init_playback(void)
 		chan_info.format, chan_info.sample, chan_info.channels,
 		chan_info.kbps, chan_info.duration);
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
+#ifdef CONFIG_MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
 	// Wait to make sure mute AMP when output zero data.
 	os_sleep(20 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
 	// mute AMP
@@ -201,6 +204,7 @@ int bmr_init_playback(void)
 	thread_timer_init(&bmr->mute_timer,
 			bmr_mute_handler, NULL);
 	thread_timer_start(&bmr->mute_timer, 0, 10);
+#endif
 #endif
 
 	bmr->player = media_player_open(&init_param);
@@ -308,10 +312,12 @@ int bmr_stop_playback(void)
 		NULL,NULL);
 
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
+#ifdef CONFIG_MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
 	extern void hm_ext_pa_start(void);
 	hm_ext_pa_start();
 	if (thread_timer_is_running(&bmr->mute_timer))
 		thread_timer_stop(&bmr->mute_timer);
+#endif
 #endif
 
 	media_player_fade_out(bmr->player, 10);
@@ -331,6 +337,14 @@ int bmr_stop_playback(void)
 	}
 
 	bmr->player_run = 0;
+
+#ifdef CONFIG_EXTERNAL_DSP_DELAY
+	// wait ext-dsp data flushed to avoid noise.
+	os_sleep(CONFIG_EXTERNAL_DSP_DELAY / 1000);
+#ifdef CONFIG_MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
+	// if mute AMP, should umute
+#endif
+#endif
 
 	SYS_LOG_INF("%p\n", bmr->player);
 

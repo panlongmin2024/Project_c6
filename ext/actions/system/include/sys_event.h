@@ -111,6 +111,7 @@ enum sys_event_e
     SYS_EVENT_MCU_FW_UPDATED,
 #endif
 
+    SYS_EVENT_STEREO_GROUP_INDICATION,
 };
 
 /** sys event ui map structure */

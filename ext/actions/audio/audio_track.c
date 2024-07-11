@@ -333,11 +333,15 @@ __ramfunc int _audio_track_request_more_data(void *handle, uint32_t reason)
 			}
 			goto exit;
 		} else {
-			read_len = _stream_get_length(audio_track, audio_track->audio_stream);
-			if (read_len > audio_track->pcm_frame_size / 2)
-				read_len = audio_track->pcm_frame_size / 2;
-			if (read_len < 0)
+			stream_length = _stream_get_length(audio_track, audio_track->audio_stream);
+			if (stream_get_length < 0)
 				goto exit;
+			else if (stream_length < audio_track->pcm_frame_size / 2){
+				if (stream_length)
+					_stream_read(audio_track, audio_track->audio_stream, buf, stream_length);
+				memset(buf + stream_length, 0, read_len - stream_length);
+				goto flush_exception;
+			}
 		}
 	} else {
 		printk_cnt = 0;
@@ -355,6 +359,7 @@ __ramfunc int _audio_track_request_more_data(void *handle, uint32_t reason)
 		_aduio_track_update_output_samples(audio_track, read_len);
 	}
 
+flush_exception:
 	if (audio_track->timeline) {
 		timeline_trigger_listener(audio_track->timeline);
 	}
@@ -923,9 +928,9 @@ int audio_track_flush(struct audio_track_t *handle)
 		SYS_LOG_INF("wait mix tts\n");
 		while(tts_merge_manager_is_running()
 			&& try_cnt++ < 450){
-			if(_stream_get_length(handle, handle->audio_stream) < handle->pcm_frame_size / 2){
-				acts_ringbuf_fill(stream_get_ringbuffer(handle->audio_stream),0,stream_get_space(handle->audio_stream));
-			}
+			// if(_stream_get_length(handle, handle->audio_stream) < handle->pcm_frame_size / 2){
+			// 	acts_ringbuf_fill(stream_get_ringbuffer(handle->audio_stream),0,stream_get_space(handle->audio_stream));
+			// }
 			os_sleep(1);
 		}
 		SYS_LOG_INF("wait mix tts end %d\n",try_cnt);

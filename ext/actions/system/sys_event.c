@@ -69,7 +69,8 @@ void sys_event_send_message_new(uint32_t message, uint8_t cmd, void* extra_data,
 	if (bt_manager_audio_get_letws_handle() &&
 		message == MSG_SYS_EVENT &&
 		cmd != SYS_EVENT_MAX_VOLUME &&
-		cmd != SYS_EVENT_MIN_VOLUME) {
+		cmd != SYS_EVENT_MIN_VOLUME &&
+		cmd != SYS_EVENT_POWER_OFF) {
 		/* Tws master/slave will sync volume by pa */
 		broadcast_tws_vnd_send_sys_event(cmd);
 	}
@@ -121,7 +122,8 @@ void sys_event_notify(uint32_t event)
 #ifdef CONFIG_BT_LETWS
 	if (bt_manager_audio_get_letws_handle() &&
 		event != SYS_EVENT_MAX_VOLUME &&
-		event != SYS_EVENT_MIN_VOLUME) {
+		event != SYS_EVENT_MIN_VOLUME &&
+		event != SYS_EVENT_POWER_OFF) {
 		/* Tws master/slave will sync volume by pa */
 		broadcast_tws_vnd_send_sys_event(event);
 	}

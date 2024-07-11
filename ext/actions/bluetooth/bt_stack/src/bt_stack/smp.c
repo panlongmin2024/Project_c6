@@ -3037,7 +3037,9 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		rsp->resp_key_dist &= SEND_KEYS_SC;
 
 		/*Fix GAP/SEC/SEM/BI-09-C, if both support SC, reject key size < BT_SMP_MAX_ENC_KEY_SIZE*/
-		conn->required_sec_level = BT_SECURITY_L4;
+		if (get_encryption_key_size(smp) != BT_SMP_MAX_ENC_KEY_SIZE) {
+			return BT_SMP_ERR_ENC_KEY_SIZE;
+		}
 	}
 
 	if ((rsp->auth_req & BT_SMP_AUTH_CT2) &&

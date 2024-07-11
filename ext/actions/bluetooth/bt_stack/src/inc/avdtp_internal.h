@@ -247,9 +247,10 @@ struct bt_avdtp_sep {
 struct bt_avdtp {
 	struct bt_l2cap_br_chan br_chan;
 	uint8_t session_priority:3;
-	uint8_t role:3;				/* Source/sink/media role */
+	uint8_t role:2;				/* Source/sink/media role */
 	uint8_t intacp_role:1;			/* As initial or accept */
 	uint8_t connected:1;			/* A2dp connect or not */
+	uint8_t used:1;	
 };
 
 struct bt_avdtp_conn {

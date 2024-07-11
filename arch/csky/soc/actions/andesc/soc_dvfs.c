@@ -21,8 +21,6 @@
 #define ACT_LOG_MODEL_ID ALF_MODEL_SOC_DVFS
 
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
-#define SOC_DVFS_PRE_CHANGE		(0)
-#define SOC_DVFS_POST_CHANGE		(1)
 
 struct dvfs_manager {
 	struct k_sem lock;
@@ -33,6 +31,9 @@ struct dvfs_manager {
 	struct dvfs_level *dvfs_level_tbl;
 
 };
+
+static sys_dlist_t dvfs_notify_list = SYS_DLIST_STATIC_INIT(&dvfs_notify_list);
+
 
 /**
  * 1/ The following CPU&DSP clock frequencies are forbidden.
@@ -50,32 +51,32 @@ struct dvfs_manager {
 static struct dvfs_level default_soc_dvfs_table[] = {
 	/* level                       enable_cnt cpu_freq,  dsp_freq, ahb_freq, vdd_volt  */
 	{SOC_DVFS_LEVEL_IDLE,              0,         60,        60,      30,        1100}, /* CPU:60 DSP:60 HCLK:30 */
-	{SOC_DVFS_LEVEL_MCU_PERFORMANCE,   0,          78,       78,      39,        1100}, /* CPU:78 DSP:78 HCLK:39  */
-	{SOC_DVFS_LEVEL_NORMAL,            0,         66,       132,      33,        1100}, /* CPU:66 DSP:132 HCLK:33 */
-	{SOC_DVFS_LEVEL_SINGLE_MUSIC,      0,         132,      132,     66,        1100},  /* CPU:132 DSP:132 HCLK:66 */
-	{SOC_DVFS_LEVEL_DSP_ENCOM_PERFM,   0,        132,       180,      61,        1150}, /* CPU:123 DSP:180 HCLK:61 */
-	{SOC_DVFS_LEVEL_DSP_PERFORMANCE,   0,        180,       180,      45,        1150}, /* CPU:180 DSP:180 HCLK:45 */
+	{SOC_DVFS_LEVEL_MCU_PERFORMANCE,   0,        180,       180,      90,        1300}, /* CPU:78 DSP:78 HCLK:39  */
+	{SOC_DVFS_LEVEL_NORMAL,            0,        180,       180,      90,        1300}, /* CPU:66 DSP:132 HCLK:33 */
+	{SOC_DVFS_LEVEL_SINGLE_MUSIC,      0,        180,       180,      90,        1300},  /* CPU:132 DSP:132 HCLK:66 */
+	{SOC_DVFS_LEVEL_DSP_ENCOM_PERFM,   0,        180,       180,      90,        1300}, /* CPU:123 DSP:180 HCLK:61 */
+	{SOC_DVFS_LEVEL_DSP_PERFORMANCE,   0,        180,       180,      90,        1300}, /* CPU:180 DSP:180 HCLK:45 */
 
 #ifdef CONFIG_SPDIF_IN_APP
 	{SOC_DVFS_LEVEL_ALL_PERFORMANCE,   0, SPDIF_RX_COREPLL_MHZ, SPDIF_RX_COREPLL_MHZ, 49, 1200}, /* CPU:198 DSP:198 HCLK:49 */
 #else
-	{SOC_DVFS_LEVEL_ALL_PERFORMANCE,   0,        180,       180,      45,        1150}, /* CPU:180 DSP:180 HCLK:45 */
+	{SOC_DVFS_LEVEL_ALL_PERFORMANCE,   0,        180,       180,      90,        1300}, /* CPU:180 DSP:180 HCLK:45 */
 #endif
 
-	{SOC_DVFS_LEVEL_HIGH_PERFORMANCE, 0,         198,       198,      49,        1200},
+	{SOC_DVFS_LEVEL_HIGH_PERFORMANCE, 0,         198,       198,      99,        1300},
 
 	/* LE audio slave */
-	{SOC_DVFS_LEVEL_LE_AUDIO_SLAVE_PERFORMANCE, 	   0,		129,	   258, 	 32,	 1150}, /* CPU:129 DSP:258 HCLK:32 */
-	{SOC_DVFS_LEVEL_MASTER_PERFORMANCE,0,        180,       234,      43,        1250}, /* CPU:175 DSP:234 HCLK:43 */
-	{SOC_DVFS_LEVEL_CSB_PERFORMANCE,   0,		 234,		234,	  58,        1250}, /* CPU:234 DSP:234 HCLK:58 */
+	{SOC_DVFS_LEVEL_LE_AUDIO_SLAVE_PERFORMANCE, 	0,        180,       180,      90,        1300}, /* CPU:129 DSP:258 HCLK:32 */
+	{SOC_DVFS_LEVEL_MASTER_PERFORMANCE,0,        180,       180,      90,        1300}, /* CPU:175 DSP:234 HCLK:43 */
+	{SOC_DVFS_LEVEL_CSB_PERFORMANCE,   0,        180,       180,      90,        1300}, /* CPU:234 DSP:234 HCLK:58 */
 	/* BR */
-	{SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE,0,		 234,		234,	  58,        1250}, /* CPU:234 DSP:234 HCLK:58 */
+	{SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, 0,		 234,		234,	  112,        1300}, /* CPU:234 DSP:234 HCLK:58 */
 	/* BR slave + LE audio master */
-	{SOC_DVFS_LEVEL_LE_AUDIO_BR_MASTER_PERFORMANCE,    0,		146,	   324, 	 35,     1250}, /* CPU:141 DSP:324 HCLK:35 */
+	{SOC_DVFS_LEVEL_LE_AUDIO_BR_MASTER_PERFORMANCE,    0,        171,       342,      86,        1300}, /* CPU:141 DSP:324 HCLK:35 */
 	/* USB device */
-	{SOC_DVFS_LEVEL_FULL_PERFORMANCE,  0,        171,       342,      42,        1300}, /* CPU:171 DSP:342 HCLK:42 */
+	{SOC_DVFS_LEVEL_FULL_PERFORMANCE,  0,        171,       342,      86,        1300}, /* CPU:171 DSP:342 HCLK:42 */
 	/* USB audio sink/source + LE audio master */
-	{SOC_DVFS_LEVEL_LE_AUDIO_USB_MASTER_PERFORMANCE,   0,		171,	   342, 	 42, 	 1300}, /* CPU:171 DSP:342 HCLK:42 */
+	{SOC_DVFS_LEVEL_LE_AUDIO_USB_MASTER_PERFORMANCE,   0,		171,	   342, 	 86, 	 1300}, /* CPU:171 DSP:342 HCLK:42 */
 };
 
 struct dvfs_manager g_soc_dvfs;
@@ -120,6 +121,53 @@ void soc_dvfs_dump_tbl(void)
 			dvfs_level->vdd_volt,
 			dvfs_level->enable_cnt);
 	}
+}
+
+static void dvfs_changed_notify(int state, uint8_t old_level_index, uint8_t new_level_index)
+{
+	struct dvfs_notifier *obj, *next;
+
+	struct dvfs_freqs dvfs_freqs_info = {0};
+	dvfs_freqs_info.state = state;
+	dvfs_freqs_info.old_level = old_level_index;
+	dvfs_freqs_info.new_level = new_level_index;
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&dvfs_notify_list, obj, next, node) {
+		if (obj->dvfs_notify_func_t)
+			obj->dvfs_notify_func_t(obj->user_data, &dvfs_freqs_info);
+	}
+}
+
+int dvfs_register_notifier(struct dvfs_notifier *notifier)
+{
+	struct dvfs_notifier *obj;
+
+	if (!notifier)
+		return -EINVAL;
+
+    SYS_DLIST_FOR_EACH_CONTAINER(&dvfs_notify_list, obj, node) {
+		if (obj == notifier) {
+			SYS_LOG_ERR("dvfs notifier:%p has already registered", notifier);
+			return -EEXIST;
+		}
+    }
+
+	sys_dlist_append(&dvfs_notify_list, &notifier->node);
+
+	SYS_LOG_DBG("dvfs register notifier:%p func:%p\n",
+			notifier, notifier->dvfs_notify_func_t);
+
+	return 0;
+}
+
+int dvfs_unregister_notifier(struct dvfs_notifier *notifier)
+{
+	if (!notifier)
+		return -EINVAL;
+
+	sys_dlist_remove(&notifier->node);
+
+	return 0;
 }
 
 static void soc_dvfs_corepll_changed_notify(int state, int old_corepll_freq, int new_corepll_freq)
@@ -175,6 +223,9 @@ static void soc_dvfs_sync(void)
 	}
 
 	/* send notify before clock setting */
+	dvfs_changed_notify(SOC_DVFS_PRE_CHANGE, old_dvfs_level->level_id, dvfs_level->level_id);
+
+	/* send notify before clock setting */
 	soc_dvfs_corepll_changed_notify(SOC_DVFS_PRE_CHANGE,
 		old_dsp_freq, dvfs_level->dsp_freq);
 
@@ -184,14 +235,17 @@ static void soc_dvfs_sync(void)
 	/* adjust core/dsp/cpu clock */
 	soc_freq_set_cpu_clk(dvfs_level->dsp_freq, dvfs_level->cpu_freq, dvfs_level->ahb_freq);
 
-	/* send notify after clock setting */
-	soc_dvfs_corepll_changed_notify(SOC_DVFS_POST_CHANGE,
-		old_dsp_freq, dvfs_level->dsp_freq);
-
 	/* set vdd voltage after clock setting if new vdd is down */
 	if (dvfs_level->vdd_volt < old_volt) {
 		soc_pmu_set_vdd_voltage(dvfs_level->vdd_volt);
 	}
+
+	/* send notify after clock setting */
+	soc_dvfs_corepll_changed_notify(SOC_DVFS_POST_CHANGE,
+		old_dsp_freq, dvfs_level->dsp_freq);
+
+	/* send notify after clock setting */
+	dvfs_changed_notify(SOC_DVFS_POST_CHANGE, old_dvfs_level->level_id, dvfs_level->level_id);
 
 	g_soc_dvfs.cur_dvfs_idx = new_idx;
 }

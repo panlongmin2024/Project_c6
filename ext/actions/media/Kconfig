@@ -96,6 +96,11 @@ config MUSIC_EXTERNAL_EFFECT
 	help
 	This option enables external music effect
 
+config MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
+    bool
+    prompt "reset i2s/dac clk for bis/tws muti-device align"
+    default n
+
 config MUSIC_EXTERNAL_EFFECT_MIC_STREAM
 	bool
 	prompt "music externl effect mic stream"

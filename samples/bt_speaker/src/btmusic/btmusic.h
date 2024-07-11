@@ -111,6 +111,7 @@ struct btmusic_app_t {
 	uint8_t padv_tx_enable:1;
 	uint8_t wait_for_past_req:1;
 	uint8_t use_past:1;
+	uint8_t mute_player:1;
 	uint8_t broadcast_retransmit_number;
 	uint8_t broadcast_level_hold_time;
 

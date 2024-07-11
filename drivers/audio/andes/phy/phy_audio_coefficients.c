@@ -21,7 +21,7 @@
  *	2018/5/19: Created by mike.
  ****************************************************************************
  */
-
+#ifdef CONFIG_AUDIO_ASRC_ENABLE
 #include "../audio_inner.h"
 #include "../audio_asrc.h"
 #include <string.h>
@@ -818,3 +818,4 @@ void asrc_buf_init(void)
 	memcpy((void *)ADDR_ASRC_FIFO_0,asrc_buf0,sizeof(asrc_buf0));	
 }
 
+#endif

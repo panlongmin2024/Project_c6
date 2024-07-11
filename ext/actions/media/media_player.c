@@ -965,6 +965,7 @@ __ramfunc int media_player_audio_track_trigger_callback(void *audio_track, int w
 {
 	struct audio_track_t *handle = (struct audio_track_t *)audio_track;
 	if (handle->phy_dma){
+#ifdef CONFIG_MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
 		u32_t digtal_ctl_reg = AUDIO_DAC_REG_BASE;
 		if (audio_policy_get_out_channel_id(handle->stream_type) == AOUT_FIFO_I2STX0){
 			digtal_ctl_reg = AUDIO_I2STX0_REG_BASE;
@@ -974,6 +975,11 @@ __ramfunc int media_player_audio_track_trigger_callback(void *audio_track, int w
 			k_busy_wait(wait_us);
 			sys_write32(sys_read32(digtal_ctl_reg)|0x1,digtal_ctl_reg);
 		}
+#else
+		if (wait_us > 0){
+			k_busy_wait(wait_us);
+		}
+#endif
 		acts_dma_start((dma_reg_t *)handle->phy_dma);
 		printk("[fix]%d\n", wait_us);
 	} else {

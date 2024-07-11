@@ -15,6 +15,7 @@
 #ifdef CONFIG_BT_SELF_APP
 #include "selfapp_api.h"
 #endif
+#include <audio_track.h>
 
 #ifdef CONFIG_ACT_EVENT
 #include <app_act_event_id.h>
@@ -505,7 +506,8 @@ static int btmusic_handle_letws_disconnected(uint8_t *reason)
 #ifdef CONFIG_BT_LETWS
 	struct btmusic_app_t *btmusic = btmusic_get_app();
 
-	if(*reason == 0x8){
+	//08 link loss or ungroup
+	if(*reason == 0x8 || !selfapp_get_group_id()){
 		btmusic_stop_playback();
 		btmusic_exit_playback();
 
@@ -792,7 +794,7 @@ static void btmusic_switch_auracast()
 	struct btmusic_app_t *btmusic = btmusic_get_app();
 #ifdef CONFIG_BT_LETWS
 	if(3 == btmusic_get_auracast_mode()){
-		bt_mamager_letws_disconnect();
+		bt_mamager_letws_disconnect(BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		return;
 	}else if(1 == btmusic_get_auracast_mode()){
 #else
@@ -898,6 +900,7 @@ void btmusic_input_event_proc(struct app_msg *msg)
 	struct btmusic_app_t *btmusic =
 	    (struct btmusic_app_t *)btmusic_get_app();
 	int status;
+	struct audio_track_t * track = NULL;
     extern uint8_t ReadODM(void);
 	static bool pd_volt_flag = 0;	
 
@@ -1025,6 +1028,39 @@ void btmusic_input_event_proc(struct app_msg *msg)
 			btmusic_switch_auracast();
 		}
 		break;
+	case MSG_MUTE_PLAYER:
+		track = audio_system_get_track();
+
+		if (NULL != track && btmusic->playback_player_run) {
+			if (!btmusic->mute_player) {
+				media_player_fade_out(btmusic->playback_player, 60);
+
+				/** reserve time to fade out*/
+				os_sleep(audio_policy_get_bis_link_delay_ms() + 80);
+				audio_track_mute(track, 1);
+				btmusic->mute_player = 1;
+			}
+		}else {
+			btmusic->mute_player = 1;
+		}
+		break;
+	case MSG_UNMUTE_PLAYER:
+		track = audio_system_get_track();
+
+		if (NULL != track && btmusic->playback_player_run) {
+			if (btmusic->mute_player) {
+#ifdef CONFIG_EXTERNAL_DSP_DELAY
+				media_player_fade_in(btmusic->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
+#else
+				media_player_fade_in(btmusic->playback_player, 200);
+#endif
+				audio_track_mute(track, 0);
+				btmusic->mute_player = 0;
+			}
+		}else {
+			btmusic->mute_player = 0;
+		}
+		break;
 	default:
 		break;
 	}
@@ -1091,10 +1127,6 @@ void btmusic_tws_event_proc(struct app_msg *msg)
 {
 	struct btmusic_app_t *btmusic =
 	    (struct btmusic_app_t *)btmusic_get_app();
-#ifdef CONFIG_BT_LETWS
-	u8_t i;
-	bd_address_t bd_addr;
-#endif
 
 	SYS_LOG_INF("cmd: %d\n", msg->cmd);
 
@@ -1110,15 +1142,13 @@ void btmusic_tws_event_proc(struct app_msg *msg)
 #ifdef CONFIG_BT_LETWS
 				struct lasting_stereo_device_info info;
 #ifdef CONFIG_BT_SELF_APP
+				memset(&info,0,sizeof(info));
 				info.ch = selfapp_get_channel();
-				info.ch = info.ch == 1 ? 2 : 1;
+				if(info.ch){
+					info.ch = info.ch == 1 ? 2 : 1;
+				}
 				info.id = selfapp_get_group_id();
 				selfapp_get_group_name(info.name,sizeof(info.name));
-
-				btif_br_get_local_mac(&bd_addr);
-				for (i = 0; i < 6; i++) {
-					info.addr[i] = bd_addr.val[5-i];
-				}
 #endif
 				broadcast_tws_vnd_set_dev_info(&info);
 #endif

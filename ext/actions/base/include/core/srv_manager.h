@@ -102,18 +102,6 @@ struct service_entry_t
 };
 
 /**
- * @brief service manager init funcion
- *
- * This routine calls init service manager ,called by main
- *
- *
- * @return true if invoked succsess.
- * @return false if invoked failed.
- */
-
-bool srv_manager_init(void);
-
-/**
  * @brief Statically define and initialize service entry for service.
  *
  * The service entry define statically.

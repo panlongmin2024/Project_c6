@@ -2652,7 +2652,6 @@ void btif_pts_set_adv_ann_type(void);
 int btif_pts_start_adv(uint8_t adv_type);
 void btif_pts_test_set_flag(uint8_t          flags);
 void btif_pts_test_clear_flag(uint8_t flags);
-uint16_t btif_pts_test_get_attr_by_uuid(uint16_t uuid);
 void btif_pts_set_pacs_aac(struct bt_conn *conn, uint16_t src_aac, uint16_t sink_aac);
 void btif_pts_set_pacs_sac(struct bt_conn *conn, uint16_t src_aac, uint16_t sink_aac);
 uint16_t btif_pts_get_pacs_aac(struct bt_conn *conn, uint8_t is_sink);

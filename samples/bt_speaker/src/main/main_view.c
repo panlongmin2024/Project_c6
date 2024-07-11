@@ -107,6 +107,7 @@ static bool is_need_play_tts(u32_t ui_event)
 	        case UI_EVENT_MCU_FW_UPDATED:
 		case UI_EVENT_CHARGING_WARNING:
 		case UI_EVENT_REMOVE_CHARGING_WARNING:	
+		case UI_EVENT_STEREO_GROUP_INDICATION:
 			ret = true;
 			break;
 		default:

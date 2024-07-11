@@ -15,6 +15,9 @@
 #include "bqb_gap.h"
 #include "keys_br_store.h"
 
+
+extern void bt_ssp_set_bondable(bool enable);
+
 static void bqb_gap_write_scan_enable_cb(uint8_t status, uint8_t *data, uint16_t len);
 static void bqb_gap_inquiry_cb(struct bt_br_discovery_result *result);
 
@@ -35,17 +38,6 @@ static void bqb_gap_l2cap_disconnected_cb(struct bt_l2cap_chan *chan);
 static void bqb_gap_l2cap_encrypt_changed_cb(struct bt_l2cap_chan *chan, uint8_t status);
 static int bqb_gap_l2cap_recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf);
 static int bqb_gap_l2cap_accept_cb(struct bt_conn *conn, struct bt_l2cap_chan **chan);
-
-//#define BT_SSP_BONDABLE_ENABLE
-
-#ifdef BT_SSP_BONDABLE_ENABLE
-extern void bt_ssp_set_bondable(bool enable);
-#else
-void bt_ssp_set_bondable(bool enable)
-{
- //Need implement in the ssp.c
-}
-#endif
 
 typedef struct bqb_gap_context {
     // connection

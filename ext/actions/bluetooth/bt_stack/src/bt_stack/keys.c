@@ -357,19 +357,6 @@ void bt_keys_clear(struct bt_keys *keys)
 	(void)memset(keys, 0, sizeof(*keys));
 }
 
-uint8_t acts_bt_keys_clear_by_addr(void *addr)
-{
-	int i = 0;
-	uint8_t ret = 0;
-	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
-		if (!bt_addr_le_cmp(&key_pool[i].addr, (const bt_addr_le_t *)addr)) {
-			bt_keys_clear(&key_pool[i]);
-			ret = 1;
-		}
-	}
-	return ret;
-}
-
 #if defined(CONFIG_BT_PROPERTY)
 int bt_keys_store(struct bt_keys *keys)
 {

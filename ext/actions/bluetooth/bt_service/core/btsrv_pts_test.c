@@ -175,11 +175,6 @@ void btsrv_pts_test_clear_flag(uint8_t flags)
 	pts_test_clear_flag(flags);
 }
 
-uint16_t btsrv_pts_test_get_attr_by_uuid(uint16_t uuid)
-{
-	return pts_test_get_attr_by_uuid(uuid);
-}
-
 void btsrv_pts_set_adv_ann_type(void)
 {
 	s_pts_ctx.adv_ann_type = 1;

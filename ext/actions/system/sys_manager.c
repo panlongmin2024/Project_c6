@@ -65,11 +65,7 @@ int system_restore_factory_config(void)
 void system_pre_init(void)
 {
 	msg_manager_init();
-
-	srv_manager_init();
-
 	app_manager_init();
-
 }
 
 void system_init(void)

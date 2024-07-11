@@ -1772,9 +1772,6 @@ int hostif_bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
-	if (pts_test_is_flag(PTS_TEST_FLAG_PADV)) {
-		return 0;
-	}
 
 #ifdef CONFIG_BT_LE_ATT
 	int prio, ret;

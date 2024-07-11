@@ -86,6 +86,7 @@ static const struct sys_event_ui_map sys_event_map[] = {
 	{SYS_EVENT_MCU_FW_SUCESS, UI_EVENT_MCU_FW_SUCESS, false},
 	{SYS_EVENT_MCU_FW_FAIL, UI_EVENT_MCU_FW_FAIL, false},
 	{SYS_EVENT_MCU_FW_UPDATED, UI_EVENT_MCU_FW_UPDATED, false},
+	{SYS_EVENT_STEREO_GROUP_INDICATION, UI_EVENT_STEREO_GROUP_INDICATION, false},
 };
 
 int system_event_map_init(void)

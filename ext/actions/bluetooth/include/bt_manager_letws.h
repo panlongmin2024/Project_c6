@@ -43,8 +43,8 @@ uint16_t bt_manager_letws_get_handle(void);
 int bt_mamager_letws_connected(uint16_t handle);
 void bt_mamager_letws_disconnected(uint16_t handle, uint8_t role, uint8_t reason);
 int bt_mamager_set_remote_ble_addr(bt_addr_le_t *addr);
-void bt_manager_letws_start_pair_search(uint8_t role);
-int bt_mamager_letws_disconnect(void);
+void bt_manager_letws_start_pair_search(uint8_t role,int time_out_s);
+int bt_mamager_letws_disconnect(int reason);
 int bt_mamager_letws_reconnect(void);
 void bt_manager_letws_reset(void);
 

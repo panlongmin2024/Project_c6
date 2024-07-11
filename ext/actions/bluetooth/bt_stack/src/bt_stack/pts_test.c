@@ -31,11 +31,6 @@ uint8_t bt_is_pts_test(void)
 	return bt_internal_is_pts_test();
 }
 
-uint8_t bt_pts_clear_keys(void * bt_addr)
-{
-	return acts_bt_keys_clear_by_addr(bt_addr);
-}
-
 static uint8_t s_pts_test_flags = 0;
 
 void pts_test_set_flag(pts_test_flags_e flags)
@@ -56,14 +51,5 @@ uint8_t pts_test_is_flag(pts_test_flags_e flag)
 	}
 #endif
 	return 0;
-}
-
-uint16_t pts_test_get_attr_by_uuid(uint16_t uuid)
-{
-#ifdef CONFIG_BT_PTS_TEST
-	return bt_gatt_get_attr_by_uuid(uuid);
-#else
-	return 0;
-#endif
 }
 

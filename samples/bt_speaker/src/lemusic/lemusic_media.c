@@ -527,6 +527,11 @@ int lemusic_stop_playback(void)
 
 	MSG_SEND_TIME_STAT_STOP();
 
+#ifdef CONFIG_EXTERNAL_DSP_DELAY
+	// wait ext-dsp data flushed to avoid noise.
+	os_sleep(CONFIG_EXTERNAL_DSP_DELAY / 1000);
+#endif
+
 	SYS_LOG_INF("%p\n", slave->playback_player);
 
 	return 0;

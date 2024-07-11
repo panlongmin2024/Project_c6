@@ -439,6 +439,13 @@ config AUDIO_SOFT_ANTIPOP_ENABLE
 	help
 	Enable soft antipop or not.
 
+config AUDIO_ASRC_ENABLE
+	bool
+	prompt "enable asrc or not"
+	default n
+	help
+	Enable asrc or not.
+
 config AUDIO_ASRC_ACTS_DEV_NAME
 	string "Device Name for Actions SoC audio asrc"
 	default "audio_asrc"

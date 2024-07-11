@@ -1726,7 +1726,7 @@ static void lemusic_switch_auracast()
 	struct lemusic_app_t *lemusic = lemusic_get_app();
 #ifdef CONFIG_BT_LETWS
 	if(lemusic_get_auracast_mode() == 3){
-		bt_mamager_letws_disconnect();
+		bt_mamager_letws_disconnect(BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		return;
 	}else if (lemusic_get_auracast_mode() == 1) {
 #else

@@ -341,7 +341,7 @@ static int shell_dump_data_analy_clear_all_record(int argc, char *argv[])
 #ifdef CONFIG_BT_LETWS
 
 int bt_mamager_set_remote_ble_addr(bt_addr_le_t *addr);
-void bt_manager_letws_start_pair_search(uint8_t role);
+void bt_manager_letws_start_pair_search(uint8_t role,int time_out_s);
 
 static int str2bt_addr(const char *str, bt_addr_t *addr)
 {
@@ -392,7 +392,7 @@ static int shell_ble_scan_enable(int argc, char *argv[])
     bt_mamager_set_remote_ble_addr(&remote_ble_addr);
 
 	//bt_manager_audio_le_resume_scan();
-    bt_manager_letws_start_pair_search(BTSRV_TWS_MASTER);
+    bt_manager_letws_start_pair_search(BTSRV_TWS_MASTER,60);
 	return 0;
 }
 
@@ -419,7 +419,7 @@ static int shell_ble_adv_enable(int argc, char *argv[])
 
    	//bt_manager_audio_le_resume_adv();
 	//bt_manager_letws_adv_start(1);
-	bt_manager_letws_start_pair_search(BTSRV_TWS_SLAVE);
+	bt_manager_letws_start_pair_search(BTSRV_TWS_SLAVE,60);
 	return 0;    
 }
 

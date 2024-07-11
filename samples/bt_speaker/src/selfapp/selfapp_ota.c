@@ -23,7 +23,7 @@
 #define OTADFU_REMAIN_DATABUF_SIZE (1024)
 #define OTADFU_READ_BLOCK    (512)
 
-#define OTADFU_READ_TIMEOUT (3*1000)
+#define OTADFU_READ_TIMEOUT (5*1000)
 #define OTADFU_CMD_TIMEOUT  (1 * 1000)
 
 #define OTADFU_HEADER_DATA_SIZE (4 * 1024)
@@ -453,8 +453,15 @@ static int dfu_data_check_recv_seq(otadfu_handle_t * otadfu, uint8_t sequence, u
 	otadfu->data_sequence = sequence;
 
 	if(otadfu->last_index == 0xffff){
-		otadfu->last_index = sequence;
-		otadfu->last_frame_checksum = fram_checksum;
+		if(sequence == 0){
+			otadfu->last_index = sequence;
+			otadfu->last_frame_checksum = fram_checksum;
+		}else{
+			//illegal seq
+			otadfu->data_sequence = 0;
+			dfureport_state_error();
+			return -EIO;
+		}
 	}else{
 		if(((otadfu->last_index + 1) & 0xff) == sequence){
 			//printk("recv seq %x real seq %x len %u total len %u\n", sequence, (otadfu->last_index + 1), len, otadfu->recv_size);
@@ -468,7 +475,6 @@ static int dfu_data_check_recv_seq(otadfu_handle_t * otadfu, uint8_t sequence, u
 				//return -EIO;
 
 				if(otadfu->last_frame_checksum == fram_checksum){
-					otadfu->flag_no_send_ack = true;
 					printk("recv same frame drop!!!\n");
 					return -EIO;
 				}
@@ -844,7 +850,7 @@ static void _selfapp_ota_app_cmd_thread(void *p1, void *p2, void *p3)
 		}else{
 			if(otadfu->state == DFUSTA_DOWNLOADING){
 				SYS_LOG_ERR("wait cmd timeout!");
-				dfureport_state_sequence(otadfu->state, otadfu->data_sequence);
+				dfureport_state(otadfu->state);
 			}
 
 			printk("wait cmd timeout %d\n", otadfu->thread_need_terminated);
@@ -881,7 +887,7 @@ static void ota_app_cmd_thread_stop(otadfu_handle_t *otadfu)
 
 	os_mutex_unlock(&otadfu_mutex);
 
-	while(!otadfu->thread_terminated){
+	while(otadfu->app_cmd_thread && !otadfu->thread_terminated){
 		os_sem_give(&otadfu->read_sem);
 		os_sleep(1000);
 		printk("wait ota app cmd thread exit\n");
@@ -1169,6 +1175,7 @@ static void otadfu_callback(int event)
         }
     } else if(event == OTA_INIT_FINISHED) {
 		otadfu_set_state(DFUSTA_READY);
+		dfureport_state(otadfu->state);
     }
 }
 #endif				//CONFIG_OTA_SELF_APP
@@ -1193,10 +1200,6 @@ int otadfu_SetDfuData(u8_t sequence, u8_t * data, int len)
 	ret = dfu_data_buf_write(otadfu, &sequence, &data, len);
 
 	if(ret < 0){
-		if(otadfu->flag_no_send_ack){
-			otadfu->flag_no_send_ack = false;
-			return 0;
-		}
 		dfureport_state_sequence(otadfu->state, otadfu->data_sequence);
 		return ret;
 	}
@@ -1282,7 +1285,7 @@ int otadfu_ReqDfuStart(dfu_start_t * param)
 {
 	int ret = -1;
 #ifdef CONFIG_OTA_SELF_APP
-	int i;
+	//int i;
 	otadfu_handle_t *otadfu = NULL;
 
 	os_mutex_lock(&otadfu_mutex, OS_FOREVER);
@@ -1304,12 +1307,18 @@ int otadfu_ReqDfuStart(dfu_start_t * param)
     if(ret != 0) {
         dfureport_state_error();
     }else{
+#if 0
         // wait otadfu->state to be set DFUSTA_READY
         for(i = 0; i < 3*1000 && otadfu->state != DFUSTA_READY; i++) {
+#ifdef CONFIG_TASK_WDT
+			task_wdt_feed(TASK_WDT_CHANNEL_SYSTEM_APP);
+#endif
             os_sleep(1);
 			if((i % 1000) == 0){
 				printk("wait main thread switch to ota scene %d\n", otadfu->state);
 			}
+
+			ret = -EIO;
         }
         if(otadfu->state == DFUSTA_READY) {
             dfureport_state(otadfu->state);
@@ -1317,6 +1326,7 @@ int otadfu_ReqDfuStart(dfu_start_t * param)
         else {
             dfureport_state_error();
         }
+#endif
 	}
 
 	selfapp_log_inf("dfu reqDfuStart %s\n", ret == 0 ? "succ" : "fail");

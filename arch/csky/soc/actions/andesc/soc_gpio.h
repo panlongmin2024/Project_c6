@@ -11,6 +11,8 @@
 #ifndef	_ACTIONS_SOC_GPIO_H_
 #define	_ACTIONS_SOC_GPIO_H_
 
+#include <soc_regs.h>
+
 #define GPIO_MAX_PIN_NUM			57
 #define GPIO_MAX_GROUPS				(((GPIO_MAX_PIN_NUM) + 31) / 32)
 
@@ -72,7 +74,26 @@
 #define GPIO52_CTL_AD_SELECT          4
 #define GPIO53_CTL_AD_SELECT          4
 
-void debug_io_write(unsigned int pin, unsigned int value);
-void debug_io_out(int pin, int level);
+static inline void debug_io_init(unsigned int pin)
+{
+	sys_write32(0x60, GPIO_CTL(pin));
+}
+
+static inline void debug_io_write(unsigned int pin, unsigned int value)
+{
+	int bit_mask;
+
+	if(pin < 32){
+		bit_mask = 1 << pin;
+	}else{
+		bit_mask = (1 << (pin - 32));
+	}
+
+	if (value){
+		sys_write32(bit_mask, GPIO_REG_BSR(GPIO_REG_BASE, pin));
+	}else{
+		sys_write32(bit_mask, GPIO_REG_BRR(GPIO_REG_BASE, pin));
+	}
+}
 
 #endif /* _ACTIONS_SOC_GPIO_H_	*/

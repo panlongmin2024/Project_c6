@@ -738,9 +738,6 @@ int btif_broadcast_scan_stop(void)
 
 int btif_broadcast_source_create(struct bt_broadcast_source_create_param *param)
 {
-	if (pts_test_is_flag(PTS_TEST_FLAG_PADV)) {
-		return 0;
-	}
 	return btsrv_broadcast_source_create(param);
 }
 

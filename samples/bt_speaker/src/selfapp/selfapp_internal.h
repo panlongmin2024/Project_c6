@@ -17,7 +17,9 @@
 #define SPEC_LED_PATTERN_CONTROL
 #endif
 //#define SPEC_ONE_TOUCH_MUSIC_BUTTON
-//#define SPEC_REMOTE_CONTROL
+#ifdef CONFIG_BT_LETWS
+#define SPEC_REMOTE_CONTROL
+#endif
 //#define SPEC_EQ_GENERAL
 //#define SPEC_PARTYBOOST
 
@@ -146,6 +148,10 @@ typedef struct {
 #ifdef CONFIG_LOGSRV_SELF_APP
 	p_logsrv_callback_t log_cb;
 #endif
+	struct AURACAST_GROUP creat_group;
+	u8_t auracast_role;
+	u32_t time_out;
+	struct thread_timer mute_timer;
 } selfapp_context_t;
 
 extern selfapp_context_t *self_get_context(void);

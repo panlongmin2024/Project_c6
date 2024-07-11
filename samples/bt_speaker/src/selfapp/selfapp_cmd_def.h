@@ -211,6 +211,7 @@ enum AuracastGroupInformationKey {
 	AGIK_StereoGroupId,
 	AGIK_StereoGroupName,
 	AGIK_PartnerMac,
+	AGIK_CreatGroupTimeOut,
 	AGIK_NUM,
 };
 

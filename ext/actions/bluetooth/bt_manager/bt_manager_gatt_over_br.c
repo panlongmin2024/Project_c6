@@ -126,13 +126,13 @@ static int bt_manager_gatt_over_br_user_cb(struct bt_conn *conn, uint8_t connect
 	if(connected) {
 		memset(addr, 0, 13);
 		hex_to_str(addr, (uint8_t *)(info.br.dst->val), 6);
-		SYS_LOG_INF("connected MAC: %s, %p", addr, conn);
+		SYS_LOG_INF("conn:%s,%p", addr, conn);
 		stream_ble_connect_cb(conn, BT_CONN_TYPE_BR, (uint8_t *)(info.br.dst->val), true);
 #ifdef GATT_OVER_BR_QOS_SETUP
         bt_manager_gatt_over_br_setup_qos(conn);
 #endif
 	}else {
-		SYS_LOG_INF("disconnected: %p", conn);
+		SYS_LOG_INF("disconn: %p", conn);
 		stream_ble_connect_cb(conn, BT_CONN_TYPE_BR, (uint8_t *)(info.br.dst->val), false);
 		os_sem_give(&ind_sem);
 	}

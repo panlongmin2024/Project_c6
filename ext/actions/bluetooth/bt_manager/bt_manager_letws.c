@@ -21,7 +21,6 @@
 #include <property_manager.h>	
 
 #define CFG_BTMGR_LETWS_INFO	"BTMGR_LETWS_INFO"
-#define LETWS_AUTO_TIMEOUT      30
 
 static struct btmgr_letws_context_t letws_context;
 
@@ -150,17 +149,19 @@ void bt_manager_letws_stop_pair_search(void)
 	SYS_LOG_INF(":");
 }
 
-void bt_manager_letws_start_pair_search(uint8_t role)
+void bt_manager_letws_start_pair_search(uint8_t role,int time_out_s)
 {
 	struct bt_manager_context_t* bt_manager = bt_manager_get_context();
 	struct btmgr_letws_context_t* context = btmgr_get_letws_context();
+
+	bt_manager_letws_stop_pair_search();
 
 	os_mutex_lock(&context->letws_mutex, OS_FOREVER);
 	if(context->tws_role == BTSRV_TWS_NONE){
 		context->temp_tws_role = role;
 		context->tws_role = BTSRV_TWS_PENDING;
-	}else if(role != context->tws_role){
-		SYS_LOG_INF("pair failed\n");
+	}else if(role != context->tws_role || context->tws_handle){
+		SYS_LOG_INF("pair failed %d 0x%x\n",context->tws_role,context->tws_handle);
 		os_mutex_unlock(&context->letws_mutex);
 		return;
 	}
@@ -177,9 +178,13 @@ void bt_manager_letws_start_pair_search(uint8_t role)
 	} else {
 		;
 	}
-	os_delayed_work_submit(&bt_manager->letws_pair_search_work,LETWS_AUTO_TIMEOUT*1000);
+	if(time_out_s){
+		os_delayed_work_submit(&bt_manager->letws_pair_search_work,time_out_s*1000);
+	}else{
+		//os_delayed_work_submit(&bt_manager->letws_pair_search_work,60*1000);
+	}
 	os_mutex_unlock(&context->letws_mutex);
-	SYS_LOG_INF(":");
+	SYS_LOG_INF("t:%d",time_out_s);
 }
 
 
@@ -248,7 +253,7 @@ int bt_mamager_set_remote_ble_addr(bt_addr_le_t *addr)
 	return 0;
 }
 
-int bt_mamager_letws_disconnect(void)
+int bt_mamager_letws_disconnect(int reason)
 {
 	struct btmgr_letws_context_t* context = btmgr_get_letws_context();
 	struct bt_manager_context_t* bt_manager = bt_manager_get_context();
@@ -256,11 +261,12 @@ int bt_mamager_letws_disconnect(void)
 	os_mutex_lock(&context->letws_mutex, OS_FOREVER);
 
 	if(bt_manager->letws_mode_state == BT_LETWS_MODE_CONNECTED){
-		bt_manager_audio_conn_disconnect(context->tws_handle);
+		//bt_manager_audio_conn_disconnect(context->tws_handle);
+		btif_conn_disconnect_by_handle(context->tws_handle,reason);
 		bt_manager->letws_mode_state = BT_LETWS_MODE_DISCONNECT;
 	}
 	os_mutex_unlock(&context->letws_mutex);
-	SYS_LOG_INF(":");
+	SYS_LOG_INF(":%d",reason);
 	return 0;
 }
 
@@ -277,7 +283,7 @@ int bt_mamager_letws_reconnect(void)
 		context->le_remote_addr_valid = 1;
 		btif_audio_set_ble_tws_addr(&(context->remote_ble_addr));
 
-		bt_manager_letws_start_pair_search(context->info.dev_role);
+		bt_manager_letws_start_pair_search(context->info.dev_role,0);
 	}
 	os_mutex_unlock(&context->letws_mutex);
 	SYS_LOG_INF(":");
@@ -291,7 +297,7 @@ void bt_manager_letws_reset(void)
 
 	bt_manager_letws_stop_pair_search();
 	if (context->tws_role == BTSRV_TWS_MASTER) {
-		bt_mamager_letws_disconnect();
+		bt_mamager_letws_disconnect(BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 	bt_manager_clear_letws_info();
 	os_mutex_unlock(&context->letws_mutex);

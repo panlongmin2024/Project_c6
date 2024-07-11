@@ -173,15 +173,19 @@ static int bqb_a2dp_create_conn(char* role, bool conn_a2dp)
 		BT_ERR("role is error");
 		return -1;
 	}
-	s_bqb_a2dp_ctx.auto_conn_a2dp = conn_a2dp;
+	if (s_bqb_a2dp_ctx.conn) {
+		hostif_bt_a2dp_connect(s_bqb_a2dp_ctx.conn, s_bqb_a2dp_ctx.role);
+	} else {
+		s_bqb_a2dp_ctx.auto_conn_a2dp = conn_a2dp;
 
-	bqb_utils_read_pts_addr(&addr);
-	s_bqb_a2dp_ctx.conn = hostif_bt_conn_create_br(&addr, BT_BR_CONN_PARAM_DEFAULT);
-	if (!s_bqb_a2dp_ctx.conn) {
-		BT_ERR("create acl failed");
-		return -1;
+		bqb_utils_read_pts_addr(&addr);
+		s_bqb_a2dp_ctx.conn = hostif_bt_conn_create_br(&addr, BT_BR_CONN_PARAM_DEFAULT);
+		if (!s_bqb_a2dp_ctx.conn) {
+			BT_ERR("create acl failed");
+			return -1;
+		}
+		hostif_bt_conn_unref(s_bqb_a2dp_ctx.conn);
 	}
-	hostif_bt_conn_unref(s_bqb_a2dp_ctx.conn);
 	return 0;
 }
 
@@ -293,6 +297,8 @@ int bqb_a2dp_test_command_handler(int argc, char *argv[])
 		} else {
 			ret = -1;
 		}
+	} else if (!strcmp(cmd, "disconn_sig")) {
+		hostif_bt_a2dp_disconnect(s_bqb_a2dp_ctx.conn);
 	} else if (!strcmp(cmd, "regsrcep")) {
 		bqb_a2dp_a2dp_register_src_endpoint();
 	} else if (!strcmp(cmd, "setcfg")) {

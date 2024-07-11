@@ -17,6 +17,8 @@
 #include <app_launch.h>
 #include <media_player.h>
 #include <bt_manager.h>
+#include <broadcast.h>
+#include <app_ui.h>
 
 static bool bat_user_set = false;
 static u8_t bat_percents = 100;
@@ -99,10 +101,18 @@ int selfapp_set_indication(u8_t dev_idx)
 	int ret = -1;
 
 	if (dev_idx == 0) {
-		sys_event_notify_single(SYS_EVENT_WAKE_UP);
+		if(!selfapp_get_lasting_stereo_mode()){
+			selfapp_mute_player(1);
+		}
+		sys_event_notify_single(SYS_EVENT_STEREO_GROUP_INDICATION);
 		ret = 0;
 	} else if (dev_idx == 1) {
+#ifdef CONFIG_BT_LETWS
+		broadcast_tws_vnd_send_indication();
+		ret = 0;
+#else
 		selfapp_log_wrn("no twsdev\n");
+#endif
 	}
 
 	return ret;
@@ -124,6 +134,30 @@ u8_t selfapp_get_role(void)
 	}
 
 	return role;
+}
+
+u8_t selfapp_get_lasting_stereo_mode(void)
+{
+	u8_t mode, role;
+
+	mode = system_app_get_auracast_mode();
+
+	if (mode == 3 || mode == 4) {
+		role = 1;
+	} else {
+		role = 0;
+	}
+
+	return role;
+}
+
+u8_t selfapp_get_lasting_stereo_role(void)
+{
+	struct AURACAST_GROUP group;
+
+	selfapp_config_get_ac_group(&group);
+
+	return group.role;
 }
 
 /*
@@ -339,7 +373,16 @@ u8_t selfapp_get_manufacturer_data(u8_t * buf)
 	 */
 	role = selfapp_get_role() & 0x03;
 	bat = (selfapp_get_bat_level()) & 0x07;
+#ifdef CONFIG_BT_LETWS
+	if(selfapp_get_lasting_stereo_mode()){
+		ch = (selfapp_get_channel() + 1) & 0x03;
+	}else{
+		ch = 1;
+	}
+#else
 	ch = (selfapp_get_channel() + 1) & 0x03;
+#endif
+
 	buf[i++] = ch << 5 | bat << 2 | role;
 
 	//Note: VIMICRO uses little endian to transfer CRC16, and we follows it.
@@ -387,17 +430,17 @@ void selfapp_switch_lasting_stereo_mode(int enable)
 	selfapp_config_get_ac_group(&group);
 
 	if(enable){
-		if(group.role == 0x1){
-			memcpy(addr.a.val,group.addr,6);
+		if(selfctx->creat_group.role == 0x1){
+			memcpy(addr.a.val,selfctx->creat_group.addr,6);
 #ifdef CONFIG_BT_LETWS
 			bt_mamager_set_remote_ble_addr(&addr);
-			bt_manager_letws_start_pair_search(BTSRV_TWS_MASTER);
+			bt_manager_letws_start_pair_search(BTSRV_TWS_MASTER,selfctx->time_out);
 #endif
-		}else if(group.role == 0x2){
-			memcpy(addr.a.val,group.addr,6);
+		}else if(selfctx->creat_group.role == 0x2){
+			memcpy(addr.a.val,selfctx->creat_group.addr,6);
 #ifdef CONFIG_BT_LETWS
 			bt_mamager_set_remote_ble_addr(&addr);
-			bt_manager_letws_start_pair_search(BTSRV_TWS_SLAVE);
+			bt_manager_letws_start_pair_search(BTSRV_TWS_SLAVE,selfctx->time_out);
 #endif
 		}
 	}else{
@@ -417,3 +460,33 @@ void selfapp_set_lasting_stereo_group_info(struct AURACAST_GROUP *group){
 	selfapp_config_set_ac_group(group);
 }
 
+void selfapp_set_lasting_stereo_group_info_to_slave(struct AURACAST_GROUP *group){
+	selfapp_context_t *selfctx = self_get_context();
+
+	if (NULL == selfctx || NULL == group) {
+		return;
+	}
+
+	struct lasting_stereo_device_info info;
+	memset(&info,0,sizeof(info));
+	info.ch = group->ch;
+	info.id = group->id;
+	memcpy(info.name,group->name,strlen(group->name));
+
+	broadcast_tws_vnd_set_dev_info(&info);
+}
+
+void selfapp_mute_player(u8_t mute)
+{
+	selfapp_log_inf("mute %d\n", mute);
+
+	struct app_msg msg = { 0 };
+
+	msg.type = MSG_INPUT_EVENT;
+	if(mute)
+		msg.cmd = MSG_MUTE_PLAYER;
+	else
+		msg.cmd = MSG_UNMUTE_PLAYER;
+	msg.value = 0;
+	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
+}

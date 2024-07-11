@@ -91,9 +91,18 @@ config USER_PAUSE_POLICY
 config BT_LETWS
   bool
   prompt "enable letws"
-  default n	
-  
-	
+  default n
+
+config HM_FLIP_SERIES
+  bool
+  prompt "harman filp series"
+  default n
+
+config HM_CHARGE_SERIES
+  bool
+  prompt "harman charge series"
+  default n
+
 menu "App Configuration"
 
 source "samples/bt_speaker/src/main/Kconfig"

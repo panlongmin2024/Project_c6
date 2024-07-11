@@ -481,6 +481,9 @@ int selfapp_deinit(void)
 		selfapp_routine_start_stop(0);
 		selfapp_connect_deinit();
 		self_set_context(NULL);
+		if (thread_timer_is_running(&selfctx->mute_timer)){
+			thread_timer_stop(&selfctx->mute_timer);
+		}
 		mem_free(selfctx);
 		selfapp_log_inf("deinited\n");
 		return 0;

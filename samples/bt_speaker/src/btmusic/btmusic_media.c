@@ -16,6 +16,7 @@
 #ifdef CONFIG_BT_SELF_APP
 #include "selfapp_api.h"
 #endif
+#include <audio_track.h>
 
 #define SUPPORT_RETRANSMIT_NUM_ADJUST
 #define MEDIA_PACKET_TIME_THRESHOLD       20
@@ -89,6 +90,7 @@ static void set_player_effect_output_mode(media_player_t *player)
 }
 
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
+#ifdef CONFIG_MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
 static void btmusic_mute_handler(struct thread_timer *ttimer,
 					     void *expiry_fn_arg)
 {
@@ -114,6 +116,7 @@ static void btmusic_mute_handler(struct thread_timer *ttimer,
 		}
 	}
 }
+#endif
 #endif
 
 int btmusic_init_playback()
@@ -198,6 +201,7 @@ int btmusic_init_playback()
 		audio_policy_set_bis_link_delay_ms(broadcast_get_bis_link_delay(btmusic->qos));
 
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
+#ifdef CONFIG_MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
 		// Wait to make sure mute AMP when output zero data.
 		os_sleep(20 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
 		// mute AMP
@@ -208,6 +212,7 @@ int btmusic_init_playback()
 		thread_timer_init(&btmusic->mute_timer,
 			  btmusic_mute_handler, NULL);
 		thread_timer_start(&btmusic->mute_timer, 0, 10);
+#endif
 #endif
 	}
 #endif
@@ -313,11 +318,15 @@ int btmusic_start_playback(void)
 			media_player_audio_track_trigger_callback,audio_system_get_track());
 	}
 
+	if (btmusic->mute_player) {
+		audio_track_mute(audio_system_get_track(), 1);
+	}else{
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
-	media_player_fade_in(btmusic->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
+		media_player_fade_in(btmusic->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
 #else
-	media_player_fade_in(btmusic->playback_player, 200);
+		media_player_fade_in(btmusic->playback_player, 200);
 #endif
+	}
 	media_player_play(btmusic->playback_player);
 
 	btmusic->playback_player_run = 1;
@@ -344,10 +353,12 @@ int btmusic_stop_playback(void)
 		bt_manager_broadcast_stream_tws_sync_cb_register_1(btmusic->chan,
 			NULL,NULL);
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
+#ifdef CONFIG_MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
 		extern void hm_ext_pa_start(void);
 		hm_ext_pa_start();
 		if (thread_timer_is_running(&btmusic->mute_timer))
 			thread_timer_stop(&btmusic->mute_timer);
+#endif
 #endif
 	}
 
@@ -372,6 +383,14 @@ int btmusic_stop_playback(void)
 
 	btmusic->media_opened = 0;
     btmusic->pcm_time = 0;
+
+#ifdef CONFIG_EXTERNAL_DSP_DELAY
+	// wait ext-dsp data flushed to avoid noise.
+	os_sleep(CONFIG_EXTERNAL_DSP_DELAY / 1000);
+#ifdef CONFIG_MUSIC_MULTI_DEVICE_ALIGN_TO_RESET_CLK
+	// if mute AMP, should umute
+#endif
+#endif
 
 	return 0;
 }

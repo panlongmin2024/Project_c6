@@ -8,6 +8,8 @@
 
 #define AG_EVENT_RING  "RING"
 #define AG_EVENT_CLIP  "+CLIP:\"1234567\",129"
+
+#define AG_EVENT_NEGOTIATION_LC3_SWB  "+BCS:3"
 #define AG_EVENT_NEGOTIATION_SBC  "+BCS:2"
 #define AG_EVENT_NEGOTIATION_CVSD  "+BCS:1"
 #define AG_EVENY_SETUP_AUDIO_CONN  "AT+BCC"
@@ -23,6 +25,7 @@
 typedef enum {
 	BT_HFP_AG_CODEC_TYPE_CVSD = 0x1,
 	BT_HFP_AG_CODEC_TYPE_MSBC = 0x2,
+	BT_HFP_AG_CODEC_TYPE_LC3_SWB = 0x03
 } bt_hfp_ag_codec_e;
 
 typedef enum{
@@ -75,7 +78,7 @@ typedef struct {
 extern int atoi(const char* str);
 
 static bqb_hfp_ag_ctx_t s_bqb_hfp_ag_ctx;
-
+uint16_t s_ag_set_content_format = 0x0060;
 static int bqb_hfp_ag_conn_ag();
 
 
@@ -89,7 +92,7 @@ static void bqb_ag_acl_connected(struct bt_conn *conn, u8_t err)
 	}
 
 	if (err) {
-		hostif_bt_conn_unref(s_bqb_hfp_ag_ctx.conn);
+		//hostif_bt_conn_unref(s_bqb_hfp_ag_ctx.conn);
 		s_bqb_hfp_ag_ctx.conn = NULL;
 	} else {
 		s_bqb_hfp_ag_ctx.conn = conn;
@@ -210,6 +213,8 @@ static int bqb_hfp_ag_callin(char* codec)
 {
 	if (!strcmp(codec, "msbc")){
 		s_bqb_hfp_ag_ctx.codec = 2;
+	} else if (!strcmp(codec, "lc3")) {
+		s_bqb_hfp_ag_ctx.codec = 3;
 	} else {
 		s_bqb_hfp_ag_ctx.codec = 1;
 	}
@@ -224,7 +229,9 @@ static int bqb_hfp_ag_callin(char* codec)
 
 static int bqb_hfp_ag_setcodec(bt_hfp_ag_codec_e codec)
 {
-	if (codec == 2){
+	if (codec == 3) {
+		hostif_bt_hfp_ag_send_event(s_bqb_hfp_ag_ctx.conn, AG_EVENT_NEGOTIATION_LC3_SWB, strlen(AG_EVENT_NEGOTIATION_SBC));
+	} else if (codec == 2){
 		hostif_bt_hfp_ag_send_event(s_bqb_hfp_ag_ctx.conn, AG_EVENT_NEGOTIATION_SBC, strlen(AG_EVENT_NEGOTIATION_SBC));
 	} else {
 		hostif_bt_hfp_ag_send_event(s_bqb_hfp_ag_ctx.conn, AG_EVENT_NEGOTIATION_CVSD, strlen(AG_EVENT_NEGOTIATION_CVSD));
@@ -272,10 +279,11 @@ static int bqb_ag_ag_at_cmd(struct bt_conn *conn, uint8_t at_type, void *param)
 
 		case AT_CMD_BCS:
 		{
-			BT_INFO("Remote Codec Negoa...%s", (uint8_t*)param);
-			hostif_bt_hfp_ag_send_event(s_bqb_hfp_ag_ctx.conn, AG_EVENY_SETUP_AUDIO_CONN, strlen(AG_EVENY_SETUP_AUDIO_CONN));
-			k_sleep(200);
-			if (((char*)param)[0] - '0' == s_bqb_hfp_ag_ctx.codec) {
+			struct at_cmd_param* at_param = (struct at_cmd_param*)param;
+			BT_INFO("Remote Codec: %d", at_param->val_u32t);
+			//hostif_bt_hfp_ag_send_event(s_bqb_hfp_ag_ctx.conn, AG_EVENY_SETUP_AUDIO_CONN, strlen(AG_EVENY_SETUP_AUDIO_CONN));
+			//k_sleep(200);
+			if (at_param->val_u32t == s_bqb_hfp_ag_ctx.codec) {
 				hostif_bt_conn_create_sco(s_bqb_hfp_ag_ctx.conn);
 				s_bqb_hfp_ag_ctx.call_state = BQB_CALL_STATE_CREATE_AUDIO_CONN;
 			}
@@ -508,6 +516,10 @@ int bqb_hfp_ag_test_command_handler(int argc, char *argv[])
 			strcpy(s_bqb_hfp_ag_ctx.call2_status, argv[2]);
 		}
 		s_bqb_hfp_ag_ctx.call_status_idx++;
+	} else if (!strcmp(cmd, "setcnt")) {
+		s_ag_set_content_format = atoi(argv[2]);
+	} else if (!strcmp(cmd, "setcodec")) {
+		s_bqb_hfp_ag_ctx.codec = atoi(argv[2]);
 	} else {
 		BT_ERR("Error Cmd...");
 	}

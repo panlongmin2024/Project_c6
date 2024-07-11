@@ -36,7 +36,7 @@
 #define FULL_RANGE_PA_VALUE 0x28
 
 #define MAX_SBC_DYNAMIC_TIME  (90)
-#define MAX_AAC_DYNAMIC_TIME  (180)
+#define MAX_AAC_DYNAMIC_TIME  (100)
 #define GET_LIMIT_VALUE(a, limit)    (a > limit ? limit : a)
 
 static const struct audio_policy_t *user_policy = NULL;
@@ -215,9 +215,9 @@ int audio_policy_get_out_pcm_channel_num(uint8_t stream_type)
 
 	if ( (user_policy && (user_policy->audio_out_channel & AUDIO_CHANNEL_I2STX))
 	  || (user_policy && (user_policy->audio_out_channel & AUDIO_CHANNEL_SPDIFTX))) {
-		  if (audio_policy_get_out_channel_id(stream_type) != AOUT_FIFO_DAC0) {
-			 channel_num = 2;
-	  	}
+		//   if (audio_policy_get_out_channel_id(stream_type) != AOUT_FIFO_DAC0) {
+		// 	 channel_num = 2;
+		// }
 #ifdef CONFIG_I2STX_SLAVE_MCLKSRC_INTERNAL
 		if (user_policy->audio_out_channel == AUDIO_CHANNEL_I2STX) {
 			channel_num = 0;

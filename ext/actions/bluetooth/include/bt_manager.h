@@ -1632,6 +1632,15 @@ int bt_manager_bt_name_update(uint8_t *name, uint8_t len);
 uint32_t bt_manager_get_bt_name_crc_value(void);
 
 /**
+ * @brief
+ *
+ *  set aes ccm work mode 0:async mode 1:sync mode
+ *
+ * @param device name
+ */
+void bt_manager_set_aesccm_mode(uint8_t mode);
+
+/**
  * @} end defgroup bt_manager_apis
  */
 

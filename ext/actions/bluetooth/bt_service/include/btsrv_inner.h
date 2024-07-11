@@ -980,7 +980,6 @@ int btsrv_pts_process(struct app_msg *msg);
 void btsrv_pts_reset(void);
 void btsrv_pts_test_set_flag(uint8_t flags);
 void btsrv_pts_test_clear_flag(uint8_t flags);
-uint16_t btsrv_pts_test_get_attr_by_uuid(uint16_t uuid);
 void btsrv_pts_set_le_audio_evt_flag(audio_core_evt_flags_e flag);
 void btsrv_pts_clear_le_audio_evt_flag(audio_core_evt_flags_e flag);
 int btsrv_pts_start_adv(uint8_t adv_type);

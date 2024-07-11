@@ -25,13 +25,13 @@
 
 #define  PCM_DATA_EXCHANGE
 
-#define LAZY_DELAY 1000
+#define LAZY_DELAY 10
 #define WORK_DELAY 200
 #define BUSY_DELAY 1
 
-#define DUMP_BUF_SIZE (1024)
+#define DUMP_BUF_SIZE (1024*4)
 #define MAX_DUMP (5)
-#define MAX_DUMP_CURRENT (3)
+#define MAX_DUMP_CURRENT (1)
 
 #define STUB_BUF_SIZE ROUND_UP(STUB_COMMAND_HEAD_SIZE + 1 + (1024 + 1) * 2, 2)
 
@@ -58,6 +58,9 @@ struct DUMP_data {
 
 	uint8_t upload_status : 1;
 	uint8_t last_upload_status : 1;
+
+	uint8_t player_dumping:1;
+	uint8_t player_lost:1;
 
 	dump_ST_ModuleSel modesel;
 	struct acts_ringbuf* dump_bufs[ARRAY_SIZE(dump_tag_table)];
@@ -212,8 +215,31 @@ static int dump_prepare_data_upload(struct DUMP_data* data)
 			dump_tag_table[i], data->dump_bufs[i]);
 	}
 
+	data->player_dumping = 1;
 	return media_player_dump_data(player, ARRAY_SIZE(dump_tag_table),
 		dump_tag_table, data->dump_bufs);
+}
+
+static int dump_prepare_data_check_player(struct DUMP_data* data)
+{
+	media_player_t* player = media_player_get_current_dumpable_player();
+	if (data->player_dumping) {
+		if (!player) {
+			if (!data->player_lost){
+				data->player_lost = 1;
+				SYS_LOG_INF("player lost");
+			}
+		} else {
+			if (data->player_lost) {
+				SYS_LOG_INF("player reconfig");
+				data->player_lost = 0;
+				return media_player_dump_data(player, ARRAY_SIZE(dump_tag_table),
+					dump_tag_table, data->dump_bufs);
+			}
+		}
+	}
+
+	return 0;
 }
 
 static void dump_unprepare_data_upload(struct DUMP_data* data)
@@ -228,6 +254,8 @@ static void dump_unprepare_data_upload(struct DUMP_data* data)
 			data->dump_bufs[i] = NULL;
 		}
 	}
+
+	data->player_dumping = 0;
 }
 
 /* ASQT upload format*/
@@ -305,10 +333,10 @@ static int dump_upload_data(struct DUMP_data* data)
 
 static int dump_btcall_is_on(void)
 {
-	if (!media_player_get_current_dumpable_player()) {
-		SYS_LOG_DBG("no work player.\n");
-		return 0;
-	}
+	// if (!media_player_get_current_dumpable_player()) {
+	// 	SYS_LOG_DBG("no work player.\n");
+	// 	return 0;
+	// }
 
 	return 1;
 }
@@ -367,13 +395,17 @@ static void dump_prepare_works(void)
 		dump_data->last_run_status = dump_data->run_status;
 	}
 
+	dump_prepare_data_check_player(dump_data);
+
 	// Upload preparing work
 	if (dump_data->upload_status != dump_data->last_upload_status) {
 		if (dump_data->upload_status) {
-			SYS_LOG_INF("upload start");
+			if (!dump_data->player_lost) {
+				SYS_LOG_INF("upload start");
 #ifdef PCM_DATA_EXCHANGE
-			dump_prepare_data_upload(dump_data);
+				dump_prepare_data_upload(dump_data);
 #endif
+			}
 		} else {
 			SYS_LOG_INF("upload end");
 #ifdef PCM_DATA_EXCHANGE
@@ -429,6 +461,7 @@ void tool_dump_loop(void)
 		// Download, Upload, and tool setting update.
 		if (dump_data->upload_status) {
 			// Need to feed and dumpout stream in time, so could not wait too long time.
+
 #ifdef PCM_DATA_EXCHANGE
 			for (int i = 0; i < WORK_DELAY / BUSY_DELAY; i++) {
 				dump_upload_data(dump_data);
@@ -438,7 +471,7 @@ void tool_dump_loop(void)
 			os_sleep(WORK_DELAY);
 #endif
 		} else {
-			SYS_LOG_INF("Not upload.");
+			// SYS_LOG_INF("Not upload.");
 			os_sleep(LAZY_DELAY);
 		}
 	}

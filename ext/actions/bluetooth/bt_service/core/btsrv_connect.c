@@ -1454,7 +1454,6 @@ static void btsrv_autoconn_profile_connecting_proc(void)
 		SYS_LOG_ERR("connecting_proc need to fix!!!");
 		goto try_other_dev;
 	}
-
 	auto_conn->profile_reconnect_times += 1;
 
 	if (auto_conn->profile_reconnect_times > auto_conn->profile_try) {

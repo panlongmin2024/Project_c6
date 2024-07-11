@@ -8,6 +8,8 @@
 
 #include <thread_timer.h>
 #include <i2c.h>
+#include <led_manager.h>
+#include <mem_manager.h>
 
 #include <gpio.h>
 #include <pinmux.h>
@@ -405,15 +407,14 @@ static void mps_ota_get_status(u8_t *status)
 
 	SYS_LOG_INF("  %x\n", *status);
 }
+
 int OTA_PD(void)
 {
 	// struct device *iic_dev;
 	// union dev_config config = {0};
-
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	
 	printf("live  OTA_PD start \n");
-	
 	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
 	k_sleep(10); //delay 10ms
 	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
@@ -468,6 +469,7 @@ int OTA_PD(void)
 	int data_len = sizeof(fw_data);//fw_data.Length;
 	int res = data_len % 128;
 	int frame_index = 0;
+	u8_t power_led_cnt = 0;
 	printf("live  OTA_PD 444 data_len = %d \n",data_len);
 	
 	for(int i=0; i<(data_len-res); i+=128)
@@ -479,17 +481,25 @@ int OTA_PD(void)
 		frame[0]= frame_index/4;
 		//printf("live  OTA_PD 444 frame_index = %02x\n ",frame_index/8);
 		memcpy(&frame[1], &fw_data[i], 128);
-		//for(int j =0 ;j < 65;j++)
-		//	printf("0x%02x,",frame[j]);
-			//frame[513]=crc_value;
-		// i2c_write(iic_dev, frame, 65, 0xAF);
-		// i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR,0xAF, frame, 129);
-
+	
 		pd_mps52002_write_reg_value(PD_MPS_AF_REG, frame, 129);
-
 		frame_index++;
 		if(frame_index % 4 == 0)
 		{
+		 if(power_led_cnt%6 == 0)
+		 {
+		   if((power_led_cnt/6)%2 == 0)
+		   	{
+		   	  SYS_LOG_INF("LED_On \n   ");
+			  led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+		   	}
+		    else if((power_led_cnt/6)%2 == 1)
+		    {
+             SYS_LOG_INF("LED_OFF   \n");
+			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+			}
+		 }
+			power_led_cnt++;
 			k_sleep(60); //delay 50ms before read index and crc status
 		}
 		
@@ -549,6 +559,7 @@ int OTA_PD(void)
 	if ( count <= 0) 
 	{	 
 		mps_ota_set_status(0x55);
+	    led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 		printf("[%s %d] OTA_PD FAIL!!!!!!!!!!!!!!!!!!\n", __func__, __LINE__);
 		return 0;
 	}
@@ -567,6 +578,8 @@ int OTA_PD(void)
 	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
 	k_sleep(10); //delay 10ms
 	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
+	k_sleep(200); //delay 10ms
+	led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 	printf("[%s,%d] OTA_PD end\n", __FUNCTION__, __LINE__);
 	return 1;
 }	
@@ -587,16 +600,16 @@ static void pd_mps52002_status_value(void)
     // i2c_configure(iic_dev, config.raw);
 
    
-	pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2);
-	pd_mps52002->pd_version = buf[0];
-
-    if(ota_flag == 0x55 ||(pd_mps52002->pd_version < mps_pd_current_version))
+	if(!pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2))
 	{
-	  	OTA_PD();
-	 	k_sleep(100);
-    }
-	
-    printf("live debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
+	   printf("live debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
+	   pd_mps52002->pd_version = buf[0];
+
+	    if(ota_flag == 0x55 ||(pd_mps52002->pd_version < mps_pd_current_version))
+		{
+		  	OTA_PD();
+	    }
+    }	
 	k_sleep(10);
 	//i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0x06, buf2, 2);
 	pd_mps52002_write_reg_value(PD_MOSFET_CTRL, buf2, 2);

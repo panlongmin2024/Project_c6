@@ -26,6 +26,7 @@
 #include <soc_dvfs.h>
 #include <acts_bluetooth/host_interface.h>
 #include <property_manager.h>
+#include "ctrl_interface.h"
 #ifdef CONFIG_ACT_EVENT
 #include <bt_act_event_id.h>
 #include <logging/log_core.h>
@@ -820,12 +821,8 @@ static int bt_manager_service_callback(btsrv_event_e event, void *param)
 {
 	int ret = 0;
 
-    if(event == BTSRV_REQ_FLUSH_PROPERTY){
-	    SYS_LOG_INF("event: %s %s",bt_manager_service_evt2str(event),(char *)param);
-	}
-	else{
-	    SYS_LOG_INF("event: %s",bt_manager_service_evt2str(event));
-	}
+	SYS_LOG_INF("ev: %s",bt_manager_service_evt2str(event));
+
 	switch (event) {
 	case BTSRV_READY:
 		bt_manager_btsrv_ready();
@@ -1082,12 +1079,13 @@ static void tws_pair_search_work_callback(struct k_work *work)
 {
     bt_manager_tws_end_pair_search();
 }
+
 #ifdef CONFIG_BT_LETWS
 static void letws_pair_search_work_callback(struct k_work *work)
 {
-
+	SYS_LOG_INF("");
 	bt_manager_letws_stop_pair_search();
-	
+	bt_mamager_letws_reconnect();
 }
 #endif
 
@@ -1323,6 +1321,11 @@ void bt_manager_deinit(void)
     btif_br_update_pair_status(bt_manager->pair_status);
 	user_visual.enable = 0;
 	btif_br_set_user_visual(&user_visual);
+
+#ifdef CONFIG_BT_LETWS
+	//TODO:makesure conn is disconnected
+	bt_mamager_letws_disconnect(BT_HCI_ERR_REMOTE_POWER_OFF);
+#endif
 
 	btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_ALL);
 	btif_br_set_autoconn_info_need_update(0);
@@ -1585,4 +1588,9 @@ void bt_manager_dump_info(void)
 
 	printk("\n");
 	btif_dump_brsrv_info();
+}
+
+void bt_manager_set_aesccm_mode(uint8_t mode)
+{
+	ctrl_set_br_aesccm_mode(mode);
 }

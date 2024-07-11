@@ -733,6 +733,9 @@ int tts_manager_play(uint8_t *tts_name, uint32_t mode)
 
 	if (tts_ctx->tts_manager_locked > 0) {
 		SYS_LOG_INF("locked %d\n",tts_ctx->tts_manager_locked);
+		if(strncmp(tts_name, "poweroff", 8) == 0){
+			_tts_event_nodify(TTS_EVENT_POWER_OFF, 0);
+		}
 		res = -ENOLCK;
 		goto exit;
 	}

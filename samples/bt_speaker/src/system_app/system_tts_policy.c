@@ -96,6 +96,8 @@ const tts_ui_event_map_t tts_ui_event_map[] = {
 	{UI_EVENT_MCU_FW_SUCESS, 0, "1.mp3"},
 	{UI_EVENT_MCU_FW_FAIL, 0, "0.mp3"},
 	{UI_EVENT_MCU_FW_UPDATED, 0, "2.mp3"},
+
+	{UI_EVENT_STEREO_GROUP_INDICATION, TTS_CANNOT_BE_FILTERED, "indicate.mp3",},
 };
 
 #ifdef CONFIG_PLAYTTS

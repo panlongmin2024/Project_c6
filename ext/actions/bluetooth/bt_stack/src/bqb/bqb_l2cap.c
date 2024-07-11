@@ -27,6 +27,7 @@ static void bqb_l2cap_connected_cb(struct bt_l2cap_chan *chan);
 static void bqb_l2cap_disconnected_cb(struct bt_l2cap_chan *chan);
 static void bqb_l2cap_encrypt_changed_cb(struct bt_l2cap_chan *chan, uint8_t status);
 static int bqb_l2cap_recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf);
+extern int atoi (const char *nptr);
 
 struct bqb_l2cap_context {
     struct bt_conn *conn;
@@ -139,6 +140,38 @@ static int bqb_l2cap_req_update_conn_param(void)
     return bt_l2cap_update_conn_param(bqb_l2cap_cntx.conn, &param);
 }
 
+static int bqb_l2cap_br_server_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+{
+	BT_INFO("conn: %p", conn);
+	memset(&bqb_l2cap_cntx.br_chan, 0, sizeof(bqb_l2cap_cntx.br_chan));
+	bqb_l2cap_cntx.conn = conn;
+	bqb_l2cap_cntx.br_chan.chan.ops = &bqb_l2cap_ops;
+	*chan = &bqb_l2cap_cntx.br_chan.chan;
+
+	return 0;
+}
+
+
+struct bt_l2cap_server s_bqb_l2cap_br_server = {
+	.psm = 0xF3,
+	.sec_level = BT_SECURITY_L1,
+	.accept = bqb_l2cap_br_server_accept,
+	.node.next = NULL,
+};
+
+static int bqb_l2cap_br_send_data(uint32_t len)
+{
+	struct net_buf* buf = bt_l2cap_create_pdu(NULL, 0);
+	net_buf_add_mem(buf, "abab", len);
+	int  ret = bt_l2cap_br_chan_send(&bqb_l2cap_cntx.br_chan.chan, buf);
+	BT_INFO(" send data %d", ret);
+	if (ret < 0) {
+		net_buf_destroy(buf);
+	}
+	return ret;
+}
+
+
 int bqb_l2cap_test_command_handler(int argc, char *argv[])
 {
     char *cmd = NULL;
@@ -165,9 +198,22 @@ int bqb_l2cap_test_command_handler(int argc, char *argv[])
     } else if (!strcmp(cmd, "regsrv")) {
         bt_l2cap_server_register(&s_bqb_l2cap_server);
     } else if (!strcmp(cmd, "srvsd")){
-        extern int atoi (const char *nptr);
         bqb_l2cap_send_data(atoi(argv[2]));
-    }else {
+    } else if (!strcmp(cmd, "regbrsrv")) {
+        bt_l2cap_br_server_register(&s_bqb_l2cap_br_server);
+    } else if (!strcmp(cmd, "connbrsrv")) {
+        bt_l2cap_br_chan_connect(bqb_l2cap_cntx.conn, &bqb_l2cap_cntx.br_chan.chan, s_bqb_l2cap_br_server.psm);
+    }else if (!strcmp(cmd, "echo")) {
+        static uint8_t echo_data[4] = {0, 1, 2, 3};
+        bt_l2cap_br_chan_echo_req(&bqb_l2cap_cntx.br_chan.chan, echo_data, sizeof(echo_data));
+    } else if (!strcmp(cmd, "setbrsrvparam")) {
+        uint16_t psm = atoi(argv[2]);
+        s_bqb_l2cap_br_server.psm = psm;
+        s_bqb_l2cap_br_server.sec_level = atoi(argv[3]);
+        BT_INFO("set BR server PSM: %x, SEC_LE: %x", s_bqb_l2cap_br_server.psm, s_bqb_l2cap_br_server.sec_level);
+    } else if (!strcmp(cmd, "brsrvsd")) {
+         bqb_l2cap_br_send_data(atoi(argv[2]));
+    } else {
         printk("The cmd is not existed!\n");
     }
 

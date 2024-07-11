@@ -198,5 +198,8 @@ void ctrl_set_le_legacy_adv_tx_pwr(int16_t tx_power);
 
 uint8_t ctrl_cis_set_active_device(uint16_t acl_handle);
 
+/* 0 - 异步校验   1 - 实时校验 */
+void ctrl_set_br_aesccm_mode(int mode);
+
 #endif
 

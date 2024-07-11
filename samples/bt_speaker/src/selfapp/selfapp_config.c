@@ -341,6 +341,7 @@ void selfapp_config_reset(void)
 #ifdef SPEC_ONE_TOUCH_MUSIC_BUTTON
 	selfsta->one_touch = (0x01 << 8) | 0x01; //long press & light-show
 #endif
+	memcpy(selfsta->group.name,DEDAULT_STEREO_GROUP_NAME,strlen(DEDAULT_STEREO_GROUP_NAME));
 	self_stamem_save(1);
 }
 
@@ -382,6 +383,8 @@ void selfapp_config_init(void)
 		SYS_LOG_INF("set effect %p %d", addr, size);
 		media_effect_set_user_param(AUDIO_STREAM_MUSIC, 0, addr, size);
 	}
+
+	selfapp_log_inf("group id 0x%x name %s\n",selfsta->group.id,selfsta->group.name);
 }
 
 int selfapp_get_feedback_tone_ext(void)

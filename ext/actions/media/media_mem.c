@@ -42,7 +42,7 @@ __in_section_unique(DSP_SHARE_MEDIA_RAM) char output_pcm2[0x400];
 __in_section_unique(DSP_SHARE4_MEDIA_RAM) char output_pcm[0x2200];
 #else
 #ifdef CONFIG_MUSIC_EXTERNAL_EFFECT
-__in_section_unique(DSP_SHARE_MEDIA_RAM) char output_pcm[0x3e00];
+__in_section_unique(DSP_SHARE_MEDIA_RAM) char output_pcm[0x4600];
 #else
 __in_section_unique(DSP_SHARE_MEDIA_RAM) char output_pcm[0x1e00];
 #endif
@@ -198,12 +198,14 @@ static const struct media_memory_block media_memory_config[] = {
 			{.mem_type = OUTPUT_DECODER,  .mem_base = (u32_t)__share_media_ram_start, .mem_size = 0x800,},
 			{.mem_type = OUTPUT_PLAYBACK, .mem_base = (u32_t)__share_media_ram_start + 0x800, .mem_size = 0x4c00,},
 			{.mem_type = OUTPUT_RESAMPLE, .mem_base = (u32_t)__share4_media_ram_start + 0x1200, .mem_size = 0x1000,},
+			//{.mem_type = INPUT_RESAMPLE, .mem_base = (u32_t) __share4_media_ram_start + 0x2200, .mem_size = 0x800,},
 #else
 			{.mem_type = INPUT_CAPTURE,   .mem_base = (u32_t)__share_media_ram_start, .mem_size = 0x1200,},
 			{.mem_type = OUTPUT_DECODER,  .mem_base = (u32_t)__share_media_ram_start + 0x1200, .mem_size = 0x800,},
 #ifdef CONFIG_MUSIC_EXTERNAL_EFFECT
 			{.mem_type = OUTPUT_RESAMPLE, .mem_base = (u32_t)__share_media_ram_start + 0x7e00, .mem_size = 0x1000,},
 			{.mem_type = OUTPUT_PLAYBACK, .mem_base = (u32_t)__share_media_ram_start + 0x1a00, .mem_size = 0x6400,},
+			{.mem_type = INPUT_RESAMPLE, .mem_base = (u32_t) __share_media_ram_start + 0x8e00, .mem_size = 0x800,},
 #else
 			{.mem_type = OUTPUT_PLAYBACK, .mem_base = (u32_t)__share_media_ram_start + 0x1a00, .mem_size = 0x5400,},
 			{.mem_type = OUTPUT_RESAMPLE, .mem_base = (u32_t)__share4_media_ram_start, .mem_size = 0x1000,},

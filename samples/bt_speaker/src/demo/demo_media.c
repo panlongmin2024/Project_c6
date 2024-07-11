@@ -148,5 +148,10 @@ void demo_stop_play(void)
 		stream_destroy(usound->usound_stream);
 		usound->usound_stream = NULL;
 	}
+
+#ifdef CONFIG_EXTERNAL_DSP_DELAY
+	// wait ext-dsp data flushed to avoid noise.
+	os_sleep(CONFIG_EXTERNAL_DSP_DELAY / 1000);
+#endif
 }
 

@@ -221,10 +221,6 @@ static void btsrv_scan_check_state(void)
 	}
 #endif
 
-	if (pts_test_is_flag(PTS_TEST_FLAG_PADV)) {
-		return;
-	}
-
 	btsrv_context = btsrv_adapter_get_context();
     pair_state = btsrv_adapter_get_pair_state();
 	reconnect_phone = btsrv_autoconn_is_phone_connecting();

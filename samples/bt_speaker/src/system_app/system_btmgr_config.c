@@ -44,7 +44,7 @@ CFG_Type_BT_Scan_Params  cfg_scan_params[7] =
     { BTSRV_SCAN_MODE_DEFAULT_INQUIRY_PAGE, 0x12, 0x1000, 0,  0x12, 0x600, 1 },
     { BTSRV_SCAN_MODE_FAST_PAGE,            0,    0,      0,  0x30, 0x180, 1 },
     { BTSRV_SCAN_MODE_FAST_PAGE_EX,         0,    0,      0,  0x60, 0x200, 1 },
-    { BTSRV_SCAN_MODE_NORMAL_PAGE,          0,    0,      0,  0x18, 0x380, 1 },
+    { BTSRV_SCAN_MODE_NORMAL_PAGE,          0x12, 0x800,  0,  0x18, 0x200, 1 },
     { BTSRV_SCAN_MODE_NORMAL_PAGE_S3,       0,    0,      0,  0x12, 0x800, 1 },
     { BTSRV_SCAN_MODE_NORMAL_PAGE_EX,       0,    0,      0,  0x60, 0x500, 1 },
     { BTSRV_SCAN_MODE_FAST_INQUIRY_PAGE,    0x60, 0x400,  1,  0x60, 0x200, 1 },

@@ -62,6 +62,46 @@
 LOG_MODULE_DECLARE(main, CONFIG_ACT_EVENT_APP_COMPILE_LEVEL);
 #endif
 
+#ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
+static void bt_dvfs_notify(void *user_data, struct dvfs_freqs *dvfs_freq)
+{
+	uint32_t key;
+
+	ARG_UNUSED(user_data);
+
+	if (!dvfs_freq) {
+		return ;
+	}
+
+	if (dvfs_freq->old_level == dvfs_freq->new_level)
+		return ;
+
+	key = irq_lock();
+
+	if (dvfs_freq->new_level != SOC_DVFS_LEVEL_IDLE) {
+		/* vdd voltage decrease */
+		if (dvfs_freq->state == SOC_DVFS_POST_CHANGE) {
+#ifdef CONFIG_BLUETOOTH
+			bt_manager_set_aesccm_mode(1);
+#endif
+		}
+	} else {
+		/* vdd voltage increase */
+		if (dvfs_freq->state == SOC_DVFS_PRE_CHANGE) {
+#ifdef CONFIG_BLUETOOTH
+			bt_manager_set_aesccm_mode(0);
+#endif
+		}
+	}
+
+	irq_unlock(key);
+}
+
+static struct dvfs_notifier bt_dvsf_notifier = {
+	.dvfs_notify_func_t = bt_dvfs_notify,
+};
+#endif
+
 static void main_app_init(void)
 {
 	main_app_view_init();
@@ -69,6 +109,15 @@ static void main_app_init(void)
 	system_app_launch_init();
 
 	desktop_manager_enter();
+
+#ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
+	dvfs_register_notifier(&bt_dvsf_notifier);
+	if(soc_dvfs_get_current_level() > SOC_DVFS_LEVEL_IDLE){
+#ifdef CONFIG_BLUETOOTH
+		bt_manager_set_aesccm_mode(1);
+#endif
+	}
+#endif
 }
 extern bool run_mode_is_demo(void);
 void main_msg_proc(void *parama1, void *parama2, void *parama3)

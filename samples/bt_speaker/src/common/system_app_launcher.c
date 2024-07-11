@@ -201,8 +201,8 @@ void system_app_set_auracast_mode(int mode)
 		}
 #endif
 #ifdef CONFIG_BT_LETWS
+		bt_mamager_letws_reconnect();
 		if(last_mode == 1 || last_mode == 2){
-			bt_mamager_letws_reconnect();
 			sys_event_notify(SYS_EVENT_PLAY_EXIT_AURACAST_TTS);
 		}
 #else
@@ -246,7 +246,12 @@ void system_app_set_auracast_mode(int mode)
 	}
 
 #ifdef CONFIG_BT_SELF_APP
-	selfapp_send_msg(MSG_SELFAPP_APP_EVENT, SELFAPP_CMD_ROLE_UPDATE, 0, mode);
+	if(last_mode == 1 || last_mode == 2 || mode == 1 || mode == 2){
+		selfapp_send_msg(MSG_SELFAPP_APP_EVENT, SELFAPP_CMD_ROLE_UPDATE, 0, mode);
+	}
+	if(last_mode == 3 || last_mode == 4 || mode == 3 || mode == 4){
+		selfapp_send_msg(MSG_SELFAPP_APP_EVENT, SELFAPP_CMD_LASTING_STEREO_MODE_UPDATE, 0, mode);
+	}
 #endif
 }
 

@@ -212,6 +212,11 @@ int broadcast_tws_vnd_rx_cb(const uint8_t *buf, uint16_t len)
 			SYS_LOG_INF("set eq info\n");
 			send_ack = 1;
 			break;
+		case COMMAND_SENDINDICATION:
+			SYS_LOG_INF("indication\n");
+			sys_event_notify_single(SYS_EVENT_STEREO_GROUP_INDICATION);
+			send_ack = 1;
+			break;
 		case COMMAND_DEVACK:
 			SYS_LOG_INF("recv ack for cmd 0x%x \n",buf[3]);
 			break;
@@ -243,6 +248,9 @@ void broadcast_tws_vnd_send_key(uint32_t key)
 
 	switch(key){
 		case KEY_POWER|KEY_TYPE_SHORT_UP:
+			key = KEY_EVENT_PLAY;
+			break;
+		case KEY_PAUSE_AND_RESUME|KEY_TYPE_SHORT_UP:
 			key = KEY_EVENT_PLAY;
 			break;
 		case KEY_POWER|KEY_TYPE_LONG_DOWN:
@@ -423,5 +431,25 @@ void broadcast_tws_vnd_send_set_user_eq(struct lasting_stereo_eq_info *eq_info)
 	memcpy(&cmd[4],eq_info,6);
 
    	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, 6 + 3);
+}
+
+void broadcast_tws_vnd_send_indication()
+{
+	uint8_t cmd[3] = { 0 };
+
+	uint16_t temp_acl_handle = 0;
+
+	temp_acl_handle = bt_manager_audio_get_letws_handle();
+
+	if (!temp_acl_handle) {
+		SYS_LOG_ERR("tws link loss:");
+		return;
+	}
+
+	cmd[0] = COMMAND_IDENTIFIER;
+	cmd[1] = COMMAND_SENDINDICATION;
+	cmd[2] = 0;
+
+   	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, 3);
 }
 
