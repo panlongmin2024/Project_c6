@@ -177,12 +177,13 @@ static int cdc_shell_ats_exit_ats_and_reset(struct device *dev, u8_t *buf, int l
     msg.cmd = MSG_FACTORY_DEFAULT;
 	msg.value = ATS_SYS_REBOOT_DELAY_TIME_MS;
     send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
-	ats_sys_power_off();
+	//ats_sys_power_off();
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_DUT_SET, sizeof(ATS_CMD_RESP_DUT_SET)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
+	sys_pm_reboot(0);
 	return 0;
 }
 
