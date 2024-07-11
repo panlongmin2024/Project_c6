@@ -1201,7 +1201,7 @@ void BT_DutTest(int bqb_mode)
     SYS_LOG_INF("watchdog_clear...");
     
     extern int task_wdt_delet_all(void);
-    task_wdt_delet_all()
+    task_wdt_delet_all();
     while (1)
     {
 	/* for bqb rx sensitivity */
