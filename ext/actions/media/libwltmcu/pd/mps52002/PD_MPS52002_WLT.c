@@ -589,7 +589,7 @@ static void pd_mps52002_status_value(void)
    
 	pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2);
 	pd_mps52002->pd_version = buf[0];
-
+	printf("plm debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
     if(ota_flag == 0x55 ||(pd_mps52002->pd_version < mps_pd_current_version))
 	{
 	  	OTA_PD();
