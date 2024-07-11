@@ -282,14 +282,23 @@ static int cdc_shell_ats_reset(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_color_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
+	if(len>5 || len<1){
+		/* limit length 1-5 */
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+		return 0;
+	}
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 			dev, ATS_CMD_RESP_SET_COLOR, sizeof(ATS_CMD_RESP_SET_COLOR)-1, 
 			buf, len);
 
-	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
-
 	result = ats_color_write(buf, len);
+	if(result<0){
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	}
 
 	return 0;
 }
@@ -315,17 +324,25 @@ static int cdc_shell_ats_color_read(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_gfps_model_id_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
-	char gfps_model_id_str[3*2+1] = {0};
+	
+	if(len>5 || len<1){
+		/* limit length 1-5 */
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+		return 0;
+	}
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 			dev, ATS_CMD_RESP_SET_MODEID, sizeof(ATS_CMD_RESP_SET_MODEID)-1, 
 			buf, len);
 
-	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
-
-	memcpy(gfps_model_id_str, buf, 6);
-
+	memcpy(gfps_model_id_str, buf, len);
 	result = ats_gfps_model_id_write(gfps_model_id_str, strlen(gfps_model_id_str));
+	if(result<0){
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	}
 
 	return 0;
 }
@@ -409,7 +426,7 @@ static int cdc_shell_ats_psn_write(struct device *dev, u8_t *buf, int len)
 		dev,ATS_CMD_RESP_PSN_SET_ID,sizeof(ATS_CMD_RESP_PSN_SET_ID)-1,
 		buf,len);
 
-	result = ats_dsn_write(buf, len);
+	result = ats_psn_write(buf, len);
 
 	if(result<0){
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
@@ -1426,7 +1443,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
         index += sizeof(ATS_AT_CMD_GFPS_MODEL_ID_WRITE)-1;
 		target_index = index;
-		cdc_shell_ats_gfps_model_id_write(dev, &buf[target_index], size-target_index);
+		cdc_shell_ats_gfps_model_id_write(dev, &buf[target_index], size-target_index-8);
 	}
 	else if(!memcmp(&buf[index], ATS_AT_CMD_GFPS_MODEL_ID_READ, sizeof(ATS_AT_CMD_GFPS_MODEL_ID_READ)-1))
 	{
