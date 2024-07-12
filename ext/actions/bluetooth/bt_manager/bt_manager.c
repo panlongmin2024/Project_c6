@@ -1574,7 +1574,7 @@ void bt_manager_dump_info(void)
 
 	printk("Bt manager info\n");
 	void battery_hw_test(void);
-	battery_hw_test();
+	battery_hw_test();//////
 	printk("num %d, tws_mode %d, bt_state 0x%x, playing %d\n", bt_manager->connected_phone_num,
 		bt_manager->tws_mode, bt_manager->bt_state, (bt_manager_a2dp_get_status() == BT_STATUS_PLAYING));
 	for (i = 0; i < MAX_MGR_DEV; i++) {
