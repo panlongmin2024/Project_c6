@@ -21,7 +21,7 @@
 #include <fw_version.h>
 #include <sys_manager.h>
 #include <nvram_config.h>
-#include "hm_gauge_bq28z610_security.h"
+//#include "hm_gauge_bq28z610_security.h"
 
 #include<led_manager.h>
 #include<bt_manager_inner.h>
@@ -46,6 +46,7 @@ extern bool pd_mps52002_ats_switch_volt(u8_t PDO_index);
 extern int bt_manager_bt_read_rssi(uint16_t handle);
 extern int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
 extern int user_uuid_verify(void);
+extern unsigned char is_authenticated(void);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
