@@ -420,7 +420,22 @@ se_bool is_backup_authenticated(se_uint8* sn, se_uint8* rsn)
 
     return ret;
 }
-
-
 #endif
+
+static void battery_hw_key(se_uint8* rnd_string, se_uint8* out)
+{
+	se_uint8 cmd_id[] = {0x01,0x00};
+	se_uint8 cmd_Chemical_ID = {0x06,0x00};
+	se_uint8 output_string[40] = {0};
+	
+    i2c_write_data(bq28z610_i2c_addr, sec_Register_AltManufacturerAccess_L, cmd_Chemical_ID, 2);
+
+	i2c_read_data(bq28z610_i2c_addr,sec_Register_AltManufacturerAccess_L,output_string,40);
+	
+    DEBUG_SEC_BQ28Z610("\n Security output = ");
+	print_buffer_lazy("output_string:", output_string, 32);
+    DEBUG_SEC_BQ28Z610("\n");
+}
+
+
 

@@ -21,6 +21,7 @@
 #include <fw_version.h>
 #include <sys_manager.h>
 #include <nvram_config.h>
+#include "hm_gauge_bq28z610_security.h"
 
 #include<led_manager.h>
 #include<bt_manager_inner.h>
@@ -307,7 +308,7 @@ static int cdc_shell_ats_color_write(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_color_read(struct device *dev, u8_t *buf, int len)
 {
 	int result;
-	uint8_t buffer[2+1] = {0};
+	uint8_t buffer[5+1] = {0};
 
 	result = ats_color_read(buffer, sizeof(buffer)-1);
 	if (result < 0)
@@ -1168,24 +1169,6 @@ static int cdc_shell_ats_power_on_run_time_dump(struct device *dev, u8_t *buf, i
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 	return 0;
 }
-static int cdc_shell_ats_haman_battery_key_check(struct device *dev, u8_t *buf, int len)
-{	
-	int16 battery_volt = 0x00,battery_curr=0x00;
-	uint8_t buffer[9+1] = "0000:0000";
-	// pd_mps2760_read_current(&battery_volt,&battery_curr,&ext_curr);
-
-	//battery_volt = power_manager_get_battery_vol();
-	//battery_volt /= 1000; // change voltage unit uv to mv
-	snprintf(&buffer[0], 4, "%04d", battery_volt);
-	snprintf(&buffer[5], 4, "%04d", battery_curr);
-
-	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_CMD_RESP_BATTERY_CUR_VALUE, sizeof(ATS_CMD_RESP_BATTERY_CUR_VALUE)-1, 
-		buffer, sizeof(buffer)-1);
-	 ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
-
-	return 0;
-}
 static int cdc_shell_ats_speaker_all_on(struct device *dev, u8_t *buf, int len)
 {	
 	uint8_t hw_info = ReadODM();
@@ -1392,6 +1375,18 @@ static int cdc_shell_ats_exit_module_test_mode(struct device *dev, u8_t *buf, in
 
 	return 0;
 }
+static int cdc_shell_ats_haman_battery_key_check(struct device *dev, u8_t *buf, int len)
+{	
+	if(is_authenticated()){
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+	}
+
+	return 0;
+}
+
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
@@ -1650,44 +1645,45 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 /* haman battery start */
 	else if (!memcmp(&buf[index],ATS_AT_CMD_BATTERY_CHK, sizeof(ATS_AT_CMD_BATTERY_CHK)-1))
 	{		   
-		/*  */
+		/* check key of harman battery */
 		cdc_shell_ats_haman_battery_key_check(dev, NULL, 0);
 	}	
 	else if (!memcmp(&buf[index],ATS_AT_CMD_BATTERY_SN_READ, sizeof(ATS_AT_CMD_BATTERY_SN_READ)-1))
 	{		   
-		/*  */
+		/* read key1-sn of harman battery */
+		cdc_shell_ats_haman_battery_key_check(dev, NULL, 0);
 	}
 	else if (!memcmp(&buf[index],ATS_AT_CMD_BATTERY_RSN_READ, sizeof(ATS_AT_CMD_BATTERY_RSN_READ)-1))
 	{		   
-		/*  */
+		/* read key2-rsn of harman battery */
 	}
 	else if (!memcmp(&buf[index],ATS_AT_CMD_BATTERY_SN_WRITE, sizeof(ATS_AT_CMD_BATTERY_SN_WRITE)-1))
 	{		   
-		/*  */
+		/* read sn of harman battery */
 	}
 	else if (!memcmp(&buf[index],ATS_AT_CMD_BATTERY_BIND_SN_READ, sizeof(ATS_AT_CMD_BATTERY_BIND_SN_READ)-1))
 	{		   
-		/*  */
+		/* read sn of harman battery */
 	}
 	else if (!memcmp(&buf[index],ATS_AT_CMD_DEV_BAT_RSN, sizeof(ATS_AT_CMD_DEV_BAT_RSN)-1))
 	{		   
-		/*  */
+		/* delet */
 	}
 	else if (!memcmp(&buf[index],ATS_AT_CMD_DEV_BAT_SOH, sizeof(ATS_AT_CMD_DEV_BAT_SOH)-1))
 	{		   
-		/*  */
+		/* read percent of battery health */
 	}		
 	else if (!memcmp(&buf[index],ATS_AT_CMD_DEV_BAT_CYCLE, sizeof(ATS_AT_CMD_DEV_BAT_CYCLE)-1))
 	{		   
-		/*  */
+		/* read times of battery cycles */
 	}	
 	else if (!memcmp(&buf[index],ATS_AT_CMD_DEV_BAT_CHECK_KEY, sizeof(ATS_AT_CMD_DEV_BAT_CHECK_KEY)-1))
 	{		   
-		/*  */
+		/* authenticationkey of battery */
 	}	
 	else if (!memcmp(&buf[index],ATS_AT_CMD_DevBatCheckSnRsn, sizeof(ATS_AT_CMD_DevBatCheckSnRsn)-1))
 	{		   
-		/*  */
+		/* check sn and rsn */
 	}	
 	else if (!memcmp(&buf[index],ATS_AT_CMD_USB_NTC_STATUS, sizeof(ATS_AT_CMD_USB_NTC_STATUS)-1))
 	{		   
