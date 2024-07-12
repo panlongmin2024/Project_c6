@@ -196,7 +196,7 @@ static int cdc_shell_ats_reboot(struct device *dev, u8_t *buf, int len)
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 	
 	//ats_sys_reboot();
-	sys_pm_reboot(0);
+	sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_NORMAL);
 	return 0;
 }
 
