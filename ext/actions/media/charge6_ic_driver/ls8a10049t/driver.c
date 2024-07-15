@@ -365,6 +365,12 @@ static int _ls8a10049t_check_power_key_pressed(struct logic_mcu_ls8a10049t_devic
 	reg_7b.bit7 = 1;
 	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
 
+	static bool isPowerkeyPressed = false;
+	if(isPowerkeyPressed){
+		isPowerkeyPressed = true;
+		power_key_press = true;
+	}
+
 	SYS_LOG_INF("power_key_press = %d\n", power_key_press);
 
     return power_key_press;
