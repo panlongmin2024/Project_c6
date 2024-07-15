@@ -96,7 +96,14 @@ void report_key_event(struct k_work *work)
 		}
 	}
 #endif	
-	sys_event_report_input(input->report_key_value);
+	if(ats_get_enter_key_check_record() == false){
+		SYS_LOG_INF("----> sys_event_report_input\n");
+		sys_event_report_input(input->report_key_value);
+	}
+	else{
+		SYS_LOG_INF("----> sys_event_report_input_ats\n");
+		sys_event_report_input_ats(input->report_key_value);
+	}
 }
 
 static bool is_support_hold(int key_code)
