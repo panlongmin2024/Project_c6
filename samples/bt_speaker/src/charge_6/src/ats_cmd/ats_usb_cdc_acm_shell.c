@@ -47,6 +47,8 @@ extern int bt_manager_bt_read_rssi(uint16_t handle);
 extern int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
 extern int user_uuid_verify(void);
 extern unsigned char is_authenticated(void);
+extern int ext_dsp_set_bypass(int bypass);
+extern int logic_mcu_read_ntc_status(void);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -191,12 +193,15 @@ static int cdc_shell_ats_exit_ats_and_reset(struct device *dev, u8_t *buf, int l
 
 static int cdc_shell_ats_reboot(struct device *dev, u8_t *buf, int len)
 {
+	u8_t buffre[1+1] = "6";
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_DUT_REBOOT, sizeof(ATS_CMD_RESP_DUT_REBOOT)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 	
-	//ats_sys_reboot();
-	sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_NORMAL);
+	/* save reboot flag! */
+	property_set_factory(CFG_AUTO_USER_ATS_REBOOT,buffre,1);
+
+	sys_pm_reboot(0);
 	return 0;
 }
 
@@ -375,7 +380,7 @@ static int cdc_shell_ats_dsn_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
 
-	if(len>30 || len<1){
+	if(len!=16){
 		/* limit length 1-30 */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 		return 0;
@@ -397,7 +402,7 @@ static int cdc_shell_ats_dsn_write(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_dsn_read(struct device *dev, u8_t *buf, int len)
 {
 	int result;
-	u8_t buffer[30+1] = {0};
+	u8_t buffer[16+1] = {0};
 
 	result = ats_dsn_read(buffer, sizeof(buffer)-1);
 	if (result < 0)
@@ -419,7 +424,7 @@ static int cdc_shell_ats_psn_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
 
-	if(len>30 || len<1){
+	if(len!=16){
 		/* limit length 1-30 */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 		return 0;
@@ -969,74 +974,36 @@ static int cdc_shell_ats_odm_dump(struct device *dev, u8_t *buf, int len)
 	return 0;
 }
 
-static int cdc_shell_ats_music_bypass_allow_flag_write(struct device *dev, u8_t *buf, int len)
+static int cdc_shell_ats_music_enter_bypass(struct device *dev, u8_t *buf, int len)
 {
-	int allow_flag;
-	char allow_flag_str[4+1] = {0};
-	int result;
-
-	if (buf[0] < '0' || buf[0] > '9' || 
-		buf[1] < '0' || buf[1] > '9')
-	{
-		SYS_LOG_ERR("arg err\n");
-		goto __err_exit;
+	if(ext_dsp_set_bypass(true) == 0){
+		/* enter bypass ok */
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_ENTER_SPK_BYPASS, sizeof(ATS_CMD_RESP_ENTER_SPK_BYPASS)-1, 
+			ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+	}	
+	else{
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_ENTER_SPK_BYPASS, sizeof(ATS_CMD_RESP_ENTER_SPK_BYPASS)-1, 
+			ATS_CMD_RESP_FAIL, sizeof(ATS_CMD_RESP_FAIL)-1);
 	}
 
-	allow_flag = (buf[0]-'0')*10 + (buf[1]-'0');
-	
-	if (allow_flag > 2)
-	{
-		SYS_LOG_ERR("arg err\n");
-		goto __err_exit;
-	}
-
-	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
-
-	snprintf(allow_flag_str, sizeof(allow_flag_str), "0x%X", allow_flag);
-
-	SYS_LOG_INF("allow_flag_str:%s\n", allow_flag_str);
-
-	result = ats_music_bypass_allow_flag_write(allow_flag_str, strlen(allow_flag_str));
-	if (result != 0)
-	{
-		SYS_LOG_ERR("err\n");
-	}
-	else 
-	{
-		SYS_LOG_INF("ok\n");
-	}
-
-	return 0;
-
-__err_exit:
-	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 	return 0;
 }
 
 
-static int cdc_shell_ats_music_bypass_allow_flag_read(struct device *dev, u8_t *buf, int len)
+static int cdc_shell_ats_music_exit_bypass(struct device *dev, u8_t *buf, int len)
 {
-	int result;
-	char buffer[4+1] = {0};
-	int val;
-
-	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
-
-	result = ats_music_bypass_allow_flag_read(buffer, sizeof(buffer)-1);
-	if (result < 0)
-	{
+	if(ext_dsp_set_bypass(false) == 0){
+		/* exit bypass ok */
 		ats_usb_cdc_acm_cmd_response_at_data(
-			dev, ATS_CMD_RESP_MUSIC_BYPASS_ALLOW_FLAG_READ, sizeof(ATS_CMD_RESP_MUSIC_BYPASS_ALLOW_FLAG_READ)-1, 
-			NULL, 0);
-	}
-	else
-	{	
-		val = atoi(buffer);
-		snprintf(buffer, sizeof(buffer), "%02d", val);
-
+			dev, ATS_CMD_RESP_EXIT_SPK_BYPASS, sizeof(ATS_CMD_RESP_EXIT_SPK_BYPASS)-1, 
+			ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+	}	
+	else{
 		ats_usb_cdc_acm_cmd_response_at_data(
-			dev, ATS_CMD_RESP_MUSIC_BYPASS_ALLOW_FLAG_READ, sizeof(ATS_CMD_RESP_MUSIC_BYPASS_ALLOW_FLAG_READ)-1, 
-			buffer, strlen(buffer));
+			dev, ATS_CMD_RESP_EXIT_SPK_BYPASS, sizeof(ATS_CMD_RESP_EXIT_SPK_BYPASS)-1, 
+			ATS_CMD_RESP_FAIL, sizeof(ATS_CMD_RESP_FAIL)-1);
 	}
 
 	return 0;
@@ -1388,6 +1355,26 @@ static int cdc_shell_ats_haman_battery_key_check(struct device *dev, u8_t *buf, 
 	return 0;
 }
 
+
+
+static int cdc_shell_ats_usb_ntc_read_status(struct device *dev, u8_t *buf, int len)
+{	
+	char buffer[2+1] = "00";
+	if(logic_mcu_read_ntc_status()){
+		/* voer temperature */
+		buffer[1] = '1';
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_GET_USB_NTC_STATUS, sizeof(ATS_CMD_RESP_GET_USB_NTC_STATUS)-1, 
+			buffer, sizeof(buffer)-1);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_GET_USB_NTC_STATUS, sizeof(ATS_CMD_RESP_GET_USB_NTC_STATUS)-1, 
+			buffer, sizeof(buffer)-1);
+	}
+	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	return 0;
+}
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
@@ -1572,15 +1559,13 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
 		cdc_shell_ats_odm_dump(dev, NULL, 0);
 	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_MUSIC_BYPASS_ALLOW_FLAG_WRITE, sizeof(ATS_AT_CMD_MUSIC_BYPASS_ALLOW_FLAG_WRITE)-1))
+	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_SPK_BYPASS, sizeof(ATS_AT_CMD_ENTER_SPK_BYPASS)-1))
 	{
-	   index += sizeof(ATS_AT_CMD_MUSIC_BYPASS_ALLOW_FLAG_WRITE)-1;
-		target_index = index;
-		cdc_shell_ats_music_bypass_allow_flag_write(dev, &buf[target_index], 2);
+		cdc_shell_ats_music_enter_bypass(dev, NULL, 0);
 	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_MUSIC_BYPASS_ALLOW_FLAG_READ, sizeof(ATS_AT_CMD_MUSIC_BYPASS_ALLOW_FLAG_READ)-1))
+	else if (!memcmp(&buf[index], ATS_AT_CMD_EXIT_SPK_BYPASS, sizeof(ATS_AT_CMD_EXIT_SPK_BYPASS)-1))
 	{
-		cdc_shell_ats_music_bypass_allow_flag_read(dev, NULL, 0);
+		cdc_shell_ats_music_exit_bypass(dev, NULL, 0);
 	}
 	else if (!memcmp(&buf[index], ATS_AT_CMD_MUSIC_BYPASS_STATUS_READ, sizeof(ATS_AT_CMD_MUSIC_BYPASS_STATUS_READ)-1))
 	{
@@ -1685,12 +1670,13 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	else if (!memcmp(&buf[index],ATS_AT_CMD_DevBatCheckSnRsn, sizeof(ATS_AT_CMD_DevBatCheckSnRsn)-1))
 	{		   
 		/* check sn and rsn */
-	}	
+	}									
+/* haman battery stop */		
 	else if (!memcmp(&buf[index],ATS_AT_CMD_USB_NTC_STATUS, sizeof(ATS_AT_CMD_USB_NTC_STATUS)-1))
 	{		   
-		/*  */
-	}								
-/* haman battery stop */	
+		/* read usb ntc status  */
+		cdc_shell_ats_usb_ntc_read_status(dev, NULL, 0);
+	}
 	else if (!memcmp(&buf[index],ATS_AT_CMD_TURN_ON_ALL_SPEAKER, sizeof(ATS_AT_CMD_TURN_ON_ALL_SPEAKER)-1))
 	{		   
 		/* speaker all on */
@@ -1735,7 +1721,19 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* exit ats module test mode */
 		cdc_shell_ats_exit_module_test_mode(dev, NULL, 0);
-	}							
+	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_PWR_TIME, sizeof(ATS_AT_CMD_GET_PWR_TIME)-1))
+	{		   
+		/* get poweron time */
+		cdc_shell_ats_power_on_run_time_dump(dev, NULL, 0);
+	}
+	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_PALY_TIME, sizeof(ATS_AT_CMD_GET_PALY_TIME)-1))
+	{		   
+		/* get play time */
+		cdc_shell_ats_music_play_time_read(dev, NULL, 0);
+	}	
+	
+							
 	else	
 	{
 		//ats_usb_cdc_acm_write_data("live ats_usb_cdc_acm_shell_command_handler exit",sizeof("live ats_usb_cdc_acm_shell_command_handler exit")-1);

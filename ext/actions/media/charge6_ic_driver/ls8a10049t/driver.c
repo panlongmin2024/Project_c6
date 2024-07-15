@@ -32,6 +32,7 @@
 
 #include <logging/sys_log.h>
 #include <wltmcu_manager_supply.h>
+#include <property_manager.h>
 
 #define NTC_STATUS_NORMAL_TEMPERATURE			0
 #define NTC_STATUS_OVER_TEMPERATURE				1
@@ -365,10 +366,12 @@ static int _ls8a10049t_check_power_key_pressed(struct logic_mcu_ls8a10049t_devic
 	reg_7b.bit7 = 1;
 	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
 
-	static bool isPowerkeyPressed = false;
-	if(isPowerkeyPressed){
-		isPowerkeyPressed = true;
-		power_key_press = true;
+	int property_read_reboot = property_get_int(CFG_AUTO_USER_ATS_REBOOT,0);
+	printf("------> property_read_reboot %d\n",property_read_reboot);
+	if(property_read_reboot == 6){
+		u8_t buffer[1+1] = "8";
+		property_set_factory(CFG_AUTO_USER_ATS_REBOOT,buffer,1);
+		power_key_press = 1;
 	}
 
 	SYS_LOG_INF("power_key_press = %d\n", power_key_press);
@@ -1513,3 +1516,11 @@ struct logic_mcu_ls8a10049t_driver_api_t * mcu_ls8a10049t_get_api(void)
     return &logic_mcu_ls8a10049t_driver_api;
 }
 #endif
+/* plm add,for factory test! */
+int logic_mcu_read_ntc_status(void)
+{
+	struct logic_mcu_ls8a10049t_device_data_t *dev = NULL;
+    dev = logic_mcu_ls8a10049t_get_device_data();
+
+	return _ls8a10049t_check_ntc_status(dev);
+}
