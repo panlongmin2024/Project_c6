@@ -177,13 +177,27 @@ static int _sys_standby_allow_auto_powerdown(void)
 	return ret;
 }
 
-static int _sys_standby_check_auto_powerdown()
+static int _sys_standby_check_auto_powerdown(bool flag)
 {
 	int ret = 0;
 	static int power_state = 0;
-	if (sys_pm_get_power_5v_status()) {
-		power_state = 0;
-		return 0;
+
+	if(flag)
+	{
+		if (dc_power_in_status_read() && sys_pm_get_power_5v_status()) {
+
+			power_state = 0;
+			return 0;
+			
+		}
+
+		SYS_LOG_INF("[%d] vBus down!!!\n", __LINE__);
+
+	}else{
+		if (sys_pm_get_power_5v_status()) {
+			power_state = 0;
+			return 0;
+		}
 	}
 	
 	if(_sys_standby_allow_auto_powerdown())
@@ -777,7 +791,7 @@ static int _sys_standby_process_s2(void)
 
 static int _sys_standby_work_handle(void)
 {
-	int ret = _sys_standby_check_auto_powerdown();
+	int ret = _sys_standby_check_auto_powerdown(false);
 
 	if (ret)
 		return ret;

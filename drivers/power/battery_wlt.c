@@ -111,6 +111,9 @@ struct acts_battery_info {
 	int last_temperature_report;
 	int cur_temperature;
 #endif	
+	bool bat_is_full_flag;
+	u16_t bat_is_full_volt;
+	u16_t bat_is_full_cap;
 
 };
 
@@ -130,6 +133,44 @@ static const struct battery_cap battery_cap_tbl[BATTERY_CAP_TABLE_CNT] = {
 };
 static void battery_volt_selectsort(u16_t *arr, u16_t len);
 bool bat_charge_callback(bat_charge_event_t event, bat_charge_event_para_t *para, struct acts_battery_info *bat);
+
+static bool _battery_is_full_check(struct acts_battery_info *bat)
+{
+	return 0;
+	if(bat->bat_is_full_flag)
+	{
+		if(bat->bat_is_full_cap > bat->iic_bat_cap)
+		{
+			if((bat->bat_is_full_cap - bat->iic_bat_cap) >= 1)
+			{
+				bat->bat_is_full_flag = false;
+			}
+		}
+
+		if(bat->bat_is_full_volt > bat->iic_bat_voltage)
+		{
+			if((bat->bat_is_full_volt - bat->iic_bat_voltage) >= 200)
+			{
+				bat->bat_is_full_flag = false;
+			}
+		}
+	}
+	SYS_LOG_INF("\nfull_flag:%d,full cap:%d%%,full volt:%dmv\n",bat->bat_is_full_flag,bat->bat_is_full_cap,bat->bat_is_full_volt);	
+
+	return bat->bat_is_full_flag;
+}
+
+static void _battery_is_full_deal(struct acts_battery_info *bat)
+{
+	return;
+	if(!bat->bat_is_full_flag)
+	{
+		bat->bat_is_full_flag = true;
+		bat->bat_is_full_cap = bat->iic_bat_cap;
+		bat->bat_is_full_volt = bat->iic_bat_voltage;	
+		SYS_LOG_INF("\nfull_flag:%d,full cap:%d%%,full volt:%dmv\n",bat->bat_is_full_flag,bat->bat_is_full_cap,bat->bat_is_full_volt);	
+	}
+}
 
 #ifndef CONFIG_WLT_MODIFY_BATTERY_DISPLAY 
 /* 参考spec 7.4.5.1 BATADC. 1LSB = 2.93mv
@@ -375,8 +416,13 @@ static int battery_get_charge_status(struct acts_battery_info *bat, const void *
 	//	if(!hw_info)
 		{
 		//if(1){
-			if((bat->iic_bat_cap >= 96) && pd_get_sink_full_state()){
+			if((bat->iic_bat_cap >= 96) && (pd_get_sink_full_state() || _battery_is_full_check(bat))){
 				charge_full_cnt++;
+				if(pd_get_sink_full_state())
+				{
+					_battery_is_full_deal(bat);
+				}
+
 			}
 			else{
 				charge_full_cnt = 0;

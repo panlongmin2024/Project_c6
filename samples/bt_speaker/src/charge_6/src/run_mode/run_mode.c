@@ -86,9 +86,9 @@ bool run_mode_is_demo(void)
 {
     int ret;
 
-    os_mutex_lock(&run_mode_mutex, OS_FOREVER);
+   // os_mutex_lock(&run_mode_mutex, OS_FOREVER);
     ret = run_mode;
-    os_mutex_unlock(&run_mode_mutex);
+   // os_mutex_unlock(&run_mode_mutex);
 
     return (ret == RUN_MODE_DEMO);
 }

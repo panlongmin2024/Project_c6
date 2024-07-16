@@ -165,7 +165,7 @@ static void mps_ota_get_status(u8_t *status);
 #define MCU_ONE_SECOND_PERIOD           ((1000/MCU_RUN_TIME_PERIOD))
 #define MAX_DC_POWER_IN_TIMER			20
 
-#define WLT_OTG_DEBOUNCE_TIMEOUT        8
+#define WLT_OTG_DEBOUNCE_TIMEOUT        6
 #define MAX_SOURCE_DISC_COUNT           13
 #define MAX_SINK_CHECK_MOBILE_TIME		2
 
@@ -175,12 +175,12 @@ enum ti_pd_reg_address_t{
     PD_FIRMWARE_ID           = 0x01,//Read only 15:8 MPF52002_CHIP_ID SAMPLE 02 :MSP52002       
     PD_PD_CONTROL            = 0x02, // bit2:1  default 00 ; SRC Setting 00:18w 01:5w(5v1a) 10:2.5w(5v0.5a);bit0 sink disable
                                     
-    PD_PD_STATUS       		= 0x03, ////Read only bit1 :src mode bit0: sink mode
+    PD_PD_STATUS       		= 0x03, 		////Read only bit1 :src mode bit0: sink mode
 
-    PD_CHARGE_CURRENT      = 0x04,//bit7:0 default :(3a)
-    PD_SYS_POWER_STATUS    = 0x05, //if bt speaker to bit :01 sink to src
-    PD_MOSFET_CTRL     		= 0x06, //mosfet contro PB3 OR PB6
-	PD_MPS_07_REG			= 0x7,
+    PD_CHARGE_CURRENT      = 0x04,			//bit7:0 default :(3a)
+    PD_SYS_POWER_STATUS    = 0x05, 			//if bt speaker to bit :01 sink to src
+    PD_MOSFET_CTRL     		= 0x06, 		//mosfet contro PB3 OR PB6
+	PD_MPS_07_REG			= 0x7,			//
 	PD_MPS_09_REG			= 0x9,
 	PD_MPS_0A_REG			= 0x0a,
     PD_MP2760_STATUS_0  	= 0X16,//
@@ -194,6 +194,7 @@ enum ti_pd_reg_address_t{
 
     PD_DISABLE_SOURCE  		 =0X40,//disable source 
 	PD_MPS_41_REG			= 0x41,
+	PD_MPS_42_REG			= 0x42,
 
 	PD_MPS_AA_REG			= 0xaa,
 	PD_MPS_AF_REG			= 0xaf,
@@ -369,11 +370,9 @@ void pd_mps52002_pd_otg_on(bool flag)
 	pd_mps52002_write_reg_value(PD_DISABLE_SOURCE, buf,2);
 	printf(" pd_tps52002_pd_otg_on PD_DISABLE_SOURCE write = %d \n",buf[0]);
 
-	k_sleep(10);
-	pd_tps52002_read_reg_value(PD_DISABLE_SOURCE, buf, 2);
+	// k_sleep(10);
+	// pd_tps52002_read_reg_value(PD_DISABLE_SOURCE, buf, 2);
 
-
-    
 }
 
 
@@ -620,9 +619,9 @@ static void pd_mps52002_status_value(void)
 	// i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0x07, buf1, 2);
 	pd_mps52002_write_reg_value(PD_MPS_07_REG, buf1, 2);
     
-	k_sleep(10);
-	pd_tps52002_read_reg_value(PD_SYS_POWER_STATUS, buf, 2);
-	printf("live debug Power status:0x%x 0x%x  \n",buf[0], buf[1]);
+	// k_sleep(10);
+	// pd_tps52002_read_reg_value(PD_SYS_POWER_STATUS, buf, 2);
+	// printf("live debug Power status:0x%x 0x%x  \n",buf[0], buf[1]);
 	
 	k_sleep(10);
 	pd_tps52002_read_reg_value(PD_PD_STATUS, buf, 2);
@@ -721,6 +720,7 @@ struct wlt_pd_mps52002_config {
 extern bool key_water_status_read(void);
 extern bool media_player_is_working(void);
 extern bool dc_power_in_status_read(void);
+extern bool sys_check_standby_state(void);
 
 
 #define POWER_SUPLAY_CONTORL_PIN_G2                 51
@@ -816,7 +816,7 @@ void pd_detect_event_report_MPS52002(void){
 #else
 extern bool bt_mcu_get_bt_wake_up_flag(void);
 extern uint8_t pd_get_app_mode_state(void);
-static uint8_t Wake_up_times = 0;
+// static uint8_t Wake_up_times = 0;
 void pd_detect_event_report_MPS52002(void){
 
     pd_manager_charge_event_para_t para;
@@ -829,45 +829,32 @@ void pd_detect_event_report_MPS52002(void){
 	static uint8_t source_sink_debunce = 0x00;
 
 	static uint8_t p_dc_power_in_flag = 0x00;
+	static uint8_t p_dc_power_in_status = 0x00;
 
     if (!pd_mps52002->notify) {
         printk("[%s:%d] pd notify function did not register!\n", __func__, __LINE__);
         return;
     }
 
-	if(!pd_mps_source_pin_read())
+
+	if(dc_power_in_status_read() != p_dc_power_in_status)							//only for debug; Totti 2024/6/26
 	{
-		fisrtreadtimes = 0;
-		// pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
-		// pd_mps52002->pd_sink_debounce_time = 0x00;
-		// pin_dc_power_in_debunce_count = 0x00;
-		// p_dc_power_in_flag = 0x00;
+		p_dc_power_in_status = dc_power_in_status_read();
+		SYS_LOG_INF("[%d] DC_POWER_IN = %d \n", __LINE__, p_dc_power_in_status);
 	}
 
 
-	if(dc_power_in_status_read() != p_dc_power_in_flag)							//only for debug; Totti 2024/6/26
-	{
-		p_dc_power_in_flag = dc_power_in_status_read();
-		SYS_LOG_INF("[%d] DC_POWER_IN = %d \n", __LINE__, p_dc_power_in_flag);
-	}
-
-
-	if(bt_mcu_get_bt_wake_up_flag())
-    {
-       Wake_up_times = 1;
-       SYS_LOG_INF("[%d] wake_up_flag = 1  \n", __LINE__);
-       return;
-	}
-
-	if(fisrtreadtimes <= 1) 
-	{
-	   fisrtreadtimes++;
-	   return;
-	}
+	// if(bt_mcu_get_bt_wake_up_flag())
+    // {
+    //    Wake_up_times = 1;
+    //    SYS_LOG_INF("[%d] wake_up_flag = 1  \n", __LINE__);
+    //    return;
+	// }
 
 	if(dc_power_in_status_read())
 	{
 		pin_dc_power_in_debunce_count = MAX_DC_POWER_IN_TIMER;
+		p_dc_power_in_flag = true;
 	}else{
 		
 		if(pin_dc_power_in_debunce_count > 0)
@@ -909,11 +896,34 @@ void pd_detect_event_report_MPS52002(void){
 					para.pd_event_val = pd_mps52002->pd_52002_sink_flag;
 					pd_mps52002->notify(PD_EVENT_SINK_STATUS_CHG, &para);
 				}
+				pd_mps52002->otg_mobile_flag = false;
 				pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
 				pd_mps52002->pd_sink_debounce_time = 0x00;
+				p_dc_power_in_flag = false;
 			}
 		}
 	}
+
+	if(!p_dc_power_in_flag)
+	{
+		return;										// after DC_POWER_IN down, don't read pd status;
+	}
+
+	if(!pd_mps_source_pin_read())
+	{
+		fisrtreadtimes = 0;
+		// pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
+		// pd_mps52002->pd_sink_debounce_time = 0x00;
+		// pin_dc_power_in_debunce_count = 0x00;
+	
+	}
+
+	if(fisrtreadtimes <= 1) 								// pb7 active, delay 100ms to read PD reg.
+	{
+	   fisrtreadtimes++;
+	   return;
+	}
+
 
     pd_tps52002_read_reg_value(PD_PD_STATUS, buf, 2);
 
@@ -924,10 +934,12 @@ void pd_detect_event_report_MPS52002(void){
 		{
 			source_sink_debunce = 0x00;
 		}
-
 		SYS_LOG_INF("[%d] PD_PD_STATUS(0x3):0%x \n", __LINE__, buf[0]);	
+		
 	}
 	
+
+
 	readresult = buf[0];
 
 	if(readresult & 0x04)													// check OTG mobile
@@ -1122,12 +1134,12 @@ void pd_read_volt_current_process1(void)
 	// union dev_config config = {0};
 	u8_t  buf[10]={0};
 
-	if(Wake_up_times > 0)
-	{
-		Wake_up_times--;
-	   	SYS_LOG_INF("[%d] waiting Wake_up_times = %d", __LINE__, Wake_up_times);
-	   	return;
-	}
+	// if(Wake_up_times > 0)
+	// {
+	// 	Wake_up_times--;
+	//    	SYS_LOG_INF("[%d] waiting Wake_up_times = %d", __LINE__, Wake_up_times);
+	//    	return;
+	// }
 
 	if(!pd_mps_source_pin_read())
 		return;
@@ -1154,6 +1166,7 @@ void pd_read_volt_current_process2(void)
 	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
 	pd_manager_charge_event_para_t para;
 	static u8_t otg_debounce_cnt = 0;
+	u8_t otg_debounce_time = 0x00;
 	// struct device *iic_dev;
 	u8_t  buf[10]={0};
 
@@ -1172,7 +1185,8 @@ void pd_read_volt_current_process2(void)
 	pd_mps52002->src_cur_value =(int16)((((((buf[1]<<8) | buf[0])& 0x03ff)*0.806)-100)*5); 
 
 	SYS_LOG_INF("mps2761 src volt:%d, cur:%d", pd_mps52002->src_volt_value, pd_mps52002->src_cur_value);
-	SYS_LOG_INF("SRC OTG flag 1=full, 0=charging: 0x%x \n", pd_mps52002->SRC_5OMA_FLAG);
+
+	SYS_LOG_INF("source_flag:%d, check_flag:%d, 50ms_flag:%d \n", pd_mps52002->pd_52002_source_flag, pd_mps52002->chk_current_flag, pd_mps52002->SRC_5OMA_FLAG);
 
     if(pd_mps52002->pd_52002_source_flag)
     {
@@ -1184,7 +1198,14 @@ void pd_read_volt_current_process2(void)
 
             if(((value >= 0) && (value < 60)) || pd_mps52002->SRC_5OMA_FLAG)
             {
-                if(otg_debounce_cnt++ >= WLT_OTG_DEBOUNCE_TIMEOUT) {
+
+				otg_debounce_time = WLT_OTG_DEBOUNCE_TIMEOUT;
+				if(sys_check_standby_state())
+				{
+					otg_debounce_time = 2 ;
+				}
+
+                if(otg_debounce_cnt++ >= otg_debounce_time) {
                     para.pd_event_val = 1;
 					// pd_mps52002_src_small_current_otg_off(); 
 					SYS_LOG_INF("[%d] count:%d\n", __LINE__, otg_debounce_cnt);
@@ -1280,6 +1301,7 @@ extern int 	mcu_ui_ota_deal(void);
 extern void led_status_manger_handle(void);
 extern void wlt_logic_mcu_ls8a10049t_int_fn(void);
 extern void batt_led_display_timeout(void);
+extern void  amp_aw85xxx_read_buf(void);
 
 static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
@@ -1287,8 +1309,14 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
    	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
     static u16_t mcu_one_secound_count = 0;
 	static u8_t set_fisrt_flag = 0;
+	static u8_t	two_secound_flalg = 0x00;
 
 	led_status_manger_handle();
+
+	if(pd_mps52002->pd_65992_unload_flag)
+	{
+		return;
+	}
 
 	if((mcu_one_secound_count % 5) == 0)
 	{
@@ -1296,7 +1324,8 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 		{
 
 			batt_led_display_timeout();
-
+          extern void power_manager_battery_led_fn(void);
+	      power_manager_battery_led_fn();
 			if(mcu_ui_ota_deal()){	 
 				return;
 			}
@@ -1307,10 +1336,7 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 			}
 
 			pd_mps52002_iic_send_data();
-			if(pd_mps52002->pd_65992_unload_flag)
-			{
-				return;
-			}
+
 		}else{
 
 			
@@ -1345,8 +1371,13 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 		   				set_fisrt_flag =1;
 					}
 				}
-			
-				break;
+
+			// case (MCU_ONE_SECOND_PERIOD-37):
+			//     if(ReadODM() == HW_GUOGUANG_BOARD)
+			// 	{
+			// 		amp_aw85xxx_read_buf();	
+			// 	}
+			// 	break;
 
 			case (MCU_ONE_SECOND_PERIOD-47):
 				pd_read_volt_current_process1();
@@ -1361,7 +1392,19 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 		}
 
     }else{
-		 mcu_one_secound_count = 1; 
+		mcu_one_secound_count = 1; 
+
+		if(two_secound_flalg++ == 0x2)
+		{
+			two_secound_flalg = 0x00;
+
+			// if(ReadODM() == HW_GUOGUANG_BOARD)
+			// {
+			// 	amp_aw85xxx_read_buf();	
+			// }
+
+		}
+
 	}
    
 //	printk("[%s,%d]\n", __FUNCTION__, __LINE__);
@@ -1389,7 +1432,13 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			 val->intval = pd_mps52002->cur_value; 
             break;
         case PD_SUPPLY_PROP_PLUG_PRESENT:
-            val->intval = pd_mps52002->pd_52002_sink_flag; // dc_power_in_status_read();
+			if(run_mode_is_demo())
+			{
+ 				val->intval = dc_power_in_status_read();
+			}else
+			{
+				val->intval = pd_mps52002->pd_52002_sink_flag & !pd_mps52002->otg_mobile_flag; 
+			}
             break;
 		case PD_SUPPLY_PROP_SINK_HIGH_Z_STATE:
             val->intval = 0x00;  
@@ -1426,6 +1475,21 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
     return 0;
 }
 
+void mps_set_power_down(void)
+{
+  	// union dev_config config = {0};
+  	// struct device *iic_dev;
+	// iic_dev = device_get_binding(CONFIG_I2C_0_NAME);
+	// config.bits.speed = I2C_SPEED_STANDARD;
+	// i2c_configure(iic_dev, config.raw);
+	 
+      
+	wake_up_pd();
+   	u8_t buf[2]={0x01,0x00};
+
+   	printf("[%s,%d] %02x\n", __FUNCTION__, __LINE__,buf[0]);
+	pd_mps52002_write_reg_value(PD_MPS_42_REG, buf, 2);
+}
 
 void mps_set_source_disc(void)
 {
@@ -1545,7 +1609,7 @@ void pd_mps52002_iic_send_data()
 				pd_mps52002_sink_charging_disable(true);
 				// pd_iic_push_queue(PD_IIC_TYPE_PROP_SINK_CHANGING_OFF, (u8_t)val->intval);
 				break; 
-			case PD_IIC_TYPE_PROP_ONOFF_AMP_PVDD:
+			case PD_IIC_TYPE_PROP_ONOFF_G2:
 				MPS_PB2_LOW(0);
 				// pd_iic_push_queue(PD_IIC_TYPE_PROP_ONOFF_AMP_PVDD, (u8_t)val->intval);
 				break;   
@@ -1619,22 +1683,26 @@ static void pd_mps52002_wlt_set_property(struct device *dev,enum pd_manager_supp
 
         case PD_SUPPLY_PROP_STANDBY:
             // MPS_PB6_LOW(0);
-			pd_iic_push_queue(PD_IIC_TYPE_PROP_STANDBY, (u8_t)val->intval);
+			pd_mps52002->pd_65992_unload_flag = true;
+			thread_timer_stop(&pd_mps52002->timer);
+			// pd_iic_push_queue(PD_IIC_TYPE_PROP_STANDBY, (u8_t)val->intval);
             break;  
 		case PD_SUPPLY_PROP_POWERDOWN:
 			// thread_timer_stop(&pd_mps52002->timer);
 			// pd_mps52002->pd_65992_unload_flag = true;
-			thread_timer_stop(&pd_mps52002->timer);
-			
+			// thread_timer_stop(&pd_mps52002->timer);
+			MPS_PB2_LOW(0);
+			k_sleep(10);
 			if(!val->intval)
 			{
 				pd_mps52002_pd_otg_on(true); 	
 			}
 
-			k_sleep(20);
+			k_sleep(10);
 			MPS_ONOFF_BGATE(0);  
-			pd_mps52002->pd_65992_unload_flag = true;
-
+			k_sleep(10);
+			mps_set_power_down();
+			
             break;  
 
         case PD_SUPPLY_PROP_OTG_OFF:
@@ -1654,10 +1722,10 @@ static void pd_mps52002_wlt_set_property(struct device *dev,enum pd_manager_supp
             // pd_mps52002_sink_charging_disable(true);
 			pd_iic_push_queue(PD_IIC_TYPE_PROP_SINK_CHANGING_OFF, (u8_t)val->intval);
             break; 
-		case PD_SUPPLY_PROP_ONOFF_AMP_PVDD:
+		case PD_SUPPLY_PROP_ONOFF_G2:
             // MPS_PB2_LOW(0);
 			
-			pd_iic_push_queue(PD_IIC_TYPE_PROP_ONOFF_AMP_PVDD, (u8_t)val->intval);
+			pd_iic_push_queue(PD_IIC_TYPE_PROP_ONOFF_G2, (u8_t)val->intval);
             break;   
 		case PD_SUPPLY_PROP_ONOFF_BGATE:
 			//  if(val->intval)
@@ -1856,25 +1924,31 @@ void MPS_PB2_LOW(bool OnOFF)
 	pd_mps52002_write_reg_value(PD_MPS_41_REG, buf, 2);
 }
 
-void MPS_SET_SOURCE_SSRC(bool OnOFF)
-{
-//   union dev_config config = {0};
-//   struct device *iic_dev;
-// 	 iic_dev = device_get_binding(CONFIG_I2C_0_NAME);
-// 	 config.bits.speed = I2C_SPEED_STANDARD;
-// 	 i2c_configure(iic_dev, config.raw);
-	     
-	wake_up_pd();
-   u8_t buf[2]={0x00,0x00};
 
-    if(OnOFF)
-	{
-	   buf[0] = 0x01;
-    }	
-   printf("[%s,%d] %02x\n", __FUNCTION__, __LINE__,buf[0]);
-   // i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0x05, buf, 2); 
-   pd_mps52002_write_reg_value(PD_SYS_POWER_STATUS, buf, 2);   
-}
+
+
+
+// void MPS_SET_SOURCE_SSRC(bool OnOFF)
+// {
+// //   union dev_config config = {0};
+// //   struct device *iic_dev;
+// // 	 iic_dev = device_get_binding(CONFIG_I2C_0_NAME);
+// // 	 config.bits.speed = I2C_SPEED_STANDARD;
+// // 	 i2c_configure(iic_dev, config.raw);
+	     
+// 	wake_up_pd();
+
+
+//    u8_t buf[2]={0x00,0x00};
+
+//     if(OnOFF)
+// 	{
+// 	   buf[0] = 0x01;
+//     }	
+//    printf("[%s,%d] %02x\n", __FUNCTION__, __LINE__,buf[0]);
+//    // i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0x05, buf, 2); 
+//    pd_mps52002_write_reg_value(PD_SYS_POWER_STATUS, buf, 2);   
+// }
 
 void MPS_ONOFF_BGATE(bool OnOFF)
 {

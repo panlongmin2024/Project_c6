@@ -358,10 +358,8 @@ void mcu_ui_set_dsp_dcdc(uint8_t onoff)
         mcu_ui_send_led_code(MCU_SUPPLY_PROP_DSP_DCDC,onoff); 
      }
 
-    SYS_LOG_INF("[%d],onoff =%d\n", __LINE__, onoff);
+ //   SYS_LOG_INF("[%d],onoff =%d\n", __LINE__, onoff);
 
-
-    // mcu_ui_send_led_code(MCU_SUPPLY_PROP_DSP_DCDC,onoff); 
 }
 #if 0
 static void battery_led_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)
@@ -853,7 +851,7 @@ extern bool wlt_pd_manager_is_init(void);
 extern bool bt_mcu_get_pw_cmd_exit_standy(void);
 extern void bt_mcu_set_first_power_on_flag(bool flag);
 extern bool bt_mcu_get_first_power_on_flag(void);
-extern void bt_mcu_set_bt_warning_poweroff_flag(bool flag);
+extern void bt_mcu_set_bt_warning_poweroff_flag(u8_t flag);
 extern uint8_t bt_mcu_get_bt_warning_poweroff_flag(void);
 extern void bt_mcu_set_bt_wake_up_flag(bool flag);
 extern bool bt_mcu_get_bt_wake_up_flag(void);
@@ -1105,6 +1103,8 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 }
                 else
                 {
+                    SYS_LOG_INF("[%d] \n", __LINE__);
+                    bt_mcu_set_bt_warning_poweroff_flag(2);
                     bt_is_charge_warnning_flag = false;
                 }
                 //sys_event_notify(SYS_EVENT_CHARGING_WARNING);
@@ -1123,16 +1123,13 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 pd_set_source_refrest();
                 sys_event_notify(SYS_EVENT_REMOVE_CHARGING_WARNING);
                 pd_manager_set_poweron_filte_battery_led(WLT_FILTER_NOTHING);
-                if(sys_pm_get_power_5v_status())
+              //  if(sys_pm_get_power_5v_status())
                 {
                    bt_mcu_set_bt_warning_poweroff_flag(0);     
                 }
                 bt_is_charge_warnning_flag = false;
             }  
 
-            if(sys_pm_get_power_5v_status() == 0 && (bt_mcu_get_bt_warning_poweroff_flag() == 1)){
-                bt_mcu_set_bt_warning_poweroff_flag(2);
-            } 
             break;
 
         case MCU_INT_TYPE_WATER:

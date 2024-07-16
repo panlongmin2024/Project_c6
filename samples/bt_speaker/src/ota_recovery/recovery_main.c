@@ -68,6 +68,7 @@ typedef struct {
 
 static u8_t reg_7b = { 0 };
 extern bool key_water_status_read(void);
+
 static void _ota_ls8a10049t_watchdog_clear(void)
 {
     union dev_config config = {0};
@@ -79,7 +80,25 @@ static void _ota_ls8a10049t_watchdog_clear(void)
     SYS_LOG_INF("i2c_dev = %p\n", iic_dev);
 
 	i2c_burst_read(iic_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+	
 	printk("1111 %x\n",reg_7b);
+
+   
+	reg_7b &= ~(1 << 2);
+	i2c_burst_write(iic_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+	printk("22 clear %x\n",reg_7b);
+	reg_7b |= (1 << 2);
+	i2c_burst_write(iic_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+    printk("22 clear end  %x\n",reg_7b);
+
+	//clear watch dog
+	reg_7b &= ~(1 << 3);
+	i2c_burst_write(iic_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+	printk("33 clear %x\n",reg_7b);
+	reg_7b |= (1 << 3);
+	i2c_burst_write(iic_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+    printk("33 clear end  %x\n",reg_7b);
+	
 
 	//power hold
 	reg_7b &= ~(1);
@@ -87,12 +106,11 @@ static void _ota_ls8a10049t_watchdog_clear(void)
 	k_sleep(1);
 	reg_7b |= (1);
 	i2c_burst_write(iic_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+	
+	i2c_burst_read(iic_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+	printk("44 end %x\n",reg_7b);
 
-	//clear watch dog
-	reg_7b &= ~(1 << 3);
-	i2c_burst_write(iic_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
-	reg_7b |= (1 << 3);
-	i2c_burst_write(iic_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+
 
 }
 

@@ -55,7 +55,7 @@
 
 #define DEFAULT_NOPOWER_CAP_LEVEL	    				5
 #define DEFAULT_JUST_VOLUME_PERIODS						(300*1000)
-#define DEFAULT_POWER_OFF_PERIODS						(10*1000)
+#define DEFAULT_POWER_OFF_PERIODS						(8*1000)
 #endif	
 
 struct power_manager_info {
@@ -380,7 +380,7 @@ int power_manager_sync_slave_battery_state(void)
 	return 0;
 }
 
-static void power_manager_battery_led_fn(void)
+ void power_manager_battery_led_fn(void)
 {
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
 	static int charge_status = 0;
@@ -530,7 +530,7 @@ static int _power_manager_work_handle(void)
 	if (!power_manager)
 		return -ESRCH;
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY		
-	power_manager_battery_led_fn();
+	//power_manager_battery_led_fn();
 	/*if (power_manager->current_temperature >= DEFUALT_HIAHERTEMP_POWER_LEVEL) {
 		if (((os_uptime_get_32() - power_manager->report_timestamp) >=  2000
 				|| !power_manager->report_timestamp)) {		
@@ -551,7 +551,7 @@ static int _power_manager_work_handle(void)
 			sys_event_notify(SYS_EVENT_SMART_CONTROL_VOLUME);
 			power_manager->report_justvol_timestamp = os_uptime_get_32();
 		}		
-		return 0;
+		// return 0;																		// Totti debug on 2024/0712
 	}
 	else if(power_manager->current_temperature < DEFUALT_LOWTEMP_POWER_LEVEL){
 		SYS_LOG_INF("%d temp too low", power_manager->current_temperature);
@@ -586,6 +586,15 @@ static int _power_manager_work_handle(void)
 	#endif
 #endif
 	}
+
+
+	if (power_manager->charge_full_flag) {
+		power_manager->charge_full_flag = 0;
+		sys_event_notify(SYS_EVENT_CHARGE_FULL);
+	}
+
+
+#ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
 
 	int dut_is_charging;
 	if(ReadODM())
@@ -630,31 +639,32 @@ static int _power_manager_work_handle(void)
 		return 0;
 	}
 
-	if (power_manager->charge_full_flag) {
-		power_manager->charge_full_flag = 0;
-		sys_event_notify(SYS_EVENT_CHARGE_FULL);
-	}
-	
-#ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
+
 	if (power_manager->current_cap <= DEFAULT_NOPOWER_CAP_LEVEL) {
 		if(!power_manager->report_timestamp)
 		{
 			power_manager->report_timestamp = os_uptime_get_32();
 		}
-		if((os_uptime_get_32() - power_manager->report_timestamp) >= 5000)
+		if((os_uptime_get_32() - power_manager->report_timestamp) >= (DEFAULT_POWER_OFF_PERIODS/2))
 		{
 _POWER_OFF_:			
 			SYS_LOG_INF("%d %d too low", power_manager->current_cap, power_manager->current_vol);
 			power_manager->report_timestamp = 0;
-			if((pd_get_app_mode_state() == CHARGING_APP_MODE && power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE)
-				|| (pd_get_app_mode_state() != CHARGING_APP_MODE && bt_manager_a2dp_get_status() == BT_STATUS_PLAYING)){
+
+			// if((pd_get_app_mode_state() == CHARGING_APP_MODE && power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE)
+			// 	|| (pd_get_app_mode_state() != CHARGING_APP_MODE && bt_manager_a2dp_get_status() == BT_STATUS_PLAYING)){
+
+			if((pd_get_app_mode_state() == CHARGING_APP_MODE) && (power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE))
+			{
 
 				printk("\n %s,charge mode do not charge  \n",__func__);
 				pd_manager_deinit(0);
 				sys_pm_poweroff(); 
 			} 
-			else		
-			sys_event_notify(SYS_EVENT_BATTERY_TOO_LOW);
+			else
+			{		
+				sys_event_notify(SYS_EVENT_BATTERY_TOO_LOW);
+			}
 		}
 		return 0;
 	}

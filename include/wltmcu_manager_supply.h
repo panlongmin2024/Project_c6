@@ -84,7 +84,11 @@ enum pd_manager_supply_property {
     PD_SUPPLY_PROP_UNLOAD_FINISHED,
     PD_SUPPLY_PROP_OTG_MOBILE,
     PD_SUPPLY_PROP_SOURCE_DISC,
+
+    PD_SUPPLY_PROP_ONOFF_G2,
+
     PD_SUPPLY_PROP_PD_VERSION,
+
 };
 
 typedef enum

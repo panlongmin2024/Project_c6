@@ -450,7 +450,7 @@ static void bt_warning_poweroff_handle_fn(void)
 {
     //bt_mcu_send_pw_cmd_powerdown();
     // pd_bq25798_adc_off();
-    pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);
+    // pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);
     sys_event_notify(SYS_EVENT_POWER_OFF);    
 }
 
@@ -550,9 +550,10 @@ bool bt_mcu_get_first_power_on_flag(void)
     return bt_first_power_on_flag;
 }
 
-void bt_mcu_set_bt_warning_poweroff_flag(bool flag)
+void bt_mcu_set_bt_warning_poweroff_flag(u8_t flag)
 {
     bt_warning_poweroff_flag = flag;
+  //  SYS_LOG_INF("bt_warning_poweroff_flag:%d", bt_warning_poweroff_flag);
 }
 
 uint8_t bt_mcu_get_bt_warning_poweroff_flag(void)
@@ -618,6 +619,7 @@ void  pd_manager_v_sys_g1_g2(uint8_t flag)
             case PD_V_BUS_G1_G2_DEINIT:
                 gpio_pin_write(gpio_dev, POWER_SUPLAY_CONTORL_PIN_G2, 0);
                 gpio_pin_write(gpio_dev, POWER_SUPLAY_CONTORL_PIN_G1, 0);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_ONOFF_G2, 0);
                 SYS_LOG_INF("[%d] g1 off, g2 off \n",  __LINE__);
                 break;
 
@@ -625,6 +627,7 @@ void  pd_manager_v_sys_g1_g2(uint8_t flag)
             case PD_V_BUS_G1_HIGH_G2_LOW:
             default:
                 gpio_pin_write(gpio_dev, POWER_SUPLAY_CONTORL_PIN_G2, 0);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_ONOFF_G2, 0);
 
 			    Delay_ON_G1G2_flag = 2;
 				Delay_times = 0;
@@ -734,8 +737,12 @@ void pd_managet_typec_high_temp_protect(void)
 {
     static uint8_t five_second_cnt = 0;
 
+
+   //  SYS_LOG_INF("[%d] bt_warning_poweroff_flag:%d, count:%d \n ", __LINE__, bt_warning_poweroff_flag, five_second_cnt);
+
+
     if(bt_warning_poweroff_flag == 2){
-        if(five_second_cnt > 5)
+        if(five_second_cnt >= 5)
         {
             bt_warning_poweroff_flag = 0;
             five_second_cnt = 0;
@@ -842,15 +849,23 @@ void pd_manager_battery_low_check_otg(bool force_flag)
 bool pd_set_source_refrest(void)
 {
 
+    // if(run_mode_is_demo())
+    // {
+    //     return false;
+    // }
+    
     if(run_mode_is_demo())
     {
-        return false;
+        wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME;
     }
+
     pd_manager_disable_charging(false);
     pd_manager_battery_low_check_otg(true);
-    //wlt_pd_manager->source_change_debunce_count = (MAX_SOURCE_CHANGE_TIME *3)/2;
+
    // k_sleep(500);
     pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_SSRC, 0);
+
+
     return true;
 }
 
@@ -962,7 +977,7 @@ void pd_manager_source_change_debunce_process(void)
         {
             if((wlt_pd_manager->bt_app_mode == CHARGING_APP_MODE) || run_mode_is_demo())
             {
-                if(!sys_pm_get_power_5v_status())
+                if(!dc_power_in_status_read())                                   // totti chanege: sys_pm_get_power_5v_status
                 {
                     wlt_pd_manager->source_change_debunce_count = 0x00;
                     SYS_LOG_INF("DC OUT!!! \n");
@@ -1086,7 +1101,10 @@ void pd_manager_send_disc(void)
     if(wlt_pd_manager == NULL)
         return;
 
-    pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_DISC, 0);
+    if(wlt_pd_manager->pd_source_status_flag)
+    {
+        pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_DISC, 0);
+    }
 
 }
 
@@ -1709,49 +1727,14 @@ int pd_manager_deinit(int value)
 
     SYS_LOG_INF("[%d]", __LINE__);
 
-  //  pd_bq25798_adc_off();
-  //  exexternal_dsp_ats3615_effect_poweroff();
-
-
-//   uint8_t hw_info = ReadODM();
-// 	if(hw_info == HW_GUOGUANG_BOARD)
-// 	{
-// #ifdef CONFIG_C_AMP_AW85828
-// 	extern int aw85xxx_pa_stop(void);
-// 	aw85xxx_pa_stop();
-// #endif
-// 	}	
-// 	else{
-//    #ifdef CONFIG_C_AMP_TAS5828M
-// 	  amp_tas5828m_registers_deinit();
-//    #endif	
-// 	}
-//    // external_dsp_ats3615_deinit();
-
+    wlt_pd_manager->source_change_debunce_count = 0x00;
 
     thread_timer_stop(&wlt_pd_manager->timer);
-   
+    pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);                // stop pd timer;
+    k_sleep(30);
 
-   // wait_pd_init_finish();                      //Totti add it
-
-    pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);
     pd_manager_v_sys_g1_g2(PD_V_BUS_G1_G2_DEINIT);
-    k_sleep(10);
     pd_manager_send_cmd_code(PD_SUPPLY_PROP_POWERDOWN, value);
-
-    // u8_t count = 3;
-    // while(!pd_get_unload_state())
-    // {
-    //     if(--count == 0)
-    //     {
-    //         SYS_LOG_INF("[%d] timer out!\n", __LINE__);
-    //         break;
-    //     }
-
-    //     k_sleep(10);
-    //     printf("d ");
-    // }
-
     k_sleep(100);
     bt_mcu_send_pw_cmd_powerdown();
 
