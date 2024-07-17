@@ -267,7 +267,7 @@ void main_input_event_handle(struct app_msg *msg)
 			u8_t name[33];
 			int ret;
 			ret = property_get(CFG_BT_NAME, name, 33);
-			bt_manager_bt_name_update(name,ret);
+			bt_manager_bt_name_update_fatcory_reset(name,ret);
 			//k_sleep(200);
 			charge_app_enter_cmd();
 		}else
@@ -324,19 +324,13 @@ void main_input_event_handle(struct app_msg *msg)
 		SYS_LOG_INF("enter ATS\n");
 		break;
 	case MSG_DSP_EFFECT_SWITCH:
-	
-		tts_manager_wait_finished(1);
-		tts_manager_lock();
-		dsp_bypass_enable++;
-		dsp_bypass_enable = dsp_bypass_enable%2;
-		if(ext_dsp_set_bypass(dsp_bypass_enable) == 0){
-			if(dsp_bypass_enable){
-				led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
-			}else{
-				led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-			}
-		}
-		tts_manager_unlock();
+		
+		self_music_effect_ctrl_set_enable(!self_music_effect_ctrl_get_enable());
+#if 1 // need tts dump music effect info ?
+		self_music_effect_ctrl_info_dump_by_tts();
+#endif
+		ext_dsp_set_bypass(!self_music_effect_ctrl_get_enable());
+
 		SYS_LOG_INF("dsp effect switch\n");
 		break;
 	case MSG_EXTERN_CHARGE_MODE:
