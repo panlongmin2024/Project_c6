@@ -30,7 +30,6 @@
 #include <acts_bluetooth/host_interface.h>
 #include <property_manager.h>
 #include "hex_str.h"
-#include <acts_bluetooth/pts_test.h>
 #include <acts_bluetooth/bluetooth.h>
 #include <acts_bluetooth/audio/aics.h>
 #include <acts_bluetooth/audio/vocs.h>
@@ -295,7 +294,7 @@ static int pts_broadcast_source_start(int argc, char *argv[])
 		subgroup.bis[0].locations = BT_AUDIO_LOCATIONS_FL;
 		subgroup.bis[1].locations = BT_AUDIO_LOCATIONS_FR;
 	} else {
-		SYS_LOG_ERR("bis_num：%d\n",bis_num);
+		SYS_LOG_ERR("bis_num:%d\n",bis_num);
 		return -EINVAL;
 	}
 
@@ -380,8 +379,73 @@ static int pts_broadcast_source_start(int argc, char *argv[])
 			}
 			break;
 		}
+		case 4811:
+		case 4831:
+		case 4851:
+		{
+			subgroup.sample_rate = 48;
+			subgroup.frame_duration = BT_FRAME_DURATION_7_5MS;
+			subgroup.octets = 75;
+			qos->interval = 7500;
+			qos->max_sdu = 75;
+			qos->rtn = 4;
+			qos->latency = 15;
+			if (setting_type == 4831) {
+				subgroup.octets = 90;
+				qos->max_sdu = 90;
+			} else if (setting_type == 4851) {
+				subgroup.octets = 117;
+				qos->max_sdu = 117;
+			}
+			break;
+		}
+
+		case 4821:
+		case 4841:
+		case 4861:
+		{
+			subgroup.sample_rate = 48;
+			subgroup.frame_duration = BT_FRAME_DURATION_10MS;
+			subgroup.octets = 100;
+			qos->interval = 10000;
+			qos->max_sdu = 100;
+			qos->rtn = 4;
+			qos->latency = 20;
+			if (setting_type == 4841) {
+				subgroup.octets = 120;
+				qos->max_sdu = 120;
+			} else if (setting_type == 4861) {
+				subgroup.octets = 155;
+				qos->max_sdu = 155;
+			}
+
+			break;
+		}
+
+		case 4812:
+		case 4832:
+		case 4852:
+		{
+			subgroup.sample_rate = 48;
+			subgroup.frame_duration = BT_FRAME_DURATION_7_5MS;
+			subgroup.octets = 75;
+			qos->interval = 7500;
+			qos->max_sdu = 75;
+			qos->rtn = 4;
+			qos->latency = 50;
+			if (setting_type == 4832) {
+				subgroup.octets = 90;
+				qos->max_sdu = 90;
+			} else if (setting_type == 4852) {
+				subgroup.octets = 117;
+				qos->max_sdu = 117;
+			}
+			break;
+		}
+
 		case 4822:
 		case 4842:
+		case 4862:
 		{
 			subgroup.sample_rate = 48;
 			subgroup.frame_duration = BT_FRAME_DURATION_10MS;
@@ -393,6 +457,9 @@ static int pts_broadcast_source_start(int argc, char *argv[])
 			if (setting_type == 4842) {
 				subgroup.octets = 120;
 				qos->max_sdu = 120;
+			} else if (setting_type == 4862) {
+				subgroup.octets = 155;
+				qos->max_sdu = 155;
 			}
 
 			break;
@@ -745,8 +812,8 @@ static int pts_ble_create_acl_cancel(int argc, char *argv[])
 	pts_clear_reusme_flag(PTS_RESUME_CREATE_CONN);
 	memset(str_traget_addr, 0, 5);
 
-	if (pts_test_is_flag(PTS_TEST_FLAG_CSIP)) {
-		pts_test_clear_flag(PTS_TEST_FLAG_CSIP);
+	if (btif_pts_test_is_flag(PTS_TEST_FLAG_CSIP)) {
+		btif_pts_test_clear_flag(PTS_TEST_FLAG_CSIP);
 	}
 
 	hostif_bt_le_scan_stop();
@@ -1739,6 +1806,7 @@ static int pts_vcs_notify_state(int argc, char *argv[])
 	return 0;
 }
 
+#if (defined(CONFIG_BT_VCS_SERVICE) && defined(CONFIG_BT_VOCS))
 extern const struct bt_gatt_service_static vocs_svc;
 static struct bt_vocs_server *pts_get_vocs_svc(struct bt_conn *conn, uint16_t handle)
 {
@@ -1763,6 +1831,7 @@ static int pts_vocs_init(int argc, char *argv[])
 
 	return 0;
 }
+#endif /*CONFIG_BT_VCS_SERVICE && CONFIG_BT_VOCS*/
 
 static int pts_discover_cas(int argc, char *argv[])
 {
@@ -1873,7 +1942,7 @@ static int pts_set_aics_gain_mode(int argc, char *argv[])
 static int pts_csip_test(int argc, char *argv[])
 {
 	/* pts csip cases do not use ext adv */
-	pts_test_set_flag(PTS_TEST_FLAG_CSIP);
+	btif_pts_test_set_flag(PTS_TEST_FLAG_CSIP);
 	return 0;
 }
 
@@ -2535,7 +2604,9 @@ int pts_le_audio_init(void)
 
 	bt_manager_audio_start(BT_TYPE_LE);
 
+#if (defined(CONFIG_BT_VCS_SERVICE) && defined(CONFIG_BT_VOCS))
 	pts_vocs_init(0, NULL);
+#endif /*CONFIG_BT_VCS_SERVICE && CONFIG_BT_VOCS*/
 
 	pts_reset_ext_adv(0, NULL);
 

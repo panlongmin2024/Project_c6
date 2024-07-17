@@ -20,11 +20,22 @@ static void bqb_spp_connect_fail_cb(struct bt_conn *conn, uint8_t spp_id);
 static void bqb_spp_connected_cb(struct bt_conn *conn, uint8_t spp_id);
 static void bqb_spp_disconnected_cb(struct bt_conn *conn, uint8_t spp_id);
 static void bqb_spp_recv_cb(struct bt_conn *conn, uint8_t spp_id, uint8_t *data, uint16_t len);
+static void bqb_spp_passkey_display_cb(struct bt_conn *conn, unsigned int passkey);
+static void bqb_spp_passkey_confirm_cb(struct bt_conn *conn, unsigned int passkey);
 
 typedef struct bqb_spp_context {
     struct bt_conn *conn;
     uint8_t spp_id;
 } bqb_spp_context_t;
+
+static const struct bt_conn_auth_cb bqb_spp_auth_display_yesno_cbs = {
+    .passkey_display = bqb_spp_passkey_display_cb,
+    .passkey_entry = NULL,
+    .passkey_confirm = bqb_spp_passkey_confirm_cb,
+    .pincode_entry = NULL,
+    .cancel = NULL,
+    .pairing_confirm = NULL,
+};
 
 static const uint8_t bqb_spp_uuid[16] = {0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
     0x00, 0x10, 0x00, 0x00, 0x01, 0x11, 0x00, 0x00};
@@ -42,6 +53,24 @@ static struct bt_spp_app_cb bqb_spp_cbs = {
     .disconnected = bqb_spp_disconnected_cb,
     .recv = bqb_spp_recv_cb,
 };
+
+static void bqb_spp_passkey_display_cb(struct bt_conn *conn, unsigned int passkey)
+{
+    if (conn != g_bqb_spp_cntx.conn) {
+        BT_ERR("conn error, connected: %p, curr: %p\n", g_bqb_spp_cntx.conn, conn);
+    }
+}
+
+static void bqb_spp_passkey_confirm_cb(struct bt_conn *conn, unsigned int passkey)
+{
+    if (conn != g_bqb_spp_cntx.conn) {
+        BT_ERR("conn error, connected: %p, curr: %p\n", g_bqb_spp_cntx.conn, conn);
+        return;
+    }
+	int ret = bt_conn_auth_passkey_confirm(g_bqb_spp_cntx.conn);
+    BT_INFO("passkey cfm ret: %d\n", ret);
+}
+
 
 static void bqb_spp_acl_connected_cb(struct bt_conn *conn, u8_t err)
 {
@@ -106,10 +135,14 @@ static void bqb_spp_start(void)
     hostif_bt_conn_cb_register(&bqb_spp_acl_conn_cbs);
     hostif_bt_spp_register_service((uint8_t *)bqb_spp_uuid);
     hostif_bt_spp_register_cb(&bqb_spp_cbs);
+    hostif_bt_conn_auth_cb_register(&bqb_spp_auth_display_yesno_cbs);
+	bqb_gap_write_scan_enable(BQB_GAP_BOTH_INQUIRY_PAGE_SCAN);
 }
 
 static void bqb_spp_stop(void)
 {
+    bqb_gap_write_scan_enable(BQB_GAP_NO_SCANS);
+    hostif_bt_conn_auth_cb_register(NULL);
     hostif_bt_conn_cb_unregister(&bqb_spp_acl_conn_cbs);
     hostif_bt_spp_register_cb(NULL);
 }

@@ -571,7 +571,7 @@ static int bmr_handle_letws_disconnected(uint8_t *reason)
 #ifdef CONFIG_BT_LETWS
 	struct bmr_app_t *bmr = bmr_get_app();
 
-	if(*reason == 0x8 || *reason == 0x15 || !selfapp_get_group_id()){
+	if(*reason != 0x16 || !selfapp_get_group_id()){
 		tts_manager_disable_filter();
 		//system_app_set_auracast_mode(0);
 		bmr->broadcast_mode_reset = 1;
@@ -772,6 +772,12 @@ void bmr_input_event_proc(struct app_msg *msg)
 			bt_manager_media_play_previous();
 		break;
 	case MSG_BMR_PLAY_APP_EXIT:
+#ifdef CONFIG_BT_LETWS
+		if(4 == system_app_get_auracast_mode()){
+			bt_mamager_letws_disconnect(BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+			break;
+		}
+#endif
 	case MSG_AURACAST_EXIT:
 	{
 		tts_manager_disable_filter();

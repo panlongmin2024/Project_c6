@@ -248,6 +248,36 @@ int bt_manager_bt_name_update(uint8_t *name, uint8_t len)
 	return 0;
 }
 
+int bt_manager_bt_name_update_fatcory_reset(uint8_t *name, uint8_t len)
+{
+ 	uint8_t bt_name[BT_NAME_LEN];
+
+	if (!name || 0 == len) {
+		return -1;
+	}
+
+	if( len > (BT_NAME_LEN-1)){
+		len = (BT_NAME_LEN-1);
+	}
+
+	memset(bt_name, 0, BT_NAME_LEN);
+	memcpy(bt_name, name, len);
+#ifdef CONFIG_PROPERTY
+	property_set(CFG_BT_NAME, bt_name, BT_NAME_LEN);
+	property_set(CFG_BLE_NAME, bt_name, BT_NAME_LEN);
+	property_set(CFG_BT_LOCAL_NAME, bt_name, BT_NAME_LEN);
+	//property_set(CFG_BT_BROADCAST_NAME, bt_name, BT_NAME_LEN);
+#endif
+
+	//to do ble name??
+
+	btif_br_update_devie_name();
+
+#ifdef CONFIG_PROPERTY
+	//property_flush(NULL);
+#endif
+	return 0;
+}
 
 void bt_manager_bt_mac(uint8_t *mac_str)
 {

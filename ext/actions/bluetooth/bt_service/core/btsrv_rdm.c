@@ -806,6 +806,35 @@ bool btsrv_rdm_is_ios_dev(struct bt_conn *base_conn)
 	}
 }
 
+bool btsrv_rdm_is_profile_connected(struct bt_conn *base_conn)
+{
+    struct rdm_device *dev;
+    dev = btsrv_rdm_find_dev_by_conn(base_conn);
+    if (dev == NULL) {
+        SYS_LOG_WRN("not connected??\n");
+        return false;
+    }
+
+    if(btsrv_rdm_is_a2dp_connected(base_conn) == true){
+        return true;
+    }
+    else if(btsrv_rdm_is_hfp_connected(base_conn) == true){
+        return true;
+    }
+    else if(btsrv_rdm_is_avrcp_connected(base_conn) == true){
+        return true;
+    }
+    else if(btsrv_rdm_is_spp_connected(base_conn) == true){
+        return true;
+    }
+    else if(btsrv_rdm_is_hid_connected(base_conn) == true){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
 int btsrv_rdm_set_a2dp_connected(struct bt_conn *base_conn, bool connected)
 {
 	struct rdm_device *dev;

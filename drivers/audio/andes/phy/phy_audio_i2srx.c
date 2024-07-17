@@ -504,7 +504,7 @@ int phy_i2srx_clk_config(struct device *dev, ain_channel_node_t *ptr_channel, ui
 			//phy_i2stx0_clk_config(dev, fs_khz, AOUT_I2S_CLK_DAC256FS,bclk_rate);
 			*(REG32)(CMU_I2SCLK) |= ((clk_src & 0x0f)<<CMU_I2SCLK_I2SRX1MCLKSRC_SHIFT);
 		} else if(clk_src == AIN_I2S1_CLK_I2SRX0MCLK){
-			phy_i2srx_clk_config(dev, ptr_channel, fs_khz, AIN_I2S0_CLK_ADCCLK, bclk_rate, 0);
+			//phy_i2srx_clk_config(dev, ptr_channel, fs_khz, AIN_I2S0_CLK_ADCCLK, bclk_rate, 0);
 			*(REG32)(CMU_I2SCLK) |= ((clk_src & 0x0f)<<CMU_I2SCLK_I2SRX1MCLKSRC_SHIFT);
 		} else{
 			*(REG32)(CMU_I2SCLK) |= ((clk_src & 0x0f)<<CMU_I2SCLK_I2SRX1MCLKSRC_SHIFT);
@@ -771,7 +771,8 @@ int PHY_audio_enable_i2srx(struct device *dev, PHY_audio_in_param_t *ain_param, 
 
 #ifdef CONFIG_I2SRX1_SLAVE_MCLKSRC_INTERNAL
 		if (ain_param->ptr_i2srx_setting->i2srx_role == I2S_DEVICE_SLAVE) {
-			i2srx_clk_src = AIN_I2S1_CLK_I2S1CLK;
+			//i2srx_clk_src = AIN_I2S1_CLK_I2S1CLK;
+			i2srx_clk_src = AIN_I2S1_CLK_I2STX0MCLK;
 			i2srx_clk_type = I2SRX_MCLK_INT;
 			sample_rate = i2srx_sample_rate_update_internal_mclk(i2s_param->i2srx_sample_rate);
 		}

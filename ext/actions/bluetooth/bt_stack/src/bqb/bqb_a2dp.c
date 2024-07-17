@@ -130,7 +130,7 @@ static void bqb_a2dp_acl_connected(struct bt_conn *conn, u8_t err)
 	BT_INFO("type: %d, error: 0x%x",hostif_bt_conn_get_type(conn), err);
 
 	if (err) {
-		hostif_bt_conn_unref(s_bqb_a2dp_ctx.conn);
+		//hostif_bt_conn_unref(s_bqb_a2dp_ctx.conn);
 		s_bqb_a2dp_ctx.conn = NULL;
 	} else {
 		s_bqb_a2dp_ctx.conn = conn;
@@ -228,6 +228,7 @@ static void bqb_a2dp_init()
 	memset(&s_bqb_a2dp_ctx, 0, sizeof(s_bqb_a2dp_ctx));
 	hostif_bt_conn_cb_register(&s_bqb_a2dp_bt_conn_cb);
 	hostif_bt_a2dp_register_cb(&s_bt_a2dp_cb);
+	bqb_gap_write_scan_enable(BQB_GAP_BOTH_INQUIRY_PAGE_SCAN);
 }
 
 static int bqb_a2dp_a2dp_register_src_endpoint()
@@ -254,6 +255,33 @@ static int bqb_a2dp_a2dp_register_src_endpoint()
 	bqb_endpoint.info.next = NULL;
 	return hostif_bt_a2dp_register_endpoint(&bqb_endpoint, BT_A2DP_AUDIO, BT_A2DP_EP_SOURCE);
 }
+
+static int bqb_a2dp_a2dp_register_sink_endpoint()
+{
+	static uint8_t a2dp_sbc_sink_codec[] = {
+	0x00,	/* BT_A2DP_AUDIO << 4 */
+	0x00,	/* BT_A2DP_SBC */
+	0xFF,	/* (SNK optional) 16000, 32000, (SNK mandatory)44100, 48000, mono, dual channel, stereo, join stereo */
+	0xF7,	/* (SNK mandatory) Block length: 4/8/12/16, subbands:8, Allocation Method: SNR, Londness */
+	0x02,	/* min bitpool */
+#ifdef CONFIG_BT_A2DP_MAX_BITPOOL
+	0x23,	/* max bitpool */
+#else
+	0x35,
+#endif
+	};
+
+	static struct bt_a2dp_endpoint bqb_endpoint;
+	bqb_endpoint.info.codec = (struct bt_a2dp_media_codec*)&a2dp_sbc_sink_codec;
+
+	bqb_endpoint.info.a2dp_delay_report = 0;
+	bqb_endpoint.info.a2dp_cp_scms_t = 0;
+	bqb_endpoint.info.ep_halt = 0;
+	bqb_endpoint.info.next = NULL;
+
+	return hostif_bt_a2dp_register_endpoint(&bqb_endpoint, BT_A2DP_AUDIO, BT_A2DP_EP_SINK);
+}
+
 
 static int bqb_a2dp_test_open()
 {
@@ -301,6 +329,8 @@ int bqb_a2dp_test_command_handler(int argc, char *argv[])
 		hostif_bt_a2dp_disconnect(s_bqb_a2dp_ctx.conn);
 	} else if (!strcmp(cmd, "regsrcep")) {
 		bqb_a2dp_a2dp_register_src_endpoint();
+	} else if (!strcmp(cmd, "regsnkep")) {
+		bqb_a2dp_a2dp_register_sink_endpoint();
 	} else if (!strcmp(cmd, "setcfg")) {
 		ret = bt_a2dp_set_configuration(s_bqb_a2dp_ctx.conn);
 	} else if (!strcmp(cmd, "open")) {

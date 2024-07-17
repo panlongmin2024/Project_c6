@@ -68,6 +68,8 @@ long lasting stereo protocol
 #define COMMAND_IDENTIFIER         0xAA
 #define COMMAND_DEVACK             0x00
 
+#define COMMAND_REQDEVINFO         0x11
+#define COMMAND_RSPDEVINFO         0x12
 #define COMMAND_SETDEVINFO         0x13
 #define COMMAND_SETKEYEVENT        0x31
 #define COMMAND_SETLIGHTINFO       0x41
@@ -76,7 +78,6 @@ long lasting stereo protocol
 #define COMMAND_SETUSEREQ          0x93
 #define COMMAND_REQ_PASTINFO       0xf1
 #define COMMAND_SENDSYSEVENT       0xf2
-#define COMMAND_SENDINDICATION     0xf3
 
 
 enum {
@@ -494,4 +495,8 @@ void broadcast_tws_vnd_request_past_info(void);
 void broadcast_tws_vnd_send_sys_event(uint8_t event);
 void broadcast_tws_vnd_set_dev_info(struct lasting_stereo_device_info *info);
 void broadcast_tws_vnd_send_indication(void);
+void broadcast_tws_vnd_send_resp_eqinfo(u8_t send);
+void broadcast_tws_vnd_request_dev_info();
+void broadcast_tws_vnd_notify_dev_info();
+void broadcast_tws_vnd_notify_bat_status();
 #endif

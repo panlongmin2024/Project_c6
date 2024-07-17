@@ -11,8 +11,6 @@
 #include "common_internal.h"
 #include "keys.h"
 
-#include <acts_bluetooth/pts_test.h>
-
 #define CONFIG_CSB 1
 
 int hostif_set_negative_prio(void)

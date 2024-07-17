@@ -11,6 +11,7 @@
 #include <acts_bluetooth/host_interface.h>
 
 #include "bqb_utils.h"
+#include "bqb_gap.h"
 
 static struct device_id_info s_did_info = {
 	.vendor_id = 0x03E0,
@@ -31,9 +32,10 @@ int bqb_did_test_command_handler(int argc, char *argv[])
     cmd = argv[1];
 
     if (!strcmp(cmd, "start")) {
+        bqb_gap_write_scan_enable(BQB_GAP_BOTH_INQUIRY_PAGE_SCAN);
         hostif_bt_did_register_sdp(&s_did_info);
     } else if (!strcmp(cmd, "stop")) {
-
+        bqb_gap_write_scan_enable(BQB_GAP_NO_SCANS);
     } else {
         printk("invalid parameters\n");
     }

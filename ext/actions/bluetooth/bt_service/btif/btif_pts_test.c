@@ -120,6 +120,11 @@ void btif_pts_test_clear_flag(uint8_t flags)
 	btsrv_pts_test_clear_flag(flags);
 }
 
+uint8_t btif_pts_test_is_flag(pts_test_flags_e flag)
+{
+	return btsrv_pts_test_is_flag(flag);
+}
+
 void btif_pts_set_pacs_aac(struct bt_conn *conn, uint16_t src_aac, uint16_t sink_aac)
 {
 	pacs_srv_set_aac(conn, src_aac, sink_aac);

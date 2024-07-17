@@ -427,7 +427,7 @@ static void bqb_hfp_ag_init()
 	hostif_bt_hfp_ag_register_cb(&s_ag_cb);
 	bqb_gap_auth_register();
 
-	//os_work_q_start(&s_bqb_hfp_ag_ctx.work_q, s_hfp_ag_delay_work_stack, 1500, 8);
+	hostif_bt_br_write_scan_enable(3, NULL);
 	os_delayed_work_init(&s_bqb_hfp_ag_ctx.work, bqb_hfp_ag_callin_work_handler);
 }
 
@@ -437,7 +437,7 @@ static void bqb_hfp_ag_deinit()
 		hostif_bt_hfp_ag_disconnect(s_bqb_hfp_ag_ctx.conn);
 		bqb_gap_disconnect_acl(s_bqb_hfp_ag_ctx.conn);
 	}
-
+	hostif_bt_br_write_scan_enable(0, NULL);
 	memset(&s_bqb_hfp_ag_ctx, 0, sizeof(s_bqb_hfp_ag_ctx));
 }
 

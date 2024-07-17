@@ -261,6 +261,10 @@ static void btmusic_handle_playback_status(struct bt_media_play_status *status)
 		}
 	} else if (status->status == BT_STATUS_PLAYING) {
 		SYS_LOG_INF("play\n");
+#ifdef CONFIG_EXTERNAL_DSP_DELAY
+		if (!btmusic->media_state)
+			media_player_fade_in(btmusic->playback_player, 60);
+#endif
 		btmusic->media_state = 1;
 		if(btmusic->playing){
 			tts_manager_enable_filter();
@@ -347,7 +351,7 @@ static int btmusic_bms_handle_source_config(struct bt_braodcast_configured *rep)
 		if (btmusic->use_past == 0) {
 		    bt_manager_broadcast_source_vnd_ext_send(chan->handle, vnd_buf,
 							    sizeof(vnd_buf), type);
-			SYS_LOG_INF("no use past:\n");					
+			SYS_LOG_INF("no use past:\n");
 		}
 
 		btmusic->chan = chan;
@@ -485,7 +489,7 @@ static int btmusic_handle_letws_connected(uint16_t *handle)
 		*/
 		system_app_set_auracast_mode(4);
 		system_app_launch_switch(DESKTOP_PLUGIN_ID_BR_MUSIC,DESKTOP_PLUGIN_ID_BMR);
-	}else if (tws_role == BTSRV_TWS_MASTER){	
+	}else if (tws_role == BTSRV_TWS_MASTER){
 		btmusic_stop_playback();
 		btmusic_exit_playback();
 
@@ -507,7 +511,7 @@ static int btmusic_handle_letws_disconnected(uint8_t *reason)
 	struct btmusic_app_t *btmusic = btmusic_get_app();
 
 	//08 link loss or ungroup
-	if(*reason == 0x8 || !selfapp_get_group_id()){
+	if(*reason != 0x16 || !selfapp_get_group_id()){
 		btmusic_stop_playback();
 		btmusic_exit_playback();
 
@@ -1061,6 +1065,9 @@ void btmusic_input_event_proc(struct app_msg *msg)
 			btmusic->mute_player = 0;
 		}
 		break;
+	case MSG_PLAYER_RESET:
+		btmusic_player_reset();
+		break;
 	default:
 		break;
 	}
@@ -1139,7 +1146,7 @@ void btmusic_tws_event_proc(struct app_msg *msg)
 				}
 				thread_timer_start(&btmusic->broadcast_start_timer, 0, 0);
 				btmusic->wait_for_past_req = 0;
-#ifdef CONFIG_BT_LETWS
+#if 0
 				struct lasting_stereo_device_info info;
 #ifdef CONFIG_BT_SELF_APP
 				memset(&info,0,sizeof(info));

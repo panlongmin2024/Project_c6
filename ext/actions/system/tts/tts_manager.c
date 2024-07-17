@@ -574,6 +574,11 @@ void tts_manager_disable_filter(void)
 	SYS_LOG_INF("\n");
 }
 
+int tts_manager_is_filter(void)
+{
+	struct tts_manager_ctx_t *tts_ctx = _tts_get_ctx();
+	return tts_ctx->filter_enable;
+}
 void tts_manager_unlock(void)
 {
 	struct tts_manager_ctx_t *tts_ctx = _tts_get_ctx();
@@ -688,6 +693,9 @@ void tts_manager_wait_finished(bool clean_all)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	SYS_LOG_INF("enter\n");
 #endif
+	if(clean_all == true){
+		tts_manager_lock();
+	}
 
 	/**avoid tts wait finished death loop*/
 	while (tts_ctx->tts_curr && try_cnt-- > 0) {
@@ -713,6 +721,9 @@ void tts_manager_wait_finished(bool clean_all)
 	}
 
 	os_mutex_unlock(&tts_ctx->tts_mutex);
+	if(clean_all == true){
+		tts_manager_unlock();
+	}
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	SYS_LOG_INF("exit\n");
@@ -763,6 +774,12 @@ int tts_manager_play(uint8_t *tts_name, uint32_t mode)
 #endif
 	if (!item) {
 		res = -ENOMEM;
+		goto exit;
+	}
+
+	if(tts_manager_get_same_tts_in_list(item->tts_file_name) >= 1){
+		SYS_LOG_ERR("have tts in list\n");
+		mem_free(item);
 		goto exit;
 	}
 
@@ -1165,6 +1182,21 @@ void tts_manager_disable_keycode_check(void)
 	}
 
 	irq_unlock(key);
+}
+int tts_manager_get_same_tts_in_list(u8_t *name)
+{
+	struct tts_manager_ctx_t *tts_ctx = _tts_get_ctx();
+	struct tts_item_t *item,*tmp;
+	unsigned int key;
+	int i = 0;
+	key = irq_lock();
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tts_ctx->tts_list, item, tmp, node) {
+		if(!memcmp(name,item->tts_file_name,strlen(item->tts_file_name))){
+			i++;
+		}
+	}
+	irq_unlock(key);
+	return i;
 }
 #endif
 

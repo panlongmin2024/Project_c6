@@ -227,6 +227,7 @@ int btmusic_init_playback()
 	btmusic->sink_stream = input_stream;
 
 	audio_system_mutex_lock();
+	bt_manager_media_set_active_br_handle();
 	bt_manager_volume_set(audio_system_get_stream_volume
 			      (stream_type),BT_VOLUME_TYPE_BR_MUSIC);
 	audio_system_mutex_unlock();

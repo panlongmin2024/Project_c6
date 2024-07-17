@@ -31,6 +31,7 @@
 #include "wltmcu_manager_supply.h"
 #include "power_supply.h"
 #include "power_manager.h"
+#include "self_media_effect/self_media_effect.h"
 
 extern void hm_ext_pa_deinit(void);
 extern void hm_ext_pa_init(void);
@@ -171,12 +172,14 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
     pd_set_app_mode_state(CHARGING_APP_MODE);
 	pd_manager_send_disc();
 	system_set_power_run_mode(1);
+	bt_manager_halt_ble();
 	bt_manager_auto_reconnect_stop();
 	bt_manager_end_pair_mode();
 	bt_manager_set_user_visual(1,0,0,0);
 	bt_manager_set_autoconn_info_need_update(0);
 	bt_manager_disconnect_all_device();
 	system_app_set_auracast_mode(0);
+	self_music_effect_ctrl_set_enable(1);
 	tts_manager_play("poweroff.mp3", PLAY_IMMEDIATELY);
 	p_charge_app_app->tts_start_time = os_uptime_get_32();
 	//tts_manager_lock();
@@ -211,7 +214,7 @@ static int _charge_app_exit(void)
 	bt_manager_set_user_visual(0,0,0,0);
 	bt_manager_set_autoconn_info_need_update(1);
 	bt_manager_powon_auto_reconnect(0); 
-
+	bt_manager_resume_ble();
 	tts_manager_remove_event_lisener(charge_system_tts_event_nodify);
 	tts_manager_unlock();
 	tts_manager_disable_filter();

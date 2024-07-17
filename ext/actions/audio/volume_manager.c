@@ -95,16 +95,16 @@ int system_volume_set(int stream_type, int volume, bool display)
 	ret = audio_system_set_stream_volume(stream_type, volume);
 	if (display) {
 		if (ret == MAX_VOLUME_VALUE) {
-			if ((uint32_t)(k_cycle_get_32() - volume_timestampe) / (sys_clock_hw_cycles_per_sec / 1000000)> 500000) {
+			//if ((uint32_t)(k_cycle_get_32() - volume_timestampe) / (sys_clock_hw_cycles_per_sec / 1000000)> 500000) {
 				sys_event_notify(SYS_EVENT_MAX_VOLUME);
 				volume_timestampe = k_cycle_get_32();
-			}
+			//}
 			is_limited = true;
 		} else if (ret == MIN_VOLUME_VALUE) {
-			if ((uint32_t)(k_cycle_get_32() - volume_timestampe) / (sys_clock_hw_cycles_per_sec / 1000000) > 500000) {
+			//if ((uint32_t)(k_cycle_get_32() - volume_timestampe) / (sys_clock_hw_cycles_per_sec / 1000000) > 500000) {
 				sys_event_notify(SYS_EVENT_MIN_VOLUME);
 				volume_timestampe = k_cycle_get_32();
-			}
+			//}
 			is_limited = true;
 		}
 	}

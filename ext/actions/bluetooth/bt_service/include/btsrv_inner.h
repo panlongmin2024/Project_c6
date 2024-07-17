@@ -460,6 +460,7 @@ int btsrv_rdm_remove_dev(uint8_t *mac);
 void btsrv_rdm_set_security_changed(struct bt_conn *base_conn);
 bool btsrv_rdm_is_security_changed(struct bt_conn *base_conn);
 bool btsrv_rdm_is_connected(struct bt_conn *base_conn);
+bool btsrv_rdm_is_profile_connected(struct bt_conn *base_conn);
 bool btsrv_rdm_is_a2dp_connected(struct bt_conn *base_conn);
 bool btsrv_rdm_is_avrcp_connected(struct bt_conn *base_conn);
 bool btsrv_rdm_is_hfp_connected(struct bt_conn *base_conn);
@@ -931,6 +932,9 @@ void btsrv_pts_set_broadcast_code(uint8_t *p_broadcast_code);
 struct bt_data * btsrv_pts_set_adv_data(void);
 uint8_t btsrv_pts_is_adv_enable(void);
 uint8_t btsrv_pts_is_le_audio_evt_flag(audio_core_evt_flags_e flag);
+void btsrv_pts_test_set_flag(uint8_t flags);
+void btsrv_pts_test_clear_flag(uint8_t flags);
+uint8_t btsrv_pts_test_is_flag(pts_test_flags_e flag);
 
 /* btsrv_cas.c */
 int btsrv_cas_cli_read_lock(struct bt_conn *conn);
@@ -978,8 +982,6 @@ int btsrv_pts_avrcp_set_abs_volume(uint8_t volume);
 /* btsrv_pts_test.c */
 int btsrv_pts_process(struct app_msg *msg);
 void btsrv_pts_reset(void);
-void btsrv_pts_test_set_flag(uint8_t flags);
-void btsrv_pts_test_clear_flag(uint8_t flags);
 void btsrv_pts_set_le_audio_evt_flag(audio_core_evt_flags_e flag);
 void btsrv_pts_clear_le_audio_evt_flag(audio_core_evt_flags_e flag);
 int btsrv_pts_start_adv(uint8_t adv_type);

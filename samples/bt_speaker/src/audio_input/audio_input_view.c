@@ -15,19 +15,12 @@
 #include <ui_manager.h>
 
 static const ui_key_map_t audio_input_keymap[] = {
-
 	{KEY_VOLUMEUP, KEY_TYPE_SHORT_UP | KEY_TYPE_LONG | KEY_TYPE_HOLD,
 	 AUDIO_INPUT_STATUS_ALL, MSG_AUDIO_INPUT_PLAY_VOLUP},
 	{KEY_VOLUMEDOWN, KEY_TYPE_SHORT_UP | KEY_TYPE_LONG | KEY_TYPE_HOLD,
 	 AUDIO_INPUT_STATUS_ALL, MSG_AUDIO_INPUT_PLAY_VOLDOWN},
-	{KEY_POWER, KEY_TYPE_SHORT_UP, AUDIO_INPUT_STATUS_ALL,
-	 MSG_AUDIO_INPUT_PLAY_PAUSE_RESUME},
-#ifdef CONFIG_BMS_AUDIO_IN_APP
-	{KEY_TBD, KEY_TYPE_SHORT_UP, AUDIO_INPUT_STATUS_PLAYING,
-	 MSG_ENTER_BROADCAST},
-#else
-	{KEY_TBD, KEY_TYPE_ALL, AUDIO_INPUT_STATUS_ALL, MSG_AUDIO_INPUT_NO_ACT},
-#endif
+	{KEY_POWER, KEY_TYPE_SHORT_UP, AUDIO_INPUT_STATUS_ALL, MSG_AUDIO_INPUT_PLAY_PAUSE_RESUME},
+	{KEY_TBD, KEY_TYPE_SHORT_UP, AUDIO_INPUT_STATUS_ALL, MSG_SWITCH_BROADCAST},
 	{KEY_RESERVED, 0, 0, 0}
 };
 
@@ -37,12 +30,16 @@ static int _audio_input_view_proc(u8_t view_id, u8_t msg_id, u32_t msg_data)
 	case MSG_VIEW_CREATE:
 		{
 			SYS_LOG_INF("CREATE\n");
+#ifdef CONFIG_LED_MANAGER_APP_USAGE
+			led_manager_set_display(0, LED_OFF, OS_FOREVER, NULL);
+			led_manager_set_display(1, LED_ON, OS_FOREVER, NULL);
+#endif
 			break;
 		}
 	case MSG_VIEW_DELETE:
 		{
 			SYS_LOG_INF("DELETE\n");
-#ifdef CONFIG_LED_MANAGER
+#ifdef CONFIG_LED_MANAGER_APP_USAGE
 			led_manager_set_display(0, LED_OFF, OS_FOREVER, NULL);
 			led_manager_set_display(1, LED_OFF, OS_FOREVER, NULL);
 #endif
@@ -88,7 +85,7 @@ void audio_input_show_play_status(bool status)
 	seg_led_display_icon(SLED_PAUSE, !status);
 	seg_led_display_icon(SLED_PLAY, status);
 #endif
-#ifdef CONFIG_LED_MANAGER
+#ifdef CONFIG_LED_MANAGER_APP_USAGE
 	if (status) {
 		led_manager_set_breath(0, NULL, OS_FOREVER, NULL);
 		led_manager_set_breath(1, NULL, OS_FOREVER, NULL);

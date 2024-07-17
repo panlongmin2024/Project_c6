@@ -77,14 +77,19 @@ static void btmgr_poff_tws_proc(struct bt_manager_context_t *bt_manager)
 	btmgr_tws_poff_state_proc();
 }
 
+void btmgr_poff_disconnect_device(int disconnect_mode)
+{
+	btif_autoconn_info_active_clear_check();
+	btif_br_set_autoconn_info_need_update(0);
+	btif_br_disconnect_device(disconnect_mode);
+}
+
 static void btmgr_poff_disconnect_phone_proc(struct bt_manager_context_t *bt_manager)
 {
 	if (bt_manager->local_req_poweroff ||
 		(bt_manager->remote_req_poweroff && (bt_manager->single_poweroff == 0))) {
 		if (bt_manager_get_connected_dev_num()) {
-			btif_autoconn_info_active_clear_check();
-			btif_br_set_autoconn_info_need_update(0);
-			btif_br_disconnect_device(BTSRV_DISCONNECT_PHONE_MODE);
+			btmgr_poff_disconnect_device(BTSRV_DISCONNECT_PHONE_MODE);
 			btmgr_poff_set_state_work(POFF_STATE_WAIT_DISCONNECT_PHONE, POWEROFF_WAIT_TIMEOUT, 1);
 		} else {
 			btmgr_poff_set_state_work(POFF_STATE_FINISH, POWEROFF_WAIT_MIN_TIME, 0);

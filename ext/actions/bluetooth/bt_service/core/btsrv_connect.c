@@ -1668,6 +1668,8 @@ static void btsrv_add_monitor(struct bt_conn *conn)
 static void btsrv_update_monitor(uint8_t *addr, uint8_t type)
 {
 	int i, index = BTSRV_SAVE_AUTOCONN_NUM;
+	bd_address_t bd_addr;
+	struct bt_conn *conn;
 
 	for (i = 0; i < BTSRV_SAVE_AUTOCONN_NUM; i++) {
 		if (p_connect->monitor_conn[i].valid &&
@@ -1687,6 +1689,20 @@ static void btsrv_update_monitor(uint8_t *addr, uint8_t type)
 	case BTSRV_LINK_BASE_DISCONNECTED:
 		p_connect->monitor_conn[index].valid = 0;
 		break;
+	case BTSRV_LINK_A2DP_CONNECTED:
+		p_connect->monitor_conn[index].a2dp_times = MONITOR_A2DP_TIMES;
+	    break;
+    case BTSRV_LINK_HFP_DISCONNECTED:
+    case BTSRV_LINK_A2DP_DISCONNECTED:
+    case BTSRV_LINK_AVRCP_DISCONNECTED:
+    case BTSRV_LINK_SPP_DISCONNECTED:
+    case BTSRV_LINK_HID_DISCONNECTED:
+        memcpy(bd_addr.val,addr,6);
+        conn = btsrv_rdm_find_conn_by_addr(&bd_addr);
+        if (conn && !btsrv_rdm_is_profile_connected(conn)){
+            p_connect->monitor_conn[index].valid = 0;
+        }
+        break;
 	}
 }
 
@@ -1768,6 +1784,7 @@ void btsrv_proc_link_change(uint8_t *mac, uint8_t type)
 	case BTSRV_LINK_SPP_DISCONNECTED:
 	case BTSRV_LINK_PBAP_DISCONNECTED:
 		btsrv_rdm_remove_dev(mac);
+		btsrv_update_monitor(mac, type);
 		btsrv_scan_update_mode(false);
 		break;
 

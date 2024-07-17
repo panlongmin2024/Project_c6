@@ -229,3 +229,13 @@ int bt_rfcomm_get_sync_info(struct bt_conn *conn, void *info);
 int bt_rfcomm_set_sync_info(struct bt_conn *conn, void *info);
 int bt_rfcomm_create_dlc_init(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc);
 void bt_rfcomm_dump_info(void);
+/** @brief send remote line status.
+ *
+ *  @param dlc Dlc object.
+ *  @cr command/response
+ *  @line_status  line status
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_rfcomm_send_rls(struct bt_rfcomm_dlc *dlc, uint8_t cr, uint8_t line_status);
+

@@ -527,7 +527,7 @@ static int _ls8a10049t_check_ntc_status(struct logic_mcu_ls8a10049t_device_data_
 	i2c_burst_read(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7C, (u8_t *)&reg_7c, 1);
 
     int over_temp = reg_7c.bit1;
-
+	SYS_LOG_INF("------> over_temp = %d\n", over_temp);
 	if (over_temp)
 		return NTC_STATUS_OVER_TEMPERATURE;
 

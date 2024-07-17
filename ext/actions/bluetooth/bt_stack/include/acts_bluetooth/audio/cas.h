@@ -40,6 +40,9 @@ struct bt_cas_client_cb {
 
 int bt_cas_discover(struct bt_conn *conn, struct bt_cas_client *cli);
 
+int bt_cas_csis_discover(struct bt_conn *conn, struct bt_cas_client *cli);
+
+
 void bt_cas_client_cb_register(struct bt_cas_client_cb *cb);
 
 #ifdef __cplusplus

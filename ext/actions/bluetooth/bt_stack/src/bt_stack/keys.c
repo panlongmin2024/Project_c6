@@ -712,7 +712,7 @@ bool bt_le_clear_device(bt_addr_le_t* dev)
 	uint8_t i;
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
-		if (bt_addr_le_cmp(&key_pool[i].addr, dev)) {
+		if (!bt_addr_le_cmp(&key_pool[i].addr, dev)) {
 			bt_keys_clear(&key_pool[i]);
 			return true;
 		}

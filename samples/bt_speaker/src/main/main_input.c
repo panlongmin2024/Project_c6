@@ -74,7 +74,7 @@ void main_key_event_handle(u32_t key_event)
 		u32_t key_type = key_event  & KEY_MAX;
 		if(temp_role == BTSRV_TWS_SLAVE && (key_type == KEY_VOLUMEUP || key_type == KEY_BT
 			|| key_type == KEY_VOLUMEDOWN || key_type == KEY_PAUSE_AND_RESUME
-			|| (key_event == (KEY_POWER | KEY_TYPE_SHORT_UP))|| key_type == KEY_TBD)){
+			|| (key_event == (KEY_POWER | KEY_TYPE_SHORT_UP)))){
 			broadcast_tws_vnd_send_key(key_event);
 		}else
 #endif

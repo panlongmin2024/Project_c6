@@ -998,7 +998,7 @@ class firmware(object):
 
         #print("FW: Post build %s"%app_cert_file)
         script_firmware_path = os.path.join(script_path, 'rsa_sign_app.py')
-        cmd = ['python3', '-B', script_firmware_path, app_original_file, app_cert_file, app_file, publick_key_path]
+        cmd = ['python3', '-B', script_firmware_path, app_original_file, app_cert_file, app_file, publick_key_path, app_conf]
         #print("build cmd : %s\n" %(cmd))
         (outmsg, exit_code) = run_cmd(cmd)
         #print(outmsg)
@@ -1186,7 +1186,7 @@ class firmware(object):
         os.replace(ota_temp_file, ota_file)
 
 def main(argv):
-    global soc_name, board_name, encrypt_fw, efuse_bin, ota_image_check, secure_boot
+    global soc_name, board_name, encrypt_fw, efuse_bin, ota_image_check, secure_boot, app_conf
 
     parser = argparse.ArgumentParser(
         description='Build firmware',
@@ -1195,6 +1195,7 @@ def main(argv):
     parser.add_argument('-e', dest = 'encrypt_fw')
     parser.add_argument('-ef', dest = 'efuse_bin')
     parser.add_argument('-b', dest = 'board_name')
+    parser.add_argument('-a', dest = 'app_conf')
     parser.add_argument('-s', dest = 'soc_name')
     parser.add_argument('-v', dest = 'fw_ver_file')
     parser.add_argument('-ota_image_check', dest = 'ota_image_check', type=int, default=0)
@@ -1205,6 +1206,7 @@ def main(argv):
     encrypt_fw = args.encrypt_fw
     efuse_bin = args.efuse_bin
     board_name = args.board_name
+    app_conf = args.app_conf
     ota_image_check = args.ota_image_check
     secure_boot = args.secure_boot
     date_stamp = time.strftime('%y%m%d',time.localtime(time.time()))

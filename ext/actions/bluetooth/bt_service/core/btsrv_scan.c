@@ -14,8 +14,6 @@
 #include "btsrv_os_common.h"
 #include "btsrv_inner.h"
 
-#include <acts_bluetooth/pts_test.h>
-
 #define BTSRV_SCAN_DELAY_SET		1
 #define BTSRV_SCAN_DELAY_RUN		200			/* 200ms */
 

@@ -175,23 +175,31 @@ static struct thread_timer check_adfu_timer;
 static u32_t  adfu_wait_time;
 static void main_system_check_adfu_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
-	static u8_t power_led_cnt = 0;
+	static u8_t power_led_cnt = 0 ,fairst = 0;
 	power_led_cnt++;
 	if(power_led_cnt < 2){
 		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
 	}else if(power_led_cnt < 6){
 		led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 	}else{
-			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-			power_led_cnt = 0;
+		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+		power_led_cnt = 0;
 	}
 
-	if(dc_power_in_status_read())
-		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
-	
 	if((os_uptime_get_32() - adfu_wait_time)>1200000){
 		pd_srv_sync_exit();
 	}
+
+	if(fairst == 0){
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
+		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+		fairst = 1;
+	}else{
+		if(dc_power_in_status_read())
+			sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	}
+
 }
 #endif
 
@@ -240,7 +248,12 @@ static void system_wait_exit_charger_mode(void)
 	system_ready();
 	if(check_is_wait_adfu() && (main_system_is_enter_bqb() == 0)){
 		thread_timer_init(&check_adfu_timer, main_system_check_adfu_timer, NULL);
-		thread_timer_start(&check_adfu_timer,500,500);
+		thread_timer_start(&check_adfu_timer,2000,500);
+		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_CONNECTED);
+		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);
+		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_ON); // all led turn on
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));
 		wait_adfu = 1;
 		adfu_wait_time = os_uptime_get_32();
 	}
@@ -466,6 +479,8 @@ void system_app_init(void)
 				}else{
 					system_ready();
 				}
+#else
+				system_ready();
 #endif
 			}
 		}

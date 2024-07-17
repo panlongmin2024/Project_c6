@@ -264,7 +264,7 @@ void tts_manager_enable_filter(void);
  * @return N/A
  */
 void tts_manager_disable_filter(void);
-
+int tts_manager_is_filter(void);
 
 int key_tone_manager_init(void);
 
@@ -306,6 +306,7 @@ bool tts_manager_is_filter_music_locked(void);
 
 void tts_ext_event_notify(int start_stop);
 void tts_manager_disable_keycode_check(void);
+int tts_manager_get_same_tts_in_list(u8_t *name);
 #endif
 
 #endif

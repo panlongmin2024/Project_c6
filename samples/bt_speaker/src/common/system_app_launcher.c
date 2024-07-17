@@ -78,6 +78,10 @@ int system_app_launch_init(void)
 	desktop_manager_init(def_desktop_id);
 	desktop_manager_add(def_desktop_id);
 
+#ifdef CONFIG_I2SRX_IN_APP
+    desktop_manager_add(DESKTOP_PLUGIN_ID_I2SRX_IN);
+#endif
+
 	return 0;
 }
 
@@ -107,16 +111,16 @@ void system_app_launch_del(uint8_t plugin_id)
 
 	SYS_LOG_INF("%d", plugin_id);
 	struct app_msg	msg = {0};
-	
+
 	msg.type = MSG_SWITCH_APP;
 	msg.cmd = DESKTOP_SWITCH_LAST;
 	msg.value = plugin_id;
-	
+
 	if(send_async_msg(CONFIG_FRONT_APP_NAME, &msg) == false){
 		SYS_LOG_INF("%d failed\n", plugin_id);
 		return;
 	}
-	
+
 	return;
 
 }
@@ -126,11 +130,11 @@ bool system_app_launch_switch(uint8_t old, uint8_t new)
 	SYS_LOG_INF("%d->%d", old, new);
 
 	struct app_msg	msg = {0};
-	
+
 	msg.type = MSG_SWITCH_APP;
 	msg.cmd = DESKTOP_SWITCH_CURR_AND_DEL;
 	msg.value = new|(old<<8);
-	
+
 	if(send_async_msg(CONFIG_FRONT_APP_NAME, &msg) == false){
 		SYS_LOG_INF("failed\n");
 		return false;
@@ -143,10 +147,10 @@ void system_app_switch(void)
 	SYS_LOG_INF("\n");
 
 	struct app_msg	msg = {0};
-	
+
 	msg.type = MSG_SWITCH_APP;
 	msg.cmd = DESKTOP_SWITCH_NEXT;
-	
+
 	if(send_async_msg(CONFIG_FRONT_APP_NAME, &msg) == false){
 		SYS_LOG_INF("failed\n");
 		return;
@@ -173,7 +177,7 @@ static uint8_t bis_cis_restrict = 0;
 extern void bt_manager_auracast_led_display(bool status);
 
 // [0,1,2,3,4] 0-Normal, 1-BMS, 2-BMR, 3-stereo+primary, 4-stereo+secondary
-static int g_auracast_mode = 0; 
+static int g_auracast_mode = 0;
 void system_app_set_auracast_mode(int mode)
 {
 	SYS_LOG_INF("mode %d->%d", g_auracast_mode, mode);

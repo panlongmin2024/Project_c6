@@ -19,7 +19,7 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-
+#include "bqb_gap_le.h"
 
 static void bqb_l2cap_acl_connected_cb(struct bt_conn *conn, u8_t err);
 static void bqb_l2cap_acl_disconnected_cb(struct bt_conn *conn, uint8_t reason);
@@ -75,7 +75,7 @@ static void bqb_l2cap_connected_cb(struct bt_l2cap_chan *chan)
 static void bqb_l2cap_disconnected_cb(struct bt_l2cap_chan *chan)
 {
     BT_INFO("bqb_l2cap_disconnected_cb\n");
-    bqb_gap_disconnect_acl(bqb_l2cap_cntx.conn);
+    //bqb_gap_disconnect_acl(bqb_l2cap_cntx.conn);
 }
 
 static void bqb_l2cap_encrypt_changed_cb(struct bt_l2cap_chan *chan, uint8_t status)
@@ -97,6 +97,7 @@ static void bqb_l2cap_start(void)
 static void bqb_l2cap_stop(void)
 {
     hostif_bt_conn_cb_unregister(&bqb_l2cap_conn_cbs);
+    memset(&bqb_l2cap_cntx, 0, sizeof(bqb_l2cap_cntx));
 }
 
 static int bqb_l2cap_server_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
@@ -162,7 +163,7 @@ struct bt_l2cap_server s_bqb_l2cap_br_server = {
 static int bqb_l2cap_br_send_data(uint32_t len)
 {
 	struct net_buf* buf = bt_l2cap_create_pdu(NULL, 0);
-	net_buf_add_mem(buf, "abab", len);
+	net_buf_add(buf, len);
 	int  ret = bt_l2cap_br_chan_send(&bqb_l2cap_cntx.br_chan.chan, buf);
 	BT_INFO(" send data %d", ret);
 	if (ret < 0) {
@@ -171,6 +172,15 @@ static int bqb_l2cap_br_send_data(uint32_t len)
 	return ret;
 }
 
+static int bqb_l2cap_conn_le_acl(char* addr)
+{
+    char temp_addr[6] = {0};
+    bt_addr_le_t le_addr = {0};
+    bqb_utils_str2hex(temp_addr, addr, 6);
+    bqb_utils_bytes_reverse(le_addr.a.val, temp_addr, 6);
+    le_addr.type = BT_ADDR_LE_PUBLIC;
+    return bqb_gap_le_connect_acl(&le_addr, &bqb_l2cap_cntx.conn);
+}
 
 int bqb_l2cap_test_command_handler(int argc, char *argv[])
 {
@@ -193,6 +203,10 @@ int bqb_l2cap_test_command_handler(int argc, char *argv[])
         bt_l2cap_chan_disconnect(&(bqb_l2cap_cntx.br_chan.chan));
     } else if (!strcmp(cmd, "disc_acl")) {
         hostif_bt_conn_disconnect(bqb_l2cap_cntx.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+    } else if (!strcmp(cmd, "connle")){
+        bqb_l2cap_conn_le_acl(argv[2]);
+    } else if (!strcmp(cmd, "discle")) {
+        bt_l2cap_chan_disconnect(&(bqb_l2cap_cntx.le_chan.chan));
     } else if (!strcmp(cmd, "update_param")) {
         bqb_l2cap_req_update_conn_param();
     } else if (!strcmp(cmd, "regsrv")) {
@@ -213,6 +227,20 @@ int bqb_l2cap_test_command_handler(int argc, char *argv[])
         BT_INFO("set BR server PSM: %x, SEC_LE: %x", s_bqb_l2cap_br_server.psm, s_bqb_l2cap_br_server.sec_level);
     } else if (!strcmp(cmd, "brsrvsd")) {
          bqb_l2cap_br_send_data(atoi(argv[2]));
+    } else if (!strcmp(cmd, "adv")) {
+         uint8_t enable = atoi(argv[2]);
+         if (enable) {
+            bqb_gap_le_adv_start(3);
+         } else {
+            bqb_gap_le_adv_stop();
+         }
+    } else if (!strcmp(cmd, "scan")) {
+         uint8_t enable = atoi(argv[2]);
+         if (enable) {
+            bqb_gap_write_scan_enable(3);
+         } else {
+            bqb_gap_write_scan_enable(0);
+         }
     } else {
         printk("The cmd is not existed!\n");
     }

@@ -62,6 +62,11 @@ int pd_srv_sync_exit(void)
 	struct app_msg msg = {0};
 	os_sem return_notify;
 
+#ifdef CONFIG_DATA_ANALY
+	msg.type = MSG_EXIT_DATA_ANALY;
+	msg.cmd = 0;
+	send_async_msg(CONFIG_SYS_APP_NAME, &msg);
+#endif	
 	os_sem_init(&return_notify, 0, 1);
 	msg.type = MSG_PD_SRV_EXIT;
 	msg.value = 0;

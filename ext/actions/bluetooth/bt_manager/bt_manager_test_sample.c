@@ -27,6 +27,8 @@
 #include <acts_bluetooth/host_interface.h>
 #include <property_manager.h>
 
+#define BTMGR_TEST_SHELL_MODULE		"btmgr_test"
+
 #ifdef CONFIG_BT_SPP
 #define MGR_SPP_TEST_SHELL		0
 #else
@@ -46,7 +48,7 @@
 #endif
 
 #ifdef CONFIG_BT_BLE
-#define MGR_BLE_TEST_SHELL		0
+#define MGR_BLE_TEST_SHELL		1
 #else
 #define MGR_BLE_TEST_SHELL		0
 #endif
@@ -136,7 +138,7 @@ static void btmgr_discover_result(void *result)
 	}
 }
 
-static int shell_cmd_btmgr_br_discover(const struct shell *shell, size_t argc, char *argv[])
+static int shell_cmd_btmgr_br_discover(int argc, char *argv[])
 {
 	struct btsrv_discover_param param;
 
@@ -163,7 +165,7 @@ static int shell_cmd_btmgr_br_discover(const struct shell *shell, size_t argc, c
 	return 0;
 }
 
-static int shell_cmd_btmgr_br_connect(const struct shell *shell, size_t argc, char *argv[])
+static int shell_cmd_btmgr_br_connect(int argc, char *argv[])
 {
 	bd_address_t addr;
 	int err;
@@ -182,7 +184,7 @@ static int shell_cmd_btmgr_br_connect(const struct shell *shell, size_t argc, ch
 	return bt_manager_br_connect(&addr);
 }
 
-static int shell_cmd_btmgr_br_disconnect(const struct shell *shell, size_t argc, char *argv[])
+static int shell_cmd_btmgr_br_disconnect(int argc, char *argv[])
 {
 	bd_address_t addr;
 	int err;
@@ -611,30 +613,66 @@ static int cmd_test_map_disconnect(const struct shell *shell, size_t argc, char 
 #define SPEED_BLE_WRITE_UUID		BT_UUID_DECLARE_16(0xFFC1)
 #define SPEED_BLE_READ_UUID			BT_UUID_DECLARE_16(0xFFC2)
 
-static int ble_speed_rx_data(uint8_t *buf, uint16_t len);
+static int ble_speed_rx_data(struct bt_conn *conn, uint8_t *buf, uint16_t len);
 
 #define BLE_TEST_SEND_SIZE			200
 #define BLE_TEST_WORK_INTERVAL		1		/* 1ms */
+#define BLE_SPEED_MAX_NUM			3
 
 static const char ble_speed_tx_trigger[] = "1122334455";
-static uint8_t ble_speed_tx_flag = 0;
-static uint8_t ble_speed_notify_enable = 0;
-static os_delayed_work ble_speed_test_work;
-uint8_t ble_speed_send_buf[BLE_TEST_SEND_SIZE];
+
+struct tx_rx_info_t {
+	uint32_t curr_time;
+	uint32_t pre_time;
+	uint32_t count;
+};
+
+struct ble_speed_info_t {
+	struct bt_conn *conn;
+	uint8_t ble_speed_tx_flag;
+	uint8_t ble_speed_notify_enable;
+	os_delayed_work ble_speed_test_work;
+	uint8_t ble_speed_send_buf[BLE_TEST_SEND_SIZE];
+	struct tx_rx_info_t rx;
+	struct tx_rx_info_t tx;
+};
+
+static OS_MUTEX_DEFINE(ble_speed_mutex);
+struct ble_speed_info_t ble_speed_info[BLE_SPEED_MAX_NUM];
+
+static struct ble_speed_info_t *ble_speed_info_get(struct bt_conn *conn)
+{
+	for (int i = 0; i < BLE_SPEED_MAX_NUM; i++) {
+		if (ble_speed_info[i].conn == conn) {
+			return &ble_speed_info[i];
+		}
+	}
+	return NULL;
+}
 
 static ssize_t speed_write_cb(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      const void *buf, uint16_t len, uint16_t offset,
 			      uint8_t flags)
 {
-	ble_speed_rx_data((uint8_t *)buf, len);
+	ble_speed_rx_data(conn, (uint8_t *)buf, len);
 	return len;
 }
 
-static void speed_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static ssize_t speed_ccc_cfg_changed(struct bt_conn *conn, uint8_t conn_type,
+								const struct bt_gatt_attr *attr, uint16_t value)
 {
-	SYS_LOG_INF("value: %d\n", value);
-	ble_speed_notify_enable = (uint8_t)value;
+	struct ble_speed_info_t *p_ble_speed_info;
+
+	p_ble_speed_info = ble_speed_info_get(conn);
+	if(p_ble_speed_info) {
+		SYS_LOG_INF("conn: %p, conn_type: %d, value: %d\n", conn, conn_type, value);
+		p_ble_speed_info->ble_speed_notify_enable = (uint8_t)value;
+	}else {
+		SYS_LOG_ERR("p_ble_speed_info is NULL");
+	}
+
+	return sizeof(uint16_t);
 }
 
 static struct bt_gatt_attr ble_speed_attrs[] = {
@@ -645,21 +683,24 @@ static struct bt_gatt_attr ble_speed_attrs[] = {
 
 	BT_GATT_CHARACTERISTIC(SPEED_BLE_READ_UUID, BT_GATT_CHRC_NOTIFY,
 				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, NULL, NULL, NULL),
-	BT_GATT_CCC(speed_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CCC(NULL, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 };
 
 static void ble_speed_test_delaywork(os_work *work)
 {
-	static uint32_t curr_time;
-	static uint32_t pre_time;
-	static uint32_t TxCount;
 	uint16_t mtu;
 	static uint8_t data = 0;
 	uint8_t i, j, repeat;
 	int ret;
 
-	if (ble_speed_tx_flag && ble_speed_notify_enable) {
-		mtu = bt_manager_get_ble_mtu() - 3;
+	struct ble_speed_info_t* p_ble_speed_info =
+		CONTAINER_OF(work, struct ble_speed_info_t, ble_speed_test_work);
+
+	SYS_LOG_DBG("start: %p, %p, %d, %d, %d\n", p_ble_speed_info, p_ble_speed_info->conn, os_uptime_get_32(),
+				p_ble_speed_info->ble_speed_tx_flag, p_ble_speed_info->ble_speed_notify_enable);
+
+	if (p_ble_speed_info->ble_speed_tx_flag && p_ble_speed_info->ble_speed_notify_enable) {
+		mtu = bt_manager_get_ble_mtu(p_ble_speed_info->conn) - 3;
 		mtu = (mtu > BLE_TEST_SEND_SIZE) ? BLE_TEST_SEND_SIZE : mtu;
 
 #if 0
@@ -671,95 +712,126 @@ static void ble_speed_test_delaywork(os_work *work)
 			repeat = 1;
 		}
 #else
-		repeat = 10;
+		repeat = 1;
 #endif
 
 		for (j = 0; j < repeat; j++) {
 			for (i = 0; i < mtu; i++) {
-				ble_speed_send_buf[i] = data++;
+				p_ble_speed_info->ble_speed_send_buf[i] = data++;
 			}
 
-			ret = bt_manager_ble_send_data(&ble_speed_attrs[3], &ble_speed_attrs[4], ble_speed_send_buf, mtu);
+			ret = bt_manager_ble_send_data(p_ble_speed_info->conn, &ble_speed_attrs[3],
+										&ble_speed_attrs[4], p_ble_speed_info->ble_speed_send_buf, mtu);
 			if (ret < 0) {
 				break;
 			}
 
-			TxCount += mtu;
-			curr_time = k_uptime_get_32();
-			if ((curr_time - pre_time) >= 1000) {
-				printk("Tx: %d byte\n", TxCount);
-				TxCount = 0;
-				pre_time = curr_time;
+			p_ble_speed_info->tx.count += mtu;
+			p_ble_speed_info->tx.curr_time = k_uptime_get_32();
+			if ((p_ble_speed_info->tx.curr_time - p_ble_speed_info->tx.pre_time) >= 1000) {
+				printk("Tx: %d byte/s\n", p_ble_speed_info->tx.count);
+				p_ble_speed_info->tx.count = 0;
+				p_ble_speed_info->tx.pre_time = p_ble_speed_info->tx.curr_time;
 			}
 
 			os_yield();
 		}
 	}
 
-	os_delayed_work_submit(&ble_speed_test_work, BLE_TEST_WORK_INTERVAL);
+	os_delayed_work_submit(&p_ble_speed_info->ble_speed_test_work, BLE_TEST_WORK_INTERVAL);
 }
 
-static void test_ble_speed_start_stop_delaywork(void)
+static void test_ble_speed_start_stop_delaywork(struct bt_conn *conn)
 {
-	if (!ble_speed_tx_flag) {
-		ble_speed_tx_flag = 1;
-		os_delayed_work_init(&ble_speed_test_work, ble_speed_test_delaywork);
-		os_delayed_work_submit(&ble_speed_test_work, BLE_TEST_WORK_INTERVAL);
-		SYS_LOG_INF("BLE tx start\n");
+	struct ble_speed_info_t *p_ble_speed_info;
+	p_ble_speed_info = ble_speed_info_get(conn);
+
+	if(!p_ble_speed_info) {
+		SYS_LOG_ERR("p_ble_speed_info is NULL");
+		return;
+	}
+
+	if (!p_ble_speed_info->ble_speed_tx_flag) {
+		p_ble_speed_info->ble_speed_tx_flag = 1;
+		os_delayed_work_init(&p_ble_speed_info->ble_speed_test_work, ble_speed_test_delaywork);
+		os_delayed_work_submit(&p_ble_speed_info->ble_speed_test_work, BLE_TEST_WORK_INTERVAL);
+		SYS_LOG_INF("BLE tx start %p\n", conn);
 	} else {
-		ble_speed_tx_flag = 0;
-		ble_speed_notify_enable = 0;
-		os_delayed_work_cancel(&ble_speed_test_work);
-		SYS_LOG_INF("BLE tx stop\n");
+		p_ble_speed_info->ble_speed_tx_flag = 0;
+		os_delayed_work_cancel(&p_ble_speed_info->ble_speed_test_work);
+		SYS_LOG_INF("BLE tx stop %p\n", conn);
 	}
 }
 
-static int ble_speed_rx_data(uint8_t *buf, uint16_t len)
+static int ble_speed_rx_data(struct bt_conn *conn, uint8_t *buf, uint16_t len)
 {
-	static uint32_t curr_time;
-	static uint32_t pre_time;
-	static uint32_t RxCount;
+	struct ble_speed_info_t *p_ble_speed_info;
+	p_ble_speed_info = ble_speed_info_get(conn);
+
+	if(!p_ble_speed_info) {
+		SYS_LOG_ERR("p_ble_speed_info is NULL");
+		return -1;
+	}
 
 	if (len == strlen(ble_speed_tx_trigger)) {
 		if (memcmp(buf, ble_speed_tx_trigger, len) == 0) {
-			test_ble_speed_start_stop_delaywork();
+			test_ble_speed_start_stop_delaywork(conn);
+			return 0;
 		}
 	}
 
-	RxCount += len;
-	curr_time = k_uptime_get_32();
-	if ((curr_time - pre_time) >= 1000) {
-		printk("Rx: %d byte\n", RxCount);
-		RxCount = 0;
-		pre_time = curr_time;
+	p_ble_speed_info->rx.count += len;
+	p_ble_speed_info->rx.curr_time = k_uptime_get_32();
+	if ((p_ble_speed_info->rx.curr_time - p_ble_speed_info->rx.pre_time) >= 1000) {
+		printk("Rx: %d byte/s\n", p_ble_speed_info->rx.count);
+		p_ble_speed_info->rx.count = 0;
+		p_ble_speed_info->rx.pre_time = p_ble_speed_info->rx.curr_time;
 	}
 
 	return 0;
 }
 
-static void ble_speed_connect_cb(uint8_t *mac, uint8_t connected)
+static void ble_speed_connect_cb(struct bt_conn *conn, uint8_t conn_type, uint8_t *mac, uint8_t connected)
 {
+	struct ble_speed_info_t *p_ble_speed_info;
 	SYS_LOG_INF("BLE %s\n", connected ? "connected" : "disconnected");
 	SYS_LOG_INF("MAC %2x:%2x:%2x:%2x:%2x:%2x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
+	os_mutex_lock(&ble_speed_mutex, OS_FOREVER);
 	if (connected) {
 #if WAIT_TODO
 		hci_set_acl_print_enable(0);
 #endif
+		p_ble_speed_info = ble_speed_info_get(NULL);
+		if(p_ble_speed_info) {
+			p_ble_speed_info->conn = conn;
+		} else {
+			SYS_LOG_ERR("p_ble_speed_info is NULL!");
+		}
 	} else {
 #if WAIT_TODO
 		hci_set_acl_print_enable(1);
 #endif
-		ble_speed_tx_flag = 0;
+		p_ble_speed_info = ble_speed_info_get(conn);
+		if(p_ble_speed_info) {
+			os_delayed_work_cancel(&p_ble_speed_info->ble_speed_test_work);
+			p_ble_speed_info->ble_speed_tx_flag = 0;
+			p_ble_speed_info->ble_speed_notify_enable = 0;
+			p_ble_speed_info->conn = NULL;
+		} else {
+			SYS_LOG_ERR("p_ble_speed_info is NULL!");
+		}
 	}
+	os_mutex_unlock(&ble_speed_mutex);
 }
 
 static struct ble_reg_manager ble_speed_mgr = {
 	.link_cb = ble_speed_connect_cb,
 };
 
-static int shell_cmd_btble_reg(const struct shell *shell, size_t argc, char *argv[])
+static int shell_cmd_btble_reg(int argc, char *argv[])
 {
+	struct _bt_gatt_ccc *ccc;
 	static uint8_t reg_flag = 0;
 
 	if (reg_flag) {
@@ -767,6 +839,9 @@ static int shell_cmd_btble_reg(const struct shell *shell, size_t argc, char *arg
 	} else {
 		ble_speed_mgr.gatt_svc.attrs = ble_speed_attrs;
 		ble_speed_mgr.gatt_svc.attr_count = ARRAY_SIZE(ble_speed_attrs);
+
+		ccc = (struct _bt_gatt_ccc *)ble_speed_attrs[5].user_data;
+		ccc->cfg_write = speed_ccc_cfg_changed;
 
 		bt_manager_ble_service_reg(&ble_speed_mgr);
 		reg_flag = 1;
@@ -918,47 +993,35 @@ static int shell_cmd_sppble_stream_reg(const struct shell *shell, size_t argc, c
 }
 #endif
 
-SHELL_STATIC_SUBCMD_SET_CREATE(bt_mgr_cmds,
-	SHELL_CMD(discover, NULL, "BR discover", shell_cmd_btmgr_br_discover),
-	SHELL_CMD(br_connect, NULL, "BR connect", shell_cmd_btmgr_br_connect),
-	SHELL_CMD(br_disconnect, NULL, "BR disconnect", shell_cmd_btmgr_br_disconnect),
+static const struct shell_cmd btmgr_test_commands[] = {
+	{"discover", shell_cmd_btmgr_br_discover, "BR discover"},
+	{"br_connect", shell_cmd_btmgr_br_connect, "BR connect"},
+	{"br_disconnect", shell_cmd_btmgr_br_disconnect, "BR disconnect"},
 #if MGR_SPP_TEST_SHELL
-	SHELL_CMD(spp_reg, NULL, "Register spp uuid", shell_cmd_btspp_reg),
-	SHELL_CMD(spp_connect, NULL, "SPP connect", shell_cmd_btspp_spp_connect),
-	SHELL_CMD(spp_disconnect, NULL, "SPP disconnect", shell_cmd_btspp_spp_disconnect),
-	SHELL_CMD(spp_send, NULL, "SPP send data", shell_cmd_btspp_send),
+	{"spp_reg", shell_cmd_btspp_reg, "Register spp uuid"},
+	{"spp_connect", shell_cmd_btspp_spp_connect, "SPP connect"},
+	{"spp_disconnect", shell_cmd_btspp_spp_disconnect, "SPP disconnect"},
+	{"spp_send", shell_cmd_btspp_send, "SPP send data"},
 #endif
 #if MGR_PBAP_TEST_SHELL
-	SHELL_CMD(pbap_get, NULL, "Get phonebook", shell_cmd_pbap_get),
-	SHELL_CMD(pbap_abort, NULL, "Abort get phonebook", shell_cmd_pbap_abort),
+	{"pbap_get", shell_cmd_pbap_get, "Get phonebook"},
+	{"pbap_abort", shell_cmd_pbap_abort, "Abort get phonebook"},
 #endif
 #if MGR_MAP_TEST_SHELL
-	SHELL_CMD(map_connect, NULL, "Connect MSE", cmd_test_map_connect),
-	SHELL_CMD(map_abort, NULL, "Abort get message", cmd_test_map_abort),
-	SHELL_CMD(map_disconnect, NULL, "Disconnect MSE", cmd_test_map_disconnect),
-	SHELL_CMD(map_setfolder, NULL, "Set Folder", cmd_test_map_set_folder),
-	SHELL_CMD(map_getmsglist, NULL, "Get Messages Listing", cmd_test_map_get_msg_list),
-	SHELL_CMD(map_getfolderlist, NULL, "Get Folder Listing", cmd_test_map_get_folder_list),
+	{"map_connect", cmd_test_map_connect, "Connect MSE"},
+	{"map_abort", cmd_test_map_abort, "Abort get message"},
+	{"map_disconnect", cmd_test_map_disconnect, "Disconnect MSE"},
+	{"map_setfolder", cmd_test_map_set_folder, "Set Folder"},
+	{"map_getmsglist", cmd_test_map_get_msg_list, "Get Messages Listing"},
+	{"map_getfolderlist", cmd_test_map_get_folder_list, "Get Folder Listing"},
 #endif
 #if MGR_BLE_TEST_SHELL
-	SHELL_CMD(ble_reg, NULL, "Register ble service", shell_cmd_btble_reg),
+	{"ble_reg", shell_cmd_btble_reg, "Register ble service"},
 #endif
 #if MGR_SPPBLE_STREAM_TEST_SHELL
-	SHELL_CMD(sppble_stream_reg, NULL, "Register sppble stream", shell_cmd_sppble_stream_reg),
+	{"sppble_stream_reg", shell_cmd_sppble_stream_reg, "Register sppble stream"},
 #endif
-	SHELL_SUBCMD_SET_END
-);
+	{NULL, NULL, NULL}
+};
 
-static int cmd_bt_mgr(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		shell_help(shell);
-		return SHELL_CMD_HELP_PRINTED;
-	}
-
-	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
-
-	return -EINVAL;
-}
-
-SHELL_CMD_REGISTER(btmgr, &bt_mgr_cmds, "Bluetooth manager test shell commands", cmd_bt_mgr);
+SHELL_REGISTER(BTMGR_TEST_SHELL_MODULE, btmgr_test_commands);

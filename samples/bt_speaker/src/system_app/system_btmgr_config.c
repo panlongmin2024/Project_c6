@@ -232,7 +232,7 @@ int system_btmgr_config_update_2nd(void)
 	reconnect_config->enter_pair_mode_when_startup_reconnect_fail = 0;//cfg_reconnect.Enter_Pair_Mode_When_Startup_Reconnect_Fail;
     reconnect_config->reconnect_resume_play = 0;
 
-	reconnect_config->always_reconnect_last_device = 1;
+	reconnect_config->always_reconnect_last_device = 0;
 
     if(reconnect_config->reconnect_phone_interval <= reconnect_config->reconnect_phone_timeout){
         reconnect_config->reconnect_phone_interval = reconnect_config->reconnect_phone_timeout + 10;

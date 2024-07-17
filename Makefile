@@ -1539,6 +1539,7 @@ firmware: nvram_bin datafs_bin sdfs_bin
 			-ef $(FW_DIR)/bin/efuse.bin \
 			-s $(CONFIG_SOC_SERIES) \
 			-b $(BOARD_NAME) \
+			-a ${APP_CONFIG} \
 			-ota_image_check $(CONFIG_OTA_IMAGE_CHECK_MODE) \
 			-secure_boot 1; \
 	else \
@@ -1548,6 +1549,7 @@ firmware: nvram_bin datafs_bin sdfs_bin
 			-ef $(FW_DIR)/bin/efuse.bin \
 			-s $(CONFIG_SOC_SERIES) \
 			-b $(BOARD_NAME) \
+			-a ${APP_CONFIG} \
 			-ota_image_check $(CONFIG_OTA_IMAGE_CHECK_MODE) \
 			-secure_boot 0; \
 	fi;

@@ -1257,7 +1257,7 @@ static void btsrv_a2dp_update_avrcp_playstate(struct bt_conn *conn, uint8_t avrc
 		}
 	}
 	
-	SYS_LOG_INF("avrcp_playing %d hdl 0x%x active %d prio 0x%x", avrcp_playing, hostif_bt_conn_get_handle(conn),
+	SYS_LOG_INF("avrcp:%d hdl:0x%x ac:%d pr:0x%x", avrcp_playing, hostif_bt_conn_get_handle(conn),
 					btsrv_rdm_a2dp_get_active(conn), btsrv_rdm_a2dp_get_priority(conn));
 	
 	btsrv_a2dp_start_stop_check_prio_timer(1);

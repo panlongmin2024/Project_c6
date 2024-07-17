@@ -323,6 +323,10 @@ static int send_play_analytics_data(u8_t * buf)
 		ret = self_send_data(buf, hl + 2);
 	}
 
+	if (NULL != data) {
+		mem_free(data);
+	}
+
 	return ret;
 }
 

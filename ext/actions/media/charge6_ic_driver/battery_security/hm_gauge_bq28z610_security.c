@@ -451,7 +451,6 @@ void battery_hw_test(void)
     i2c_write_data(bq28z610_i2c_addr, sec_Register_AltManufacturerAccess_L, cmd_Chemical_ID4, 2);
 	i2c_read_data(bq28z610_i2c_addr,sec_Register_AltManufacturerAccess_L,output_string,24);
 	//print_buffer_lazy("output_string:", output_string, 24);              
-
 }
 
 

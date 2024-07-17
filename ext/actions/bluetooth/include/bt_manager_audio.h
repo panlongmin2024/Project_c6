@@ -601,6 +601,8 @@ int bt_manager_media_get_local_passthrough_status(void);
 
 uint16_t bt_manager_media_get_active_br_handle(void);
 
+uint16_t bt_manager_media_set_active_br_handle(void);
+
 /*
  * Call Control
  */

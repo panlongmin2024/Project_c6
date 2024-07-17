@@ -266,6 +266,10 @@ static int selfapp_connect_deinit(void)
 		stream_close(selfctx->stream_hdl);
 		selfctx->stream_opened = 0;
 	}
+
+	if(selfctx->mute_player){
+		selfapp_mute_player(0);
+	}
 	return 0;
 }
 

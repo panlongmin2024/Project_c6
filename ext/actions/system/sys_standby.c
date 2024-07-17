@@ -35,6 +35,7 @@
 #include <audio_hal.h>
 #include <soc_dvfs.h>
 #include <cpuload_stat.h>
+#include <input_manager.h>
 
 #ifdef CONFIG_C_AMP_TAS5828M
 #include <driver/amp/tas5828m/tas5828m_head.h>
@@ -44,7 +45,7 @@
 #endif
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-
+#define USE_HM_S2_PROCESS	1
 #include <wltmcu_manager_supply.h>
 #endif	
 #ifdef CONFIG_TASK_WDT
@@ -276,6 +277,7 @@ static int _sys_standby_enter_s1(void)
 	hm_ext_pa_deinit();
 	external_dsp_ats3615_deinit();
 	bt_mcu_send_pw_cmd_standby();
+	input_manager_lock();
 #endif
 
 	//bt_manager_sys_event_notify(SYS_EVENT_BT_WAIT_PAIR);
@@ -327,6 +329,7 @@ static int _sys_standby_exit_s1(void)
 		
 	bt_mcu_send_pw_cmd_exit_standy();
 	soc_dvfs_unset_level(SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, "pa init");
+	input_manager_unlock();
 #endif
 	t = app_manager_get_apptid(CONFIG_FRONT_APP_NAME);
 	if (NULL != t){
@@ -399,7 +402,7 @@ bool sys_check_standby_state(void)
 }
 
 //#define CONFIG_S3BT_LEAST_LOG
-
+#ifndef USE_HM_S2_PROCESS
 static void sys_before_enter_deep_sleep(void)
 {
 #ifdef CONFIG_SOC_SERIES_ANDESC
@@ -448,7 +451,7 @@ static int _sys_standby_enter_s3(void)
 
 	return wakeup_src;
 }
-
+#endif
 static int _sys_standby_process_normal(void)
 {
 	u32_t wakelocks = sys_wakelocks_check();
@@ -604,7 +607,7 @@ static bool _sys_standby_wakeup_from_s2(void)
 	
 	return false;
 }
-
+#ifndef USE_HM_S2_PROCESS
 static void _sys_standby_process_before_s2(void)
 {
 	struct device *dev = NULL;
@@ -788,10 +791,51 @@ static int _sys_standby_process_s2(void)
 	sys_wake_unlock(WAKELOCK_WAKE_UP);
 	return 0;
 }
+#else
+static int _sys_standby_process_s2_hm(void)
+{
+	u32_t cur_time;
 
+	task_wdt_feed_all();
+
+	/**have sys wake lock*/
+	if (_sys_standby_wakeup_from_s2()) {
+		_sys_standby_exit_s2();
+		sys_wake_lock(WAKELOCK_WAKE_UP);
+		_sys_standby_exit_s1();
+		sys_wake_unlock(WAKELOCK_WAKE_UP);
+		return 0;
+	}
+
+	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	cur_time = sys_pm_get_rc_timestamp();
+	if ((cur_time < power_led_last_tinme)){
+		power_led_wait_time -= cur_time + 0x10000000 - power_led_last_tinme;
+	}else{
+		power_led_wait_time -= cur_time - power_led_last_tinme;
+	}
+	power_led_last_tinme = sys_pm_get_rc_timestamp();
+	if((power_led_wait_time <= 10)){
+		if(power_led_state){
+			power_led_wait_time = 4000;
+			power_led_state = 0;
+			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+		}else{
+			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+			power_led_wait_time = 500;
+			power_led_state = 1;
+		}
+	}
+	#endif
+	return 0;
+}	
+#endif
 static int _sys_standby_work_handle(void)
 {
-	int ret = _sys_standby_check_auto_powerdown(false);
+	int ret = 0; 
+	
+	if(standby_context->standby_state == STANDBY_NORMAL)	
+		ret = _sys_standby_check_auto_powerdown(false);
 
 	if (ret)
 		return ret;
@@ -804,7 +848,7 @@ static int _sys_standby_work_handle(void)
 		ret = _sys_standby_process_s1();
 		break;
 	case STANDBY_S2:
-		ret = _sys_standby_process_s2();
+		ret = _sys_standby_process_s2_hm();
 		break;
 	}
 	return ret;

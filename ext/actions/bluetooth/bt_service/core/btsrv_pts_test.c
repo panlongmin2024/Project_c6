@@ -13,7 +13,6 @@
 #include "btsrv_inner.h"
 #include <acts_bluetooth/hci.h>
 #include <acts_bluetooth/bluetooth.h>
-#include "acts_bluetooth/pts_test.h"
 
 #ifdef CONFIG_BT_PTS_TEST
 
@@ -165,16 +164,6 @@ int btsrv_pts_register_auth_cb(bool reg_auth)
 	return 0;
 }
 
-void btsrv_pts_test_set_flag(uint8_t flags)
-{
-	pts_test_set_flag(flags);
-}
-
-void btsrv_pts_test_clear_flag(uint8_t flags)
-{
-	pts_test_clear_flag(flags);
-}
-
 void btsrv_pts_set_adv_ann_type(void)
 {
 	s_pts_ctx.adv_ann_type = 1;
@@ -309,11 +298,11 @@ int btsrv_pts_start_adv(pts_adv_type_e adv_type)
 			btsrv_audio_stop_adv();
 			/* start csis rsi adv */
 			s_pts_ctx.is_adv_enable = 1;
-			pts_test_set_flag(PTS_TEST_FLAG_CSIP);
+			btsrv_pts_test_set_flag(PTS_TEST_FLAG_CSIP);
 			btsrv_audio_start_adv();
 			/* clear cisp flag */
 			s_pts_ctx.is_adv_enable = 0;
-			pts_test_clear_flag(PTS_TEST_FLAG_CSIP);
+			btsrv_pts_test_clear_flag(PTS_TEST_FLAG_CSIP);
 			break;
 		}
 
@@ -527,6 +516,28 @@ uint8_t btsrv_pts_is_le_audio_evt_flag(audio_core_evt_flags_e flag)
 #else
 	return 0;
 #endif /*CONFIG_BT_PTS_TEST*/
+}
+
+static uint8_t s_pts_test_flags = 0;
+
+void btsrv_pts_test_set_flag(uint8_t flags)
+{
+	s_pts_test_flags |= flags;
+}
+
+void btsrv_pts_test_clear_flag(uint8_t flags)
+{
+	s_pts_test_flags &= ~flags;
+}
+
+uint8_t btsrv_pts_test_is_flag(pts_test_flags_e flag)
+{
+#ifdef CONFIG_BT_PTS_TEST
+	if (flag & s_pts_test_flags) {
+		return 1;
+	}
+#endif
+	return 0;
 }
 
 

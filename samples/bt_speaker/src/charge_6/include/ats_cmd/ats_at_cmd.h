@@ -113,4 +113,5 @@
 #define ATS_AT_CMD_GET_PWR_TIME             "TL_GET_PWR_TIME"
 #define ATS_AT_CMD_GET_PALY_TIME            "TL_GET_PLAY_TIME"
 
+#define ATS_AT_CMD_ALL_WLED_ON              "TL_WLED_ALLON"
 #endif

@@ -7,6 +7,8 @@
 #include <acts_bluetooth/audio/vocs.h>
 #include "audio_service.h"
 
+#ifdef CONFIG_BT_VCS_SERVICE
+
 static void offset_state_cfg_changed(struct bt_conn *conn, uint8_t conn_type,
 					 const struct bt_gatt_attr *attr, uint16_t value)
 {
@@ -51,5 +53,7 @@ static void output_desc_cfg_changed(struct bt_conn *conn, uint8_t conn_type,
 	BT_GATT_CCC(output_desc_cfg_changed,    \
 		    BT_GATT_PERM_READ | BT_AUDIO_GATT_PERM_WRITE),    \
 )
+
+#endif /*CONFIG_BT_VCS_SERVICE*/
 
 #endif /* __BT_VOCS_SERVICE_H */

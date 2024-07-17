@@ -2579,6 +2579,11 @@ typedef enum
 	BTSRV_AUDIO_CAS_AUTO_DISCOVER      = 0x20,
 	BTSRV_AUDIO_GENERATE_INCOMING_CALL = 0x40,
 } audio_core_evt_flags_e;
+
+typedef enum
+{
+	PTS_TEST_FLAG_CSIP = 0x01,
+} pts_test_flags_e;
 /*
  * For pts test lib_service
  */
@@ -2652,6 +2657,7 @@ void btif_pts_set_adv_ann_type(void);
 int btif_pts_start_adv(uint8_t adv_type);
 void btif_pts_test_set_flag(uint8_t          flags);
 void btif_pts_test_clear_flag(uint8_t flags);
+uint8_t btif_pts_test_is_flag(pts_test_flags_e flag);
 void btif_pts_set_pacs_aac(struct bt_conn *conn, uint16_t src_aac, uint16_t sink_aac);
 void btif_pts_set_pacs_sac(struct bt_conn *conn, uint16_t src_aac, uint16_t sink_aac);
 uint16_t btif_pts_get_pacs_aac(struct bt_conn *conn, uint8_t is_sink);

@@ -21,19 +21,19 @@ config APP_STACKSIZE
     This option set stack size for app thread
 
 config BT_MUSIC_APP
-	bool
-	prompt "BT MUSIC App Support"
-	default n
+	  bool
+	  prompt "BT MUSIC App Support"
+	  default n
 
 config AURACAST
-	bool
-	prompt "Auracast Support"
-	default n
+	  bool
+	  prompt "Auracast Support"
+	  default n
 
 config BT_DISABLE_PAIR_MODE
-	bool
-	prompt "disable pair mode"
-	default n
+	  bool
+	  prompt "disable pair mode"
+	  default n
 
 config DSP_COMPUTE_COMPLEXITY
 	int
@@ -63,45 +63,45 @@ config SPI_SWITCH_BY_GPIO
     prompt "enable test battery"
     default n
 config AUARCAST_FILTER_POLICY_H
-  bool
-  prompt "auarcast filter policy H"
-  default n
+    bool
+    prompt "auarcast filter policy H"
+    default n
 
 config BT_LE_AUDIO
-  bool
-  prompt "enable leaudio"
-  default n
+    bool
+    prompt "enable leaudio"
+    default n
 
 config BT_LE_AUDIO_CALL
-  bool
-  prompt "enable leaudio call"
-  default n
+    bool
+    prompt "enable leaudio call"
+    default n
 
 config EXTERNAL_DSP_DELAY
-	int
-	prompt "external DSP delay"
-	default 0
-	help
+	  int
+	  prompt "external DSP delay"
+	  default 0
+	  help
 
 config USER_PAUSE_POLICY
-	bool
-	prompt "different policy when user pause.player will be stopped immediately when user pause if this macro config"
-	default n
+	  bool
+	  prompt "different policy when user pause.player will be stopped immediately when user pause if this macro config"
+	  default n
 
 config BT_LETWS
-  bool
-  prompt "enable letws"
-  default n
+    bool
+    prompt "enable letws"
+    default n
 
 config HM_FLIP_SERIES
-  bool
-  prompt "harman filp series"
-  default n
+    bool
+    prompt "harman filp series"
+    default n
 
 config HM_CHARGE_SERIES
-  bool
-  prompt "harman charge series"
-  default n
+    bool
+    prompt "harman charge series"
+    default n
 
 menu "App Configuration"
 

@@ -148,7 +148,7 @@ static const struct shell_cmd commands[] = {
 	{ "extern_dsp_effect_switch", shell_extern_dsp_switch, "shell_extern_dsp_switch" },
 	{ "wakelocks_dump", shell_wakelocks_dump, "wakelocks dump"},
 	{ "enter_bqb", shell_enter_bqb, "enter bqb"},
-	{ "enter_uart_test", shell_uart_test, "enter uart test"},
+	{ "TL_ATS_IN", shell_uart_test, "enter uart test"},
 	{ NULL, NULL, NULL }
 };
 

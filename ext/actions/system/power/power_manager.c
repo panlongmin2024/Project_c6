@@ -669,6 +669,7 @@ _POWER_OFF_:
 		return 0;
 	}
 	power_manager->report_timestamp = 0;
+
 #else
 _POWER_OFF_:
 	if (power_manager->current_vol <= power_manager->nopower_level) {

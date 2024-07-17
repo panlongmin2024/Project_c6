@@ -11,8 +11,6 @@ obj-$(CONFIG_BT_TESTING) += testing.o
 obj-$(CONFIG_BT_HOST_CCM) += aes_ccm.o
 obj-$(CONFIG_BT_PROPERTY) += property.o
 
-obj-y += pts_test.o
-
 obj-$(CONFIG_BT_BREDR) += sdp.o ssp.o
 
 

@@ -21,6 +21,7 @@
 #include <global_mem.h>
 #ifdef CONFIG_BLUETOOTH
 #include <bt_manager.h>
+#include <broadcast.h>
 #endif
 #ifdef CONFIG_PLAYTTS
 #include <tts_manager.h>
@@ -292,6 +293,9 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 
 				case MSG_REBOOT:
 					SYS_EVENT_INF(EVENT_SYSTEM_REBOOT, msg.cmd);
+					#ifdef CONFIG_DATA_ANALY
+					data_analy_exit();
+					#endif
 					system_power_reboot(msg.cmd);
 					break;
 
@@ -327,11 +331,17 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 				break;
 #endif
 
-#ifdef CONFIG_BT_SELF_APP
-				case MSG_BAT_CHARGE_EVENT:
-					selfapp_report_bat();
-				break;
 
+				case MSG_BAT_CHARGE_EVENT:
+#ifdef CONFIG_BT_SELF_APP
+					selfapp_report_bat();
+#endif
+#ifdef 	CONFIG_BT_LETWS
+					if(bt_manager_letws_get_dev_role() == BTSRV_TWS_SLAVE)
+						broadcast_tws_vnd_notify_bat_status();
+#endif
+				break;
+#ifdef CONFIG_BT_SELF_APP
 				case MSG_SELFAPP_APP_EVENT:
 					if(SELFAPP_CMD_CALLBACK == msg.cmd) {
 						selfapp_on_connect_event((msg.reserve >> 4)&0xF, msg.reserve&0xF, msg.value);
@@ -365,6 +375,13 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 					#endif
 				}
 				break;
+
+				case MSG_EXIT_DATA_ANALY:
+					#ifdef CONFIG_DATA_ANALY
+					data_analy_exit();
+					#endif
+				break;
+
 				default:
 					break;
 			}

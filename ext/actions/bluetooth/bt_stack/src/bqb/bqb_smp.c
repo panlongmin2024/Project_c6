@@ -307,8 +307,10 @@ static void bqb_smp_connect_br_acl(char *str_addr)
 
 static void bqb_smp_conn_start_encrypt(void)
 {
+    int err = 0;
     BT_INFO("start enc\n");
-    bt_smp_start_security(g_bqb_smp_cntx.conn);
+    err = bt_smp_start_security(g_bqb_smp_cntx.conn);
+    BT_INFO("enc ret:%d\n", err);
 }
 
 static void bqb_smp_start(void)

@@ -100,6 +100,11 @@ int spkeq_SetNTIEQ(u8_t * param, u16_t plen)
 		selfapp_config_set_customer_eq(active_id, ntieq_ctm->band_count, ntieq_ctm->level_scope, (u8_t *)ntieq_ctm->bands);
 	}
 
+	if (selfapp_lasting_stereo_is_primary_role()) {
+		selfapp_log_inf("re-transfer to secondary");
+		extern void broadcast_tws_vnd_send_resp_eqinfo(u8_t send);
+		broadcast_tws_vnd_send_resp_eqinfo(1);
+	}
 #if 1 //def CONFIG_C_EXTERNAL_DSP_ATS3615
 	ext_dsp_set_eq_by_app(active_id, pre_id, param+1, plen-1);
 #else

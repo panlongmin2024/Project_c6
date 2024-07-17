@@ -4482,21 +4482,36 @@ int bt_manager_media_get_local_passthrough_status(void)
 	return audio_conn->media_state;
 }
 
+static uint16_t media_handle = 0;
+uint16_t bt_manager_media_set_active_br_handle(void)
+{
+	uint16_t active_hdl = 0;
+	struct bt_audio_conn *audio_conn;
+
+	audio_conn = find_active_slave();
+	if (!audio_conn) {
+		goto exit;
+	}
+
+	if(audio_conn->type == BT_TYPE_BR){
+		active_hdl = audio_conn->handle;
+	}
+
+exit:
+	if (media_handle != active_hdl) {
+		media_handle = active_hdl;
+		bt_manager_update_phone_volume(media_handle, 1);
+		SYS_LOG_INF("%x", active_hdl);
+	}
+	return 1;
+}
+
 uint16_t bt_manager_media_get_active_br_handle(void)
 {
-    struct bt_audio_conn *audio_conn;
-
-    audio_conn = find_active_slave();
-    if (!audio_conn) {
-        return 0;
-    }
-
-    if(audio_conn->type == BT_TYPE_BR){
-        return audio_conn->handle;
-    }
-    else{
-        return 0;
-    }
+	if (media_handle == 0) {
+		SYS_LOG_INF("%x", media_handle);
+	}
+	return media_handle;
 }
 
 static struct bt_audio_call_inst *new_bt_call(struct bt_audio_conn *audio_conn,

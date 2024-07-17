@@ -76,8 +76,7 @@ struct bt_a2dp_media_aac_codec {
 	uint8_t codec_type;
 	uint8_t obj_type;
 	uint8_t freq0;
-	uint8_t rfa1:2;
-	uint8_t channels:2;
+	uint8_t channels:4;
 	uint8_t freq1:4;
 	uint8_t bit_rate0:7;
 	uint8_t vbr:1;

@@ -1621,7 +1621,7 @@ void bt_manager_tws_set_leaudio_active(int8_t leaudio_active);
  * @param len: device name len
  */
 int bt_manager_bt_name_update(uint8_t *name, uint8_t len);
-
+int bt_manager_bt_name_update_fatcory_reset(uint8_t *name, uint8_t len);
 /**
  * @brief
  *

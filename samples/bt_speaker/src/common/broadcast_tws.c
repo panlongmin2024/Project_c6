@@ -13,9 +13,12 @@
 #include <input_manager.h>
 #include <sys_event.h>
 #include <bt_manager.h>
+#include <property_manager.h>
 #ifdef CONFIG_BT_SELF_APP
 #include "selfapp_api.h"
 #endif
+#include <app_launch.h>
+#include <fw_version.h>
 
 enum DeviceInfo_TokenID_e {
 	TokenID_ProductID = 0x31,	     // R  2bytes
@@ -27,18 +30,18 @@ enum DeviceInfo_TokenID_e {
 	TokenID_MACAddress = 0x37,	     // RW 6bytes
 	TokenID_Role = 0x38,	         // RW 1byte
 	TokenID_TwsMode = 0x39,	         // RW 1byte, 0 normal, 1 tws connecting, 2 tws connected, 3 wired mode
-	TokenID_GroupName = 0x3a,        // RW dynamic
 	TokenID_GroupId = 0x3b,		     // RW 4bytes
 	TokenID_AuracastMode = 0x3c,	 // RW 1byte  0 normal, 1 auracast, 2 auracast on and unlinked, 3 auracast on and linked
 	TokenID_SyncOnOff = 0x3d,	     // RW 1byte  0 sync on off disable, 1 sync on off enable
 	TokenID_DeviceSerialNum = 0x40,	 // R  16bytes
-	TokenID_DeviceFirmware = 0x41,	 // R  3bytes
+	TokenID_DeviceFirmware = 0x41,	 // R  4bytes
 	TokenID_UsbStatus = 0x42,	     // R  1byte
 	TokenID_MicStatus = 0x43,	     // R  1byte
 	TokenID_DeviceNameCRC16 = 0x44,	 // R  2bytes, A CRC16 value of source device name
 	TokenID_SoundDetection = 0x45,	 // RW 1byte
 	TokenID_AbsoluteVolume = 0x46,	 // RW 1byte, Range:0-127
 	TokenID_DeviceName = 0xc1,	     // RW dynamic
+	TokenID_GroupName = 0xc2,        // RW dynamic
 };
 
 int broad_tws_send_message_to_front(uint8_t msg_type, uint8_t cmd, uint8_t reserved)
@@ -117,16 +120,18 @@ static void broadcast_tws_vnd_handle_set_dev_info(const uint8_t * data,int len)
 		int id = data[index];
 		switch (id) {
 		case TokenID_ActiveChannel:
-			SYS_LOG_INF("ActiveChan=0x%x\n", data[index + 2]);
+			SYS_LOG_INF("ActiveChan=0x%x\n", data[index + 1]);
 #ifdef CONFIG_BT_SELF_APP
-			group.ch = data[index + 2];
+			group.ch = data[index + 1];
 #endif
+			index += 1 + 1;
 			break;
 
 		case TokenID_MACAddress:
 #ifdef CONFIG_BT_SELF_APP
-			memcpy(group.addr,&data[index + 2],6);
+			memcpy(group.addr,&data[index + 1],6);
 #endif
+			index += 1 + 6;
 			break;
 
 		case TokenID_GroupName:
@@ -134,27 +139,174 @@ static void broadcast_tws_vnd_handle_set_dev_info(const uint8_t * data,int len)
 #ifdef CONFIG_BT_SELF_APP
 			memcpy(group.name,&data[index + 2],data[index + 1]);
 #endif
+			index += 1 + 1 + data[index + 1];
 			break;
 
 		case TokenID_GroupId:
 #ifdef CONFIG_BT_SELF_APP
-			memcpy(&group.id,&data[index + 2],data[index + 1]);
+			memcpy(&group.id,&data[index + 1],4);
 #endif
+			if(!group.id){
+				group.mode = 0;
+				group.role = 0;
+			}
 			SYS_LOG_INF("group id 0x%x.\n", group.id);
+			index += 1 + 4;
 			break;
 
 		default:
 			SYS_LOG_INF("unknow token 0x%x\n", id);
 			break;
 		}
-
-		index += 2 + data[index + 1];
 	}
 
 #ifdef CONFIG_BT_SELF_APP
 	selfapp_set_lasting_stereo_group_info(&group);
 #endif
 
+}
+
+static void broadcast_tws_vnd_handle_dev_info_rsp(const uint8_t * data,int len)
+{
+	uint16_t temp_acl_handle = 0;
+	temp_acl_handle = bt_manager_audio_get_letws_handle();
+	selfapp_device_info_t info;
+	uint8_t first = 0;
+	uint8_t update_bat = 0;
+	
+    if (!temp_acl_handle) {
+		SYS_LOG_ERR("tws link loss:");
+        return;
+	}
+
+	memset(&info,0,sizeof(info));
+
+	int index = 0;
+	while(index < len){
+		int id = data[index];
+		switch (id) {
+		case TokenID_BatteryStatus:
+			info.bat_status = data[index + 1];
+			index += 1 + 1;
+			update_bat = 1;
+			break;
+		case TokenID_DeviceSerialNum:
+			memcpy(info.serial_num,&data[index + 1],SELF_SN_LEN);
+			index += 1 + SELF_SN_LEN;
+			first = 1;
+			break;
+		case TokenID_DeviceFirmware:
+			memcpy(info.firmware_version,&data[index + 1],4);
+			index += 1 + 4;
+			break;
+		case TokenID_DeviceName:
+			memcpy(info.bt_name,&data[index + 2],data[index + 1]);
+			index += 1 + 1 + data[index + 1];
+			break;
+		default:
+			SYS_LOG_INF("unknow token 0x%x\n", id);
+			break;
+		}
+	}
+
+	if(first){
+#ifdef CONFIG_BT_SELF_APP
+		selfapp_set_device_info(&info);
+#endif
+		if (system_app_get_auracast_mode() == 3) {
+			SYS_LOG_INF("sync eqinfo when connected");
+			//TODO:
+			//broadcast_tws_vnd_send_resp_eqinfo(1);
+		}
+	}else if(update_bat){
+		selfapp_update_bat_for_secondary_device(info.bat_status);
+	}
+}
+
+static void broadcast_tws_vnd_handle_set_eqinfo(const uint8_t *data, int len)
+{
+	u8_t i, seteqcmd[15];
+	uint16_t temp_acl_handle = bt_manager_audio_get_letws_handle();
+	if (!temp_acl_handle) {
+		SYS_LOG_ERR("tws link loss:");
+		return;
+	}
+	if (data[0] != 0x01) {
+		SYS_LOG_ERR("devidx 0x%x notmatch", data[0]);
+		return ;
+	}
+
+	SYS_LOG_INF("0x%x, %d", data[1], len);
+
+	seteqcmd[0] = data[1];  // eqname: active eqcategory id
+
+	seteqcmd[1] = EQ_NAME_CUSTOM;  // custom eqcategory id, fixedly
+	seteqcmd[2] = 0x06;            // scope: [-6, +6]
+	seteqcmd[3] = 5;               // band count, 5 for now
+
+	for (i = 0; i < seteqcmd[3]; i++) {
+		seteqcmd[4 + i*2]   = i + 1;        // band[i] type
+		seteqcmd[4 + i*2 + 1] = data[3+i];  // band[i] level
+
+		// only 3 band level from primary device for now, the left bands set 0
+		if (i >= 3) {
+			seteqcmd[4 + i*2 + 1] = 0;
+		}
+	}
+	//print_buffer(seteqcmd, 1, 14, 16, 0x11223344);
+
+#ifdef CONFIG_BT_SELF_APP
+	extern int spkeq_SetNTIEQ(u8_t * param, u16_t plen);
+	spkeq_SetNTIEQ(seteqcmd, 14);
+#endif
+}
+
+void broadcast_tws_vnd_send_resp_eqinfo(u8_t send)
+{
+	u8_t eqcmdbuf[11];
+	uint16_t temp_acl_handle = bt_manager_audio_get_letws_handle();
+	if (!temp_acl_handle) {
+		SYS_LOG_ERR("tws link loss:");
+		return;
+	}
+
+	eqcmdbuf[0] = COMMAND_IDENTIFIER;
+	eqcmdbuf[1] = COMMAND_RSPUSEREQ;
+	eqcmdbuf[2] = 6;            // payloadlen
+	if (send) {
+		eqcmdbuf[1] = COMMAND_SETUSEREQ;
+	}
+
+	eqcmdbuf[3] = 1;            // device index, 1 secondary
+	eqcmdbuf[4] = EQ_NAME_OFF;  // active eqid, refer to EQ_Category_Id_e in selfapp_internal.h
+	eqcmdbuf[5] = 1;            // ON, of course
+
+#ifdef CONFIG_BT_SELF_APP
+	{
+		u8_t scope = 0;
+		s8_t eqband[5][2];  //refer to customeq_param_nti_t
+
+		extern u8_t selfapp_config_get_eq_id(void);
+		extern int selfapp_config_get_customer_eq(u8_t *scope, u8_t *bands);
+
+		eqcmdbuf[4] = selfapp_config_get_eq_id();
+		selfapp_config_get_customer_eq(&scope, (u8_t *)eqband);
+		//print_buffer(eqband, 1, 10, 16, 0x12345678);
+
+		#define EQScopeLimit(x)   ( ((x) < -2) ? -2 : ((x) > 2) ? 2 : (x) )
+		#define EQScopePostive(x) ( (0 - (x)) + 2 )
+		eqcmdbuf[6] = EQScopePostive(EQScopeLimit(eqband[0][1]));
+		eqcmdbuf[7] = EQScopePostive(EQScopeLimit(eqband[1][1]));
+		eqcmdbuf[8] = EQScopePostive(EQScopeLimit(eqband[2][1]));
+		//eqcmdbuf[9] = EQScopePostive(EQScopeLimit(eqband[3][1]));
+		//eqcmdbuf[10] = EQScopePostive(EQScopeLimit(eqband[4][1]));
+	}
+#endif
+
+	SYS_LOG_INF("%x", eqcmdbuf[1]);
+	print_buffer(eqcmdbuf, 1, eqcmdbuf[2]+3, 16, 0xaabbccdd);
+
+	bt_manager_audio_le_vnd_send(temp_acl_handle, eqcmdbuf, eqcmdbuf[2] + 3);
 }
 
 int broadcast_tws_vnd_rx_cb(const uint8_t *buf, uint16_t len)
@@ -168,7 +320,7 @@ int broadcast_tws_vnd_rx_cb(const uint8_t *buf, uint16_t len)
 	SYS_LOG_INF("buf: %p, len: %d\n", buf, len);
 
 	for (i = 0; i < len; i++) {
-		printk("0x%x", buf[i]);
+		printk("%02x ", buf[i]);
 	}
 	printk("\n");
 
@@ -204,17 +356,25 @@ int broadcast_tws_vnd_rx_cb(const uint8_t *buf, uint16_t len)
 			broadcast_tws_vnd_handle_set_dev_info(&buf[4],cmd_length - 1);
 			send_ack = 1;
 			break;
+		case COMMAND_REQDEVINFO:
+			SYS_LOG_INF("req dev info\n");
+			broadcast_tws_vnd_notify_dev_info();
+			break;
+		case COMMAND_RSPDEVINFO:
+			SYS_LOG_INF("rsp dev info\n");
+			broadcast_tws_vnd_handle_dev_info_rsp(&buf[4],cmd_length - 1);
+			break;
 		case COMMAND_SETLIGHTINFO:
 			SYS_LOG_INF("set light info\n");
 			send_ack = 1;
 			break;
+		case COMMAND_REQUSEREQ:
+			SYS_LOG_INF("resp eq info\n");
+			broadcast_tws_vnd_send_resp_eqinfo(0);
+			break;
 		case COMMAND_SETUSEREQ:
 			SYS_LOG_INF("set eq info\n");
-			send_ack = 1;
-			break;
-		case COMMAND_SENDINDICATION:
-			SYS_LOG_INF("indication\n");
-			sys_event_notify_single(SYS_EVENT_STEREO_GROUP_INDICATION);
+			broadcast_tws_vnd_handle_set_eqinfo(&buf[3], cmd_length);
 			send_ack = 1;
 			break;
 		case COMMAND_DEVACK:
@@ -335,11 +495,18 @@ void broadcast_tws_vnd_send_sys_event(uint8_t event){
 		return;
 	}
 
+	if (event != SYS_EVENT_ENTER_PAIR_MODE
+		&& event != SYS_EVENT_MAX_VOLUME
+		&& event != SYS_EVENT_BT_CONNECTED
+		&& event != SYS_EVENT_2ND_CONNECTED){
+		return;
+	}
+
 	cmd[0] = COMMAND_IDENTIFIER;
 	cmd[1] = COMMAND_SENDSYSEVENT;
 	cmd[2] = 0x01;
 	cmd[3] = event;
-	SYS_LOG_INF("");
+	SYS_LOG_INF("%d\n",event);
 	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, sizeof(cmd));
 }
 
@@ -366,11 +533,9 @@ void broadcast_tws_vnd_set_dev_info(struct lasting_stereo_device_info *info){
 
 	cmd[index++] = 0;//device index
 	cmd[index++] = TokenID_ActiveChannel;
-	cmd[index++] = 1;
 	cmd[index++] = info->ch;
 
 	cmd[index++] = TokenID_MACAddress;
-	cmd[index++] = 6;
 	memcpy(&cmd[index],info->addr,6);
 	index += 6;
 
@@ -380,7 +545,6 @@ void broadcast_tws_vnd_set_dev_info(struct lasting_stereo_device_info *info){
 	index += strlen(info->name) + 1;
 
 	cmd[index++] = TokenID_GroupId;
-	cmd[index++] = 4;
 	memcpy(&cmd[index],&info->id,4);
 	index += 4;
 
@@ -435,6 +599,27 @@ void broadcast_tws_vnd_send_set_user_eq(struct lasting_stereo_eq_info *eq_info)
 
 void broadcast_tws_vnd_send_indication()
 {
+	uint8_t cmd[4] = { 0 };
+
+	uint16_t temp_acl_handle = 0;
+
+	temp_acl_handle = bt_manager_audio_get_letws_handle();
+
+	if (!temp_acl_handle) {
+		SYS_LOG_ERR("tws link loss:");
+		return;
+	}
+
+	cmd[0] = COMMAND_IDENTIFIER;
+	cmd[1] = COMMAND_SENDSYSEVENT;
+	cmd[2] = 0x01;
+	cmd[3] = SYS_EVENT_STEREO_GROUP_INDICATION;
+	SYS_LOG_INF("\n");
+
+   	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, 4);
+}
+
+void broadcast_tws_vnd_request_dev_info(){
 	uint8_t cmd[3] = { 0 };
 
 	uint16_t temp_acl_handle = 0;
@@ -447,9 +632,94 @@ void broadcast_tws_vnd_send_indication()
 	}
 
 	cmd[0] = COMMAND_IDENTIFIER;
-	cmd[1] = COMMAND_SENDINDICATION;
+	cmd[1] = COMMAND_REQDEVINFO;
 	cmd[2] = 0;
 
-   	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, 3);
+	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, 3);
+}
+
+void broadcast_tws_vnd_notify_dev_info(){
+	uint8_t cmd[40] = { 0 };
+	uint8_t serial_num[SELF_DEFAULT_SN_LEN] = { 0 };
+	uint8_t name[SELF_BTNAME_LEN + 1] = { 0 };
+	uint16_t temp_acl_handle = 0;
+	int index = 0,len = 0;
+	uint8_t  vercode[4];    // 3Bytes is sw version, big endian, 1Byte is hw version
+	temp_acl_handle = bt_manager_audio_get_letws_handle();
+
+	if (!temp_acl_handle) {
+		SYS_LOG_ERR("tws link loss:");
+        return;
+	}
+
+	cmd[index++] = COMMAND_IDENTIFIER;
+	cmd[index++] = COMMAND_RSPDEVINFO;
+	cmd[index++] = 0;
+
+#ifdef CONFIG_PROPERTY
+	len = property_get(CFG_ATS_SN, serial_num, SELF_DEFAULT_SN_LEN);
+#endif
+	if (len <= 0 || len > SELF_SN_LEN) {
+		memcpy(serial_num, SELF_DEFAULT_SN, SELF_DEFAULT_SN_LEN);
+	}
+	len = strlen(serial_num);
+
+	cmd[index++] = 0;//device index
+
+	cmd[index++] = TokenID_BatteryStatus;
+	cmd[index++] = selfapp_get_bat_power();
+
+	cmd[index++] = TokenID_DeviceSerialNum;
+	memcpy(&cmd[index],serial_num,SELF_SN_LEN);
+	index += SELF_SN_LEN;
+
+	u32_t hwver = 0, swver = fw_version_get_code();
+
+	vercode[0] = (u8_t)(swver >> 16);
+	vercode[1] = (u8_t)(swver >> 8);
+	vercode[2] = (u8_t)swver;
+	vercode[3] = (u8_t)hwver;
+
+	cmd[index++] = TokenID_DeviceFirmware;
+	memcpy(&cmd[index],vercode,4);
+	index += 4;
+
+	cmd[index++] = TokenID_DeviceName;
+#ifdef CONFIG_PROPERTY
+	property_get(CFG_BT_NAME, name, SELF_BTNAME_LEN);
+#endif
+	len = strlen(name);
+	cmd[index++] = len;
+	memcpy(&cmd[index],name,len);
+	index += len;
+
+	cmd[2] = index - 3;
+
+	SYS_LOG_INF("len %d\n",index);
+	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, index);
+}
+
+void broadcast_tws_vnd_notify_bat_status(){
+	uint8_t cmd[10] = { 0 };
+	uint16_t temp_acl_handle = 0;
+	int index = 0;
+
+	temp_acl_handle = bt_manager_audio_get_letws_handle();
+
+	if (!temp_acl_handle) {
+		SYS_LOG_ERR("tws link loss:");
+        return;
+	}
+
+	cmd[index++] = COMMAND_IDENTIFIER;
+	cmd[index++] = COMMAND_RSPDEVINFO;
+	cmd[index++] = 3;
+
+	cmd[index++] = 0;//device index
+	cmd[index++] = TokenID_BatteryStatus;
+	cmd[index++] = selfapp_get_bat_power();
+
+	SYS_LOG_INF("len %d\n",index);
+	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, index);
 }
 

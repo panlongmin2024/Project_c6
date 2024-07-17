@@ -48,7 +48,7 @@ void self_music_effect_ctrl_set_enable(bool en)
         SYS_LOG_INF("en:%d\n", en);
 
         self_music_effect_ctrl_bypass = !en;
-        change_flag = 1;
+        //change_flag = 1;
     }
 
     os_mutex_unlock(&self_music_effect_ctrl_mutex);

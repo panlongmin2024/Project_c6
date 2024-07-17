@@ -9,18 +9,14 @@
 #endif
 
 #include <media_player.h>
-
+#include <fw_version.h>
 #ifdef CONFIG_DATA_ANALY
 #include <data_analy.h>
 #endif
 
-#define SELF_BTNAME_LEN    (16)
-#define SELF_SN_LEN    (16)
-#define SELF_DEFAULT_SN "Do Not-available"
-#define SELF_DEFAULT_SN_LEN (sizeof(SELF_DEFAULT_SN))
-
 enum DeviceInfo_TokenID_e {
-	TokenID_DeviceName = 0xc1,	// RW dynamic
+	TokenID_DeviceName = 0xc1,	// RW dynamic 32 bytes at most
+	TokenID_Serial_Number = 0xc2,	// R dynamic 64 bytes at most
 	TokenID_ProductID = 0x42,	// RW 2bytes
 	TokenID_ModelID = 0x43,	// RW 1byte
 	TokenID_BatteryStatus = 0x44,	// R  1byte, bit[7] charging or not, bit[6-0] battery level 0-100%
@@ -31,6 +27,7 @@ enum DeviceInfo_TokenID_e {
 	TokenID_BTAddressCRC16 = 0x4a,	// R  2bytes
 	TokenID_WaterInChargingPort = 0x4b,	// R 1byte, 0 no, 1 there is water in charging port
 	TokenID_SupportAuracast = 0x4c,	// R 1byte, 0-doesn't support Auracast, 1-support Auracast
+	TokenID_Firmware_Version = 0x4d,	// R 4byte
 	TokenID_lasting_Stereo_Connected = 0x4f,	// R 1byte, 0-normal, 1-stereo
 };
 
@@ -216,6 +213,7 @@ static int devinfo_set_forward_token(u8_t id, u8_t *value, u16_t *token_len)
 	return ret;
 }
 
+static int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen);
 static int devinfo_set_handle_token(u8_t id, u8_t *value, u16_t *token_len)
 {
 	u16_t paylen = 0;
@@ -240,14 +238,19 @@ static int devinfo_set_handle_token(u8_t id, u8_t *value, u16_t *token_len)
 	case TokenID_ActiveChannel:
 		selfapp_log_inf("ActiveChan=0x%x\n", value[0]);
 #ifdef CONFIG_BT_LETWS
-		//TODO:restart media player
 		selfapp_config_get_ac_group(&group);
-		group.ch = value[0];
-		selfapp_config_set_ac_group(&group);
-		if(group.ch){
-			group.ch = group.ch == 1 ? 2 : 1;
+		if(value[0] != group.ch){
+			group.ch = value[0];
+			selfapp_config_set_ac_group(&group);
+			if(group.ch){
+				group.ch = group.ch == 1 ? 2 : 1;
+			}
+			selfapp_set_lasting_stereo_group_info_to_slave(&group);
+			spk_ret_auracast_group(NULL,0);
+			selfapp_reset_player();
+		}else{
+			selfapp_log_inf("same channel\n");
 		}
-		selfapp_set_lasting_stereo_group_info_to_slave(&group);
 #endif
 		paylen = 1 + 1;
 		ret = 0;
@@ -301,7 +304,12 @@ static u16_t devinfo_pack_fixed_token(u8_t * buf, u8_t id, u32_t val, u8_t len, 
 static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 {
 	u16_t sendlen = 0;
+	u16_t size = 0;
+	selfapp_context_t *selfctx = self_get_context();
 
+	if (NULL == selfctx) {
+		return -EINVAL;
+	}
 	switch (tokenid) {
 	case TokenID_DeviceName:
 	{
@@ -314,12 +322,18 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 		}
 
 		memset(name, 0, SELF_BTNAME_LEN + 1);
+		if(!device_id){
 #ifdef CONFIG_PROPERTY
-		property_get(CFG_BT_NAME, name, SELF_BTNAME_LEN);
+			property_get(CFG_BT_NAME, name, SELF_BTNAME_LEN);
 #endif
+		}else{
+			if(selfctx->secondary_device.validate && strlen(selfctx->secondary_device.bt_name)){
+				memcpy(name, selfctx->secondary_device.bt_name, strlen(selfctx->secondary_device.bt_name));
+			}
+		}
 		len = strlen(name);
 		size += selfapp_pack_header(buf, DEVCMD_RetDevInfo, 1+1+1+len);
-		buf[size++] = 0;
+		buf[size++] = device_id;
 		buf[size++] = tokenid;
 		buf[size++] = len;
 		size += selfapp_pack_bytes(buf+size, name, len);
@@ -328,20 +342,70 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 		mem_free(name);
 		break;
 	}
+	case TokenID_Serial_Number:
+	{
+		u16_t size = 0;
+		u8_t len;
+		//64 bytes at most
+		char *serial_num = mem_malloc(SELF_SN_LEN + 1);
+		if(NULL == serial_num) {
+			selfapp_log_err("malloc fails");
+			break;
+		}
+		memset(serial_num, 0, SELF_SN_LEN + 1);
+		if(!device_id){
+#ifdef CONFIG_PROPERTY
+			len = property_get(CFG_ATS_SN, serial_num, SELF_SN_LEN);
+#endif
+			if (len <= 0 || len > SELF_SN_LEN) {
+				memcpy(serial_num, SELF_DEFAULT_SN, SELF_DEFAULT_SN_LEN);
+				// len = SELF_DEFAULT_SN_LEN;
+			}
+			len = strlen(serial_num);
+		}else{
+			if(selfctx->secondary_device.validate && strlen(selfctx->secondary_device.serial_num)){
+				memcpy(serial_num, selfctx->secondary_device.serial_num, strlen(selfctx->secondary_device.serial_num));
+				len = strlen(selfctx->secondary_device.serial_num);
+			}else{
+				memcpy(serial_num, SELF_DEFAULT_SN, SELF_DEFAULT_SN_LEN);
+				len = strlen(serial_num);
+			}
+		}
+		size += selfapp_pack_header(buf, DEVCMD_RetDevInfo, 1+1+1+len);
+		buf[size++] = device_id;
+		buf[size++] = tokenid;
+		buf[size++] = len;
+		size += selfapp_pack_bytes(buf+size, serial_num, len);
+		sendlen = size;
+
+		mem_free(serial_num);
+		break;
+	}
 	case TokenID_ProductID:
 		sendlen = devinfo_pack_fixed_token(buf, tokenid, BOX_PRODUCT_ID, 2, device_id);
 		break;
 
 	case TokenID_ModelID:
+		if(device_id){
+			selfapp_log_err("unsupport right now");
+		}
 		sendlen = devinfo_pack_fixed_token(buf, tokenid, selfapp_get_model_id(), 1, device_id);
 		break;
 
 	case TokenID_BatteryStatus:
 	{
 		u8_t value;
+		if(!device_id){
+			value = selfapp_get_bat_power();
+		}else{
+			if(selfctx->secondary_device.validate){
+				value = selfctx->secondary_device.bat_status;
+			}else{
+				value = selfapp_get_bat_power();
+			}
+		}
 
-		value = selfapp_get_bat_power();
-		selfapp_log_inf("BAT=0x%x", value);
+		selfapp_log_inf("BAT=0x%x %d", value,device_id);
 
 		sendlen = devinfo_pack_fixed_token(buf, tokenid, value, 1, device_id);
 		break;
@@ -353,11 +417,17 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 
 		// 0x0 stereo, 0x1 left, 0x2 right
 		value = selfapp_get_channel();
-		if(!selfapp_get_lasting_stereo_mode() && selfapp_get_lasting_stereo_role()){
-			value = 0;
+		if(!device_id){
+			if(!selfapp_get_lasting_stereo_mode() && selfapp_get_lasting_stereo_role()){
+				value = 0;
+			}
+			selfapp_log_inf("ActiveChan=%d\n", value);
+			sendlen = devinfo_pack_fixed_token(buf, tokenid, value, 1, device_id);
+		}else{
+			if(value)
+				value = value == 1?2:1;
+			sendlen = devinfo_pack_fixed_token(buf, tokenid, value, 1, device_id);
 		}
-		selfapp_log_inf("ActiveChan=%d\n", value);
-		sendlen = devinfo_pack_fixed_token(buf, tokenid, value, 1, device_id);
 		break;
 	}
 
@@ -373,16 +443,24 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 
 	case TokenID_MACAddress:
 	{
-		u16_t size = 0;
+		size = 0;
 		u8_t mac[6];
 
-		selfapp_get_mac(mac);
+		if(device_id && selfapp_get_lasting_stereo_mode()){
+			struct AURACAST_GROUP group;
+			selfapp_config_get_ac_group(&group);
+			for (uint8_t i  = 0; i < 6; i++) {
+				mac[i] = group.addr[5-i];
+			}
+		}else{
+			selfapp_get_mac(mac);
+		}
 
 		selfapp_log_inf("MAC=%02X%02X%02X-%02X%02X%02X\n", 
 			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
 		size += selfapp_pack_header(buf, DEVCMD_RetDevInfo, 1+1+6);
-		buf[size++] = 0;
+		buf[size++] = device_id;
 		buf[size++] = tokenid;
 		size += selfapp_pack_bytes(buf+size, mac, 6);
 		sendlen = size;
@@ -399,6 +477,10 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 	{
 		u16_t crc16;
 		u8_t mac[6];
+
+		if(device_id){
+			selfapp_log_err("unsupport right now");
+		}
 
 		selfapp_get_mac(mac);
 
@@ -417,6 +499,30 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 
 	case TokenID_SupportAuracast:
 		sendlen = devinfo_pack_fixed_token(buf, tokenid, 1, 1, device_id);
+		break;
+
+	case TokenID_Firmware_Version:
+		size = 0;
+		uint8_t  vercode[4];    // 3Bytes is sw version, big endian, 1Byte is hw version
+		u32_t hwver = 0, swver = fw_version_get_code();
+
+
+		if(!device_id){
+			vercode[0] = (u8_t)(swver >> 16);
+			vercode[1] = (u8_t)(swver >> 8);
+			vercode[2] = (u8_t)swver;
+			vercode[3] = (u8_t)hwver;
+		}else{
+			if(selfctx->secondary_device.validate){
+				memcpy(vercode, selfctx->secondary_device.firmware_version, 4);
+			}
+		}
+		SYS_LOG_INF("version %d %d %d %d %d\n",vercode[0],vercode[1],vercode[2],vercode[3],device_id);
+		size += selfapp_pack_header(buf, DEVCMD_RetDevInfo, 1+1+4);
+		buf[size++] = device_id;
+		buf[size++] = tokenid;
+		size += selfapp_pack_bytes(buf+size, vercode, 4);
+		sendlen = size;
 		break;
 
 	case TokenID_lasting_Stereo_Connected:
@@ -444,6 +550,7 @@ static int devinfo_req_devinfo(void)
 
 	u8_t token_array[] = {
 	    TokenID_DeviceName,
+	    TokenID_Serial_Number,
 	    TokenID_ProductID,
 	    TokenID_ModelID,
 	    TokenID_BatteryStatus,
@@ -454,6 +561,7 @@ static int devinfo_req_devinfo(void)
 	    TokenID_BTAddressCRC16,
 	    TokenID_WaterInChargingPort,
 	    TokenID_SupportAuracast,
+	    TokenID_Firmware_Version,
 #ifdef CONFIG_BT_LETWS
 	    TokenID_lasting_Stereo_Connected,
 #endif
@@ -466,17 +574,8 @@ static int devinfo_req_devinfo(void)
 		}
 	}
 #ifdef CONFIG_BT_LETWS
-	//TO DO: return more info
 	if(selfapp_get_lasting_stereo_mode()){
-		buf[0] = 0xaa;
-		buf[1] = DEVCMD_RetDevInfo;
-		buf[2] = 5;
-		buf[3] = 1;//dev index
-		buf[4] = 0x46;//channel
-		buf[5] = selfapp_get_channel() == 1 ? 2 : 1;
-		buf[6] = 0x4f;//lasting stereo
-		buf[7] = 1;
-		self_send_data(buf, 8);
+		selfapp_report_secondary_device_info();
 	}
 #endif
 
@@ -492,7 +591,7 @@ static int devinfo_req_devinfo_token(u8_t dev, u8_t token, u8_t device_id)
 	if (buf == NULL) {
 		return ret;
 	}
-	//TODO: handle device_id =1
+
 	sendlen = devinfo_pack_token(buf, token, device_id);
 	if (sendlen > 0) {
 		ret = self_send_data(buf, sendlen);
@@ -952,7 +1051,8 @@ static int spk_set_auracast_group(u8_t * Payload, u16_t PayloadLen)
 		memset(&group, 0, sizeof(struct AURACAST_GROUP));
 		memcpy(group.name,DEDAULT_STEREO_GROUP_NAME,strlen(DEDAULT_STEREO_GROUP_NAME));
 		selfapp_config_set_ac_group(&group);
-		ret = self_send_data(buf, len + PayloadLen);
+		//ret = self_send_data(buf, len + PayloadLen);
+		ret = spk_ret_auracast_group(NULL,0);
 		if(last_group.role){
 			selfapp_set_lasting_stereo_group_info_to_slave(&group);
 			selfapp_switch_lasting_stereo_mode(0);
@@ -1317,7 +1417,6 @@ void selfapp_notify_role(void)
 	u8_t *buf;
 	int len;
 	u8_t role;
-	selfapp_context_t *selfctx = self_get_context();
 
 	buf = self_get_sendbuf();
 	if (buf == NULL) {
@@ -1327,11 +1426,8 @@ void selfapp_notify_role(void)
 
 	role = selfapp_get_role();
 	selfapp_log_inf("role=%d", role);
-	if(role != selfctx->auracast_role){
-		len = selfapp_pack_cmd_with_int(buf, DEVCMD_RetRoleInfo, role, 1);
-		self_send_data(buf, len);
-		selfctx->auracast_role = role;
-	}
+	len = selfapp_pack_cmd_with_int(buf, DEVCMD_RetRoleInfo, role, 1);
+	self_send_data(buf, len);
 }
 
 void selfapp_notify_lasting_stereo_status(void)
@@ -1385,5 +1481,52 @@ int selfapp_report_bat(void)
 	if (sendlen > 0) {
 		ret = self_send_data(buf, sendlen);
 	}
+
 	return ret;
+}
+
+int selfapp_update_bat_for_secondary_device(u8_t value){
+	selfapp_context_t *selfctx = self_get_context();
+	u8_t *buf = self_get_sendbuf();
+	u16_t sendlen = 0;
+	int ret = -1;
+
+	if (NULL == selfctx || NULL == buf) {
+		return ret;
+	}
+	selfapp_log_inf("%d\n",value);
+	if(selfctx->secondary_device.validate){
+		selfctx->secondary_device.bat_status = value;
+		sendlen = devinfo_pack_token(buf, TokenID_BatteryStatus, 1);
+		if (sendlen > 0) {
+			ret = self_send_data(buf, sendlen);
+		}
+	}
+	return ret;
+}
+
+void selfapp_report_secondary_device_info(void)
+{
+	u8_t *buf = self_get_sendbuf();
+	u16_t sendlen = 0;
+
+	if (buf == NULL) {
+		return;
+	}
+	selfapp_log_inf("");
+
+	u8_t token_array[] = {
+	    TokenID_BatteryStatus,
+	    TokenID_Serial_Number,
+	    TokenID_ActiveChannel,
+	    TokenID_SupportAuracast,
+	    TokenID_Firmware_Version,
+	    TokenID_lasting_Stereo_Connected,
+	};
+	for (int i = 0; i < sizeof(token_array); i++) {
+		sendlen = devinfo_pack_token(buf, token_array[i], 1);
+		if (sendlen > 0) {
+			self_send_data(buf, sendlen);
+		}
+	}
 }

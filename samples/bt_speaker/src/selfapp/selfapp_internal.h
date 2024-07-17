@@ -82,8 +82,12 @@ typedef struct {
 #define EQ_DATA_SIZE (100)
 
 enum EQ_Category_Id_e {
-
+	EQCATEGORY_BALANCE = 0x00,
+	EQCATEGORY_BASSBOOST1 = 0x01,
+	EQCATEGORY_BASSBOOST2 = 0x02,
 	EQCATEGORY_VOCAL = 0x03,
+	EQCATEGORY_METAL = 0x04,
+	EQCATEGORY_CLASSICAL = 0x05,
 	EQCATEGORY_SIGNATURE = 0x06,
 	EQCATEGORY_RELAXING = 0x07,
 	EQCATEGORY_ENERGETIC = 0x08,
@@ -144,14 +148,15 @@ typedef struct {
 	u8_t connect_type;	// BT_Connect_Type_e
 	u8_t stream_opened;
 	u8_t stream_handle_suspend;
+	u8_t mute_player:1;
 	struct thread_timer timer;
 #ifdef CONFIG_LOGSRV_SELF_APP
 	p_logsrv_callback_t log_cb;
 #endif
 	struct AURACAST_GROUP creat_group;
-	u8_t auracast_role;
 	u32_t time_out;
 	struct thread_timer mute_timer;
+	selfapp_device_info_t secondary_device;
 } selfapp_context_t;
 
 extern selfapp_context_t *self_get_context(void);
@@ -233,5 +238,6 @@ u8_t* selfapp_eq_cmd_get(u16_t * size);
 void selfapp_eq_cmd_update(u8_t id, const u8_t* data, u16_t len);
 int selfapp_eq_cmd_switch_eq(u8_t id, u8_t pre_id, const u8_t *data, u8_t len);
 void selfapp_set_user_bat_cap(u8_t bat);
+void selfapp_report_secondary_device_info(void);
 
 #endif

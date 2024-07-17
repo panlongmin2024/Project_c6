@@ -1424,8 +1424,9 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 	smp->local_dist &= rsp->init_key_dist;
 	smp->remote_dist &= rsp->resp_key_dist;
 
-	smp->local_dist &= SEND_KEYS_SC;
-	smp->remote_dist &= RECV_KEYS_SC;
+	//Bugfix；SM/CEN/SCCT/BV-03-C
+	smp->local_dist &= BR_SEND_KEYS_SC;
+	smp->remote_dist &= BR_RECV_KEYS_SC;
 
 	/* slave distributes its keys first */
 
@@ -1434,6 +1435,12 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
+
+    #if 0 //Todo: SM/CEN/SCCT/BV-05-C, user can enable CT2 bit.
+	if ((rsp->auth_req & BT_SMP_AUTH_CT2)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_CT2);
+	}
+    #endif
 
 	/* derive LTK if requested and clear distribution bits */
 	if ((smp->local_dist & BT_SMP_DIST_ENC_KEY) &&
@@ -1802,6 +1809,7 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 	 */
 
 	req->auth_req = 0x00;
+	//req->auth_req |= BT_SMP_AUTH_CT2; //Todo: SM/CEN/SCCT/BV-05-C, user can enable CT2 bit.
 	req->io_capability = 0x00;
 	req->oob_flag = 0x00;
 	req->max_key_size = max_key_size;

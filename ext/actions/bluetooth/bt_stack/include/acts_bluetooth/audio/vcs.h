@@ -286,7 +286,7 @@ int bt_vcs_unmute_vol_up(void);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcs_vol_set(uint8_t volume);
+int bt_vcs_vol_set(struct bt_conn *conn, uint8_t volume);
 
 /**
  * @brief Unmute the server.

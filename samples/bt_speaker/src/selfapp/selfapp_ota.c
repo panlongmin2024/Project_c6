@@ -1253,7 +1253,7 @@ int otadfu_NotifyDfuCancel(u8_t cancel_reason)
 		return 0;
 	}
 
-	otadfu->flag_cancel = 1;	//let ota_app release reading
+	// otadfu->flag_cancel = 1;	//let ota_app release reading
 
 	selfapp_log_inf("dfu cancel: 0x%x_%d_%d\n", cancel_reason, otadfu->flag_reading, otadfu->flag_cancel);
 
@@ -1268,6 +1268,13 @@ int otadfu_NotifyDfuCancel(u8_t cancel_reason)
 		os_sleep(OTADFU_SLEEP_MS);	// let ota_app exit
 	}
 #endif
+
+	if (otadfu->flag_cancel) {
+		os_mutex_unlock(&otadfu_mutex);
+		return 0;
+	} else {
+		otadfu->flag_cancel = 1;	//let ota_app release reading
+	}
 
 	ota_app_cmd_thread_stop(otadfu);
 

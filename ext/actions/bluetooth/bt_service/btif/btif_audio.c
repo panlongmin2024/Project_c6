@@ -13,9 +13,6 @@
 #include "btsrv_os_common.h"
 #include "btsrv_inner.h"
 
-#include <acts_bluetooth/pts_test.h>
-
-
 int btif_audio_register_processer(void)
 {
 	return btsrv_register_msg_processer(MSG_BTSRV_AUDIO, &btsrv_audio_process);

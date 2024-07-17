@@ -1900,9 +1900,13 @@ static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 	struct bt_iso_chan *bis;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
-		bis->iso->err = reason;
-
-		bt_iso_disconnected(bis->iso);
+		if(bis->iso){
+			bis->iso->err = reason;
+			bt_iso_disconnected(bis->iso);
+		}else{
+			//TODO:release channels
+			BT_ERR("already disconnected");
+		}
 	}
 }
 

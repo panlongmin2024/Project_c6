@@ -75,6 +75,7 @@ static const bt_mgr_event_strmap_t bt_manager_link_event_map[] =
     {BT_LINK_EV_HID_CONNECTED,              STRINGIFY(BT_LINK_EV_HID_CONNECTED)},
     {BT_LINK_EV_HID_DISCONNECTED,           STRINGIFY(BT_LINK_EV_HID_DISCONNECTED)},
     {BT_LINK_EV_SNOOP_ROLE,                 STRINGIFY(BT_LINK_EV_SNOOP_ROLE)},
+    {BT_LINK_EV_A2DP_SINGALING_CONNECTED,   STRINGIFY(BT_LINK_EV_A2DP_SINGALING_CONNECTED)},
 };
 
 static const bt_mgr_event_strmap_t bt_manager_service_event_map[] =
@@ -599,7 +600,7 @@ static int bt_manager_link_event(void *param)
 		return ret;
 	}
 
-	SYS_LOG_INF("event: %s hdl: 0x%x", bt_manager_link_evt2str(in_param->link_event), in_param->hdl);
+	SYS_LOG_INF("ev:%s hdl:0x%x", bt_manager_link_evt2str(in_param->link_event), in_param->hdl);
 	switch (in_param->link_event) {
 	case BT_LINK_EV_ACL_CONNECT_REQ:
 		//case specification requirements
@@ -669,6 +670,7 @@ static int bt_manager_link_event(void *param)
 	case BT_LINK_EV_A2DP_SINGALING_CONNECTED:
         info->a2dp_singnaling_connected = 1;
         bt_manager_notify_connected(info);
+        os_delayed_work_cancel(&info->profile_disconnected_delay_work);
         break;
 
 	case BT_LINK_EV_A2DP_DISCONNECTED:
@@ -1323,8 +1325,11 @@ void bt_manager_deinit(void)
 	btif_br_set_user_visual(&user_visual);
 
 #ifdef CONFIG_BT_LETWS
-	//TODO:makesure conn is disconnected
 	bt_mamager_letws_disconnect(BT_HCI_ERR_REMOTE_POWER_OFF);
+	while (bt_manager_letws_get_handle() && time_out++ < 500) {
+		os_sleep(10);
+	}
+	time_out = 0;
 #endif
 
 	btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_ALL);

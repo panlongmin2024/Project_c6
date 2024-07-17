@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include <zephyr/types.h>
 
+#define SELF_BTNAME_LEN    (16)
+#define SELF_SN_LEN    (16)
+#define SELF_DEFAULT_SN "Do Not-available"
+#define SELF_DEFAULT_SN_LEN (sizeof(SELF_DEFAULT_SN))
+
 struct AURACAST_GROUP {
 	u8_t ch; // 0x00-full channel; 0x01-Left channel, 0x02-right channel.
 	u8_t mode;// 0x01-stereo mode; 0x02-party mode.
@@ -12,6 +17,14 @@ struct AURACAST_GROUP {
 	u8_t name[32];
 	u8_t addr[6];
 };
+
+typedef struct{
+	u8_t validate:1;
+	u8_t bat_status;
+	u8_t firmware_version[4];
+	u8_t serial_num[SELF_SN_LEN+1];
+	u8_t bt_name[SELF_BTNAME_LEN+1];
+}selfapp_device_info_t;
 
 typedef int (*p_logsrv_callback_t)(int log_type, int (*traverse_cb)(uint8_t *data, uint32_t max_len));
 
@@ -121,4 +134,11 @@ Return:
 	0  - Success
 */
 void selfapp_notify_lasting_stereo_status(void);
+
+void selfapp_set_device_info(selfapp_device_info_t *info);
+
+int selfapp_update_bat_for_secondary_device(u8_t value);
+
+u8_t selfapp_get_bat_power(void);
+
 #endif

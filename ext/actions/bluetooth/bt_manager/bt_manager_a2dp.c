@@ -114,8 +114,8 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
 	case BTSRV_A2DP_NON_PROMPT_TONE_STARTED:
 #else
 	case BTSRV_A2DP_STREAM_STARTED:
-	case BTSRV_A2DP_STREAM_CHECK_STARTED:
 #endif
+	case BTSRV_A2DP_STREAM_CHECK_STARTED:
 	{
 		dev_info->a2dp_stream_is_check_started = 0;
 		if (event == BTSRV_A2DP_STREAM_CHECK_STARTED){
@@ -129,6 +129,8 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
         else{
             if(bt_manager_media_get_active_br_handle() == hdl){
                 bt_manager_update_phone_volume(hdl, 1);
+            }else {
+				SYS_LOG_INF("active_br_handle_0 %x, hdl %x", bt_manager_media_get_active_br_handle(), hdl);
             }
         }
 
@@ -166,7 +168,9 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
         if(update_volume_wait == 1){
             if(bt_manager_media_get_active_br_handle() == hdl){
                 bt_manager_update_phone_volume(hdl, 1);
-            }
+			}else {
+				SYS_LOG_INF("active_br_handle_1 %x, hdl %x", bt_manager_media_get_active_br_handle(), hdl);
+			}
         }
 		bt_manager_audio_stream_event(BT_AUDIO_STREAM_START, (void*)&rep, sizeof(struct bt_audio_report));
         bt_manager_media_event(BT_MEDIA_SERVER_PLAY, (void*)&rep, sizeof(struct bt_audio_report));

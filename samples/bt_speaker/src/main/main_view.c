@@ -255,13 +255,13 @@ static void main_app_view_deal(u32_t ui_event)
 #ifdef CONFIG_TWS_UI_EVENT_SYNC
 		system_do_event_notify(ui_event);
 #else
-		static uint32_t last_time = 0;
+/* 		static uint32_t last_time = 0;
 		if(ui_event == UI_EVENT_MAX_VOLUME){
 			if(last_time && k_uptime_get_32() - last_time < 1100){
 				return;
 			}
 			last_time = k_uptime_get_32();
-		}
+		} */
 		tts_manager_process_ui_event(ui_event);
 #endif
 #endif

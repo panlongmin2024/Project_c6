@@ -368,21 +368,23 @@ static void connected_dev_cb_sync_volume(struct bt_conn *base_conn, uint8_t tws_
 		btsrv_rdm_set_avrcp_sync_vol_start_time(base_conn, start_time);
 	}
     else{
-        if(btsrv_rdm_is_ios_dev(base_conn) && ((volume == 0) || (volume == 0x7F))){
-             btsrv_volume_sync_delay_ms() = 1000;
+        if(btsrv_rdm_is_ios_dev(base_conn)){
+            if((volume == 0) || (volume == 0x7F)){
+                btsrv_volume_sync_delay_ms() = 1500;
+            }
+            else{
+                btsrv_volume_sync_delay_ms() = 1000;
+            }
         }
     }
-
 	if ((curr_time - start_time) > btsrv_volume_sync_delay_ms()) {
 		btsrv_rdm_set_avrcp_sync_volume_wait(base_conn, 0);
-//		hdl = hostif_bt_conn_get_handle(base_conn);
-//		avrcp_user_callback->get_volume_cb(hdl, &volume, false);
 		SYS_LOG_DBG("hdl 0x%x, volume %d", hdl, volume);
 
 		if (!btsrv_is_pts_test()) {
 			hostif_bt_avrcp_tg_notify_change(base_conn, volume);
 			if(btsrv_rdm_is_ios_dev(base_conn)){
-                btsrv_rdm_set_avrcp_sync_vol_start_time(base_conn, start_time);
+                btsrv_rdm_set_avrcp_sync_vol_start_time(base_conn, curr_time);
             }
 		}
 	}

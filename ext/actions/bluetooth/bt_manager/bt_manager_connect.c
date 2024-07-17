@@ -615,7 +615,7 @@ void bt_manager_disconnected_reason(void *param)
 
 		if(!bt_manager_is_ready())
 			return;
-		btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_ALL);
+		//btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_ALL);
         memcpy(reconnect_param.addr.val, p_param->addr.val, sizeof(bd_address_t));
         reconnect_param.strategy = BTSRV_AUTOCONN_ALTERNATE;
 
@@ -625,7 +625,7 @@ void bt_manager_disconnected_reason(void *param)
 			    && ((cfg_reconnect->enable_auto_reconnect & (1 << 1)) == 0)){
 			    return;
 			}
-			btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_PHONE);
+			//btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_PHONE);
 			reconnect_param.base_try = cfg_reconnect->reconnect_times_by_timeout;
 			reconnect_param.reconnect_mode = BTSRV_TWS_RECONNECT_NONE;
 			reconnect_param.profile_try = BT_PROFILE_RECONNECT_TRY;

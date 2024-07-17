@@ -471,6 +471,9 @@ static int data_analy_play_write(play_analytics_upload_t* play)
 
 static void data_analy_play_check_time_then_write(void)
 {
+	if(!analy_play_p || !analy_upload_play_p){
+		return;
+	}
 
 	if(analy_play_p->param_stay_sec > 60 && !analy_play_p->written)
 	{
@@ -879,6 +882,12 @@ int data_analy_init(data_analy_init_param_t* init_param)
 int data_analy_exit(void)
 {
 	int ret = 0;
+
+	if(!analy_play_p || !analy_upload_play_p || !analy_data_p \
+		|| !analy_upload_data_p || !analy_play_index_p){
+		SYS_LOG_INF("exit already");
+		return 0;
+	}
 
 	data_analy_update_power_on_sec();
 

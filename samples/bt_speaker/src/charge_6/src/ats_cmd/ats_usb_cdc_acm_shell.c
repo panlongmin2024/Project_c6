@@ -181,7 +181,7 @@ static int cdc_shell_ats_exit_ats_and_reset(struct device *dev, u8_t *buf, int l
     msg.cmd = MSG_FACTORY_DEFAULT;
 	msg.value = ATS_SYS_REBOOT_DELAY_TIME_MS;
     send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
-	//ats_sys_power_off();
+	//ats_sys_power_off();by
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_DUT_SET, sizeof(ATS_CMD_RESP_DUT_SET)-1, 
@@ -705,7 +705,27 @@ static int cdc_shell_ats_all_turn_on(struct device *dev, u8_t *buf, int len)
 
 	return 0;
 }
+static int cdc_shell_ats_all_wled_turn_on(struct device *dev, u8_t *buf, int len)
+{    
+	/* trun all led off before turn one white leds */
+    bt_ui_charging_warning_handle(0);
+	led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 
+	mcu_ui_send_led_code(1,1);
+	mcu_ui_send_led_code(2,1);
+	mcu_ui_send_led_code(3,1);
+	mcu_ui_send_led_code(4,1);
+	mcu_ui_send_led_code(5,1);
+	mcu_ui_send_led_code(6,1);
+	mcu_ui_send_led_code(7,1);
+	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_LED_ALL_ON, sizeof(ATS_CMD_RESP_LED_ALL_ON)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	return 0;
+}
 static int cdc_shell_ats_all_turn_off(struct device *dev, u8_t *buf, int len)
 {
 	//ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
@@ -724,6 +744,11 @@ static int cdc_shell_ats_led_one_turn_on(struct device *dev, u8_t *buf, int len)
 {
 //ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 	u8_t buffer[13] = {0};
+
+	/* trun all led off before turn one led */
+    bt_ui_charging_warning_handle(0);
+	led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+
 	if (!memcmp(buf, "01",2))
 	{
 		mcu_ui_send_led_code(0,1);
@@ -1280,7 +1305,7 @@ static int cdc_shell_ats_user_data_read(struct device *dev, u8_t *buf, int len)
 		/* failed malloc */
 		goto exit;
 	}
-	if(len>512){
+	if(len>100){
 		/* failed data langth */
 		mem_free(user_data);
 		goto exit;
@@ -1426,7 +1451,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
         index += sizeof(ATS_AT_CMD_GFPS_MODEL_ID_WRITE)-1;
 		target_index = index;
-		cdc_shell_ats_gfps_model_id_write(dev, &buf[target_index], size-target_index-8);
+		cdc_shell_ats_gfps_model_id_write(dev, &buf[target_index], size-target_index-2);
 	}
 	else if(!memcmp(&buf[index], ATS_AT_CMD_GFPS_MODEL_ID_READ, sizeof(ATS_AT_CMD_GFPS_MODEL_ID_READ)-1))
 	{
@@ -1445,7 +1470,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
         index += sizeof(ATS_AT_CMD_DSN_WRITE)-1;
 		target_index = index;
-		cdc_shell_ats_dsn_write(dev, &buf[target_index], size-target_index-8);
+		cdc_shell_ats_dsn_write(dev, &buf[target_index], size-target_index-2);
 	}
 	else if(!memcmp(&buf[index], ATS_AT_CMD_DSN_READ, sizeof(ATS_AT_CMD_DSN_READ)-1))
 	{
@@ -1457,7 +1482,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
         index += sizeof(ATS_AT_CMD_PSN_WRITE)-1;
 		target_index = index;
-		cdc_shell_ats_psn_write(dev, &buf[target_index], size-target_index-8);
+		cdc_shell_ats_psn_write(dev, &buf[target_index], size-target_index-2);
 	}
 	else if(!memcmp(&buf[index], ATS_AT_CMD_PSN_READ, sizeof(ATS_AT_CMD_PSN_READ)-1))
 	{
@@ -1559,13 +1584,14 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
 		cdc_shell_ats_odm_dump(dev, NULL, 0);
 	}
+	else if (!memcmp(&buf[index], ATS_AT_CMD_EXIT_SPK_BYPASS, sizeof(ATS_AT_CMD_EXIT_SPK_BYPASS)-1))
+	{
+		/* must first check TL_SPK_BYPASS_OFF, and check TL_SPK_BYPASS after */
+		cdc_shell_ats_music_exit_bypass(dev, NULL, 0);
+	}	
 	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_SPK_BYPASS, sizeof(ATS_AT_CMD_ENTER_SPK_BYPASS)-1))
 	{
 		cdc_shell_ats_music_enter_bypass(dev, NULL, 0);
-	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_EXIT_SPK_BYPASS, sizeof(ATS_AT_CMD_EXIT_SPK_BYPASS)-1))
-	{
-		cdc_shell_ats_music_exit_bypass(dev, NULL, 0);
 	}
 	else if (!memcmp(&buf[index], ATS_AT_CMD_MUSIC_BYPASS_STATUS_READ, sizeof(ATS_AT_CMD_MUSIC_BYPASS_STATUS_READ)-1))
 	{
@@ -1732,7 +1758,11 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* get play time */
 		cdc_shell_ats_music_play_time_read(dev, NULL, 0);
 	}	
-	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_ALL_WLED_ON, sizeof(ATS_AT_CMD_ALL_WLED_ON)-1))
+	{		   
+		/* light on all white led */
+		cdc_shell_ats_all_wled_turn_on(dev, NULL, 0);
+	}		
 							
 	else	
 	{

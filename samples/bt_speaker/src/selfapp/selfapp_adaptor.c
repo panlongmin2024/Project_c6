@@ -151,6 +151,12 @@ u8_t selfapp_get_lasting_stereo_mode(void)
 	return role;
 }
 
+u8_t selfapp_lasting_stereo_is_primary_role(void)
+{
+	u8_t mode = system_app_get_auracast_mode();
+	return (mode == 3);
+}
+
 u8_t selfapp_get_lasting_stereo_role(void)
 {
 	struct AURACAST_GROUP group;
@@ -452,12 +458,21 @@ void selfapp_switch_lasting_stereo_mode(int enable)
 
 void selfapp_set_lasting_stereo_group_info(struct AURACAST_GROUP *group){
 	selfapp_context_t *selfctx = self_get_context();
+	struct AURACAST_GROUP last_group;
 
 	if (NULL == selfctx || NULL == group) {
 		return;
 	}
-
-	selfapp_config_set_ac_group(group);
+	selfapp_config_get_ac_group(&last_group);
+	if(group->id){
+		last_group.ch = group->ch;
+		memcpy(last_group.name,group->name,strlen(group->name));
+		selfapp_config_set_ac_group(&last_group);
+	}else{
+		selfapp_config_set_ac_group(group);
+		bt_manager_letws_reset();
+		selfapp_log_inf("clear group");
+	}
 }
 
 void selfapp_set_lasting_stereo_group_info_to_slave(struct AURACAST_GROUP *group){
@@ -479,7 +494,12 @@ void selfapp_set_lasting_stereo_group_info_to_slave(struct AURACAST_GROUP *group
 void selfapp_mute_player(u8_t mute)
 {
 	selfapp_log_inf("mute %d\n", mute);
+	selfapp_context_t *selfctx = self_get_context();
 
+	if (NULL == selfctx) {
+		return;
+	}
+	selfctx->mute_player = mute;
 	struct app_msg msg = { 0 };
 
 	msg.type = MSG_INPUT_EVENT;
@@ -490,3 +510,33 @@ void selfapp_mute_player(u8_t mute)
 	msg.value = 0;
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }
+
+void selfapp_reset_player()
+{
+	selfapp_log_inf("\n");
+
+	struct app_msg msg = { 0 };
+
+	msg.type = MSG_INPUT_EVENT;
+	msg.cmd = MSG_PLAYER_RESET;
+	msg.value = 0;
+	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
+}
+
+void selfapp_set_device_info(selfapp_device_info_t *info){
+	selfapp_context_t *selfctx = self_get_context();
+
+	if (NULL == selfctx) {
+		return;
+	}
+	selfapp_log_inf("%s\n",info->serial_num);
+
+	if(info){
+		memcpy(&selfctx->secondary_device,info,sizeof(*info));
+		selfctx->secondary_device.validate = 1;
+		selfapp_report_secondary_device_info();
+	}else{
+		memset(&selfctx->secondary_device,0,sizeof(selfctx->secondary_device));
+	}
+}
+
