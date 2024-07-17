@@ -13,6 +13,7 @@
 #define I2C_DEV_ADDR   0x63 // PCBA
 #define PIN_AMP_PDN		(Read_hw_ver() == GGC_EV1_TONLI_EV3 ? 13 : 53)//13 // AMP_PDN, low to shutdown the amp
 #define PIN_BOOST_EN	52 //BOOST EN, high to enable.
+#define AMP_AVDD_PW_ON		45 //AMP AVDD, high to enable.
 static int amp_tas5828m_enable_flag = 0;
 static os_mutex amp_tas5828m_mutex;
 static os_mutex *amp_tas5828m_mutex_ptr = NULL;
@@ -170,12 +171,16 @@ int amp_tas5828m_registers_init(void)
 		printk("[%s,%d] gpio_dev not found\n", __FUNCTION__, __LINE__);
 		goto exit;
 	}
-	gpio_pin_configure(gpio_dev, PIN_AMP_PDN, GPIO_DIR_OUT | GPIO_POL_NORMAL);
-	gpio_pin_write(gpio_dev, PIN_AMP_PDN, 1);
 
 	gpio_pin_configure(gpio_dev, PIN_BOOST_EN, GPIO_DIR_OUT | GPIO_POL_NORMAL);
 	gpio_pin_write(gpio_dev, PIN_BOOST_EN, 1);
+
 	
+
+	k_busy_wait(100);
+	gpio_pin_configure(gpio_dev, PIN_AMP_PDN, GPIO_DIR_OUT | GPIO_POL_NORMAL);
+	gpio_pin_write(gpio_dev, PIN_AMP_PDN, 1);
+
 	printk("[%s,%d] GPIO_CTL(PIN_BOOST_EN):0x%X\n", __FUNCTION__, __LINE__, sys_read32(GPIO_CTL(PIN_BOOST_EN)));
 
     i2c_dev = device_get_binding(CONFIG_I2C_GPIO_0_NAME);
@@ -191,8 +196,18 @@ int amp_tas5828m_registers_init(void)
 
     amp_tas5828m_i2c_register(i2c_dev, registers, registers_cnt, "registers", I2C_DEV_ADDR);
 	amp_tas5828m_enable_flag = 1;
+
     printk("[%s,%d] ok\n", __FUNCTION__, __LINE__);
 	amp_tas5828m_config_avdd();
+
+	k_sleep(1);
+	gpio_pin_configure(gpio_dev, AMP_AVDD_PW_ON, GPIO_DIR_OUT | GPIO_POL_NORMAL);
+	gpio_pin_write(gpio_dev, AMP_AVDD_PW_ON, 1);	
+
+	k_busy_wait(100);
+
+	amp_tas5828m_i2c_register(i2c_dev, ti_registers, ti_registers_cnt, "ti_registers", I2C_DEV_ADDR);
+
 	printk("[%s,%d] config avdd ok\n", __FUNCTION__, __LINE__);
 
 exit:	
@@ -213,6 +228,8 @@ int amp_tas5828m_registers_deinit(void)
 	struct device *gpio_dev = NULL;
 	uint8_t buf[10]={0};
 	
+	
+
 	if(amp_tas5828m_mutex_ptr == NULL){
 		amp_tas5828m_mutex_ptr = &amp_tas5828m_mutex;
 		os_mutex_init(amp_tas5828m_mutex_ptr);
@@ -242,7 +259,7 @@ int amp_tas5828m_registers_deinit(void)
 
 	k_sleep(20);
 	// write 03h deep sleep mode
-	buf[0] = 0x08;
+	buf[0] = 0x0a;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x03 , buf, 1);
 
 
@@ -254,10 +271,16 @@ int amp_tas5828m_registers_deinit(void)
 		goto exit;
 	}
 
+
+	gpio_pin_write(gpio_dev, AMP_AVDD_PW_ON, 0);
+	k_busy_wait(100);
+
 	gpio_pin_write(gpio_dev, PIN_AMP_PDN, 0);
+	k_sleep(10);
+
 	gpio_pin_write(gpio_dev, PIN_BOOST_EN, 0);
 	amp_tas5828m_enable_flag = 0;
-	printk("amp_tas5828m_registers_deinit ok\n");
+	printk("amp_tas5828m_registers_deinit ok!\n");
 exit:	
 	os_mutex_unlock(amp_tas5828m_mutex_ptr);
 	return 0;

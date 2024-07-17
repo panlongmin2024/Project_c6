@@ -41,6 +41,7 @@ static int charge_app_force_power_off = 0;
 static struct charge_app_t *p_charge_app_app;
 extern bool run_mode_is_normal(void);
 static struct thread_timer reset_timer;
+static u8_t power_off_no_tts;
 #ifdef CONFIG_BT_SELF_APP
 extern int selfapp_get_feedback_tone_ext(void);
 #endif
@@ -125,6 +126,17 @@ int charge_app_real_exit_deal(void)
 	}
 	return 0;
 }
+static uint8_t power_first_factory_reset_flag = 0;
+uint8_t get_power_first_factory_reset_flag(void)
+{
+  return power_first_factory_reset_flag;
+}
+
+void set_power_first_factory_reset_flag(uint8_t value)
+{
+    power_first_factory_reset_flag = value ;
+}
+
 static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
 	thread_timer_stop(&reset_timer);
@@ -133,6 +145,7 @@ static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 		led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+		set_power_first_factory_reset_flag(1);
 		set_property_factory_reset_flag(0);
 	}
 	#ifdef CONFIG_BT_SELF_APP
@@ -180,7 +193,10 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	bt_manager_disconnect_all_device();
 	system_app_set_auracast_mode(0);
 	self_music_effect_ctrl_set_enable(1);
-	tts_manager_play("poweroff.mp3", PLAY_IMMEDIATELY);
+	power_off_no_tts = 0;
+	ret = tts_manager_play("poweroff.mp3", PLAY_IMMEDIATELY);
+	if(ret != 0 )
+		power_off_no_tts = 1;
 	p_charge_app_app->tts_start_time = os_uptime_get_32();
 	//tts_manager_lock();
 	//sys_standby_time_set(5,5);
@@ -201,6 +217,15 @@ static int _charge_app_exit(void)
 	system_set_power_run_mode(0);
 	app_mem_free(p_charge_app_app);
 	p_charge_app_app = NULL;
+#ifdef CONFIG_BT_SELF_APP
+	if(selfapp_get_feedback_tone_ext()){
+		int i = 0;
+		while(tts_manager_is_locked() && (i < 10)){
+			tts_manager_unlock();
+			i++;
+		}
+	}
+#endif
 
 #ifdef CONFIG_PROPERTY
 	property_flush_req(NULL);

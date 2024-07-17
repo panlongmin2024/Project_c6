@@ -61,7 +61,7 @@
  * @}
  */
 
-#define mps_pd_current_version 0x3b
+#define mps_pd_current_version 0x40
 #define I2C_DEV_ADDR        0x48                    //TODO
 #define I2C_PD_DEV_ADDR     0x27
 // #define DEF_MCU_WATER_INT_PIN 0
@@ -167,7 +167,7 @@ static void mps_ota_get_status(u8_t *status);
 
 #define WLT_OTG_DEBOUNCE_TIMEOUT        6
 #define MAX_SOURCE_DISC_COUNT           13
-#define MAX_SINK_CHECK_MOBILE_TIME		2
+#define MAX_SINK_CHECK_MOBILE_TIME		15
 
 enum ti_pd_reg_address_t{
 
@@ -341,7 +341,7 @@ void pd_mps52002_pd_24A_proccess(int val)
 }
 
 /* for factory test */
-void pd_mps52002_pd_set_sink_charge_current(u8_t val)
+void pd_mps52002_pd_test_set_sink_charge_current(u8_t val)
 {
     u8_t buf[2] = {0}; 
 	
@@ -976,6 +976,7 @@ void pd_detect_event_report_MPS52002(void){
 		{
 			para.pd_event_val = 1;
 			pd_mps52002->otg_mobile_flag = true;
+			pd_mps52002->sink_charging_flag = true;
 			pd_mps52002->notify(PD_EVENT_OTG_MOBILE_DET, &para);
 		}
 		
@@ -1669,7 +1670,7 @@ void pd_mps52002_iic_send_data()
 
 			case PD_IIC_TYPE_PROP_TEST_SINK_CHARGE_CURRENT:
 				/* for factory test */
-				pd_mps52002_pd_set_sink_charge_current(data);
+				pd_mps52002_pd_test_set_sink_charge_current(data);
 				break;
 			default:
 				break; 

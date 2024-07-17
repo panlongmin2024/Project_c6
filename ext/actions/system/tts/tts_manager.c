@@ -758,7 +758,7 @@ int tts_manager_play(uint8_t *tts_name, uint32_t mode)
 		goto exit;
 	}
 
-	if (tts_ctx->tts_item_num >= 6) {
+	if (tts_ctx->tts_item_num >= 10) {
 		sys_snode_t *head = sys_slist_peek_head(&tts_ctx->tts_list);
 		item = CONTAINER_OF(head, struct tts_item_t, node);
 		sys_slist_find_and_remove(&tts_ctx->tts_list, head);
@@ -777,7 +777,7 @@ int tts_manager_play(uint8_t *tts_name, uint32_t mode)
 		goto exit;
 	}
 
-	if(tts_manager_get_same_tts_in_list(item->tts_file_name) >= 1){
+	if(tts_manager_get_same_tts_in_list(item->tts_file_name) >= 2){
 		SYS_LOG_ERR("have tts in list\n");
 		mem_free(item);
 		goto exit;

@@ -1840,7 +1840,13 @@ const cfg_reg registers[] = {
     { 0x33, 0x03 },
     { 0x46, 0x09 },
     { 0x03, 0x02 },
+
+};
+
+
+const cfg_reg ti_registers[] = {
 // Book 0x8c
+    { 0x00, 0x00 },
     { 0x7f, 0x8c },
     { 0x00, 0x06 },
     { 0x5c, 0x00 }, //  EQ - Ganged
@@ -2121,3 +2127,5 @@ const cfg_reg registers[] = {
 
 
 const int registers_cnt = sizeof(registers)/sizeof(registers[0]);
+
+const int ti_registers_cnt = sizeof(ti_registers)/sizeof(ti_registers[0]);

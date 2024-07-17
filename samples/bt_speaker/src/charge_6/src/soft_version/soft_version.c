@@ -4,6 +4,7 @@
 #include <string.h>
 #include <fw_version.h>
 #include <os_common_api.h>
+#include <wltmcu_manager_supply.h>
 
 #define SYS_LOG_NO_NEWLINE
 #ifdef SYS_LOG_DOMAIN
@@ -112,8 +113,9 @@ int fw_version_play_by_tts(void)
 	char file_name[] = "0.mp3";
 	u32_t mode = UNBLOCK_UNINTERRUPTABLE;
 
-	u8_t hw_ver = fw_version_get_hw_code();
+	u8_t hw_ver =  fw_version_get_hw_code();
 	u32_t sw_ver = fw_version_get_sw_code();
+	u8_t pd_ver =  pd_get_pd_version();
 
 /* 	if (tts_manager_is_enable_filter())
 	{
@@ -123,7 +125,7 @@ int fw_version_play_by_tts(void)
 
 	os_sched_lock();
 
-	SYS_LOG_INF("ok,ver:%x_%x\n",sw_ver, hw_ver);
+	SYS_LOG_INF("ok,ver:%x_%x_%x\n",sw_ver, hw_ver,pd_ver);
 
 	file_name[0] = ((sw_ver >> 16) & 0xff) + '0';
 	tts_manager_play(file_name, mode);
@@ -135,6 +137,12 @@ int fw_version_play_by_tts(void)
 	tts_manager_play(file_name, mode);
 
 	file_name[0] = hw_ver + '0';
+	tts_manager_play(file_name, mode);
+
+	file_name[0] = ((pd_ver >> 4) & 0x0f) + '0';
+	tts_manager_play(file_name, mode);
+	
+	file_name[0] = (pd_ver & 0x0f) + '0';
 	tts_manager_play(file_name, mode);
 
 	if (fw_version_get_alpha_flag() == true)

@@ -100,7 +100,7 @@ static const  bt_mcu_pair_led_map_t bt_mcu_pair_ledmap[] = {
 #define BATTERY_CHARGING_REMAIN_CAP_LEVEL3        60
 #define BATTERY_CHARGING_REMAIN_CAP_LEVEL4        75
 #define BATTERY_CHARGING_REMAIN_CAP_LEVEL5        100
-#define DISCHARGE_LED_DISPLAY_TIME_10s            100
+#define DISCHARGE_LED_DISPLAY_TIME_10s            86
 #define DISCHARGE_LED_DISPLAY_TIME_2s            10
 
 //static battery_manage_info_t global_bat_namager;
@@ -974,6 +974,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                     bt_mcu_send_pw_cmd_poweron();
                     break;
                 }
+				pd_manager_set_poweron_filte_battery_led(WLT_FILTER_STANDBY_POWEROFF);
 /* 				if(!run_mode_is_demo())
 				  led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL); */
                 if(!ReadODM())

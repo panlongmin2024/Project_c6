@@ -21,7 +21,6 @@
 #include <fw_version.h>
 #include <sys_manager.h>
 #include <nvram_config.h>
-//#include "hm_gauge_bq28z610_security.h"
 
 #include<led_manager.h>
 #include<bt_manager_inner.h>
@@ -65,7 +64,7 @@ void hex_to_string_2(u32_t num, u8_t *buf) {
 	buf[1] = '0' + num%10;
 }
 void string_t0_hex_u8(u8_t *buf,u8_t *num) {
-	num = (buf[0]-'0')*10 + (buf[1]-'0');
+	*num = (buf[0]-'0')*10 + (buf[1]-'0');
 }
 
 #if 0
@@ -647,10 +646,9 @@ static int cdc_shell_ats_battery_curr(struct device *dev, u8_t *buf, int len)
 }
 static int cdc_shell_ats_set_sink_charge_current(struct device *dev, u8_t *buf, int len)
 {
-	u8_t index;
 	static u8_t step;
 	
-	step = string_t0_hex_u8(buf,*step);
+	string_t0_hex_u8(buf,&step);
 	pd_manager_test_set_sink_charge_current(step);	
 
 	ats_usb_cdc_acm_cmd_response_at_data(
@@ -662,10 +660,9 @@ static int cdc_shell_ats_set_sink_charge_current(struct device *dev, u8_t *buf, 
 }
 static int cdc_shell_ats_get_sink_charge_current(struct device *dev, u8_t *buf, int len)
 {
-	u8_t index;
 	u8_t step;
 	
-	pd_manager_test_get_sink_charge_current(*step);
+	pd_manager_test_get_sink_charge_current(&step);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_SET_CHARGE_LEVEL, sizeof(ATS_CMD_RESP_SET_CHARGE_LEVEL)-1, 
@@ -1398,10 +1395,10 @@ static int cdc_shell_ats_select_one_speaker(struct device *dev, u8_t *buf, int l
 		hm_ext_pa_select_left_speaker();
 	}
 
-	memcpy(buffer, ATS_CMD_RESP_GET_USB_NTC_STATUS, sizeof(ATS_CMD_RESP_GET_USB_NTC_STATUS)-1);
-	memcpy(buffer+7,buf,2);
+	memcpy(buffer, ATS_CMD_RESP_TURN_ON_ONE_SPEAKER, sizeof(ATS_CMD_RESP_TURN_ON_ONE_SPEAKER)-1);
+	memcpy(buffer+10,buf,2);
 	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, buffer, sizeof(ATS_CMD_RESP_GET_USB_NTC_STATUS)-1, 
+		dev, buffer, sizeof(ATS_CMD_RESP_TURN_ON_ONE_SPEAKER)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
 	return 0;
@@ -1769,10 +1766,11 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* light on all white led */
 		cdc_shell_ats_all_wled_turn_on(dev, NULL, 0);
 	}		
-	else if (!memcmp(&buf[index],ATS_AT_CMD_TURN_ON_ONE_SPEAKER, sizeof(ATS_AT_CMD_TURN_ON_ONE_SPEAKER)-1))
+	else if (!memcmp(&buf[index],ATS_AT_CMD_TURN_ON_ONE_SPEAKER, sizeof(ATS_AT_CMD_TURN_ON_ONE_SPEAKER)-4))//at last is param
 	{		   
 		/* select one speaker */
-		target_index = 7;//TL_SPK_XX_ON 需要取XX出来	
+		index += sizeof(ATS_AT_CMD_TURN_ON_ONE_SPEAKER)-1-2;
+		target_index = index;
 		cdc_shell_ats_select_one_speaker(dev, &buf[target_index], 2);	
 	}	
 	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_CHAGER_CUR, sizeof(ATS_AT_CMD_GET_CHAGER_CUR)-1))

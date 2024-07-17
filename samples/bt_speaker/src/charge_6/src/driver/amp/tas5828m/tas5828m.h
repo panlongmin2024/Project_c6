@@ -61,5 +61,7 @@ typedef struct {
 
 extern const cfg_reg registers[];
 extern const int registers_cnt;
+extern const cfg_reg ti_registers[];
+extern const int ti_registers_cnt;
 
 #endif

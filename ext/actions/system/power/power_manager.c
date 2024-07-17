@@ -84,6 +84,8 @@ struct power_manager_info {
 	uint32_t report_last_cap_timestamp;
 };
 
+extern uint8_t get_power_first_factory_reset_flag(void);
+extern void set_power_first_factory_reset_flag(uint8_t value);
 struct power_manager_info *power_manager = NULL;
 uint8_t power_first_get_cap_flag = 0;
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
@@ -444,8 +446,9 @@ int power_manager_sync_slave_battery_state(void)
 		}
 		charge_status = temp_status;
 	}	
-	else if(power_manager->battary_led_need_change == 1){
+	else if(power_manager->battary_led_need_change == 1 || get_power_first_factory_reset_flag()){
 		power_manager->battary_led_need_change = 0;
+		set_power_first_factory_reset_flag(0);
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY	
 		if(temp_status != POWER_SUPPLY_STATUS_DISCHARGE
 		|| power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
