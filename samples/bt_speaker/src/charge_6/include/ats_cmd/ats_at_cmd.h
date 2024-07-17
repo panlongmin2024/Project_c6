@@ -54,7 +54,7 @@
 
 #define ATS_AT_CMD_TURN_ON_ALL_SPEAKER           "TL_SPK_ALL_ON"
 #define ATS_AT_CMD_TURN_OFF_ALL_SPEAKER           "TL_SPK_ALL_OFF"
-#define ATS_AT_CMD_TURN_ON_ONE_SPEAKER            "TL_SPK_ON_"
+#define ATS_AT_CMD_TURN_ON_ONE_SPEAKER            "TL_SPK_XX_ON"
 #define ATS_AT_CMD_ENTER_SPK_BYPASS             "TL_SPK_BYPASS"
 #define ATS_AT_CMD_EXIT_SPK_BYPASS              "TL_SPK_BYPASS_OFF"
 

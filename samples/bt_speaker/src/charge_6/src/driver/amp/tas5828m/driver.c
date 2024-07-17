@@ -387,3 +387,135 @@ exit:
 	os_mutex_unlock(amp_tas5828m_mutex_ptr);
 	return 0;
 }
+
+int amp_tas5828m_pa_select_left_speaker(void)
+{
+	struct device *i2c_dev = NULL;
+	union dev_config config = {0};
+
+	uint8_t buf[10]={0};
+	
+	if(amp_tas5828m_mutex_ptr == NULL){
+		amp_tas5828m_mutex_ptr = &amp_tas5828m_mutex;
+		os_mutex_init(amp_tas5828m_mutex_ptr);
+	}
+	os_mutex_lock(amp_tas5828m_mutex_ptr, OS_FOREVER);
+    i2c_dev = device_get_binding(CONFIG_I2C_GPIO_0_NAME);
+	if (!i2c_dev) 
+	{
+		printk("[%s,%d] i2c_dev not found\n", __FUNCTION__, __LINE__);
+		goto exit;
+	}
+	
+	config.bits.speed = I2C_SPEED_STANDARD;
+	i2c_configure(i2c_dev, config.raw);
+
+	// back to book 0 
+	buf[0] = 0x0;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+
+	// back to book 0 
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x7f , buf, 1);
+
+	// enter book 0x8c
+	buf[0] = 0x8c;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x7f , buf, 1);
+	
+	// enter page 0x09
+	buf[0] = 0x09;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	//input mixer left to left = 0 dB
+	buf[0] = 0x74;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	buf[0] = 0x75;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x80 , buf, 1);	
+	buf[0] = 0x76;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	buf[0] = 0x77;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+
+	// enter page 0x0a
+	buf[0] = 0x0a;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	//input mixer right to right = -110 dB
+	buf[0] = 0x08;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	buf[0] = 0x09;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+	buf[0] = 0x0a;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	buf[0] = 0x0b;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+
+exit:
+	os_mutex_unlock(amp_tas5828m_mutex_ptr);
+	return 0;
+}
+
+int amp_tas5828m_pa_select_right_speaker(void)
+{
+	struct device *i2c_dev = NULL;
+	union dev_config config = {0};
+
+	uint8_t buf[10]={0};
+	
+	if(amp_tas5828m_mutex_ptr == NULL){
+		amp_tas5828m_mutex_ptr = &amp_tas5828m_mutex;
+		os_mutex_init(amp_tas5828m_mutex_ptr);
+	}
+	os_mutex_lock(amp_tas5828m_mutex_ptr, OS_FOREVER);
+    i2c_dev = device_get_binding(CONFIG_I2C_GPIO_0_NAME);
+	if (!i2c_dev) 
+	{
+		printk("[%s,%d] i2c_dev not found\n", __FUNCTION__, __LINE__);
+		goto exit;
+	}
+	
+	config.bits.speed = I2C_SPEED_STANDARD;
+	i2c_configure(i2c_dev, config.raw);
+
+	// back to book 0 
+	buf[0] = 0x0;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+
+	// back to book 0 
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x7f , buf, 1);
+
+	// enter book 0x8c
+	buf[0] = 0x8c;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x7f , buf, 1);
+	
+	// enter page 0x09
+	buf[0] = 0x09;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	//input mixer left to left = -110 dB
+	buf[0] = 0x74;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	buf[0] = 0x75;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+	buf[0] = 0x76;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	buf[0] = 0x77;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+
+	// enter page 0x0a
+	buf[0] = 0x0a;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	//input mixer right to right = 0 dB
+	buf[0] = 0x08;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	buf[0] = 0x09;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x80 , buf, 1);	
+	buf[0] = 0x0a;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	buf[0] = 0x0b;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+
+exit:
+	os_mutex_unlock(amp_tas5828m_mutex_ptr);
+	return 0;
+}
+
+

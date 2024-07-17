@@ -71,7 +71,8 @@
 
 #define ATS_CMD_RESP_ENTER_SPK_BYPASS         			"TL_SPK_BYPASS="
 #define ATS_CMD_RESP_EXIT_SPK_BYPASS          			"TL_SPK_BYPASS_OFF="
+#define ATS_CMD_RESP_ENTER_SPK_BYPASS         			"TL_SPK_BYPASS="
 
-#define ATS_CMD_RESP_GET_USB_NTC_STATUS       			"TL_GET_USB_NTC="
+#define ATS_CMD_RESP_GET_USB_NTC_STATUS       			"TL_SPK_XX_ON="
 
 #endif

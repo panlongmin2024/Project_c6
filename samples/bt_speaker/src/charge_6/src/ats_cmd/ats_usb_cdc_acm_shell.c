@@ -49,6 +49,9 @@ extern int user_uuid_verify(void);
 extern unsigned char is_authenticated(void);
 extern int ext_dsp_set_bypass(int bypass);
 extern int logic_mcu_read_ntc_status(void);
+extern void hm_ext_pa_select_left_speaker(void);
+extern void hm_ext_pa_select_right_speaker(void);
+
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -1400,6 +1403,28 @@ static int cdc_shell_ats_usb_ntc_read_status(struct device *dev, u8_t *buf, int 
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 	return 0;
 }
+
+static int cdc_shell_ats_select_one_speaker(struct device *dev, u8_t *buf, int len)
+{	
+	char buffer[13+1] = "0";
+	if(!memcmp(buf, "01",2))
+	{
+		hm_ext_pa_select_left_speaker();
+	}
+	else if (!memcmp(buf, "02",2))
+	{
+		hm_ext_pa_select_left_speaker();
+	}
+
+	memcpy(buffer, ATS_CMD_RESP_GET_USB_NTC_STATUS, sizeof(ATS_CMD_RESP_GET_USB_NTC_STATUS)-1);
+	memcpy(buffer+7,buf,2);
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, buffer, sizeof(ATS_CMD_RESP_GET_USB_NTC_STATUS)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	return 0;
+}
+
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
@@ -1558,8 +1583,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		cdc_shell_ats_disable_charger(dev, NULL, 0);
 	}	
 	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_KEY_CHECK, sizeof(ATS_AT_CMD_ENTER_KEY_CHECK)-1))
-	{
-	 
+	{ 
 		cdc_shell_ats_enter_key_check(dev, NULL, 0);
 	}
 	else if (!memcmp(&buf[index], ATS_AT_CMD_EXIT_KEY_CHECK, sizeof(ATS_AT_CMD_EXIT_KEY_CHECK)-1))
@@ -1763,7 +1787,12 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* light on all white led */
 		cdc_shell_ats_all_wled_turn_on(dev, NULL, 0);
 	}		
-							
+	else if (!memcmp(&buf[index],ATS_AT_CMD_TURN_ON_ONE_SPEAKER, sizeof(ATS_AT_CMD_TURN_ON_ONE_SPEAKER)-1))
+	{		   
+		/* select one speaker */
+		target_index = 7;//TL_SPK_XX_ON 需要取XX出来	
+		cdc_shell_ats_select_one_speaker(dev, &buf[target_index], 2);	
+	}								
 	else	
 	{
 		//ats_usb_cdc_acm_write_data("live ats_usb_cdc_acm_shell_command_handler exit",sizeof("live ats_usb_cdc_acm_shell_command_handler exit")-1);

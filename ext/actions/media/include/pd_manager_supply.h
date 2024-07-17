@@ -233,6 +233,8 @@ typedef enum {
     MCU_IIC_TYPE_PROP_LED_AURACAST,
 
     MCU_IIC_TYPE_PROP_DSP_DCDC,
+
+	PD_IIC_TYPE_PROP_TEST_SINK_CHARGE_CURRENT,//for factory test
 } pd_manager_iic_send_para_t;
 
 

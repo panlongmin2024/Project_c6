@@ -11,6 +11,7 @@ extern int aw85xxx_pa_start(void);
 extern int _aw85xxx_pa_stop(void);
 extern void aw85xxx_init();
 extern int aw85xxx_pa_stop(void);
+extern int aw85xxx_pa_select_lr_speaker(void);
 #endif
 #ifdef CONFIG_C_AMP_TAS5828M
 extern int amp_tas5828m_registers_init(void);
@@ -18,6 +19,8 @@ extern int amp_tas5828m_registers_deinit(void);
 extern int amp_tas5828m_clear_fault(void);
 extern int amp_tas5828m_pa_stop(void);
 extern int amp_tas5828m_pa_start(void);
+extern int amp_tas5828m_pa_select_left_speaker(void);
+extern int amp_tas5828m_pa_select_right_speaker(void);
 #endif
 
 static struct thread_timer amp_timer;
@@ -75,17 +78,35 @@ void hm_ext_pa_deinit(void)
     }	
 }
 
-void hm_ext_pa_init(void)
+void hm_ext_pa_select_left_speaker(void)
 {
-    if(ReadODM() == HW_GUOGUANG_BOARD)
+	printk("------>hm_ext_pa_select_left_speaker\n");
+	if(ReadODM() == HW_GUOGUANG_BOARD)
 	{
-		aw85xxx_init();
+		#ifdef CONFIG_C_AMP_AW85828
+			aw85xxx_pa_select_left_speaker();
+		#endif
 	}else{
-		amp_tas5828m_registers_init();
-	}	
-
+		#ifdef CONFIG_C_AMP_TAS5828M
+			amp_tas5828m_pa_select_left_speaker();
+		#endif	
+	}
 }
 
+void hm_ext_pa_select_right_speaker(void)
+{
+	printk("------>hm_ext_pa_select_right_speaker\n");
+	if(ReadODM() == HW_GUOGUANG_BOARD)
+	{
+		#ifdef CONFIG_C_AMP_AW85828
+			aw85xxx_pa_select_right_speaker();
+		#endif
+	}else{
+		#ifdef CONFIG_C_AMP_TAS5828M
+			amp_tas5828m_pa_select_right_speaker();
+		#endif	
+	}
+}
 
 static void hm_ext_pa_clear_fault_timer_handle(struct thread_timer *ttimer, void *expiry_fn_arg)
 {

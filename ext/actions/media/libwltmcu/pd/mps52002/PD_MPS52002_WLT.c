@@ -124,7 +124,7 @@ struct wlt_pd_mps52002_info {
 	u8_t   	pd_version;
 	u8_t	pd_sink_debounce_time;
 	u8_t    pd_source_disc_debunce_cnt;
-
+	u8_t   	pd_test_sink_charge_step;//for factory test
 
 };
 
@@ -338,6 +338,27 @@ void pd_mps52002_pd_24A_proccess(int val)
 	pd_tps52002_read_reg_value(PD_CHARGE_CURRENT, buf, 2);
     printf("%s reg 0x%x value: 0x%x, 0x%x \n",__func__, PD_CHARGE_CURRENT  ,buf[0], buf[1]);
 
+}
+
+/* for factory test */
+void pd_mps52002_pd_set_sink_charge_current(u8_t val)
+{
+    u8_t buf[2] = {0}; 
+	
+	buf[0] = val;
+	if(buf[0]>=60){
+		buf[0] = 60;
+	}
+    buf[1] = 0x00;
+
+	pd_mps52002_write_reg_value(PD_CHARGE_CURRENT, buf, 2);
+	
+	k_sleep(1);
+	pd_tps52002_read_reg_value(PD_CHARGE_CURRENT, buf, 2);
+	
+	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
+	pd_mps52002->pd_test_sink_charge_step = buf[0];
+    printf("%s reg 0x%x value: 0x%x, 0x%x %x\n",__func__, PD_CHARGE_CURRENT  ,buf[0], buf[1],pd_mps52002->pd_test_sink_charge_step);
 }
 
 void pd_mps52002_pd_otg_on(bool flag)
@@ -1641,7 +1662,11 @@ void pd_mps52002_iic_send_data()
 			case MCU_IIC_TYPE_PROP_DSP_DCDC:
 				io_expend_aw9523b_ctl_20v5_set(data);	
 				break;
-				
+
+			case PD_IIC_TYPE_PROP_TEST_SINK_CHARGE_CURRENT:
+				/* for factory test */
+				pd_mps52002_pd_set_sink_charge_current(data);
+				break;
 			default:
 				break; 
 		}      
@@ -1740,6 +1765,10 @@ static void pd_mps52002_wlt_set_property(struct device *dev,enum pd_manager_supp
 		    // MPS_SET_SOURCE_SSRC(1);
 			 pd_iic_push_queue(PD_IIC_TYPE_PROP_SOURCE_SSRC, (u8_t)val->intval);
 			 break;
+		case PD_SUPPLY_PROP_TEST_SINK_CHARAGE_CURRENT:
+			/* for factory test */
+			pd_iic_push_queue(PD_IIC_TYPE_PROP_TEST_SINK_CHARGE_CURRENT, (u8_t)val->intval);
+			break;		
         default:
             break;               
     }
