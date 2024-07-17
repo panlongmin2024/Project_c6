@@ -51,7 +51,8 @@ extern int ext_dsp_set_bypass(int bypass);
 extern int logic_mcu_read_ntc_status(void);
 extern void hm_ext_pa_select_left_speaker(void);
 extern void hm_ext_pa_select_right_speaker(void);
-
+extern int pd_manager_test_set_sink_charge_current(u8_t step);
+extern int pd_manager_test_get_sink_charge_current(u8_t *sink_charge_step);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -62,6 +63,9 @@ void hex_to_string_4(u32_t num, u8_t *buf) {
 void hex_to_string_2(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%100/10;
 	buf[1] = '0' + num%10;
+}
+void string_t0_hex_u8(u8_t *buf,u8_t *num) {
+	num = (buf[0]-'0')*10 + (buf[1]-'0');
 }
 
 #if 0
@@ -641,55 +645,33 @@ static int cdc_shell_ats_battery_curr(struct device *dev, u8_t *buf, int len)
 
 	return 0;
 }
-static int cdc_shell_ats_set_charge_volt(struct device *dev, u8_t *buf, int len)
+static int cdc_shell_ats_set_sink_charge_current(struct device *dev, u8_t *buf, int len)
 {
 	u8_t index;
-	u8_t buffer[19] = {0};
-	if (!memcmp(buf, "01",2))
-	{
-		index = 0x01;
-	}
-	else if (!memcmp(buf, "02",2))
-	{
-		index = 0x02;
-	}
-	else if (!memcmp(buf, "03",2))
-	{
-		index = 0x03;
-	}
-	else if (!memcmp(buf, "04",2))
-	{
-		index = 0x04;
-	}
-	else if (!memcmp(buf, "05",2))
-	{
-		index = 0x05;
-	}
-	else if (!memcmp(buf, "06",2))
-	{
-		index = 0x06;
-	}
-	else if (!memcmp(buf, "07",2))
-	{
-		index = 0x07;
-	}
-	else 
-	{
-		index = 0x08;
-	}
+	static u8_t step;
+	
+	step = string_t0_hex_u8(buf,*step);
+	pd_manager_test_set_sink_charge_current(step);	
 
-	memcpy(buffer,ATS_CMD_RESP_SET_CHARGE_LEVEL,sizeof(ATS_CMD_RESP_SET_CHARGE_LEVEL)-1);
-	memcpy(buffer+17,buf,2);
 	ats_usb_cdc_acm_cmd_response_at_data(
-			dev, buffer, sizeof(buffer), 
-			NULL, 0);
+		dev, ATS_CMD_RESP_SET_CHARGE_LEVEL, sizeof(ATS_CMD_RESP_SET_CHARGE_LEVEL)-1, 
+		buf, len);
 
-	if(pd_mps52002_ats_switch_volt(index)){
-		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
-	}
-	else{
-		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
-	}
+	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	return 0;
+}
+static int cdc_shell_ats_get_sink_charge_current(struct device *dev, u8_t *buf, int len)
+{
+	u8_t index;
+	u8_t step;
+	
+	pd_manager_test_get_sink_charge_current(*step);
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_SET_CHARGE_LEVEL, sizeof(ATS_CMD_RESP_SET_CHARGE_LEVEL)-1, 
+		buf, len);
+
+	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 	return 0;
 }
 
@@ -1568,12 +1550,12 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{
 		index += sizeof(ATS_AT_CMD_SET_CHAGER_CUR)-1;
 		target_index = index;
-		cdc_shell_ats_set_charge_volt(dev, &buf[target_index], 2);
+		cdc_shell_ats_set_sink_charge_current(dev, &buf[target_index], 2);
 	}
 	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_PD_VERSION, sizeof(ATS_AT_CMD_GET_PD_VERSION)-1))
 	{
 		index += sizeof(ATS_AT_CMD_GET_PD_VERSION)-1;
-        target_index = index;
+		target_index = index;
 		cdc_shell_ats_pd_version_info_dump(dev, NULL, 0);
 	}
 	else if (!memcmp(&buf[index], ATS_AT_CMD_DISABLE_CHARGE, sizeof(ATS_AT_CMD_DISABLE_CHARGE)-1))
@@ -1792,7 +1774,12 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* select one speaker */
 		target_index = 7;//TL_SPK_XX_ON 需要取XX出来	
 		cdc_shell_ats_select_one_speaker(dev, &buf[target_index], 2);	
-	}								
+	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_CHAGER_CUR, sizeof(ATS_AT_CMD_GET_CHAGER_CUR)-1))
+	{		   
+		/* get sink charge current */
+		cdc_shell_ats_get_sink_charge_current(dev, NULL, 0);	
+	}	
 	else	
 	{
 		//ats_usb_cdc_acm_write_data("live ats_usb_cdc_acm_shell_command_handler exit",sizeof("live ats_usb_cdc_acm_shell_command_handler exit")-1);

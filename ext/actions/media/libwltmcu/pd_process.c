@@ -1205,6 +1205,20 @@ u32_t pd_get_sink_charge_current(void)
     return val.intval;
 
 }
+/* test get sink charge step!!! */
+u32_t pd_test_get_sink_charge_step(void)
+{
+    union pd_manager_supply_propval val;
+
+    if(wlt_pd_manager == NULL)
+        return 0;
+
+    const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_TEST_GET_SINK_CHARGE_STEP, &val);
+
+    return val.intval;
+
+}
 
 u32_t pd_get_source_volt(void)
 {
@@ -1832,6 +1846,20 @@ bool wlt_pd_manager_is_init(void)
     return false;
 }
 
+/* for factory test */
+int pd_manager_test_set_sink_charge_current(u8_t step)
+{
+	pd_manager_send_cmd_code(PD_SUPPLY_PROP_TEST_SINK_CHARAGE_CURRENT, step);
+	
+	return 0;
+}
+/* for factory test */
+int pd_manager_test_get_sink_charge_current(u8_t *sink_charge_step)
+{
+	*sink_charge_step = (u8_t )pd_test_get_sink_charge_step();
+	
+	return 0;
+}
 
 
 

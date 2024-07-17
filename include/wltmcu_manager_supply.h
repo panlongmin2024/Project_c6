@@ -89,6 +89,7 @@ enum pd_manager_supply_property {
 
     PD_SUPPLY_PROP_PD_VERSION,
 	PD_SUPPLY_PROP_TEST_SINK_CHARAGE_CURRENT,//for factory test
+	PD_SUPPLY_PROP_TEST_GET_SINK_CHARGE_STEP,//for factory test
 };
 
 typedef enum

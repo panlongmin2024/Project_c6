@@ -1487,7 +1487,11 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			val->intval = pd_mps52002->pd_65992_unload_flag;
 			// SYS_LOG_INF("PPD_SUPPLY_PROP_UNLOAD_FINISHED:%d", val->intval);
 			break;	
-
+		case PD_SUPPLY_PROP_TEST_GET_SINK_CHARGE_STEP:
+			/* for factory test */
+			val->intval = pd_mps52002->pd_test_sink_charge_step; 
+			break;
+			
         default:
             break;	  
     }
