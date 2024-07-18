@@ -417,7 +417,7 @@ int amp_tas5828m_pa_select_left_speaker(void)
 	union dev_config config = {0};
 
 	uint8_t buf[10]={0};
-	
+	printk("------>%s  %d\n", __FUNCTION__, __LINE__);
 	if(amp_tas5828m_mutex_ptr == NULL){
 		amp_tas5828m_mutex_ptr = &amp_tas5828m_mutex;
 		os_mutex_init(amp_tas5828m_mutex_ptr);
@@ -433,13 +433,9 @@ int amp_tas5828m_pa_select_left_speaker(void)
 	config.bits.speed = I2C_SPEED_STANDARD;
 	i2c_configure(i2c_dev, config.raw);
 
-	// back to book 0 
+	// back to page 0 
 	buf[0] = 0x0;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-
-	// back to book 0 
-	buf[0] = 0x00;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x7f , buf, 1);
 
 	// enter book 0x8c
 	buf[0] = 0x8c;
@@ -452,7 +448,7 @@ int amp_tas5828m_pa_select_left_speaker(void)
 	buf[0] = 0x74;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
 	buf[0] = 0x75;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x80 , buf, 1);	
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
 	buf[0] = 0x76;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
 	buf[0] = 0x77;
@@ -498,13 +494,9 @@ int amp_tas5828m_pa_select_right_speaker(void)
 	config.bits.speed = I2C_SPEED_STANDARD;
 	i2c_configure(i2c_dev, config.raw);
 
-	// back to book 0 
+	// back to peag 0 
 	buf[0] = 0x0;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-
-	// back to book 0 
-	buf[0] = 0x00;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x7f , buf, 1);
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1); 
 
 	// enter book 0x8c
 	buf[0] = 0x8c;
