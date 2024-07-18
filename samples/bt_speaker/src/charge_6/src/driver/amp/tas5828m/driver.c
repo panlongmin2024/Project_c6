@@ -417,6 +417,10 @@ int amp_tas5828m_pa_select_left_speaker(void)
 	union dev_config config = {0};
 
 	uint8_t buf[10]={0};
+
+	/* first start pa! */
+	amp_tas5828m_pa_start();
+	
 	printk("------>%s  %d\n", __FUNCTION__, __LINE__);
 	if(amp_tas5828m_mutex_ptr == NULL){
 		amp_tas5828m_mutex_ptr = &amp_tas5828m_mutex;
@@ -445,27 +449,27 @@ int amp_tas5828m_pa_select_left_speaker(void)
 	buf[0] = 0x09;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
 	//input mixer left to left = 0 dB
-	buf[0] = 0x74;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-	buf[0] = 0x75;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
-	buf[0] = 0x76;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-	buf[0] = 0x77;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x74 , buf, 1);
+	buf[0] = 0x80;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x75 , buf, 1);	
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x76 , buf, 1);
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x77 , buf, 1);	
 
 	// enter page 0x0a
 	buf[0] = 0x0a;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
 	//input mixer right to right = -110 dB
-	buf[0] = 0x08;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-	buf[0] = 0x09;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
-	buf[0] = 0x0a;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-	buf[0] = 0x0b;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x08 , buf, 1);
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x09 , buf, 1);	
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x0a , buf, 1);
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x0b , buf, 1);	
 
 exit:
 	os_mutex_unlock(amp_tas5828m_mutex_ptr);
@@ -478,6 +482,9 @@ int amp_tas5828m_pa_select_right_speaker(void)
 	union dev_config config = {0};
 
 	uint8_t buf[10]={0};
+
+	/* first start pa! */
+	amp_tas5828m_pa_start();
 	
 	if(amp_tas5828m_mutex_ptr == NULL){
 		amp_tas5828m_mutex_ptr = &amp_tas5828m_mutex;
@@ -506,27 +513,27 @@ int amp_tas5828m_pa_select_right_speaker(void)
 	buf[0] = 0x09;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
 	//input mixer left to left = -110 dB
-	buf[0] = 0x74;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-	buf[0] = 0x75;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
-	buf[0] = 0x76;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-	buf[0] = 0x77;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x74 , buf, 1);
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x75 , buf, 1);	
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x76 , buf, 1);
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x77 , buf, 1);	
 
 	// enter page 0x0a
 	buf[0] = 0x0a;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
 	//input mixer right to right = 0 dB
-	buf[0] = 0x08;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-	buf[0] = 0x09;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x80 , buf, 1);	
-	buf[0] = 0x0a;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
-	buf[0] = 0x0b;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);	
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x08 , buf, 1);
+	buf[0] = 0x80;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x89 , buf, 1);	
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x0a , buf, 1);
+	buf[0] = 0x00;
+	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x0b , buf, 1);	
 
 exit:
 	os_mutex_unlock(amp_tas5828m_mutex_ptr);
