@@ -652,7 +652,7 @@ static int cdc_shell_ats_set_sink_charge_current(struct device *dev, u8_t *buf, 
 	pd_manager_test_set_sink_charge_current(step);	
 
 	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_CMD_RESP_SET_CHARGE_LEVEL, sizeof(ATS_CMD_RESP_SET_CHARGE_LEVEL)-1, 
+		dev, ATS_CMD_RESP_SET_CHARGE_LEVEL, sizeof(ATS_CMD_RESP_SET_CHARGE_LEVEL)-1-2, 
 		buf, len);
 
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
@@ -661,12 +661,13 @@ static int cdc_shell_ats_set_sink_charge_current(struct device *dev, u8_t *buf, 
 static int cdc_shell_ats_get_sink_charge_current(struct device *dev, u8_t *buf, int len)
 {
 	u8_t step;
+	uint8_t buffer[2+1] = "00";
 	
 	pd_manager_test_get_sink_charge_current(&step);
-
+	hex_to_string_2(step,buffer);
 	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_CMD_RESP_SET_CHARGE_LEVEL, sizeof(ATS_CMD_RESP_SET_CHARGE_LEVEL)-1, 
-		buf, len);
+		dev, ATS_CMD_RESP_SET_CHARGE_LEVEL, sizeof(ATS_CMD_RESP_SET_CHARGE_LEVEL)-1-2, 
+		buffer, 2);
 
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 	return 0;
