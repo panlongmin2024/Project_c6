@@ -350,7 +350,7 @@ void pd_mps52002_pd_test_set_sink_charge_current(u8_t val)
 		buf[0] = 60;
 	}
     buf[1] = 0x00;
-
+	printf("------> %s val %dn",__func__, val);
 	pd_mps52002_write_reg_value(PD_CHARGE_CURRENT, buf, 2);
 	
 	k_sleep(1);

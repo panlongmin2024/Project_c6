@@ -340,6 +340,7 @@ static void _ls8a10049t_gpio2_output(struct logic_mcu_ls8a10049t_device_data_t *
  *     Remark          :
  *         需按位操作
  */
+extern bool ats_get_enter_key_check_record(void);
 static int _ls8a10049t_check_power_key_pressed(struct logic_mcu_ls8a10049t_device_data_t *dev)
 {
     u8_t buffer[4];
@@ -366,15 +367,23 @@ static int _ls8a10049t_check_power_key_pressed(struct logic_mcu_ls8a10049t_devic
 	reg_7b.bit7 = 1;
 	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
 
+	/* plm add: for factory test! */
+	////start
 	int property_read_reboot = property_get_int(CFG_AUTO_USER_ATS_REBOOT,0);
 	printf("------> property_read_reboot %d\n",property_read_reboot);
 	if(property_read_reboot == 6){
 		u8_t buffer[1+1] = "8";
 		property_set_factory(CFG_AUTO_USER_ATS_REBOOT,buffer,1);
 		power_key_press = 1;
+		return power_key_press;
 	}
 
-	SYS_LOG_INF("power_key_press = %d\n", power_key_press);
+
+	/*if(ats_get_enter_key_check_record()){
+		struct logic_mcu_ls8a10049t_device_data_t *ls8a10049t = p_mcu_ls8a10049t_dev->driver_data;
+		_ls8a10049t_watchdog_clear(ls8a10049t);
+	}*/
+	////end
 
     return power_key_press;
 }

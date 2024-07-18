@@ -1833,7 +1833,8 @@ int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value)
 {
     *volt_value = pd_get_sink_charge_volt();
     *cur_value = pd_get_sink_charge_current();
-	
+
+	SYS_LOG_INF("------> volt_value :%d,  cur_value :%d \n",*volt_value, *cur_value);
 	return 0;
 }
 

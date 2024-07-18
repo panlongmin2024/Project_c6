@@ -872,7 +872,8 @@ int check_battery_low_cap_level5()
     }
     return 0;
 }
-
+extern void sys_event_report_input_ats(uint32_t key_event);
+extern bool ats_get_enter_key_check_record(void);
 extern int pd_manager_get_power_key_debounce(void);
 extern bool main_system_tts_get_play_warning_tone_flag(void);
 static bool bt_is_charge_warnning_flag = false;
@@ -892,6 +893,10 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
     {
 
         case MCU_INT_TYPE_POWER_KEY:
+			/*if(ats_get_enter_key_check_record()){
+                sys_event_report_input_ats(KEY_PWRKEY);
+                break;
+            }*/
 
             if(pd_manager_get_power_key_debounce())  
             {

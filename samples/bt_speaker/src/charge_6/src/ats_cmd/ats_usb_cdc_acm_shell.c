@@ -63,7 +63,7 @@ void hex_to_string_2(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%100/10;
 	buf[1] = '0' + num%10;
 }
-void string_t0_hex_u8(u8_t *buf,u8_t *num) {
+void string_to_hex_u8(u8_t *buf,u8_t *num) {
 	*num = (buf[0]-'0')*10 + (buf[1]-'0');
 }
 
@@ -618,7 +618,7 @@ static int cdc_shell_ats_battery_ad_level(struct device *dev, u8_t *buf, int len
 	int battery_volt;
 	uint8_t buffer[4+1] = "0000";
 
-	battery_volt = power_manager_get_battery_vol();
+	battery_volt = power_manager_get_battery_vol()*2;
 	//battery_volt /= 1000; // change voltage unit uv to mv
 	snprintf(buffer, sizeof(buffer), "%04d", battery_volt);
 
@@ -648,7 +648,7 @@ static int cdc_shell_ats_set_sink_charge_current(struct device *dev, u8_t *buf, 
 {
 	static u8_t step;
 	
-	string_t0_hex_u8(buf,&step);
+	string_to_hex_u8(buf,&step);
 	pd_manager_test_set_sink_charge_current(step);	
 
 	ats_usb_cdc_acm_cmd_response_at_data(
@@ -1393,7 +1393,7 @@ static int cdc_shell_ats_select_one_speaker(struct device *dev, u8_t *buf, int l
 	}
 	else if (!memcmp(buf, "02",2))
 	{
-		hm_ext_pa_select_left_speaker();
+		hm_ext_pa_select_right_speaker();
 	}
 
 	memcpy(buffer, ATS_CMD_RESP_TURN_ON_ONE_SPEAKER, sizeof(ATS_CMD_RESP_TURN_ON_ONE_SPEAKER)-1);

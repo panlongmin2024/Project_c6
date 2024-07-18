@@ -98,6 +98,7 @@ void hm_ext_pa_select_left_speaker(void)
 		#endif
 	}else{
 		#ifdef CONFIG_C_AMP_TAS5828M
+            amp_tas5828m_registers_init();//first open amp
 			amp_tas5828m_pa_select_left_speaker();
 		#endif	
 	}
@@ -113,6 +114,7 @@ void hm_ext_pa_select_right_speaker(void)
 		#endif
 	}else{
 		#ifdef CONFIG_C_AMP_TAS5828M
+            amp_tas5828m_registers_init();//first open amp
 			amp_tas5828m_pa_select_right_speaker();
 		#endif	
 	}

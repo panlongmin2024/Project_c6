@@ -42,6 +42,7 @@
 #include "system_app.h"
 
 #define APP_SHELL "app"
+#include <mcu_manager_supply.h>
 
 #ifdef CONFIG_CONSOLE_SHELL
 static int shell_input_key_event(int argc, char *argv[])
@@ -479,6 +480,35 @@ static int shell_print_enable(int argc, char *argv[])
 	return 0;
 }
 
+static int shell_charge_on(int argc, char *argv[])
+{
+	extern int pd_manager_send_cmd_code(uint8_t type, int code);
+	pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
+	return 0;
+}
+
+static int shell_charge_off(int argc, char *argv[])
+{
+	extern int pd_manager_send_cmd_code(uint8_t type, int code);
+	pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 0);
+	return 0;
+}
+
+static int shell_charge_get(int argc, char *argv[])
+{
+	int16 volt,current;
+	extern int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
+	pd_manager_get_volt_cur_value(&volt,&current);
+	printk("------> volt_value :%d,  cur_value :%d \n",volt, current);
+	return 0;
+}
+static int shell_user(int argc, char *argv[])
+{
+	extern bool ats_get_enter_key_check_record(void);
+	sys_event_report_input_ats(KEY_PWRKEY);
+	printk("------> shell_user \n");
+	return 0;
+}
 static const struct shell_cmd app_commands[] = {
 	{"input", shell_input_key_event, "input key event"},
 	{"btinfo", shell_dump_bt_info, "dump bt info"},
@@ -523,6 +553,10 @@ static const struct shell_cmd app_commands[] = {
 
 	{"print", shell_print_enable, "print enable or disable"},
 
+	{"charge_on", shell_charge_on, "charge on"},
+	{"charge_off", shell_charge_off, "charge off"},
+	{"charge_get", shell_charge_get, "charge current off"},
+	{"key_user", shell_user, "key user"},
 	{NULL, NULL, NULL}};
 #endif
 
