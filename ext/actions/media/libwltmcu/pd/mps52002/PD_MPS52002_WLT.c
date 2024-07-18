@@ -428,7 +428,7 @@ static void mps_ota_get_status(u8_t *status)
 	SYS_LOG_INF("  %x\n", *status);
 }
 
-int OTA_PD(void)
+int OTA_PD(u8_t flag)
 {
 	// struct device *iic_dev;
 	// union dev_config config = {0};
@@ -438,18 +438,9 @@ int OTA_PD(void)
 	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
 	k_sleep(10); //delay 10ms
 	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
-
-	k_sleep(60); //delay 10ms
-	
-	// task_wdt_add(TASK_WDT_CHANNEL_MAIN_APP, 50000, NULL, NULL);
-	// iic_dev = device_get_binding(CONFIG_I2C_0_NAME);
-	// config.bits.speed = I2C_SPEED_STANDARD;
-	// i2c_configure(iic_dev, config.raw);     
-
+	k_sleep(60); //delay 10ms	   
 	u8_t request_cmd[] = { 0x4D, 0x50, 0x53, 0x53, 0x54, 0x41, 0x52, 0x54 };
 	
-	//i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0xaa, request_cmd, sizeof(request_cmd));
-
 	pd_mps52002_write_reg_value(PD_MPS_AA_REG, request_cmd, sizeof(request_cmd));
 
 	printf("live  OTA_PD 333 \n");
@@ -481,11 +472,6 @@ int OTA_PD(void)
 		return 0;
 	}
 		
-	// mps_ota_set_status(0x55);
-	//Data transferring
-//	u8_t *fw_data;
-	//fw_data = PD_buff;//{0x00,0x00};//read_fw_data();
-	//memcpy(fw_data,PD_buff,sizeof(PD_buff));
 	int data_len = sizeof(fw_data);//fw_data.Length;
 	int res = data_len % 128;
 	int frame_index = 0;
@@ -494,12 +480,8 @@ int OTA_PD(void)
 	
 	for(int i=0; i<(data_len-res); i+=128)
 	{		
-		//u8_t data[64];// = fw_data.Skip(i).Take(512).ToArray();
-		//memcpy(data, &fw_data[i],64);
-		//u8_t crc_value = crc8_calulate(data, 512);
 		u8_t frame[129];
 		frame[0]= frame_index/4;
-		//printf("live  OTA_PD 444 frame_index = %02x\n ",frame_index/8);
 		memcpy(&frame[1], &fw_data[i], 128);
 	
 		pd_mps52002_write_reg_value(PD_MPS_AF_REG, frame, 129);
@@ -532,21 +514,10 @@ int OTA_PD(void)
 		//u8_t data1[res];
 		int flowDataLen = 0;
 		flowDataLen = data_len-res;
-		//printf("live  OTA_PD 888 flowDataLen = %02x\n",flowDataLen);
-		//memcpy(data1,  &fw_data[flowDataLen],res);
-		//u8_t crc_value1 = crc8_calulate(data1, sizeof(data1));
+	
 		u8_t frame1[res+1];
 		frame1[0] = frame_index/4;
-			//printf("[%s %d]  = %d\n", __func__, __LINE__,frame1[0]);
-		// printf("live  OTA_PD 444 frame1 = %02x\n",frame_index/8);
 		memcpy(&frame1[1], &fw_data[flowDataLen], res);
-			//for(int jj =0 ;jj <(res+1);jj++)
-			//printf("0x%02x,",frame1[jj]);
-		// frame1[res+1]=crc_value1;
-			// i2c_write(iic_dev, frame1, res+1, 0xAF);
-		
-		// i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR,0xAF, frame1, res+1);
-
 		pd_mps52002_write_reg_value(PD_MPS_AF_REG, frame1, res+1);
 
 		k_sleep(60); //delay 50ms before read index and crc status
@@ -579,7 +550,14 @@ int OTA_PD(void)
 	if ( count <= 0) 
 	{	 
 		mps_ota_set_status(0x55);
+		if(!flag)
+	   {
 	    led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+	   }
+	   else
+	   	{
+         led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+	    }
 		printf("[%s %d] OTA_PD FAIL!!!!!!!!!!!!!!!!!!\n", __func__, __LINE__);
 		return 0;
 	}
@@ -590,8 +568,6 @@ int OTA_PD(void)
 	}
 	//Jump to execute new Firmware
 	u8_t jump_cmd = 0xAC;
-	
-	// i2c_burst_write(iic_dev,I2C_PD_DEV_ADDR,0xbb,&jump_cmd ,1); 
 	pd_mps52002_write_reg_value(PD_MPS_BB_REG, &jump_cmd, 1);
 	
 	k_sleep(10); //delay 10ms
@@ -599,7 +575,19 @@ int OTA_PD(void)
 	k_sleep(10); //delay 10ms
 	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
 	k_sleep(200); //delay 10ms
-	led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+	#ifdef CONFIG_TASK_WDT
+	task_wdt_feed_all();
+	#endif
+	
+	if(!flag)
+	  {
+	    led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+	  }
+	  else
+	  {
+         led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+	  }
+	   k_sleep(1500); //delay 10ms
 	printf("[%s,%d] OTA_PD end\n", __FUNCTION__, __LINE__);
 	return 1;
 }	
@@ -610,24 +598,18 @@ static void pd_mps52002_status_value(void)
 	u8_t buf1[2] = {0x01,0x00};
 	u8_t buf2[2] = {0x02,0x00};
 	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
-    // union dev_config config = {0};
-    // struct device *iic_dev;
+
 	mps_ota_get_status(&ota_flag);
     printf("[%s %d] ota_flag:%d \n", __func__, __LINE__, ota_flag);
-   
-    // iic_dev = device_get_binding(CONFIG_I2C_0_NAME);
-    // config.bits.speed = I2C_SPEED_STANDARD;
-    // i2c_configure(iic_dev, config.raw);
-
-   
-	if(!pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2))
+    
+	if(!pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2) || ota_flag != 0x88)
 	{
 	   printf("live debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
 	   pd_mps52002->pd_version = buf[0];
 
-	    if(ota_flag == 0x55 ||(pd_mps52002->pd_version < mps_pd_current_version))
+	    if(pd_mps52002->pd_version < mps_pd_current_version)
 		{
-		  	OTA_PD();
+		  	OTA_PD(0);
 	    }
     }	
 	k_sleep(10);
@@ -636,7 +618,7 @@ static void pd_mps52002_status_value(void)
 
 	
 	k_sleep(1);
-	printf("live debug 0x07 status:0x%x 0x%x  \n",buf[0], buf[1]);
+	printf("live debug 0x07 status:0x%x 0x%x  \n",buf2[0], buf2[1]);
 	// i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0x07, buf1, 2);
 	pd_mps52002_write_reg_value(PD_MPS_07_REG, buf1, 2);
     

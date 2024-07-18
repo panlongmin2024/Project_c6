@@ -50,7 +50,7 @@ void pd_srv_sync_init(void)
 		return;
 	}
 
-	if (os_sem_take(&return_notify, OS_SECONDS(10)) != 0) {
+	if (os_sem_take(&return_notify, OS_SECONDS(30)) != 0) {
 		printk("pd_srv_sync_end timer out\n");
 		return;
 	}

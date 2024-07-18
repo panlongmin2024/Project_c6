@@ -38,7 +38,7 @@ static void main_is_enter_att(void)
 	printk("\n %s , enter ---",__func__);
 
 	property_get = property_get_int(CFG_AUTO_ENTER_ATS_MODULE, 0);
-	/*printk("------> get_dat =  %d  att_status %d\n",property_get,get_autotest_connect_status());
+	printk("------> get_dat =  %d  att_status %d\n",property_get,get_autotest_connect_status());
     if(get_autotest_connect_status() == 0)
     {
         enter_att_flag = true;
@@ -46,7 +46,7 @@ static void main_is_enter_att(void)
 		char buffer[2] = "6";
 		ats_module_test_mode_write(buffer,sizeof(buffer)-1);		
         return;
-    }	*/
+    }	
 
 	check_adfu_gpio_key();
 	printk("\n %s , exit ---",__func__);

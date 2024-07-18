@@ -429,7 +429,7 @@ extern int check_is_wait_adfu(void);
 void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_status)
 {
     printf("zth debug remaincap_display_handle,status ,cap: %d ,0x%x \n", status,cap);
-
+   static u8_t first_10s_batt_display_time_flag = 0;
     if(check_is_wait_adfu())
         return;
 
@@ -468,7 +468,15 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
               }
 			  else //if(led_status == BATT_LED_ON_10S)
 			  {
-			    set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_10s);//set 10s
+			    if(first_10s_batt_display_time_flag)
+			     {
+			       set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_10s);//set 10s
+			     }
+			     else
+			     {
+			       first_10s_batt_display_time_flag = 1;
+                   set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_10s -13);//set 10s
+				 }
 			  }
 			  	
                 battery_status_discharge_handle(cap);
@@ -736,12 +744,12 @@ int mcu_ui_ota_deal(void)
             input_dev_disable(dev);
 
         bt_manager_send_fw_update_code(MCU_FW_UPDATEING);
-		extern int OTA_PD(void);
+		extern int OTA_PD(u8_t flag);
 
 
       if(ReadODM())
 		{
-		 ret = OTA_PD();
+		 ret = OTA_PD(1);
       	}
         else
         {
@@ -1025,14 +1033,14 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 else{
                     printk("POWER KEY!!! %d \n",sys_pm_get_power_5v_status());
                     #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
-                   // if(power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
-                    //{
-                    //  pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
-                    //}
-                   // else
-                    // {
+                    if(power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
+                    {
+                      pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
+                    }
+                   else
+                     {
                        pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_2S);
-					 // }// power_manager_battery_display_handle(1, POWER_MANAGER_BATTER_2_SECOUND);
+					 }// power_manager_battery_display_handle(1, POWER_MANAGER_BATTER_2_SECOUND);
                     #endif      
                     // pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);
                     bt_mcu_send_pw_cmd_poweron();
