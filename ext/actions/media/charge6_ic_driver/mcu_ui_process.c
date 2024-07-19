@@ -910,8 +910,8 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
             }*/
 
 			/* for factory test */
-			//if(ats_get_enter_key_check_record() == true)
-			if(user_get_key_test())
+			if(ats_get_enter_key_check_record())
+			//if(user_get_key_test())
 			{
 				mcu_ui_send_led_code(MCU_SUPPLY_PROP_FACTORY_TEST_KEY,1);
 				sys_event_report_input_ats(51);

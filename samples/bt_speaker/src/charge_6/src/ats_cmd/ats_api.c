@@ -422,7 +422,7 @@ bool ats_get_enter_key_check_record(void)
 {
     if(p_ats_ctx){
         SYS_LOG_INF("---->:p_ats_ctx is inited!\n");
-        return p_ats_ctx->ats_enter_key_check_record;
+        return p_ats_ctx->ats_enable_enter_key_check;
     }
     else{
         SYS_LOG_INF("---->:p_ats_ctx not inited!\n");
