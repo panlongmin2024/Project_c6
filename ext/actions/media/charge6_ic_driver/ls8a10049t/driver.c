@@ -980,6 +980,11 @@ static void mcu_ls8a10049t_wlt_set_property(struct device *dev,enum mcu_manager_
 		case MCU_SUPPLY_PROP_REAL_SHUTDOWN_DUT:
 			_ls8a10049t_otg_check_enable(ls8a10049t);
             break;
+		
+		/* for factory test key */
+        case MCU_SUPPLY_PROP_FACTORY_TEST_KEY:
+            _ls8a10049t_watchdog_clear(ls8a10049t);
+            break;
 
         default:
             break;               

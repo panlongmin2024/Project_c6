@@ -107,6 +107,9 @@ enum mcu_manager_supply_property {
     //MCU_SUPPLY_PROP_BATTERY_LOW_RED_LED,
      MCU_SUPPLY_PROP_RED_LED_FLASH,
      MCU_SUPPLY_PROP_REAL_SHUTDOWN_DUT,
+
+	/* for factory test! */
+	MCU_SUPPLY_PROP_FACTORY_TEST_KEY,
 };
 
 typedef union {
