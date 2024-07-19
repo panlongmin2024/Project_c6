@@ -462,6 +462,10 @@ int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
         {
             memcpy(key_buf, "04", 2);
         }
+        else if (key_value == 51)
+        {
+            memcpy(key_buf, "05", 2);
+        }		
         else 
         {
             return -1;
