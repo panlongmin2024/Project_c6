@@ -40,7 +40,6 @@
 
 static uint8_t *ats_cmd_resp_buf;
 static  int ats_cmd_resp_buf_size = 50;
-static bool isEnterKeyTest = false;
 
 extern bool pd_mps52002_ats_switch_volt(u8_t PDO_index);
 extern int bt_manager_bt_read_rssi(uint16_t handle);
@@ -66,11 +65,6 @@ void hex_to_string_2(u32_t num, u8_t *buf) {
 }
 void string_to_hex_u8(u8_t *buf,u8_t *num) {
 	*num = (buf[0]-'0')*10 + (buf[1]-'0');
-}
-
-bool user_get_key_test(void)
-{
-	return isEnterKeyTest;
 }
 
 #if 0
@@ -794,7 +788,7 @@ static int cdc_shell_ats_enter_key_check(struct device *dev, u8_t *buf, int len)
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 
 	ats_enter_key_check(true);
-	isEnterKeyTest = true;
+
 	return 0;
 }
 
@@ -805,7 +799,7 @@ static int cdc_shell_ats_exit_key_check(struct device *dev, u8_t *buf, int len)
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 
 	ats_enter_key_check(false);
-	isEnterKeyTest = false;
+
 	return 0;
 }
 
