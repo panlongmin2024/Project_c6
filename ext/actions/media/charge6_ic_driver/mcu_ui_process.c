@@ -880,12 +880,13 @@ int check_battery_low_cap_level5()
     }
     return 0;
 }
+extern bool ats_get_enter_key_check_record(void);
+extern void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
 extern void sys_event_report_input_ats(uint32_t key_event);
 extern bool ats_get_enter_key_check_record(void);
 extern int pd_manager_get_power_key_debounce(void);
 extern bool main_system_tts_get_play_warning_tone_flag(void);
 static bool bt_is_charge_warnning_flag = false;
-
 void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t *para)
 {
 
@@ -905,12 +906,10 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 sys_event_report_input_ats(KEY_PWRKEY);
                 break;
             }*/
-			bool ats_get_enter_key_check_record(void);
-			void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
-			ats_usb_cdc_acm_write_data("pwrkey_test",sizeof("pwrkey_test")-1);
+           
 			/* for factory test */
 			if(ats_get_enter_key_check_record() == true){
-				//mcu_ui_send_led_code(MCU_SUPPLY_PROP_FACTORY_TEST_KEY,1);
+				mcu_ui_send_led_code(MCU_SUPPLY_PROP_FACTORY_TEST_KEY,1);
 				sys_event_report_input_ats(51);
 				break;
 			}
