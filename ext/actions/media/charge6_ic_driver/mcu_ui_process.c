@@ -905,6 +905,15 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 sys_event_report_input_ats(KEY_PWRKEY);
                 break;
             }*/
+			bool ats_get_enter_key_check_record(void);
+			void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
+			ats_usb_cdc_acm_write_data("pwrkey_test",sizeof("pwrkey_test")-1);
+			/* for factory test */
+			if(ats_get_enter_key_check_record() == true){
+				//mcu_ui_send_led_code(MCU_SUPPLY_PROP_FACTORY_TEST_KEY,1);
+				sys_event_report_input_ats(51);
+				break;
+			}
 
             if(pd_manager_get_power_key_debounce())  
             {
@@ -1032,17 +1041,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 }
                 else{
                     printk("POWER KEY!!! %d \n",sys_pm_get_power_5v_status());
-
-					bool ats_get_enter_key_check_record(void);
-					void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
-					ats_usb_cdc_acm_write_data("pwrkey_test",sizeof("pwrkey_test")-1);
-					/* for factory test */
-					if(ats_get_enter_key_check_record() == true){
-						//mcu_ui_send_led_code(MCU_SUPPLY_PROP_FACTORY_TEST_KEY,1);
-						sys_event_report_input_ats(51);
-						break;
-					}
-					
+		
                     #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
                     if(power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
                     {
