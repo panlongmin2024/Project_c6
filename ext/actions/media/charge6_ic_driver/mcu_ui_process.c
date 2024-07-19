@@ -1036,6 +1036,9 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
 					/* for factory test */
 					if(ats_get_enter_key_check_record() == true){
 						bool ats_get_enter_key_check_record(void);
+						void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
+						ats_usb_cdc_acm_write_data("pwrkey_test",sizeof("pwrkey_test")-1);
+					
 						mcu_ui_send_led_code(MCU_SUPPLY_PROP_FACTORY_TEST_KEY,1);
 						sys_event_report_input_ats(51);
 						break;
