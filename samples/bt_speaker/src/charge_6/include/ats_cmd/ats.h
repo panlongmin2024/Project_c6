@@ -21,7 +21,7 @@ void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
 
 int ats_init(void);
 bool ats_is_enable(void);
-void ats_set_enable(u8_t en);
+void ats_set_enable(bool en);
 int ats_sys_reboot(void);
 int ats_sys_power_off(void);
 int ats_color_write(uint8_t *buf, int size);

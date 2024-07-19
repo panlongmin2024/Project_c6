@@ -127,26 +127,28 @@ exit:
 
 bool ats_is_enable(void)
 {
-    uint8_t enable;
-
+    bool enable = false;
+    if(!p_ats_ctx){
+        return enable;
+    }
     os_mutex_lock(ats_get_mutex(), OS_FOREVER);
 
     enable = p_ats_ctx->ats_enable;
 
     os_mutex_unlock(ats_get_mutex());
 
-    return (!!enable);
+    return (enable);
 }
 
-void ats_set_enable(u8_t en)
+void ats_set_enable(bool en)
 {
     SYS_LOG_INF("en:%d\n", en);
 
     os_mutex_lock(ats_get_mutex(), OS_FOREVER);
 
-    p_ats_ctx->ats_enable = !!en;
+    p_ats_ctx->ats_enable = en;
 
-    if (!!en)
+    if (en)
     {
         sys_wake_lock(6);
     }

@@ -243,14 +243,14 @@ static int cdc_shell_ats_disconnect_bt_dev_and_enter_bt_pair(struct device *dev,
 static int cdc_shell_ats_bt_rssi(struct device *dev, u8_t *buf, int len)
 {
    int RSSI_VALUE;
-   u8_t buffer[4] = {0};
+   u8_t buffer[3+1] = "-99";
 	
 	RSSI_VALUE = -bt_manager_bt_read_rssi(0);
-	hex_to_string_4(RSSI_VALUE,buffer);
+	hex_to_string_2(RSSI_VALUE,buffer+1);
 	//snprintf(buffer, sizeof(buffer), "%04d", RSSI_VALUE);
 	ats_usb_cdc_acm_cmd_response_at_data(
 			dev, ATS_CMD_RESP_READ_RSSI, sizeof(ATS_CMD_RESP_READ_RSSI)-1, 
-			buffer+2, 2);
+			buffer, 3);
 
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);	
 	return 0;

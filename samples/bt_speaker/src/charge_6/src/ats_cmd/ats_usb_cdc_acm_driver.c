@@ -260,7 +260,7 @@ int ats_usb_cdc_acm_init(void)
     os_sem_take(&callback_sem, K_FOREVER);
 
     ats_usb_cdc_acm_write_data("live test9",sizeof("live test9")-1);
-
+	ats_set_enable(true);
     return 0;
 
 err_exit:
@@ -320,6 +320,6 @@ int ats_usb_cdc_acm_deinit(void)
     {
         SYS_LOG_INF("already deinit\n");
     }
-
+	ats_set_enable(false);
     return 0;
 }

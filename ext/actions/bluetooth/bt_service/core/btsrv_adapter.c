@@ -375,7 +375,7 @@ static void connected_dev_cb_check_wake_lock(struct bt_conn *base_conn, uint8_t 
 	}
 }
 
-static void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len)
+void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len)
 {
     struct bt_conn *conn;
     uint16_t handle;
@@ -394,6 +394,7 @@ static void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len
     if(conn){
         btsrv_rdm_set_dev_rssi(conn,rssi);
     }
+	SYS_LOG_INF("-------> bt_rssi: %d", rssi);
 }
 
 
@@ -466,7 +467,8 @@ static void btsrv_adapter_monitor_link_quality_timer_handler(struct thread_timer
 
     active_conn = btsrv_rdm_a2dp_get_active_dev();
     if(active_conn){
-        if(btsrv_rdm_is_a2dp_stream_open(active_conn)){
+		bool ats_is_enable(void);
+        if(btsrv_rdm_is_a2dp_stream_open(active_conn) || ats_is_enable()){
             info->quality_time++;
             hostif_bt_br_read_rssi(active_conn,btsrv_read_rssi_event_cb);
             if(info->quality_time >= 5){

@@ -509,6 +509,19 @@ static int shell_user(int argc, char *argv[])
 	printk("------> shell_user \n");
 	return 0;
 }
+static int shell_rssi(int argc, char *argv[])
+{
+    struct bt_conn *active_conn;
+	struct bt_conn *btsrv_rdm_a2dp_get_active_dev(void);
+	int hostif_bt_br_read_rssi(struct bt_conn *conn, complete_event_cb cb);
+	//void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len);
+    active_conn = btsrv_rdm_a2dp_get_active_dev();
+    if(active_conn){
+		printk("------> shell_rssi !n");
+        //hostif_bt_br_read_rssi(active_conn,btsrv_read_rssi_event_cb);
+    }
+	return 0;
+}
 static const struct shell_cmd app_commands[] = {
 	{"input", shell_input_key_event, "input key event"},
 	{"btinfo", shell_dump_bt_info, "dump bt info"},
@@ -557,6 +570,7 @@ static const struct shell_cmd app_commands[] = {
 	{"charge_off", shell_charge_off, "charge off"},
 	{"charge_get", shell_charge_get, "charge current off"},
 	{"key_user", shell_user, "key user"},
+	{"user_rssi", shell_rssi, "user rssi"},
 	{NULL, NULL, NULL}};
 #endif
 
