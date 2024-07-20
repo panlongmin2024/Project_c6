@@ -2815,6 +2815,22 @@ int aw85xxx_volume_control(int vol)
 
     return AW_OK;
 }
+/******* Extern API: aw85xxx_mute_left_speaker *******/
+int aw85xxx_select_left_speaker(void)
+{
+	aw85xxx_init();
+    i2c_write_bits(0x4, ~(0x180<<0), 1<<7);
+
+    return AW_OK;
+}
+/******* Extern API: aw85xxx_mute_right_speaker *******/
+int aw85xxx_select_right_speaker(void)
+{
+	aw85xxx_init();
+    i2c_write_bits(0x4, ~(0x180<<0), 1<<8);
+
+    return AW_OK;
+}
 
 
 //The following is dsp gui config param (do not edit and delete)--from V0.6.2

@@ -94,7 +94,8 @@ void hm_ext_pa_select_left_speaker(void)
 	if(ReadODM() == HW_GUOGUANG_BOARD)
 	{
 		#ifdef CONFIG_C_AMP_AW85828
-			//aw85xxx_pa_select_left_speaker();
+			int aw85xxx_select_left_speaker(void);
+			aw85xxx_select_left_speaker();
 		#endif
 	}else{
 		#ifdef CONFIG_C_AMP_TAS5828M
@@ -110,7 +111,8 @@ void hm_ext_pa_select_right_speaker(void)
 	if(ReadODM() == HW_GUOGUANG_BOARD)
 	{
 		#ifdef CONFIG_C_AMP_AW85828
-			//aw85xxx_pa_select_right_speaker();
+			int aw85xxx_select_right_speaker(void);
+			aw85xxx_select_right_speaker();
 		#endif
 	}else{
 		#ifdef CONFIG_C_AMP_TAS5828M
