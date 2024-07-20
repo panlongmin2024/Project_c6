@@ -1152,8 +1152,8 @@ static int cdc_shell_ats_speaker_all_on(struct device *dev, u8_t *buf, int len)
 	if(hw_info == 2)
 	{
 #ifdef CONFIG_C_AMP_AW85828
-	extern int aw85xxx_pa_start(void);
-	aw85xxx_pa_start();
+	extern int aw85xxx_init(void);
+	aw85xxx_init();
 #endif
 	}	
 	else{
