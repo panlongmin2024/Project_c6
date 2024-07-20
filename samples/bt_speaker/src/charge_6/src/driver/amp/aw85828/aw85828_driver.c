@@ -2816,7 +2816,7 @@ int aw85xxx_volume_control(int vol)
     return AW_OK;
 }
 /******* Extern API: aw85xxx_mute_left_speaker *******/
-int aw85xxx_select_left_speaker(void)
+int aw85xxx_select_left_speaker(void)   /* for factory test */
 {
 	aw85xxx_init();
     i2c_write_bits(0x4, ~(0x180<<0), 1<<7);
@@ -2824,7 +2824,7 @@ int aw85xxx_select_left_speaker(void)
     return AW_OK;
 }
 /******* Extern API: aw85xxx_mute_right_speaker *******/
-int aw85xxx_select_right_speaker(void)
+int aw85xxx_select_right_speaker(void)  /* for factory test */
 {
 	aw85xxx_init();
     i2c_write_bits(0x4, ~(0x180<<0), 1<<8);

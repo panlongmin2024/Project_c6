@@ -411,6 +411,7 @@ exit:
 	return 0;
 }
 
+/* for factory test */
 int amp_tas5828m_pa_select_left_speaker(void)
 {
 	struct device *i2c_dev = NULL;
@@ -476,6 +477,7 @@ exit:
 	return 0;
 }
 
+/* for factory test */
 int amp_tas5828m_pa_select_right_speaker(void)
 {
 	struct device *i2c_dev = NULL;

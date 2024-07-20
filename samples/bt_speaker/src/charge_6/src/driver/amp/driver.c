@@ -88,6 +88,7 @@ void hm_ext_pa_init(void)
 
 }
 
+/* for factory test */
 void hm_ext_pa_select_left_speaker(void)
 {
 	printk("------>hm_ext_pa_select_left_speaker\n");
@@ -104,7 +105,7 @@ void hm_ext_pa_select_left_speaker(void)
 		#endif	
 	}
 }
-
+/* for factory test */
 void hm_ext_pa_select_right_speaker(void)
 {
 	printk("------>hm_ext_pa_select_right_speaker\n");
