@@ -339,7 +339,7 @@ static int cdc_shell_ats_gfps_model_id_write(struct device *dev, u8_t *buf, int 
 {
 	int result;
 	
-	if(len>5 || len<1){
+	if(len!=6){
 		/* limit length 1-5 */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 		return 0;

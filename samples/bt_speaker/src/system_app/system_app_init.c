@@ -411,6 +411,9 @@ void system_app_init(void)
 		if(property_get != 6){
 			pd_srv_sync_init();
 		}
+
+		//extern int get_autotest_connect_status(void);
+		//get_autotest_connect_status();
 	}
 
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
