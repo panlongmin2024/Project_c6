@@ -99,10 +99,8 @@ uint16 get_personalized_name(uint8_t * name)
     return name_len;
 }
 
-void update_personalized_name(uint8_t * name,uint8_t length)
+void update_personalized_name(uint8_t * name,uint8_t length, bool additional)
 {
-    //bt_local_devinfo_t *I_dev = RmtGetLocalDevInfo();
-    //uint8 r_name[BT_MAC_NAME_LEN_MAX] ={ 0 };
     int ret_val;
 
     if(name == NULL){
@@ -110,10 +108,7 @@ void update_personalized_name(uint8_t * name,uint8_t length)
         return;
     }
 
-    //if (length > BT_MAC_NAME_LEN_MAX){
-    //    length = BT_MAC_NAME_LEN_MAX;
-    //}
-
+#ifdef CONFIG_PROPERTY
     SYS_LOG_INF("name:%s",name);
     u8_t tmp_name[64];
 
@@ -126,6 +121,15 @@ void update_personalized_name(uint8_t * name,uint8_t length)
     if (ret_val < 0) {
         SYS_LOG_ERR("failed to upgade gfp bt name,ret %d\n", ret_val);
     }
+    else{
+        if(additional){
+            property_set(CFG_BT_NAME, tmp_name, BT_NAME_LEN);
+            property_set(CFG_BLE_NAME, tmp_name, BT_NAME_LEN);
+            property_set(CFG_BT_LOCAL_NAME, tmp_name, BT_NAME_LEN);
+            btif_br_update_devie_name();
+        }
+    }
+#endif
 }
 
 int is_paired_device(uint8_t* address)

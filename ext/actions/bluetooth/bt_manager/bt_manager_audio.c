@@ -982,6 +982,18 @@ bool is_le_tws(uint16_t handle)
 	return false;
 }
 
+uint16_t bt_manager_find_active_slave_handle(void)
+{
+	struct bt_audio_conn *audio_conn = NULL;
+
+	audio_conn = find_active_slave();
+	if (!audio_conn) {
+		return 0;
+	}
+
+	return audio_conn->handle;
+}
+
 bool bt_manager_check_audio_conn_is_same_dev(bd_address_t *addr, uint8_t type)
 {
 	struct bt_audio_conn *p_audio_conn;
@@ -1630,6 +1642,10 @@ static int delete_audio_conn(uint16_t handle, uint8_t reason)
 	}
 
 	os_sched_unlock();
+
+	if(bt_manager_audio_current_stream() == BT_AUDIO_STREAM_NONE) {
+		bt_manager_update_phone_volume(0,1);
+	}
 
 	SYS_LOG_INF("%p, handle: %d %d, reason:0x%x", audio_conn, handle,bt_audio.device_num, reason);
 
@@ -4508,9 +4524,6 @@ exit:
 
 uint16_t bt_manager_media_get_active_br_handle(void)
 {
-	if (media_handle == 0) {
-		SYS_LOG_INF("%x", media_handle);
-	}
 	return media_handle;
 }
 
@@ -5271,18 +5284,18 @@ int bt_manager_volume_set(uint8_t value,int type)
 	} else if (audio_conn->type == BT_TYPE_BR) {
 		if (audio_conn->call_state != BT_STATUS_HFP_NONE) {
 #ifdef CONFIG_BT_HFP_HF
-			if(type == BT_VOLUME_TYPE_BR_CALL)
-				bt_manager_hfp_sync_vol_to_remote(value);
+			if(type == BT_VOLUME_TYPE_BR_CALL
+				bt_manager_hfp_sync_vol_to_remote_by_addr(audio_conn->handle, value);
 #endif
 		} else {
 			if (find_channel2(audio_conn, BT_AUDIO_ENDPOINT_CALL)){
 #ifdef CONFIG_BT_HFP_HF
 				if(type == BT_VOLUME_TYPE_BR_CALL)
-					bt_manager_hfp_sync_vol_to_remote(value);
+					bt_manager_hfp_sync_vol_to_remote_by_addr(audio_conn->handle, value);
 #endif
 			}else{
 				if(type == BT_VOLUME_TYPE_BR_MUSIC)
-					bt_manager_avrcp_sync_vol_to_remote(value);
+					bt_manager_avrcp_sync_vol_to_remote_by_addr(audio_conn->handle, value, 0);
 			}
 		}
 	}

@@ -327,6 +327,13 @@ int desktop_manager_app_switch(struct app_msg *msg)
 
 	if (ctx->locked){
 		SYS_LOG_WRN("app switch locked %d->%d\n", desktop_manager_get_last_plugin_id(), msg->value);
+		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+		//factory in ota after exit ota need enter to charge app
+		if(msg->value == DESKTOP_PLUGIN_ID_CHARGER){
+			ctx->last_plugin_id = DESKTOP_PLUGIN_ID_CHARGER;
+			desktop_manager_add(msg->value);
+		}
+		#endif
 		return -EINVAL;
 	}
 

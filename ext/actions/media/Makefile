@@ -32,6 +32,4 @@ MEDIA_LIB += libwltmcu
 else
 LINK_SYS_LIBS += $(MEDIA_LIB_OUT_DIR)/libwltmcu.a
 endif
-
 obj-y += charge6_ic_driver/
-

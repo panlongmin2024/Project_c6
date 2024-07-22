@@ -24,6 +24,7 @@ typedef enum {
 	LEA_POLICY_EVENT_CONNECT,
 	LEA_POLICY_EVENT_DISCONNECT,
 	LEA_POLICY_EVENT_PAIRING,
+	LEA_POLICY_EVENT_EXIT_PAIRING,
 	LEA_POLICY_EVENT_SWITCH_SINGLE_POINT,
 	LEA_POLICY_EVENT_SWITCH_MULTI_POINT,
 
@@ -58,6 +59,8 @@ uint8_t bt_manager_lea_set_active_device(uint16_t handle);
 void bt_manager_lea_policy_disable(uint8_t adv_enable);
 
 void bt_manager_lea_policy_enable(void);
+
+void bt_manager_lea_policy_ctx_init(void);
 
 #endif /*__BT_MANAGER_LEA_POLICY_H__*/
 

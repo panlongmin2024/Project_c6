@@ -149,7 +149,7 @@ static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 		set_property_factory_reset_flag(0);
 	}
 	#ifdef CONFIG_BT_SELF_APP
-	if((selfapp_get_feedback_tone_ext() == 0)&&(charge_app_state == CHARGING_APP_INIT)){
+	if((power_off_no_tts == 1)&&(charge_app_state == CHARGING_APP_INIT)){
 
 		charge_system_tts_event_nodify("poweroff.mp3",TTS_EVENT_STOP_PLAY);
 	}

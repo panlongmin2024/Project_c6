@@ -146,7 +146,8 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 			os_sleep(500);
 		}
 #endif
-
+        pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,REBOOT_LED_STATUS);
+		k_sleep(200);
 		sys_pm_reboot(REBOOT_TYPE_NORMAL | reason);
 	}
 }

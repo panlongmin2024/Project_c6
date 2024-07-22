@@ -125,14 +125,16 @@ extern void pagepool_use_dump(uint32_t use_size);
 extern void thread_dump_memory(struct mem_info *mem_info, uint32_t print_detail);
 void mem_page_dump(uint32_t dump_detail)
 {
-	//mem_buddy_dump_info(dump_detail);
+
+    printk("\nHeap memory sumary:\n");
+    printk("\talloc: %d\n", sys_meminfo.alloc_size);
+    printk("\thistory alloc: %d\n", sys_meminfo.original_size);
+
     pagepool_use_dump(sys_meminfo.alloc_size);
-    printk("\nsys memory used:\n");
-    printk("\ttotal size: %d\n", sys_meminfo.alloc_size);
-    printk("\toriginal size: %d\n", sys_meminfo.original_size);
 
     if(dump_detail){
-        printk("\tmalloc detail:\n");
+        printk("\nmalloc detail:\n");
+        printk("address \tsize(space thread)\tcaller\n");
         thread_dump_memory(&sys_meminfo, true);
     }
 }

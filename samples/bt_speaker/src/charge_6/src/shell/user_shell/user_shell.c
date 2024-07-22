@@ -133,6 +133,17 @@ static int shell_uart_test(int argc, char *argv[])
      ats_usb_cdc_acm_init();
 	return 0;
 }
+
+extern void hm_ext_pa_deinit(void);
+extern void hm_ext_pa_init(void);
+static int shell_reset_pa_test(int argc, char *argv[])
+{
+	 printk("pa restart\n");
+	 hm_ext_pa_deinit();
+     hm_ext_pa_init();
+	return 0;
+}
+
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
     { "dvfs_info", shell_dvfs_info, "dump DVFS info" },
@@ -149,6 +160,7 @@ static const struct shell_cmd commands[] = {
 	{ "wakelocks_dump", shell_wakelocks_dump, "wakelocks dump"},
 	{ "enter_bqb", shell_enter_bqb, "enter bqb"},
 	{ "TL_ATS_IN", shell_uart_test, "enter uart test"},
+	{ "reset_pa", shell_reset_pa_test, "test reset pa"},
 	{ NULL, NULL, NULL }
 };
 

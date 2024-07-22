@@ -113,12 +113,21 @@ static uint8_t bqb_sbc_data48k[] = {
 	0xAD,
 };
 
+#define BQB_A2DP_FLAG_SRC_AUTO_DISCOVER    0x01
+#define BQB_A2DP_FLAG_SRC_AUTO_GET_CAP     0x02
+#define BQB_A2DP_FLAG_SRC_AUTO_SET_CFG     0x04
+#define BQB_A2DP_FLAG_SRC_AUTO_OPEN        0x08
+#define BQB_A2DP_FLAG_SRC_AUTO_CONN_DATA   0x10
+#define BQB_A2DP_FLAG_SRC_AUTO_START       0x20
+#define BQB_A2DP_FLAG_SRC_AUTO_SEND_DATA   0x40
 
 typedef struct
 {
 	struct bt_l2cap_chan_ops ops;
 	struct bt_l2cap_br_chan br_chan;
 	struct bt_conn* conn;
+	os_delayed_work work;
+	uint32_t flag;
 	bool auto_conn_a2dp;
 	uint8_t role;
 }bqb_a2dp_context_t;
@@ -153,6 +162,7 @@ static void bqb_a2dp_acl_disconnected(struct bt_conn *conn, uint8_t reason)
 	if (conn == s_bqb_a2dp_ctx.conn) {
 		s_bqb_a2dp_ctx.conn = NULL;
 		s_bqb_a2dp_ctx.auto_conn_a2dp = false;
+		s_bqb_a2dp_ctx.flag = 0;
 	}
 }
 
@@ -192,10 +202,14 @@ static int bqb_a2dp_create_conn(char* role, bool conn_a2dp)
 static void bqb_a2dp_connected(struct bt_conn *conn,u8_t session_type)
 {
 	BT_INFO("");
+	if (s_bqb_a2dp_ctx.flag) {
+		os_delayed_work_submit(&s_bqb_a2dp_ctx.work, 3000);
+	}
 }
 static void bqb_a2dp_disconnected(struct bt_conn *conn,u8_t session_type)
 {
 	BT_INFO("");
+	os_delayed_work_cancel(&s_bqb_a2dp_ctx.work);
 }
 static void bqb_a2dp_media_handler(struct bt_conn *conn, uint8_t *data, uint16_t len)
 {
@@ -223,12 +237,57 @@ static void bqb_a2dp_l2cap_encrypt_changed(struct bt_l2cap_chan* chan, uint8_t s
 	BT_INFO("status: %d \n", status);
 }
 
+static void bqb_a2dp_source_work_handler(os_work * work)
+{
+	if (s_bqb_a2dp_ctx.flag & BQB_A2DP_FLAG_SRC_AUTO_DISCOVER) {
+		bt_a2dp_discover(s_bqb_a2dp_ctx.conn);
+		os_sleep(1000);
+	}
+
+	if (s_bqb_a2dp_ctx.flag & BQB_A2DP_FLAG_SRC_AUTO_GET_CAP) {
+		bt_a2dp_get_capabilities(s_bqb_a2dp_ctx.conn);
+		os_sleep(1000);
+	}
+
+	if (s_bqb_a2dp_ctx.flag & BQB_A2DP_FLAG_SRC_AUTO_SET_CFG) {
+		bt_a2dp_set_configuration(s_bqb_a2dp_ctx.conn);
+		os_sleep(1000);
+	}
+
+	if (s_bqb_a2dp_ctx.flag & BQB_A2DP_FLAG_SRC_AUTO_OPEN) {
+		bt_a2dp_open(s_bqb_a2dp_ctx.conn);
+		os_sleep(1000);
+	}
+
+	if (s_bqb_a2dp_ctx.flag & BQB_A2DP_FLAG_SRC_AUTO_CONN_DATA) {
+		hostif_bt_a2dp_connect(s_bqb_a2dp_ctx.conn, BT_A2DP_CH_MEDIA);
+		os_sleep(1000);
+	}
+
+	if (s_bqb_a2dp_ctx.flag & BQB_A2DP_FLAG_SRC_AUTO_START) {
+		bt_a2dp_start(s_bqb_a2dp_ctx.conn);
+		os_sleep(1000);
+	}
+
+	if (s_bqb_a2dp_ctx.flag & BQB_A2DP_FLAG_SRC_AUTO_SEND_DATA) {
+		for (uint8_t i = 0; i < 60; i++) {
+			int ret = hostif_bt_a2dp_send_audio_data(s_bqb_a2dp_ctx.conn, bqb_sbc_data44k, sizeof(bqb_sbc_data44k));
+			if (ret < 0) {
+				SYS_LOG_ERR("send data error %d\n", ret);
+			}
+			k_sleep(10);
+		}
+	}
+}
+
+
 static void bqb_a2dp_init()
 {
 	memset(&s_bqb_a2dp_ctx, 0, sizeof(s_bqb_a2dp_ctx));
 	hostif_bt_conn_cb_register(&s_bqb_a2dp_bt_conn_cb);
 	hostif_bt_a2dp_register_cb(&s_bt_a2dp_cb);
 	bqb_gap_write_scan_enable(BQB_GAP_BOTH_INQUIRY_PAGE_SCAN);
+	os_delayed_work_init(&s_bqb_a2dp_ctx.work, bqb_a2dp_source_work_handler);
 }
 
 static int bqb_a2dp_a2dp_register_src_endpoint()
@@ -374,6 +433,13 @@ int bqb_a2dp_test_command_handler(int argc, char *argv[])
 		ret = bt_a2dp_reconfig(s_bqb_a2dp_ctx.conn, codec);
 	} else if (!strcmp(cmd, "abort")) {
 		ret = bt_a2dp_abort(s_bqb_a2dp_ctx.conn);
+	} else if (!strcmp(cmd, "setflag")) {
+		s_bqb_a2dp_ctx.flag = bqb_utils_atoi(argv[2]);
+	} else if (!strcmp(cmd, "autosrc")) {
+		s_bqb_a2dp_ctx.flag = bqb_utils_atoi(argv[2]);
+		os_delayed_work_submit(&s_bqb_a2dp_ctx.work, 1000);
+	} else {
+		SYS_LOG_ERR("NO Command %s\n", cmd);
 	}
 	return 0;
 }

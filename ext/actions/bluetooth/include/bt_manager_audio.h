@@ -262,6 +262,9 @@ bool bt_manager_check_audio_conn_is_same_dev(bd_address_t *addr, uint8_t type);
 
 uint32_t bt_manager_audio_get_active_channel_iso_interval(void);
 
+uint16_t bt_manager_find_active_slave_handle(void);
+
+
 /*
  * BT Audio state
  *

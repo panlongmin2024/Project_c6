@@ -18,6 +18,8 @@
 #define BTSRV_DEV_CLASS_SIZE					(3)
 
 #define CHECK_WAIT_DISCONNECT_INTERVAL		(100)	/* 100ms */
+#define CHECK_WAIT_AVRCP_PAUSE_INTERVAL		(1000)	/* 1000ms */
+
 #define WAKE_LOCK_TIMER_INTERVAL			(1000)	/* 1s */
 #define WAKE_LOCK_IDLE_TIMEOUT				(1000*10)	/* 10s */
 
@@ -309,6 +311,16 @@ static void _btsrv_adapter_ready(int err)
 	hostif_bt_conn_cb_register(&conn_callbacks);
 	bt_service_set_bt_ready();
 //	btsrv_event_notify(MSG_BTSRV_BASE, MSG_BTSRV_READY, NULL);
+}
+
+static void btsrv_adapter_start_wait_avrcp_pause_timer(void)
+{
+	if (thread_timer_is_running(&btsrv_info->wait_disconnect_timer)) {
+		return;
+	}
+
+	SYS_LOG_INF("");
+	thread_timer_start(&btsrv_info->wait_disconnect_timer, CHECK_WAIT_AVRCP_PAUSE_INTERVAL, 0);
 }
 
 static void btsrv_adapter_start_wait_disconnect_timer(void)
@@ -853,6 +865,17 @@ int btsrv_adapter_do_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 int btsrv_adapter_disconnect(struct bt_conn *conn)
 {
 	int err = 0;
+	uint16_t hdl;
+
+	if (btsrv_rdm_get_tws_role(conn) == BTSRV_TWS_NONE) {
+        if(btsrv_rdm_get_avrcp_state(conn)){
+            hdl = hostif_bt_conn_get_handle(conn);
+            btif_avrcp_send_command_by_hdl(hdl,BTSRV_AVRCP_CMD_PAUSE);
+            btsrv_rdm_set_wait_to_diconnect(conn, true);
+            btsrv_adapter_start_wait_avrcp_pause_timer();
+            return err;
+        }
+    }
 
 	hostif_bt_conn_check_exit_sniff(conn);
 

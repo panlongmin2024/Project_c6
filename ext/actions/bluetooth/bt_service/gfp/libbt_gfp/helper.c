@@ -626,7 +626,7 @@ int additional_data_written(uint8_t* packet, int packet_length)
 	tc_aes128_set_encrypt_key(ctx, ble_account_info.current_shared_key);
 	tc_ctr_mode(personalized_name, personalized_name_len , nonce_aes + AES_NONCEZ_SIZE ,personalized_name_len, counter, ctx);
 	//print_hex_comm("PERSONALLIZED:",personalized_name,personalized_name_len);
-	bluetooth_provider->update_personalized_name(personalized_name,personalized_name_len);
+	bluetooth_provider->update_personalized_name(personalized_name,personalized_name_len,true);
 
     mem_free(counter);
     mem_free(hamc_data);
@@ -759,7 +759,7 @@ void personalized_name_clear(void)
         return;
 
     memset(name_buffer,0,PERSONALIZED_NAME_SIZE);
-	bluetooth_provider->update_personalized_name(name_buffer,PERSONALIZED_NAME_SIZE);
+	bluetooth_provider->update_personalized_name(name_buffer,PERSONALIZED_NAME_SIZE,false);
 }
 
 void personalized_name_update(uint8_t *name,uint8_t size)
@@ -777,7 +777,7 @@ void personalized_name_update(uint8_t *name,uint8_t size)
     }
 
     memcpy(name_buffer,name,len);
-    bluetooth_provider->update_personalized_name(name_buffer,PERSONALIZED_NAME_SIZE);
+    bluetooth_provider->update_personalized_name(name_buffer,PERSONALIZED_NAME_SIZE,false);
 }
 
 const FastPair pairer = {

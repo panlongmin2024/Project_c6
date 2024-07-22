@@ -405,16 +405,26 @@ void bt_manager_sys_event_notify(int event)
 
 void bt_manager_update_phone_volume(uint16_t hdl,int a2dp)
 {
+	bt_mgr_dev_info_t* phone_dev = NULL;
 	int current_stream = bt_manager_audio_current_stream();
-	if (current_stream == BT_AUDIO_STREAM_NONE)
-		return;
 
-	bt_mgr_dev_info_t* phone_dev = bt_mgr_find_dev_info_by_hdl(hdl);
-	if (!phone_dev || phone_dev->is_tws)
+	if (hdl)
 	{
-		return;
+		phone_dev = bt_mgr_find_dev_info_by_hdl(hdl);
+	}
+	else
+	{
+		uint16_t active_hdl = bt_manager_find_active_slave_handle();
+		if (!active_hdl) {
+			SYS_LOG_INF("active_hdl %d", active_hdl);
+			return;
+		}
+		phone_dev = bt_mgr_find_dev_info_by_hdl(active_hdl);
 	}
 
+	if (!phone_dev || phone_dev->is_tws){
+		return;
+	}
 	SYS_LOG_INF("0x%x, %d, %d", phone_dev->hdl, phone_dev->bt_music_vol,phone_dev->bt_call_vol);
 
 	if (a2dp && (current_stream == BT_AUDIO_STREAM_BR_CALL))
@@ -422,7 +432,6 @@ void bt_manager_update_phone_volume(uint16_t hdl,int a2dp)
 		SYS_LOG_INF("ignore");
 		return;
 	}
-
 
 	if (current_stream == BT_AUDIO_STREAM_LE_MUSIC ||
 		current_stream == BT_AUDIO_STREAM_LE_CALL  ||

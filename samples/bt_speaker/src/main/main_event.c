@@ -235,6 +235,8 @@ void main_input_event_handle(struct app_msg *msg)
 #endif
 
 #ifdef CONFIG_BT_SELF_APP
+		extern void otadfu_SetForce_exit_ota(void);
+		otadfu_SetForce_exit_ota();
 		selfapp_config_reset();
 #endif
 
@@ -262,7 +264,7 @@ void main_input_event_handle(struct app_msg *msg)
 		}	*/	
 /*  		if (dc_power_in_status_read() 
 		|| (sys_pm_get_power_5v_status() == 2)){  */
-		//从充电模式关�?		
+		//从充电模式关�?		
 		if(1){
 			u8_t name[33];
 			int ret;

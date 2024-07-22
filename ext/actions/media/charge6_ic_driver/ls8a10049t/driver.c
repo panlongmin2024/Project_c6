@@ -37,7 +37,8 @@
 #define NTC_STATUS_NORMAL_TEMPERATURE			0
 #define NTC_STATUS_OVER_TEMPERATURE				1
 
-
+#define LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
+#define CHARGE_WARNNING_FILTER_TIMES           2
 
 #define LS8A10049T_I2C_ADDR    		0x8		// 7bit I2C Addr
 //#define PIN_LOGIC_MCU_INT			4 // logic MCU, INT pin
@@ -73,8 +74,6 @@ typedef struct {
 static ls8a10049t_reg_7b_t reg_7b = { 0 };
 static ls8a10049t_reg_7c_t reg_7c = { 0 };
 
-#define LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-#define CHARGE_WARNNING_FILTER_TIMES		2
 enum {
 	LS8A10049T_INT_EVENT_WATER0_BIT = 0,
 	LS8A10049T_INT_EVENT_WATER1_BIT,
@@ -88,7 +87,7 @@ typedef struct {
 	uint8_t water0_triggered_cnt;
 	uint8_t water1_triggered_cnt;
 	uint8_t ntc_triggered_cnt;
-#endif
+#endif	
 }mcu_int_info_t;
 
 int ls8a10049t_int_flag = 0;
@@ -1173,42 +1172,41 @@ void wlt_logic_mcu_ls8a10049t_int_fn(void)
     struct logic_mcu_ls8a10049t_device_data_t *dev = NULL;
     mcu_manager_charge_event_para_t para;
 	uint8_t mcu_water_flag = 0;
-
 	dev = logic_mcu_ls8a10049t_get_device_data();
 #ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
 	if((mcu_int_info.water0_triggered_cnt < CHARGE_WARNNING_FILTER_TIMES) && (mcu_int_info.water0_triggered_cnt > 0))
 	{
-		if(!_ls8a10049t_check_water0_leak(dev))
-		{
-			printk("\n%s,%d,water0_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.water0_triggered_cnt);
-			mcu_int_info.water0_triggered_cnt = 0;
-		}
+			if(!_ls8a10049t_check_water0_leak(dev))
+			{
+					printk("\n%s,%d,water0_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.water0_triggered_cnt);
+					mcu_int_info.water0_triggered_cnt = 0;
+			}
 	}
 
 	if((mcu_int_info.water1_triggered_cnt < CHARGE_WARNNING_FILTER_TIMES) && (mcu_int_info.water1_triggered_cnt > 0))
 	{
-		if(!_ls8a10049t_check_water1_leak(dev))
-		{
-			printk("\n%s,%d,water1_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.water1_triggered_cnt);
-			mcu_int_info.water1_triggered_cnt = 0;
-		}
+			if(!_ls8a10049t_check_water1_leak(dev))
+			{
+					printk("\n%s,%d,water1_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.water1_triggered_cnt);
+					mcu_int_info.water1_triggered_cnt = 0;
+			}
 	}
 
 	if((mcu_int_info.ntc_triggered_cnt < CHARGE_WARNNING_FILTER_TIMES) && (mcu_int_info.ntc_triggered_cnt > 0))
 	{
-		if(_ls8a10049t_check_ntc_status(dev))
-		{
-			printk("\n%s,%d,ntc_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.ntc_triggered_cnt);
-			mcu_int_info.ntc_triggered_cnt = 0;
-		}
+			if(_ls8a10049t_check_ntc_status(dev))
+			{
+					printk("\n%s,%d,ntc_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.ntc_triggered_cnt);
+					mcu_int_info.ntc_triggered_cnt = 0;
+			}
 	}
-#endif	
-
+#endif
 	if(logic_mcu_ls8a10049t_get_int_event() == 0){
 
 		return;
 	}
 	k_sleep(1);
+    //dev = logic_mcu_ls8a10049t_get_device_data();
 
 	printk("ZTH DEBUD: %s:%d\n", __func__, __LINE__);
 	event = logic_mcu_ls8a10049t_get_int_event();
@@ -1340,19 +1338,19 @@ static int mcu_ls8a10049t_input_event_report(void)
 				mcu_int_info.water0_triggered_cnt++;
 				if(mcu_int_info.water0_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
 				{
-					mcu_int_info.water0_triggered_cnt = 0;
-					para.mcu_event_val = MCU_INT_CMD_WATER_IN;
+						mcu_int_info.water0_triggered_cnt = 0;
+						para.mcu_event_val = MCU_INT_CMD_WATER_IN;
 
-					if (dev->mcu_notify) {
-						dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
-					}
-					else{
-						printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-					}
-					logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
+						if (dev->mcu_notify) {
+								dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
+						}
+						else{
+								printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
+						}
+						logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
 
 				}
-				#else
+				#else				
 				para.mcu_event_val = MCU_INT_CMD_WATER_IN;
 
 				if (dev->mcu_notify) {
@@ -1374,19 +1372,19 @@ static int mcu_ls8a10049t_input_event_report(void)
 				mcu_int_info.water1_triggered_cnt++;
 				if(mcu_int_info.water1_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
 				{
-					mcu_int_info.water1_triggered_cnt = 0;
-					para.mcu_event_val = MCU_INT_CMD_WATER_IN;
+						mcu_int_info.water1_triggered_cnt = 0;
+						para.mcu_event_val = MCU_INT_CMD_WATER_IN;
 
-					if (dev->mcu_notify) {
-						dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
-					}
-					else{
-						printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-					}
-					logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
+						if (dev->mcu_notify) {
+								dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
+						}
+						else{
+								printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
+						}
+						logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
 
 				}
-				#else
+				#else				
 				para.mcu_event_val = MCU_INT_CMD_WATER_IN;
 
 				if (dev->mcu_notify) {
@@ -1408,19 +1406,19 @@ static int mcu_ls8a10049t_input_event_report(void)
 				mcu_int_info.ntc_triggered_cnt++;
 				if(mcu_int_info.ntc_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
 				{
-					mcu_int_info.ntc_triggered_cnt = 0;
-					para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_HIGH;
+						mcu_int_info.ntc_triggered_cnt = 0;
+						para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_HIGH;
 
-					if (dev->mcu_notify) {
-						dev->mcu_notify(MCU_INT_TYPE_NTC, &para);
-					}
-					else{
-						printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-					}
-					logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_NTC_BIT);
+						if (dev->mcu_notify) {
+								dev->mcu_notify(MCU_INT_TYPE_NTC, &para);
+						}
+						else{
+								printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
+						}
+						logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_NTC_BIT);
 
 				}
-				#else
+				#else				
 				para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_HIGH;
 
 				if (dev->mcu_notify) {

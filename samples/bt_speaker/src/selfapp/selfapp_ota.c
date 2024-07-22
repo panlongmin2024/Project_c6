@@ -146,7 +146,7 @@ typedef struct {
 } otadfu_handle_t;
 
 static int dfu_data_buf_flush(otadfu_handle_t * otadfu);
-
+static u8_t force_exit_ota;
 static __ota_bss uint8_t ota_thread_data_buffer[OTADFU_THREAD_DATA_SIZE];
 static __ota_bss uint8_t ota_data_buffer[OTADFU_DATABUF_SIZE] ;
 static __ota_bss uint8_t ota_header_data_buffer[OTADFU_HEADER_DATA_SIZE];
@@ -991,6 +991,8 @@ static int dfu_api_read(struct ota_backend *backend, int offset, void *buf,
 
 	os_mutex_lock(&otadfu_mutex, OS_FOREVER);
 
+	force_exit_ota = 0;
+	
 	otadfu = otadfu_get_handle();
 
 	/* App send the data in order, which means device require data in order too.
@@ -1087,6 +1089,11 @@ static int dfu_api_read(struct ota_backend *backend, int offset, void *buf,
 		} else {
 			if (timeout + OTADFU_READ_TIMEOUT <= os_uptime_get_32()) {
 				selfapp_log_inf("dfuread: timeout\n");
+				ret = -3;
+				break;
+			}
+			if(force_exit_ota){
+				selfapp_log_inf("dfuread: force timeout\n");
 				ret = -3;
 				break;
 			}
@@ -1463,4 +1470,9 @@ int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 		}
 	}			//switch
 	return ret;
+}
+
+void otadfu_SetForce_exit_ota(void)
+{
+	force_exit_ota = 1;
 }

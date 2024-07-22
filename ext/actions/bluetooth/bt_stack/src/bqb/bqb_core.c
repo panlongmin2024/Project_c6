@@ -26,9 +26,13 @@ static void bqb_core_int_reay(int err)
     BT_INFO("bqb core init done.\n");
 }
 
-void bqb_core_init(void)
+void bqb_core_init(uint32_t cod)
 {
-    hostif_bt_init_class(BQB_GAP_BT_DEFAULT_COD);
+    if (cod) {
+        hostif_bt_init_class(cod);
+    } else {
+        hostif_bt_init_class(BQB_GAP_BT_DEFAULT_COD);
+    }
     //hostif_bt_init_device_id(did);
     hostif_bt_enable(bqb_core_int_reay);
 }

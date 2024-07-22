@@ -43,7 +43,7 @@ typedef enum {
 typedef struct {
 	uint8_t max_dev_num:5;
 	uint8_t btoff : 1;
-	uint8_t policy_disable : 1;
+	uint8_t policy_enable : 1;
 	btmgr_lea_policy_state_e lea_policy_state;
 	uint32_t option;
 	lea_policy_state_event_handle_func *funcs;
@@ -75,7 +75,7 @@ static void timeout_handler (
 					struct thread_timer *ttimer,
 				    void *expiry_fn_arg)
 {
-	if (btmgr_lea_policy_ctx.policy_disable) {
+	if (!btmgr_lea_policy_ctx.policy_enable) {
 		return;
 	}
 
@@ -235,6 +235,13 @@ static int lea_policy_state_pairing_handler(btmgr_lea_policy_event_e event, void
 
 			break;
 		}
+		case LEA_POLICY_EVENT_EXIT_PAIRING:
+		{
+			/* exit pairing */
+			timeout_handler(NULL,NULL);
+			break;
+		}
+
 		case LEA_POLICY_EVENT_SWITCH_SINGLE_POINT:
 		{
 			btmgr_lea_policy_ctx.max_dev_num = 1;
@@ -430,9 +437,10 @@ static int lea_policy_state_connected_handler(btmgr_lea_policy_event_e event, vo
 	return 0;
 }
 
-static void lea_policy_ctx_init(void)
+void bt_manager_lea_policy_ctx_init(void)
 {
 	memset(&btmgr_lea_policy_ctx, 0, sizeof(btmgr_lea_policy_ctx));
+	btmgr_lea_policy_ctx.policy_enable = 1;
 
 	btmgr_lea_policy_ctx.funcs = lea_policy_state_event_handler;
 	btmgr_lea_policy_ctx.max_dev_num = bt_manager_config_connect_phone_num();
@@ -445,13 +453,20 @@ static void lea_policy_ctx_init(void)
 		SYS_LOG_INF("addr:%s\n", addr_str);
 	} else {
 		btmgr_lea_policy_ctx.lea_policy_state = LEA_POLICY_STATE_PAIRING;
+	}
+
+	bt_manager_lea_policy_event_notify(LEA_POLICY_EVENT_BT_ON, NULL, 0);
+}
+
+static void lea_policy_bt_on_handler(void)
+{
+	if (btmgr_lea_policy_ctx.lea_policy_state == LEA_POLICY_STATE_PAIRING) {
 #if defined(CONFIG_BT_PRIVACY)
 		hostif_bt_le_address_resolution_enable(0);
 #endif
 		thread_timer_init(&btmgr_lea_policy_ctx.lea_policy_timer, timeout_handler, NULL);
 		thread_timer_start(&btmgr_lea_policy_ctx.lea_policy_timer, PAIRING_DURATION_MS, 0);
 	}
-
 	SYS_LOG_INF("state:%d,max dev:%d\n",
 	btmgr_lea_policy_ctx.lea_policy_state,
 	btmgr_lea_policy_ctx.max_dev_num);
@@ -479,6 +494,14 @@ struct bt_le_adv_param * bt_manager_lea_policy_get_adv_param(uint8_t adv_type, s
 	if (ADV_TYPE_EXT == adv_type) {
 		param->options |= (BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_NO_2M);
 		param->sid = BT_EXT_ADV_SID_UNICAST;
+	}
+
+	if (!btmgr_lea_policy_ctx.policy_enable) {
+#ifdef CONFIG_BT_PRIVACY
+		param->options |= BT_LE_ADV_OPT_ADDR_RPA;
+#endif
+
+		return param;
 	}
 
     //adv param config by state
@@ -566,7 +589,7 @@ uint8_t bt_manager_lea_set_active_device(uint16_t handle)
 static void bt_manager_lea_policy_event_cb(void *event_param)
 {
 	lea_policy_event_param_t *ptr = (lea_policy_event_param_t *)event_param;
-	if (btmgr_lea_policy_ctx.policy_disable) {
+	if (!btmgr_lea_policy_ctx.policy_enable) {
 		if (ptr->param) {
 			mem_free(ptr->param);
 		}
@@ -588,7 +611,7 @@ static void bt_manager_lea_policy_event_cb(void *event_param)
 		}
 		case LEA_POLICY_EVENT_BT_ON:
 		{
-			lea_policy_ctx_init();
+			lea_policy_bt_on_handler();
 			break;
 		}
 
@@ -634,7 +657,7 @@ static void bt_manager_lea_policy_event_cb(void *event_param)
 
 void bt_manager_lea_policy_event_notify(btmgr_lea_policy_event_e event, void *param, uint8_t len)
 {
-	if (btmgr_lea_policy_ctx.policy_disable) {
+	if (!btmgr_lea_policy_ctx.policy_enable) {
 		return;
 	}
 	if (event >= LEA_POLICY_EVENT_MAX_NUM) {
@@ -669,7 +692,7 @@ void bt_manager_lea_policy_event_notify(btmgr_lea_policy_event_e event, void *pa
 
 void bt_manager_lea_policy_disable(uint8_t adv_enable)
 {
-	btmgr_lea_policy_ctx.policy_disable = 1;
+	btmgr_lea_policy_ctx.policy_enable = 0;
 	bt_manager_le_audio_adv_disable();
 
 	if (adv_enable) {
@@ -685,7 +708,7 @@ void bt_manager_lea_policy_disable(uint8_t adv_enable)
 
 void bt_manager_lea_policy_enable(void)
 {
-	btmgr_lea_policy_ctx.policy_disable = 0;
+	btmgr_lea_policy_ctx.policy_enable = 1;
 	uint8_t cur_lea_num = bt_manager_audio_get_leaudio_dev_num();
 	bt_manager_halt_ble();
 #if defined(CONFIG_BT_PRIVACY)

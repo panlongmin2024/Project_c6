@@ -122,6 +122,10 @@ static int _demo_exit(void)
 		p_usound->device_init = false;
 	}
 
+	if (thread_timer_is_running(&p_usound->monitor_timer)) {
+		thread_timer_stop(&p_usound->monitor_timer);
+	}
+
 	demo_view_deinit();
 
 	bt_manager_set_user_visual(0,0,0,0);

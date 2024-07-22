@@ -83,7 +83,7 @@ typedef struct {
 
   uint16_t (*get_personalized_name)(uint8_t*);
 
-  void (*update_personalized_name)(uint8_t * name,uint8_t length);
+  void (*update_personalized_name)(uint8_t * name,uint8_t length, bool additional);
 
   void (*get_battery_value)(fp_battery_value_t * battery_value);
 

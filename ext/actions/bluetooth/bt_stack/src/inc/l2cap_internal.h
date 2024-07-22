@@ -403,8 +403,8 @@ struct bt_l2cap_br {
 	/* The channel this context is associated with */
 	struct bt_l2cap_br_chan	chan;
 	uint8_t			info_ident;
-	uint8_t			info_fixed_chan;
-	uint32_t			info_feat_mask;
+	uint32_t		info_feat_mask;
+	uint8_t			info_fixed_chan[8];
 };
 
 bool bt_l2cap_is_br_act_fix_cid(uint16_t cid);

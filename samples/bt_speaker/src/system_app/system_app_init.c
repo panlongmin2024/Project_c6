@@ -194,6 +194,8 @@ static void main_system_check_adfu_timer(struct thread_timer *ttimer, void *expi
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
 		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF); // all led turn on
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));
 		fairst = 1;
 	}else{
 		if(dc_power_in_status_read())
@@ -471,7 +473,7 @@ void system_app_init(void)
 				}
 #endif
 #endif
-				if(!run_mode_is_demo()){
+				if((!run_mode_is_demo())||(check_is_wait_adfu())){
 					system_notify_enter_charger_mode();
 					system_ready();
 

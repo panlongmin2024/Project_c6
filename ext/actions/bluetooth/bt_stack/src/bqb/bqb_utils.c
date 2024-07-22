@@ -35,7 +35,7 @@ static bt_addr_t  s_pts_addr = {0};
 static bt_addr_le_t  bqb_utils_local_le_addr = {0};
 
 extern uint8_t bt_id_read_public_addr(bt_addr_le_t *addr);
-extern void bqb_core_init(void);
+extern void bqb_core_init(uint32_t cod);
 
 uint8_t bqb_utils_get_local_public_addr(bt_addr_le_t *addr)
 {
@@ -140,13 +140,13 @@ static void bqb_utils_get_bd_addr(void)
     printk("\n");
 }
 
-void bqb_test_enable(bool enable)
+void bqb_test_enable(bool enable, uint32_t cod)
 {
     if (enable) {
      #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
         soc_dvfs_set_level(SOC_DVFS_LEVEL_FULL_PERFORMANCE, "bqb test");
 #endif
-        bqb_core_init();
+        bqb_core_init(cod);
     } else {
     #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
         soc_dvfs_unset_level(SOC_DVFS_LEVEL_FULL_PERFORMANCE, "bqb test");
@@ -201,9 +201,13 @@ int bqb_utils_command_handler(int argc, char *argv[])
     if (!strcmp(cmd, "getbda")) {
         bqb_utils_get_bd_addr();
     } else if (!strcmp(cmd, "pts-on")) {
-        bqb_test_enable(true);
+        uint32_t cod = 0;
+        if (argc == 3) {
+            cod  = bqb_utils_atoi(argv[2]);
+        }
+        bqb_test_enable(true, cod);
     } else if (!strcmp(cmd, "pts-off")) {
-        bqb_test_enable(false);
+        bqb_test_enable(false, 0);
     } else if (!strcmp(cmd, "setptsbda")) {
         bqb_utils_write_pts_addr(argv[2]);
     } else if (!strcmp(cmd, "getptsbda")) {

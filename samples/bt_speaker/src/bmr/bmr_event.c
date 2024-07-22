@@ -83,7 +83,10 @@ static int bmr_sync_padv_volume(u8_t sync_vol)
 			if (synced_vol == INVALID_VOL) {
 				//First time, sync to exact volume level.
 				SYS_LOG_INF("sync to %d firstly", sync_vol);
-				system_volume_set(AUDIO_STREAM_LE_AUDIO, sync_vol, false);
+				if(sync_vol > 17)
+					system_volume_set(AUDIO_STREAM_LE_AUDIO, 17, false);
+				else
+					system_volume_set(AUDIO_STREAM_LE_AUDIO, sync_vol, false);
 			} 
 #if 0 // if sync_vol is 0 or max, force sync vol ?
 			else if (sync_vol == 0 || sync_vol == audio_policy_get_volume_level() || synced_vol == 0) {

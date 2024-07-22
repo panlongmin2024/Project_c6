@@ -317,8 +317,6 @@ static void bt_manager_btsrv_ready(void)
     
 	SYS_LOG_INF("bt_ready:\n");
 
-	bt_manager_lea_policy_event_notify(LEA_POLICY_EVENT_BT_ON, NULL, 0);
-
 	bt_manager_event_notify(BT_READY, NULL, 0);
 }
 
@@ -416,9 +414,9 @@ static void bt_manager_notify_connected(struct bt_mgr_dev_info *info)
 	}
 
 	info->notify_connected = 1;
-	
-	if (bt_manager_get_connected_dev_num() == 0) {
-		bt_manager_update_phone_volume(info->hdl,1);
+
+	if(bt_manager_audio_current_stream() == BT_AUDIO_STREAM_NONE) {
+		bt_manager_update_phone_volume(0,1);
 	}
 
 	bt_manager_set_status_ext(BT_STATUS_CONNECTED, tmp_flag, &info->addr);
@@ -470,7 +468,7 @@ static void bt_manager_check_disconnect_notify(struct bt_mgr_dev_info *info, uin
 		if (reason == 0x08) {
             tmp_flag = 0;
 		}
-#endif		
+#endif
 		bt_manager_set_status(BT_STATUS_DISCONNECTED,tmp_flag);
 
 		phone_num = bt_manager_get_connected_dev_num();
@@ -662,15 +660,20 @@ static int bt_manager_link_event(void *param)
 		break;
 	case BT_LINK_EV_A2DP_CONNECTED:
 		info->a2dp_connected = 1;
+        if(!bt_manager_audio_is_ios_dev(info->hdl)){
+            bt_manager_notify_connected(info);
+        }
         bt_manager_control_role_check(info);
-		bt_manager_auto_reconnect_resume_play(in_param->hdl);
-		SYS_EVENT_INF(EVENT_BT_LINK_A2DP_CONNECTED, info->hdl,
-						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
+        bt_manager_auto_reconnect_resume_play(in_param->hdl);
+        SYS_EVENT_INF(EVENT_BT_LINK_A2DP_CONNECTED, info->hdl,
+            UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
 		break;
 	case BT_LINK_EV_A2DP_SINGALING_CONNECTED:
         info->a2dp_singnaling_connected = 1;
-        bt_manager_notify_connected(info);
         os_delayed_work_cancel(&info->profile_disconnected_delay_work);
+        if(bt_manager_audio_is_ios_dev(info->hdl)){
+            bt_manager_notify_connected(info);
+        }
         break;
 
 	case BT_LINK_EV_A2DP_DISCONNECTED:

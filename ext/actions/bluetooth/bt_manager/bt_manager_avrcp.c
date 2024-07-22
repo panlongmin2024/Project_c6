@@ -378,7 +378,7 @@ void bt_manager_avrcp_sync_vol_to_local(uint16_t hdl, uint8_t music_vol, bool sy
     //if ((a2dp_active_dev && dev_info->hdl != a2dp_active_dev->hdl)||((bt_manager->cur_a2dp_hdl)&&(bt_manager->cur_a2dp_hdl != dev_info->hdl)))
     if (a2dp_active_dev && dev_info->hdl != bt_manager_media_get_active_br_handle())
     {
-		SYS_LOG_INF("no active ad2p dev\n");
+		SYS_LOG_INF("no active ad2p dev %x, %x\n", dev_info->hdl, bt_manager_media_get_active_br_handle());
         notify_app = false;
     }
 	SYS_LOG_INF("hdl 0x%x bt_music_vol: %d,avrcp_remote_vol: %d\n", dev_info->hdl, dev_info->bt_music_vol,dev_info->avrcp_remote_vol);

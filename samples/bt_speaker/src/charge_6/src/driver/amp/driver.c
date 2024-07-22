@@ -138,6 +138,7 @@ static void hm_ext_pa_clear_fault_timer_handle(struct thread_timer *ttimer, void
 	gpio_pin_configure(gpio_dev, 14, GPIO_DIR_IN);
 	gpio_pin_read(gpio_dev, 14, &value);
 	if(value == 0){
+        printk("err hm_ext_pa_clear_fault_timer_handle pa fault\n");
         if(ReadODM() == HW_GUOGUANG_BOARD)
         {
             

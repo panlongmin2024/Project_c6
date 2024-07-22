@@ -128,6 +128,9 @@ int bt_le_audio_init(void)
 	struct bt_audio_role role = {0};
 
 #ifdef CONFIG_BT_LE_AUDIO
+
+	bt_manager_lea_policy_ctx_init();
+
 #ifdef CONFIG_BT_LEATWS
 	extern uint32_t leatws_get_audio_channel(void);
 	sink_location = leatws_get_audio_channel();
