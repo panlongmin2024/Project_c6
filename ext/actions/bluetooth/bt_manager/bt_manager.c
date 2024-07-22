@@ -1585,6 +1585,8 @@ void bt_manager_dump_info(void)
 	battery_hw_test();//////
 	int logic_mcu_read_ntc_status(void);
 	extern int pd_manager_test_set_sink_charge_current(u8_t step);
+	u32_t fw_version_get_sw_code(void);
+	u32_t fw_version_get_hw_code(void);
 	uint32_t swver = fw_version_get_sw_code();
 	u8_t hwver = fw_version_get_hw_code();
 	printk("swver = %d  hwver = %d\n",swver，hwver);
