@@ -505,7 +505,7 @@ static int shell_charge_get(int argc, char *argv[])
 static int shell_user(int argc, char *argv[])
 {
 	extern bool ats_get_enter_key_check_record(void);
-	sys_event_report_input_ats(KEY_PWRKEY);
+	//sys_event_report_input_ats(KEY_PWRKEY);
 	printk("------> shell_user \n");
 	return 0;
 }

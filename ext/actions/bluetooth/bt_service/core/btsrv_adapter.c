@@ -375,7 +375,7 @@ static void connected_dev_cb_check_wake_lock(struct bt_conn *base_conn, uint8_t 
 	}
 }
 
-void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len)
+static void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len)
 {
     struct bt_conn *conn;
     uint16_t handle;
@@ -394,7 +394,6 @@ void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len)
     if(conn){
         btsrv_rdm_set_dev_rssi(conn,rssi);
     }
-	SYS_LOG_INF("-------> bt_rssi: %d", rssi);
 }
 
 

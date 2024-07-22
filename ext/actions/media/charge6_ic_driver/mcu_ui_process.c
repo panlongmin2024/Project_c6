@@ -744,12 +744,12 @@ int mcu_ui_ota_deal(void)
             input_dev_disable(dev);
 
         bt_manager_send_fw_update_code(MCU_FW_UPDATEING);
-		extern int OTA_PD(u8_t flag);
+	
+		extern int WLT_OTA_PD(bool flag);
 
-
-      if(ReadODM())
+        if(ReadODM())
 		{
-		 ret = OTA_PD(1);
+		 ret = WLT_OTA_PD(1);
       	}
         else
         {
@@ -901,10 +901,6 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
     {
 
         case MCU_INT_TYPE_POWER_KEY:
-			/*if(ats_get_enter_key_check_record()){
-                sys_event_report_input_ats(KEY_PWRKEY);
-                break;
-            }*/
 
 			/* for factory test */
 			if(ats_get_enter_key_check_record()){
@@ -1039,7 +1035,6 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 }
                 else{
                     printk("POWER KEY!!! %d \n",sys_pm_get_power_5v_status());
-                
                     #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
                     if(power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
                     {
