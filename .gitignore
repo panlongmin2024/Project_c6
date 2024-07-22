@@ -41,3 +41,4 @@ ext/lib/actions/external/duer/libduer-device-3.0/out/*
 ext/actions/att/*
 pro.si4project
 pro.si4project/*
+charge6_data/srd_uis_protocol/*
