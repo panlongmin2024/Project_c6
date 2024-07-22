@@ -89,7 +89,9 @@ static void ota_app_start(void)
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
 	if (flash_device)
 		flash_write_protection_set(flash_device, false);
-
+ 	
+	bt_manager_media_pause();
+	
 #ifdef CONFIG_OTA_APP_AUTO_START
 	system_app_launch_add(DESKTOP_PLUGIN_ID_OTA,true);
 #else

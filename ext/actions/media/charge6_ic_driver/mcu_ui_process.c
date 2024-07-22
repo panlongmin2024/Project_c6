@@ -744,14 +744,12 @@ int mcu_ui_ota_deal(void)
             input_dev_disable(dev);
 
         bt_manager_send_fw_update_code(MCU_FW_UPDATEING);
-		extern int OTA_PD(u8_t flag);
+		extern int WLT_OTA_PD(bool flag);
 
-
-      if(ReadODM())
+        if(ReadODM())
 		{
-		 ret = OTA_PD(1);
+		 ret = WLT_OTA_PD(1);
       	}
-        else
         {
           ret = user_mspm0l_ota_process();
         }
