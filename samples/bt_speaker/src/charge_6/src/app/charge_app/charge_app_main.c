@@ -122,6 +122,7 @@ int charge_app_real_exit_deal(void)
 		SYS_LOG_INF("real power off\n");
 		extern int pd_manager_deinit(int value);
 		tts_manager_wait_finished(1);
+		property_flush(NULL);
 		pd_srv_sync_exit();		
 	}
 	return 0;
@@ -185,11 +186,11 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
     pd_set_app_mode_state(CHARGING_APP_MODE);
 	pd_manager_send_disc();
 	system_set_power_run_mode(1);
+	bt_manager_set_autoconn_info_need_update(0);
 	bt_manager_halt_ble();
 	bt_manager_auto_reconnect_stop();
 	bt_manager_end_pair_mode();
 	bt_manager_set_user_visual(1,0,0,0);
-	bt_manager_set_autoconn_info_need_update(0);
 	bt_manager_disconnect_all_device();
 	system_app_set_auracast_mode(0);
 	self_music_effect_ctrl_set_enable(1);

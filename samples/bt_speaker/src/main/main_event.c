@@ -222,6 +222,7 @@ void main_input_event_handle(struct app_msg *msg)
 	case MSG_FACTORY_RESET:
 		SYS_LOG_INF("factory reset\n");
 #ifdef CONFIG_BT_MANAGER
+		bt_manager_set_autoconn_info_need_update(0);
 		bt_manager_end_pair_mode();
 		bt_manager_auto_reconnect_stop();
 		bt_manager_clear_paired_list();

@@ -668,6 +668,7 @@ static int _logic_mcu_ls8a10049t_int_handle(struct logic_mcu_ls8a10049t_device_d
 				para.mcu_event_val = MCU_INT_CMD_POWEROFF;	
 			}
             if (dev->mcu_notify) {
+				printf("------> send poweroff %d\n",__LINE__);
                 dev->mcu_notify(MCU_INT_TYPE_POWER_KEY, &para);
             }
             else{
@@ -1311,6 +1312,7 @@ static int mcu_ls8a10049t_input_event_report(void)
 				char buffer[2] = "8";
 				ats_module_test_mode_write(buffer,sizeof(buffer)-1);
 				////end
+				printf("------> send poweroff %d\n",__LINE__);
                 dev->mcu_notify(MCU_INT_TYPE_POWER_KEY, &para);
             }
             else{
