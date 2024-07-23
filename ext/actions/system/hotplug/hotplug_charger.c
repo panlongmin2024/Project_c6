@@ -40,7 +40,7 @@ int _charger_get_state(void)
 	} else {
 		state = HOTPLUG_OUT;
 	}
-	printf("------> %s hotplug %d\n",__func__,sdcard_state);
+	printf("------> %s state %d\n",__func__,state);
 	return state;
 }
 
