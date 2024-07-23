@@ -54,7 +54,7 @@ int _linein_get_state(void)
 		state = HOTPLUG_IN;
 	else if(state == LINEIN_OUT)
 		state = HOTPLUG_OUT;
-
+	printf("------> %s hotplug %d\n",__func__,sdcard_state);
 exit:
 	return state;
 }
@@ -123,6 +123,6 @@ int hotplug_linein_init(void)
 	} else {
 		linein_detect_state.stable_state = HOTPLUG_NONE;
 	}
-
+	printf("------> %s hotplug %d\n",__func__,sdcard_state);
 	return hotplug_device_register(&linein_hotplug_device);
 }
