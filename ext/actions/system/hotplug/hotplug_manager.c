@@ -129,6 +129,7 @@ int hotplug_manager_get_state(int hotplug_device_type)
 		}
 	}
 
+	SYS_LOG_INF("------> get hotplug %d\n",state);
 	return state;
 }
 
