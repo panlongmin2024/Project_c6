@@ -149,6 +149,7 @@ static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 		led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 		set_power_first_factory_reset_flag(1);
 		set_property_factory_reset_flag(0);
+		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
 	}
 	#ifdef CONFIG_BT_SELF_APP
 	if((power_off_no_tts == 1)&&(charge_app_state == CHARGING_APP_INIT)){
