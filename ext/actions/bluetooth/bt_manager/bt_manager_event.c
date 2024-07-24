@@ -474,7 +474,10 @@ void bt_manager_update_led_display(void)
     {
         case BT_STATUS_LINK_NONE:
         {
-            pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+			bool get_property_factory_reset_flag(void);
+			if(!get_property_factory_reset_flag()){
+            	pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+			}
             break;
         }
 
