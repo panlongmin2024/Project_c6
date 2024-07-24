@@ -220,7 +220,7 @@ void pd_srv_sync_msg_process(struct app_msg *msg)
 
 void pd_srv_event_process(struct app_msg *msg)
 {
-	printk("pd srv event %d %d\n",msg->cmd,msg->value);
+	printk("pd srv event %d %d  btled_fac_flag %d\n",msg->cmd,msg->value,get_property_factory_reset_flag());
 	switch (msg->cmd){
 		case PD_EVENT_SOURCE_REFREST:
 			pd_set_source_refrest();
