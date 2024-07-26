@@ -125,7 +125,7 @@ struct wlt_pd_mps52002_info {
 	u8_t	pd_sink_debounce_time;
 	u8_t    pd_source_disc_debunce_cnt;
 	u8_t   	pd_test_sink_charge_step;//for factory test
-
+	u8_t 	pd_check_mobile_time;
 };
 
 typedef struct {
@@ -1341,7 +1341,7 @@ void pd_detect_event_report_MPS52002(void){
 			pd_mps52002->charge_full_flag = 0;
 			if(pd_mps52002->pd_52002_sink_flag)
 			{
-				pd_mps52002->pd_sink_debounce_time = MAX_SINK_CHECK_MOBILE_TIME;
+				pd_mps52002->pd_sink_debounce_time = pd_mps52002->pd_check_mobile_time;	//MAX_SINK_CHECK_MOBILE_TIME;
 			}else{
 				if(pd_mps52002->pd_source_otg_disable_flag)
 				{
@@ -1906,7 +1906,7 @@ extern void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);
 void pd_mps52002_iic_send_data()
 {
     u8_t type, data;
-  
+  	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
 
 	while(!pd_iid_pop_queue(&type, &data))
 	{
@@ -1971,6 +1971,7 @@ void pd_mps52002_iic_send_data()
 			case PD_IIC_TYPE_PROP_SOURCE_SSRC:
 				// MPS_SET_SOURCE_SSRC(1);
 				mps_set_source_disc();
+				
 				// pd_iic_push_queue(PD_IIC_TYPE_PROP_SOURCE_SSRC, (u8_t)val->intval);
 				break;
 
