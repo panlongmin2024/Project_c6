@@ -42,6 +42,8 @@ static struct charge_app_t *p_charge_app_app;
 extern bool run_mode_is_normal(void);
 static struct thread_timer reset_timer;
 static u8_t power_off_no_tts;
+extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
+
 #ifdef CONFIG_BT_SELF_APP
 extern int selfapp_get_feedback_tone_ext(void);
 #endif
@@ -281,6 +283,15 @@ static int charge_app_msg_pro(struct app_msg *msg)
 	case MSG_TTS_EVENT:
 		charge_app_tts_event_proc(msg);
 		break;
+
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	case MSG_PD_BAT_SINK_FULL:
+
+		logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
+		pd_manager_deinit(1);	
+		sys_pm_poweroff();
+		break;
+#endif
 	default:
 		SYS_LOG_ERR("error: 0x%x!\n", msg->type);
 	}

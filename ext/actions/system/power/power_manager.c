@@ -752,6 +752,7 @@ int power_manager_init(void)
 extern bool pd_manager_check_mobile(void);
 extern int pd_manager_deinit(int value);	
 extern void battery_remaincap_low_poweroff(void);
+extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
 
 int power_manager_early_init(void)
 {
@@ -762,7 +763,7 @@ int power_manager_early_init(void)
 
 	if ((power_manager_get_battery_capacity() <= DEFAULT_NOPOWER_CAP_LEVEL))
 	{
-		if(power_manager_get_dc5v_status())
+		if(dc_power_in_status_read())
 		{
 			k_sleep(1000);
 			if(!pd_manager_check_mobile())
@@ -771,14 +772,29 @@ int power_manager_early_init(void)
 
 		SYS_LOG_INF("no power ,shundown: %d\n", power_manager_get_battery_capacity());
 		//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
-       battery_remaincap_low_poweroff();
+        battery_remaincap_low_poweroff();
 		k_sleep(50);
         
 		pd_manager_deinit(0);		
 		sys_pm_poweroff();
 
 	}
-		
+
+	if(run_mode_is_demo())
+	{
+		k_sleep(1000);
+		SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
+		if(pd_manager_check_mobile())
+		{
+			SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
+			
+			logic_mcu_ls8a10023t_otg_mobile_det();
+			//extern int pd_manager_deinit(void);
+			pd_manager_deinit(1);
+					
+			sys_pm_poweroff();
+		}
+	}
 	return 0;
 }
 

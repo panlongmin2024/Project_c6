@@ -111,7 +111,7 @@ __exit:
 int fw_version_play_by_tts(void)
 {
 	char file_name[] = "0.mp3";
-	u32_t mode = UNBLOCK_UNINTERRUPTABLE;
+	u32_t mode = UNBLOCK_UNINTERRUPTABLE|TTS_MODE_TELE_NUM;
 
 	u8_t hw_ver =  fw_version_get_hw_code();
 	u32_t sw_ver = fw_version_get_sw_code();

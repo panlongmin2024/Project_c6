@@ -61,7 +61,7 @@
  * @}
  */
 
-#define mps_pd_current_version 0x41
+#define mps_pd_current_version 0x44
 #define I2C_DEV_ADDR        0x48                    //TODO
 #define I2C_PD_DEV_ADDR     0x28
 // #define DEF_MCU_WATER_INT_PIN 0
@@ -166,6 +166,7 @@ static void mps_ota_get_status(u8_t *status);
 #define MAX_DC_POWER_IN_TIMER			20
 
 #define WLT_OTG_DEBOUNCE_TIMEOUT        6
+#define WLT_FULL_DEBOUNCE_TIMEOUT        6
 #define MAX_SOURCE_DISC_COUNT           13
 #define MAX_SINK_CHECK_MOBILE_TIME		15
 
@@ -520,7 +521,7 @@ int OTA_PD(u8_t flag)
 	// union dev_config config = {0};
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	
-	printf("live  OTA_PD start \n");
+	printf("Totti  OTA_PD start \n");
 	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
 	k_sleep(10); //delay 10ms
 	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
@@ -563,7 +564,7 @@ int OTA_PD(u8_t flag)
 	int frame_index = 0;
 	u8_t power_led_cnt = 0;
 	int crc_pre_index = 0;
-	printf("live  OTA_PD 444 data_len = %d \n",data_len);
+	printf("Totti  OTA_PD 444 data_len = %d \n",data_len);
     u8_t crc_value = 0x00;
 	for(int i=0; i<(data_len-res); i+=128)
 	{		
@@ -676,7 +677,7 @@ int OTA_PD(u8_t flag)
 	count = 5;
 	while (count-- > 0)
 	{
-
+		k_sleep(60); //delay 100ms								// totti modify on 2024-0722
 		pd_tps52002_read_ota_value(PD_MPS_BA_REG, &readdata, 1);	
 
 		printf("readdata = 0x%02x\n",(readdata & 0x02));
@@ -684,7 +685,6 @@ int OTA_PD(u8_t flag)
 		{
 			break;
 		}
-		k_sleep(100); //delay 100ms
 	}
 
 	if ( count <= 0) 
@@ -735,7 +735,7 @@ int OTA_PD(u8_t flag)
 
  int OTA_PD(u8_t flag)
 {
-	// struct device *iic_dev;
+	// struct device *iic_dev;   
 	// union dev_config config = {0};
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	
@@ -912,11 +912,22 @@ int OTA_PD(u8_t flag)
 int WLT_OTA_PD(bool flag)
 {
 	int ret = 0x00;
-
-	ret = OTA_PD(flag);
-	if(ret != 1)
+	
+	if(flag)
 	{
-		ret = OTA_PD(flag);
+		ret = OTA_PD(flag);							// press combin key update pd;	
+	}else{											// auto update upon power on
+
+		for(int i=0; i<2; i++)
+		{
+			ret = OTA_PD(flag);
+			if( ret == 1)
+			{
+				return ret;
+			}
+		}
+		SYS_LOG_INF("[%d] PD OTA FAIL!!! \n\n", __LINE__);
+		sys_pm_reboot(REBOOT_TYPE_NORMAL);
 	}
 	return ret;
 }
@@ -1435,33 +1446,26 @@ void	pd_src_sink_full_check(void)
 {
 	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
 	pd_manager_charge_event_para_t para;
+
+	static u8_t full_check_time = 0x00;
   	
 	if(!pd_mps_source_pin_read())
 		return;
+
+
+	if(pd_mps52002->charge_full_flag && (full_check_time++ < WLT_FULL_DEBOUNCE_TIMEOUT))				// check it every five secoond
+	{
+		return; 
+	}
 	
+	full_check_time = 0x00;
+
 	if(pd_mps52002->pd_52002_sink_flag)
 	{
-	  	if(check_sink_full())
-	    {
-	     	if(!pd_mps52002->charge_full_flag)
-	    	{	    
-	       		pd_mps52002->charge_full_flag = true;
-	       		para.pd_event_val = 1;
-	       		pd_mps52002->notify(PD_EVENT_SINK_FULL, &para); 
-		   		SYS_LOG_INF("[%d] charer full =  %d", __LINE__, pd_mps52002->charge_full_flag);
-	     	}
-	    }else{
-			if(pd_mps52002->charge_full_flag)
-			{
-				pd_mps52002->charge_full_flag = false;	
-				para.pd_event_val = 0;
-	       		pd_mps52002->notify(PD_EVENT_SINK_FULL, &para); 
-		   		SYS_LOG_INF("[%d] charer full =  %d", __LINE__, pd_mps52002->charge_full_flag);
-
-			}
-
-			
-		}
+		para.pd_event_val = check_sink_full();
+		pd_mps52002->charge_full_flag = para.pd_event_val;
+		pd_mps52002->notify(PD_EVENT_SINK_FULL, &para); 
+		SYS_LOG_INF("[%d] charer full =  %d", __LINE__, pd_mps52002->charge_full_flag);
     }
 
 }	

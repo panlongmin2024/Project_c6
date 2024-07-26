@@ -56,6 +56,11 @@
 #include <logic_mcu_ls8a10023t.h>
 // #endif
 
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
+
+#endif
+
 #if 0
 //os_mutex charge_mutex;
 static void _charge_event_nodify_callback(struct app_msg *msg, int result, void *reply)
@@ -105,12 +110,14 @@ int charger_mode_check(void)
 #ifdef CONFIG_BT_CONTROLER_BQB
 	extern bool main_system_is_enter_bqb(void);
 #endif	
+	
 	if((run_mode_is_demo() == true) || (check_is_wait_adfu())
 #ifdef CONFIG_BT_CONTROLER_BQB	
 	|| (main_system_is_enter_bqb())
 #endif	
 	)
 	{
+
 /* 		charger_mode_msg.type = MSG_CHARGER_MODE;
 		charger_mode_msg.cmd = 0;
 		send_async_msg(CONFIG_SYS_APP_NAME, &charger_mode_msg); */
@@ -181,16 +188,21 @@ int charger_mode_check(void)
 				}
 				break;
 
+			case MSG_PD_BAT_SINK_FULL:	
 			case MSG_PD_OTG_MOBILE_EVENT:
 				terminaltion = true;
-				SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
-
-
+				if(msg.type == MSG_PD_OTG_MOBILE_EVENT)
+				{
+					SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
+				}else{
+					SYS_LOG_INF("%d MSG_PD_BAT_SINK_FULL\n",__LINE__);
+				}
+				
 				// struct device *logic_mcu_ls8a10023t_dev = device_get_binding(CONFIG_LOGIC_MCU_LS8A10023T_DEV_NAME);
 				// if (logic_mcu_ls8a10023t_dev)
 				// {
-extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
-				logic_mcu_ls8a10023t_otg_mobile_det();
+
+				logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
 			
 //				}
 		

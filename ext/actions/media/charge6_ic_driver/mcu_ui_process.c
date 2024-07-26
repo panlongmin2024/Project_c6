@@ -385,7 +385,7 @@ int get_batt_led_display_timer(void)
 
 static void battery_status_discharge_handle(u16_t cap)
 {
-    if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1){
+    if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1){
     
             battery_discharge_remaincap_low_15();
             set_batt_led_display_timer(-1); 
@@ -750,6 +750,7 @@ int mcu_ui_ota_deal(void)
 		{
 		 ret = WLT_OTA_PD(1);
       	}
+        else
         {
           ret = user_mspm0l_ota_process();
         }
@@ -759,6 +760,7 @@ int mcu_ui_ota_deal(void)
         printk("[%s,%d] ret %d !!!\n", __FUNCTION__, __LINE__,ret);
         if(ret == 1){
             sys_event_notify(SYS_EVENT_MCU_FW_SUCESS);
+            pd_set_source_refrest();
            // k_sleep(3000);
            // user_mspm0l_ota_sucess_startapp();
             //mcu_mspm0l->mcu_update_fw = 0xff;

@@ -98,7 +98,7 @@ extern void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event
 #ifdef CONFIG_C_TEST_BATT_MACRO
 
 static uint8_t test_id = 0;
-static int battery_cap= 5;
+static int battery_cap= 15;
 static int battery_temperature=250;
 
 void set_battery_cap(bool flag)
@@ -116,9 +116,9 @@ void set_battery_temprature_test(bool flag)
 {
     if(flag)
     {
-        battery_temperature += 50;
+        battery_temperature += 10;
     }else{
-        battery_temperature -= 50;
+        battery_temperature -= 10;
     }
     
 }
@@ -783,7 +783,6 @@ void pd_manager_battery_low_check_otg(bool force_flag)
     if(wlt_pd_manager == NULL)
         return;
 
-
     if(wlt_pd_manager->bt_app_mode == BTMODE_APP_MODE)
     {
         if((!wlt_pd_manager->pd_sink_status_flag) || force_flag)
@@ -858,13 +857,14 @@ bool pd_set_source_refrest(void)
     if(run_mode_is_demo())
     {
         wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME;
+    }else{
+        pd_manager_disable_charging(false);
+        pd_manager_battery_low_check_otg(true);
+        // k_sleep(500);
+        pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_SSRC, 0);
     }
 
-    pd_manager_disable_charging(false);
-    pd_manager_battery_low_check_otg(true);
 
-   // k_sleep(500);
-    pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_SSRC, 0);
 
 
     return true;
@@ -1380,14 +1380,22 @@ void pd_supply_report(pd_manager_charge_event_t event, pd_manager_charge_event_p
 
             wlt_pd_manager->pd_sink_full_state = para->pd_event_val; 
             
+            if(wlt_pd_manager->pd_sink_full_state)
+            {
+                msg.type = MSG_PD_BAT_SINK_FULL;
+                msg.cmd = 6;
+                msg.value = para->pd_event_val;
+                send_async_msg(APP_ID_MAIN, &msg);
+            }
+
             break;
 
         case PD_EVENT_OTG_MOBILE_DET:
                 
-                msg.type = MSG_PD_OTG_MOBILE_EVENT;
-		        msg.cmd = 6;
-		        msg.value = 0;
-                send_async_msg(APP_ID_MAIN, &msg);
+            msg.type = MSG_PD_OTG_MOBILE_EVENT;
+            msg.cmd = 6;
+            msg.value = 0;
+            send_async_msg(APP_ID_MAIN, &msg);
                 
             break;    
 
@@ -1471,7 +1479,10 @@ static void pd_manager_time_hander(struct thread_timer *ttimer, void *expiry_fn_
 
     pd_manager_source_change_debunce_process();
 
-    pd_manager_battery_low_check_otg(false);
+    if(!run_mode_is_demo())
+    {
+        pd_manager_battery_low_check_otg(false);
+    }
     pd_manager_power_key_time();
     
     if(one_second_cnt++ < 10)
@@ -1741,6 +1752,11 @@ int pd_manager_deinit(int value)
 {
 
     SYS_LOG_INF("[%d]", __LINE__);
+
+    if(wlt_pd_manager == NULL)
+    {
+        return 0;
+    }
 
     wlt_pd_manager->source_change_debunce_count = 0x00;
 
