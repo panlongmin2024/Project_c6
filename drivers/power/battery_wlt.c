@@ -686,7 +686,7 @@ void battery_acts_charge_status_check(struct acts_battery_info *bat, struct devi
 	u32_t charge_status;
 
 	charge_status = battery_get_charge_status(bat, bat_cfg);
-	printk("------> %s charge_status %d\n",__func__,charge_status);
+	//printk("------> %s charge_status %d\n",__func__,charge_status);
 	if ((charge_status_need_debounce(charge_status))
 		&& (debounce(bat->chg_debounce_buf, sizeof(bat->chg_debounce_buf), charge_status) == FALSE))
 	{
