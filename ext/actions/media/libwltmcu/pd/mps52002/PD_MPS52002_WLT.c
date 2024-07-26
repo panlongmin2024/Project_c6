@@ -169,6 +169,8 @@ static void mps_ota_get_status(u8_t *status);
 #define WLT_FULL_DEBOUNCE_TIMEOUT        6
 #define MAX_SOURCE_DISC_COUNT           13
 #define MAX_SINK_CHECK_MOBILE_TIME		15
+#define MIN_SINK_CHECK_MOBILE_TIME		1
+
 
 enum ti_pd_reg_address_t{
 
@@ -1974,8 +1976,15 @@ void pd_mps52002_iic_send_data()
 				break; 
 			case PD_IIC_TYPE_PROP_SOURCE_SSRC:
 				// MPS_SET_SOURCE_SSRC(1);
-				mps_set_source_disc();
-				
+				if(data == 0){
+					/* set source ssrc */
+					mps_set_source_disc();
+					pd_mps52002->pd_check_mobile_time = MAX_SINK_CHECK_MOBILE_TIME;
+				}
+				else{
+					/* demo mode,fast check sink */
+					pd_mps52002->pd_check_mobile_time = MIN_SINK_CHECK_MOBILE_TIME;
+				}
 				// pd_iic_push_queue(PD_IIC_TYPE_PROP_SOURCE_SSRC, (u8_t)val->intval);
 				break;
 
@@ -2246,6 +2255,7 @@ int pd_mps52002_init(void)
     thread_timer_init(&pd_mps52002->timer, mcu_pd_iic_time_hander_mps, NULL);    
  //   thread_timer_start(&pd_mps52002->timer, MCU_RUN_TIME_PERIOD, MCU_RUN_TIME_PERIOD);
 
+	pd_mps52002->pd_check_mobile_time = MIN_SINK_CHECK_MOBILE_TIME;
     return 0;
 }
 

@@ -857,6 +857,7 @@ bool pd_set_source_refrest(void)
     if(run_mode_is_demo())
     {
         wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME;
+		pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_SSRC, 1);
     }else{
         pd_manager_disable_charging(false);
         pd_manager_battery_low_check_otg(true);
