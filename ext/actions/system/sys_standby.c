@@ -311,8 +311,9 @@ static int _sys_standby_exit_s1(void)
 	led_manager_wake_up();
 #else
 	if(sys_pm_get_power_5v_status()){
-		if(system_get_power_run_mode() == 0)	
-			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+		/* 1106 remove */
+		//if(system_get_power_run_mode() == 0)	
+		//	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
 
 		bt_manager_update_led_display();
 
