@@ -1613,3 +1613,18 @@ void bt_manager_set_aesccm_mode(uint8_t mode)
 {
 	ctrl_set_br_aesccm_mode(mode);
 }
+
+void bt_manager_set_smartcontrol_vol_sync(uint8_t sync)
+{
+	btmgr_feature_cfg_t *cfg_feature = bt_manager_get_feature_config();
+	cfg_feature->smartcontrol_vol_syn = sync;
+	printk("\n%s,smartcontrol_vol_syn:%d\n",__func__,sync);
+}
+
+uint8_t bt_manager_get_smartcontrol_vol_sync(void)
+{
+	btmgr_feature_cfg_t *cfg_feature = bt_manager_get_feature_config();
+	
+	printk("\n%s,smartcontrol_vol_syn:%d\n",__func__,cfg_feature->smartcontrol_vol_syn);
+	return cfg_feature->smartcontrol_vol_syn;
+}

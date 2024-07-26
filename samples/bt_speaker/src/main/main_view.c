@@ -141,7 +141,9 @@ static int smart_handle_volume(void)
 	} 
 
 	SYS_LOG_INF("vol=%d\n", vol);
+	bt_manager_set_smartcontrol_vol_sync(0);
 	system_volume_set(AUDIO_STREAM_MUSIC, vol, true);
+	bt_manager_set_smartcontrol_vol_sync(1);
 
 	return 0;
 }

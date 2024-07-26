@@ -777,7 +777,7 @@ int tts_manager_play(uint8_t *tts_name, uint32_t mode)
 		goto exit;
 	}
 
-	if(tts_manager_get_same_tts_in_list(item->tts_file_name) >= 2){
+	if((tts_manager_get_same_tts_in_list(item->tts_file_name) >= 2)&&(!(mode & TTS_MODE_TELE_NUM))){
 		SYS_LOG_ERR("have tts in list\n");
 		mem_free(item);
 		goto exit;

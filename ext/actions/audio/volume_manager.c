@@ -120,7 +120,10 @@ int system_volume_set(int stream_type, int volume, bool display)
 	audio_system_mutex_lock();
 	if (stream_type == AUDIO_STREAM_SOUNDBAR ||
 		stream_type == AUDIO_STREAM_MUSIC) {
-		bt_manager_volume_set(volume,BT_VOLUME_TYPE_BR_MUSIC);
+		//if(bt_manager_get_smartcontrol_vol_sync())
+		{
+			bt_manager_volume_set(volume,BT_VOLUME_TYPE_BR_MUSIC);
+		}	
 	} else if(stream_type == AUDIO_STREAM_VOICE){
 		bt_manager_volume_set(volume,BT_VOLUME_TYPE_BR_CALL);
 	} else if(stream_type == AUDIO_STREAM_LE_AUDIO){
