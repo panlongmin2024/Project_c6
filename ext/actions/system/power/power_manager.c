@@ -387,6 +387,7 @@ int power_manager_sync_slave_battery_state(void)
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
 	static int charge_status = 0;
 	int temp_status = power_manager_get_charge_status();
+	printk("------> %s temp_status\n",__func__,temp_status);
 	if(charge_status != temp_status){
 		power_manager->battary_changed = 1;	
 		if(temp_status != POWER_SUPPLY_STATUS_UNKNOWN){
