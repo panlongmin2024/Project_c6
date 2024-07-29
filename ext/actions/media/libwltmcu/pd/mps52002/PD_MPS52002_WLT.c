@@ -169,7 +169,7 @@ static void mps_ota_get_status(u8_t *status);
 #define WLT_FULL_DEBOUNCE_TIMEOUT        6
 #define MAX_SOURCE_DISC_COUNT           13
 #define MAX_SINK_CHECK_MOBILE_TIME		15
-#define MIN_SINK_CHECK_MOBILE_TIME		1
+#define MIN_SINK_CHECK_MOBILE_TIME		15
 
 
 enum ti_pd_reg_address_t{
