@@ -52,7 +52,7 @@ static void main_is_enter_att(void)
 	printk("\n %s , exit ---",__func__);
 }
 #endif
-
+//test2
 static void main_pre_init(void)
 {
 	struct app_msg msg;
