@@ -31,7 +31,7 @@ bool main_get_enter_att_state(void)
 {
 	return (enter_att_flag == true);
 }
-//test
+
 static void main_is_enter_att(void)
 {
 	/*int property_get = -1;
@@ -52,7 +52,7 @@ static void main_is_enter_att(void)
 	printk("\n %s , exit ---",__func__);
 }
 #endif
-//test2
+
 static void main_pre_init(void)
 {
 	struct app_msg msg;
