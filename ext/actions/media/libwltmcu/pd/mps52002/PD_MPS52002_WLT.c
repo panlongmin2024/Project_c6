@@ -1912,7 +1912,7 @@ extern void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);
 void pd_mps52002_iic_send_data()
 {
     u8_t type, data;
-  	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
+  	//struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
 
 	while(!pd_iid_pop_queue(&type, &data))
 	{
