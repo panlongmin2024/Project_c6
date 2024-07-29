@@ -1047,7 +1047,6 @@ int bt_mcu_send_pw_cmd_standby(void)
 
 int bt_mcu_send_pw_cmd_powerdown(void)
 {
-	printf("------> send poweroff %d\n",__LINE__);
     return bt_mcu_send_cmd_code(BT_MCU_ACK_IIC_ADDR, MCU_INT_TYPE_POWER_KEY, MCU_INT_CMD_POWEROFF);
 }
 
@@ -1899,7 +1898,6 @@ void logic_mcu_input_event_proc(void){
             #endif   
                 if(code == MCU_INT_CMD_POWEROFF)
                 {
-                	printf("------> send poweroff %d\n",__LINE__);
                     if(sys_pm_get_power_5v_status())
                     {
                         printk("POWERDOWN --> charging!!!\n");

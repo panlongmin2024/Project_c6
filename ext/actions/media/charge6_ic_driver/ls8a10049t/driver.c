@@ -39,6 +39,7 @@
 
 #define LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
 #define CHARGE_WARNNING_FILTER_TIMES           2
+#define FIRST_TRIGGER_FILTER_TIME           1800
 
 #define LS8A10049T_I2C_ADDR    		0x8		// 7bit I2C Addr
 //#define PIN_LOGIC_MCU_INT			4 // logic MCU, INT pin
@@ -87,6 +88,9 @@ typedef struct {
 	uint8_t water0_triggered_cnt;
 	uint8_t water1_triggered_cnt;
 	uint8_t ntc_triggered_cnt;
+	uint32_t water0_filter_time;
+	uint32_t water1_filter_time;
+	uint32_t ntc_filter_time;	
 #endif	
 }mcu_int_info_t;
 
@@ -1412,7 +1416,20 @@ static int mcu_ls8a10049t_input_event_report(void)
 			if (water0_leak) {
 				SYS_LOG_INF("water0_leak\n");
 				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				mcu_int_info.water0_triggered_cnt++;
+				if(mcu_int_info.water0_triggered_cnt == 0)
+				{
+						mcu_int_info.water0_triggered_cnt++;
+						mcu_int_info.water0_filter_time = os_uptime_get_32();
+				}
+				else
+				{
+						//防止其他事件触发而进入，过滤1.8秒
+						if((os_uptime_get_32() - mcu_int_info.water0_filter_time) > FIRST_TRIGGER_FILTER_TIME)
+						{
+								mcu_int_info.water0_triggered_cnt++;
+								mcu_int_info.water0_filter_time = os_uptime_get_32();
+						}
+				}
 				if(mcu_int_info.water0_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
 				{
 						mcu_int_info.water0_triggered_cnt = 0;
@@ -1446,7 +1463,20 @@ static int mcu_ls8a10049t_input_event_report(void)
 			if (water1_leak) {
 				SYS_LOG_INF("water1_leak\n");
 				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				mcu_int_info.water1_triggered_cnt++;
+				if(mcu_int_info.water1_triggered_cnt == 0)
+				{
+						mcu_int_info.water1_triggered_cnt++;
+						mcu_int_info.water1_filter_time = os_uptime_get_32();
+				}
+				else
+				{
+						//防止其他事件触发而进入，过滤1.8秒
+						if((os_uptime_get_32() - mcu_int_info.water1_filter_time) > FIRST_TRIGGER_FILTER_TIME)
+						{
+								mcu_int_info.water1_triggered_cnt++;
+								mcu_int_info.water1_filter_time = os_uptime_get_32();
+						}
+				}				
 				if(mcu_int_info.water1_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
 				{
 						mcu_int_info.water1_triggered_cnt = 0;
@@ -1480,7 +1510,20 @@ static int mcu_ls8a10049t_input_event_report(void)
 			if (!over_temperature) {
 				SYS_LOG_INF("over_temperature\n");
 				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				mcu_int_info.ntc_triggered_cnt++;
+				if(mcu_int_info.ntc_triggered_cnt == 0)
+				{
+						mcu_int_info.ntc_triggered_cnt++;
+						mcu_int_info.ntc_filter_time = os_uptime_get_32();
+				}
+				else
+				{
+						//防止其他事件触发而进入，过滤1.8秒
+						if((os_uptime_get_32() - mcu_int_info.ntc_filter_time) > FIRST_TRIGGER_FILTER_TIME)
+						{
+								mcu_int_info.ntc_triggered_cnt++;
+								mcu_int_info.ntc_filter_time = os_uptime_get_32();
+						}
+				}				
 				if(mcu_int_info.ntc_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
 				{
 						mcu_int_info.ntc_triggered_cnt = 0;
