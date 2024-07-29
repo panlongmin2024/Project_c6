@@ -1976,6 +1976,7 @@ void pd_mps52002_iic_send_data()
 				break; 
 			case PD_IIC_TYPE_PROP_SOURCE_SSRC:
 				// MPS_SET_SOURCE_SSRC(1);
+				#if 0
 				if(data == 0){
 					/* set source ssrc */
 					mps_set_source_disc();
@@ -1985,6 +1986,8 @@ void pd_mps52002_iic_send_data()
 					/* demo mode,fast check sink */
 					pd_mps52002->pd_check_mobile_time = MIN_SINK_CHECK_MOBILE_TIME;
 				}
+				#endif
+				mps_set_source_disc();
 				// pd_iic_push_queue(PD_IIC_TYPE_PROP_SOURCE_SSRC, (u8_t)val->intval);
 				break;
 
