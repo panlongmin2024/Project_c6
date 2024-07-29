@@ -169,7 +169,7 @@ static void mps_ota_get_status(u8_t *status);
 #define WLT_FULL_DEBOUNCE_TIMEOUT        6
 #define MAX_SOURCE_DISC_COUNT           13
 #define MAX_SINK_CHECK_MOBILE_TIME		15
-#define MIN_SINK_CHECK_MOBILE_TIME		15
+#define MIN_SINK_CHECK_MOBILE_TIME		1
 
 
 enum ti_pd_reg_address_t{
@@ -1912,7 +1912,7 @@ extern void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);
 void pd_mps52002_iic_send_data()
 {
     u8_t type, data;
-  	//struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
+  	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
 
 	while(!pd_iid_pop_queue(&type, &data))
 	{
@@ -1976,7 +1976,6 @@ void pd_mps52002_iic_send_data()
 				break; 
 			case PD_IIC_TYPE_PROP_SOURCE_SSRC:
 				// MPS_SET_SOURCE_SSRC(1);
-				#if 0
 				if(data == 0){
 					/* set source ssrc */
 					mps_set_source_disc();
@@ -1986,8 +1985,6 @@ void pd_mps52002_iic_send_data()
 					/* demo mode,fast check sink */
 					pd_mps52002->pd_check_mobile_time = MIN_SINK_CHECK_MOBILE_TIME;
 				}
-				#endif
-				mps_set_source_disc();
 				// pd_iic_push_queue(PD_IIC_TYPE_PROP_SOURCE_SSRC, (u8_t)val->intval);
 				break;
 
