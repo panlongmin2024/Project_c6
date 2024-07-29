@@ -389,6 +389,71 @@ static int _ls8a10049t_check_power_key_pressed(struct logic_mcu_ls8a10049t_devic
 }
 
 
+static int _ls8a10049t_check_long_10s_reset(struct logic_mcu_ls8a10049t_device_data_t *dev)
+{
+    u8_t buffer[4];
+    union dev_config config = {0};
+    config.bits.speed = I2C_SPEED_STANDARD;
+    i2c_configure(dev->i2c_dev, config.raw);
+
+	k_sleep(3);
+    // 先将0x7E bit[5~4] 写入‘01’
+    buffer[0] = 1 << 4;
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7E, buffer, 1);
+
+    // 再将0x7D bit[5~3] 写入‘101’
+    buffer[0] = 0b101 << 3;
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7D, buffer, 1);
+
+    // 然后读取0x7C 的bit6 的值，如果读取为1，则说明有按键按下，如果读取为0，则说明按键松开
+	i2c_burst_read(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7C, (u8_t *)&reg_7c, 1);
+    int long_10s_reset = reg_7c.bit6;
+
+    // 读取完后，需要对改寄存器进行清除，清除方法：
+    // 写0x7B bit[7] 为0，清除后，再写0x7B bit[7] 为1，以进入下次存储准备状态
+	reg_7b.bit7 = 0;
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+
+	reg_7b.bit7 = 1;
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+
+
+	////end
+
+    return long_10s_reset;
+}
+
+static int _ls8a10049t_check_timer_out_10s(struct logic_mcu_ls8a10049t_device_data_t *dev)
+{
+    u8_t buffer[4];
+    union dev_config config = {0};
+    config.bits.speed = I2C_SPEED_STANDARD;
+    i2c_configure(dev->i2c_dev, config.raw);
+    // 先将0x7E bit[5~4] 写入‘01’
+    buffer[0] = 1 << 4;
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7E, buffer, 1);
+
+    // 再将0x7D bit[5~3] 写入‘001’
+    buffer[0] = 0b001 << 3;
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7D, buffer, 1);
+
+    // 然后读取0x7C 的bit6 的值，如果读取为1，则说明有按键按下，如果读取为0，则说明按键松开
+	i2c_burst_read(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7C, (u8_t *)&reg_7c, 1);
+    int timer_out_10s = reg_7c.bit6;
+
+    i2c_burst_read(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+    // 读取完后，需要对改寄存器进行清除，清除方法：
+    // 写0x7B bit[7] 为0，清除后，再写0x7B bit[7] 为1，以进入下次存储准备状态
+	reg_7b.bit1 = 0;
+	
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+
+	reg_7b.bit1 = 1;
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+
+	////end
+    return timer_out_10s;
+}
 
 /**
  * @brief 获取 USB 插入 状态
@@ -612,6 +677,7 @@ static void _ls8a10049t_otg_check_enable(struct logic_mcu_ls8a10049t_device_data
  *     Remark          :
  *         需按位操作
  */
+ #if 0
 static int _ls8a10049t_check_powerkey_10s_pressed(struct logic_mcu_ls8a10049t_device_data_t *dev)
 {
     u8_t buffer[4];
@@ -643,7 +709,7 @@ static int _ls8a10049t_check_powerkey_10s_pressed(struct logic_mcu_ls8a10049t_de
     return powerkey_10s_press;
 }
 
-
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -654,30 +720,39 @@ static int _logic_mcu_ls8a10049t_int_handle(struct logic_mcu_ls8a10049t_device_d
 
 	SYS_LOG_INF("logic_mcu_int_handle\n");
 	do {
+		int timer_out_10s = _ls8a10049t_check_timer_out_10s(dev);
 		int power_key_pressed = _ls8a10049t_check_power_key_pressed(dev);
+	    int powerkey_10s_pressed = _ls8a10049t_check_long_10s_reset(dev);
 		if (power_key_pressed) {
-			SYS_LOG_INF("power_key_pressed\n");
+			
 			//_ls8a10049t_poweroff(dev);
 			//_ls8a10049t_poweroff(dev);
 			//_ls8a10049t_poweroff(dev);
 			//sys_pm_poweroff();
-			if(pd_get_app_mode_state() == CHARGING_APP_MODE){
-				para.mcu_event_val = MCU_INT_CMD_POWERON;	
-			}
-			else{
-				para.mcu_event_val = MCU_INT_CMD_POWEROFF;	
-			}
-            if (dev->mcu_notify) {
-				printf("------> send poweroff %d\n",__LINE__);
-                dev->mcu_notify(MCU_INT_TYPE_POWER_KEY, &para);
-            }
-            else{
-                printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-            }			
+		 if(!timer_out_10s && !powerkey_10s_pressed)
+		  {
+		      SYS_LOG_INF("power_key_pressed--valid\n");
+				if(pd_get_app_mode_state() == CHARGING_APP_MODE){
+					para.mcu_event_val = MCU_INT_CMD_POWERON;	
+				}
+				else{
+					para.mcu_event_val = MCU_INT_CMD_POWEROFF;	
+				}
+	            if (dev->mcu_notify) {
+	                 dev->mcu_notify(MCU_INT_TYPE_POWER_KEY, &para);	  
+	            }
+	            else{
+	                printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
+	            }
+		  }
+		  else
+		  {
+              SYS_LOG_INF("power_key_pressed--invalid\n");
+		  }
 		}
 		else
 		{
-			int powerkey_10s_pressed = _ls8a10049t_check_powerkey_10s_pressed(dev);
+			//int powerkey_10s_pressed = _ls8a10049t_check_long_10s_reset(dev);
 			if(powerkey_10s_pressed)
 			{
 				SYS_LOG_INF("powerkey_10s_pressed\n");
@@ -722,7 +797,7 @@ static int _logic_mcu_ls8a10049t_int_handle(struct logic_mcu_ls8a10049t_device_d
 
 		int over_temperature = _ls8a10049t_check_ntc_status(dev);
 		if (over_temperature) {
-			SYS_LOG_INF("ntc over_temperature\n");
+			SYS_LOG_INF("ntc normal_temperature\n");
 			//battery_data.usb_port_flag.over_temperature = 1;
 		}
 	} while (0);
