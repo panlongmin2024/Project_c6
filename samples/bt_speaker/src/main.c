@@ -31,7 +31,7 @@ bool main_get_enter_att_state(void)
 {
 	return (enter_att_flag == true);
 }
-
+//test
 static void main_is_enter_att(void)
 {
 	/*int property_get = -1;
