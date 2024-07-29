@@ -1226,6 +1226,9 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 sys_pm_poweroff();    
             }
             break;
+		case MCU_INT_TYPE_DC:
+			SYS_LOG_INF("------> my typeDC %d\n", __LINE__);
+			break;
         default:
         {
             printk("UNKOWN EVENT ,DO NOTHING , NO POWEROFF!!!\n");
