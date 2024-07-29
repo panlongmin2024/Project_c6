@@ -1063,6 +1063,8 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
             if(para->mcu_event_val == MCU_INT_CMD_DC_IN)
             {
                 bt_mcu_send_cmd_code(MCU_INT_TYPE_DC, MCU_INT_CMD_DC_IN);
+				SYS_LOG_INF("------> dc_in_OK\n");
+				pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);	
 
             }else{
                 bt_mcu_send_cmd_code(MCU_INT_TYPE_DC, MCU_INT_CMD_DC_OUT);
@@ -1226,9 +1228,6 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 sys_pm_poweroff();    
             }
             break;
-		case MCU_INT_TYPE_DC:
-			SYS_LOG_INF("------> my typeDC %d\n", __LINE__);
-			break;
         default:
         {
             printk("UNKOWN EVENT ,DO NOTHING , NO POWEROFF!!!\n");
