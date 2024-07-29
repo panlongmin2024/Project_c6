@@ -765,7 +765,7 @@ int power_manager_early_init(void)
 	{
 		if(dc_power_in_status_read())
 		{
-			k_sleep(500);
+			k_sleep(1000);
 			if(!pd_manager_check_mobile())
 				return 0;
 		}
@@ -782,7 +782,7 @@ int power_manager_early_init(void)
 
 	if(run_mode_is_demo())
 	{
-		k_sleep(500);
+		k_sleep(1000);
 		SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
 		if(pd_manager_check_mobile())
 		{
