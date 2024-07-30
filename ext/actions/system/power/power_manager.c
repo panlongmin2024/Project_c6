@@ -452,7 +452,9 @@ int power_manager_sync_slave_battery_state(void)
 		set_power_first_factory_reset_flag(0);
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY	
 		if(temp_status != POWER_SUPPLY_STATUS_DISCHARGE
-		|| (temp_status == POWER_SUPPLY_STATUS_DISCHARGE && power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1))
+		|| (temp_status == POWER_SUPPLY_STATUS_DISCHARGE 
+		    && power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1
+		    && pd_get_app_mode_state() == BTMODE_APP_MODE))
 		{
 			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
 
@@ -780,7 +782,7 @@ int power_manager_early_init(void)
 
 	}
 
-	if(0)//(run_mode_is_demo())
+	if(run_mode_is_demo())
 	{
 		k_sleep(300);
 		SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
