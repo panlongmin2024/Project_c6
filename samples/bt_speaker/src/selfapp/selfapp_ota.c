@@ -1373,6 +1373,7 @@ int otadfu_AppTriggerUpgrade(void)
 #endif
 }
 extern u32_t fw_version_get_sw_code(void);
+extern u8_t fw_version_get_hw_code(void);
 int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 {
 	u8_t *buf = self_get_sendbuf();
@@ -1385,7 +1386,8 @@ int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 	switch (CmdID) {
 	case DFUCMD_ReqVer:{
 			u8_t vercode[4];	// 3Bytes is sw version, big endian, 1Byte is hw version
-			u32_t hwver = 0, swver = fw_version_get_sw_code();
+			u32_t hwver = fw_version_get_hw_code();
+			u32_t swver = fw_version_get_sw_code();
 			vercode[0] = (u8_t) (swver >> 16);
 			vercode[1] = (u8_t) (swver >> 8);
 			vercode[2] = (u8_t) swver;

@@ -19,7 +19,7 @@ typedef struct
     bt_addr_le_t addr;
 } bt_mgr_saved_letws_info_t;
 
-typedef int (*bt_letws_vnd_rx_cb)(const uint8_t *buf,uint16_t len);
+typedef int (*bt_letws_vnd_rx_cb)(uint16_t handle,const uint8_t *buf,uint16_t len);
 
 struct btmgr_letws_context_t {
 	uint8_t tws_role:3;

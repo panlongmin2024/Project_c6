@@ -51,7 +51,7 @@ int bt_manager_letws_adv_start(uint8 dir_flag)
 		os_mutex_unlock(&context->letws_mutex);
 		return 0;
 	}
-	
+
 	if (dir_flag && (!context->le_remote_addr_valid)) {
 		 SYS_LOG_ERR("dir ext adv err:");
 	}	
@@ -61,7 +61,7 @@ int bt_manager_letws_adv_start(uint8 dir_flag)
     ext_adv_params.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
     ext_adv_params.interval_max = BT_GAP_ADV_FAST_INT_MIN_2;
     ext_adv_params.options = (BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_NO_2M);
-	
+
     if (dir_flag == 1) {   
         ext_adv_params.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
 #if 1
@@ -79,7 +79,7 @@ int bt_manager_letws_adv_start(uint8 dir_flag)
         ext_adv_params.peer = &context->remote_ble_addr;
     }
     ext_adv_params.sid = BT_EXT_ADV_SID_LETWS,
-  
+
 	err = hostif_bt_le_ext_adv_create(&ext_adv_params, NULL, &context->ext_adv);
     if (err) {
 		SYS_LOG_INF("create:%d \n",err);
@@ -305,7 +305,6 @@ void bt_manager_letws_reset(void)
 	SYS_LOG_INF(":");
 }
 
-void btmgr_tws_process_ui_event(uint8_t *data, uint8_t len);
 static int bt_mamager_letws_vnd_rx_cb(uint16_t handle, const uint8_t *buf, uint16_t len)
 {
 	SYS_LOG_INF("buf: %p, len: %d\n", buf, len);
@@ -315,21 +314,9 @@ static int bt_mamager_letws_vnd_rx_cb(uint16_t handle, const uint8_t *buf, uint1
 		printk("0x%x \n", buf[i]);
 	}
 	printk("\n");
-#if 0
-	if ((buf[0] == 0xff) && (buf[1] == 0xff) && (buf[2] == 0xff) && (buf[3] == 0xff)) {
 
-	} else {
-        if (ble_tws_info.rx_cb) {
-			ble_tws_info.rx_cb(buf,len);
-		}
-	}
-#endif
-    if ((buf[0] == TWS_USER_APP_EVENT) || (buf[0] == TWS_BT_MGR_EVENT)) { 
-        btmgr_tws_process_ui_event((uint8_t *)buf,len);	
-	} else {
-        if (letws_context.rx_cb) {
-			letws_context.rx_cb(buf,len);
-		}
+	if (letws_context.rx_cb) {
+		letws_context.rx_cb(handle,buf,len);
 	}	
     return 0;
 }
@@ -360,13 +347,16 @@ int bt_mamager_letws_connected(uint16_t handle)
 
     bt_manager_audio_le_vnd_register_rx_cb(handle, bt_mamager_letws_vnd_rx_cb);
     bt_manager->letws_mode_state = BT_LETWS_MODE_CONNECTED;
-	
+
 	if (context->tws_role == BTSRV_TWS_MASTER) {
 		bt_manager_audio_le_pause_scan();
 	} else if (context->tws_role == BTSRV_TWS_SLAVE) {
 		bt_manager_letws_adv_stop();
 	}
 	os_delayed_work_cancel(&bt_manager->letws_pair_search_work);
+	if(context->rx_cb){
+		letws_context.rx_cb(handle,NULL,0);
+	}
 	os_mutex_unlock(&context->letws_mutex);
 
     SYS_LOG_INF("role:%d %d\n",context->tws_role,context->temp_tws_role);
@@ -389,6 +379,9 @@ void bt_mamager_letws_disconnected(uint16_t handle, uint8_t role, uint8_t reason
 	context->tws_handle = 0;
 	context->tws_role = 0;
 	context->temp_tws_role = 0;
+	if(context->rx_cb){
+		letws_context.rx_cb(0,NULL,0);
+	}
 	os_mutex_unlock(&context->letws_mutex);
 	if(reason == 0x8){
 		bt_mamager_letws_reconnect();

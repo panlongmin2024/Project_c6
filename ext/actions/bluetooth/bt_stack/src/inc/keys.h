@@ -88,6 +88,7 @@ struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr);
 
 void bt_keys_add_type(struct bt_keys *keys, int type);
 void bt_keys_clear(struct bt_keys *keys);
+void bt_keys_match_le_conn(struct bt_keys *keys);
 
 #if defined(CONFIG_BT_PROPERTY)
 int bt_keys_store(struct bt_keys *keys);

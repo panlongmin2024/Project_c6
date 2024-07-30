@@ -429,7 +429,21 @@ char *bt_manager_a2dp_get_dev_name(void)
 		return NULL;
 	}
 }
+#ifdef CONFIG_BT_LETWS
+static uint8_t save_name[32];
+char *bt_manager_a2dp_get_last_connected_dev_name(void)
+{
+	bt_mgr_dev_info_t* a2dp_dev = bt_mgr_get_last_a2dp_connected_dev();
+	if (a2dp_dev) {
+		memcpy(save_name, a2dp_dev->name, strlen(a2dp_dev->name));
+		return a2dp_dev->name;
+	} else {
+		return save_name;
+		//return NULL;
+	}
+}
 
+#else
 char *bt_manager_a2dp_get_last_connected_dev_name(void)
 {
 	bt_mgr_dev_info_t* a2dp_dev = bt_mgr_get_last_a2dp_connected_dev();
@@ -439,6 +453,7 @@ char *bt_manager_a2dp_get_last_connected_dev_name(void)
 		return NULL;
 	}
 }
+#endif
 
 int bt_manager_a2dp_get_codecid(void)
 {
@@ -503,7 +518,7 @@ int bt_manager_a2dp_get_status_check_avrcp_status(void)
 		return BT_STATUS_PLAYING;
 	}
 	
-	return BT_STATUS_PAUSED;
+	return BT_STATUS_INACTIVE;
 }
 #endif
 /* A2DP ֹͣ����״̬

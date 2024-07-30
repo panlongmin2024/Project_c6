@@ -678,10 +678,6 @@ int bt_manager_avrcp_sync_vol_to_remote_by_addr(uint16_t hdl, uint32_t music_vol
     }
 
 	dev_info->avrcp_remote_vol = avrcp_vol;
-	if(!bt_manager_get_smartcontrol_vol_sync())
-	{
-		return 0;
-	}
 	bt_manager_save_dev_volume();
 
 	btmgr_feature_cfg_t *cfg_feature = bt_manager_get_feature_config();

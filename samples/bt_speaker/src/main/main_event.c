@@ -80,11 +80,10 @@ static void main_input_enter_pairing_mode(void)
 	//struct app_msg app_msg = {0};
 #endif
 
-	uint8_t bt_link_num = bt_manager_get_connected_dev_num();
-	uint8_t le_link_num = bt_manager_audio_get_leaudio_dev_num();
+	uint8_t bt_link_num = bt_manager_audio_get_cur_dev_num();
 	uint8_t max_dev_num = bt_manager_config_connect_phone_num();
 
-	if (bt_link_num < max_dev_num || le_link_num < max_dev_num) {
+	if (bt_link_num <= max_dev_num) {
 		sys_event_notify(SYS_EVENT_ENTER_PAIR_MODE);
 		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_ENTER_PAIR_MODE);
 #ifdef CONFIG_AURACAST
@@ -96,19 +95,9 @@ static void main_input_enter_pairing_mode(void)
 		} */
 		bt_manager_event_notify(BT_MSG_AURACAST_EXIT, NULL, 0);
 #endif
-		if (bt_link_num <= max_dev_num) {
-			bt_manager_enter_pair_mode();
-		} else {
-			SYS_LOG_ERR("max bt dev num,:%d\n", bt_link_num);
-		}
-		if (le_link_num <= max_dev_num) {
-			bt_manager_lea_policy_event_notify(LEA_POLICY_EVENT_PAIRING, NULL, 0);
-		} else {
-			SYS_LOG_ERR("max le dev num:%d\n", le_link_num);
-		}
-
+		bt_manager_enter_pair_mode();
 	} else {
-		SYS_LOG_ERR("max connected dev num,bt:%d,le:%d\n", bt_link_num, le_link_num);
+		SYS_LOG_ERR("max connected dev num,bt:%d\n", bt_link_num);
 	}
 }
 
@@ -455,7 +444,7 @@ void main_hotplug_event_handle(struct app_msg *msg)
 				SYS_LOG_INF("------>isRealExit %d\n",pd_manager_get_source_change_state());
 				if(!pd_manager_get_source_change_state())
 				{
-					
+	
 					charge_app_real_exit_deal();          //Totti modify by 2023/12/23; pd check usb in/out status
 				}
 				tool_deinit();

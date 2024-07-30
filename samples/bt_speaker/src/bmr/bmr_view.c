@@ -95,7 +95,7 @@ void bmr_view_init(void)
 	seg_led_manager_clear_screen(LED_CLEAR_ALL);
 #endif
 
-	if (bt_manager_get_connected_dev_num() == 0) {
+	if (bt_manager_audio_get_cur_dev_num()== 0) {
 	#ifdef CONFIG_SEG_LED_MANAGER
 		seg_led_display_string(SLED_NUMBER2, "bL", true);
 		seg_led_display_string(SLED_NUMBER4, " ", false);

@@ -3,7 +3,7 @@
 
 #if CONFIG_EXTERNAL_DSP_DELAY > 0
 #define EXTERNAL_DSP_DELAY         (CONFIG_EXTERNAL_DSP_DELAY)
-#define BCST_QOS_DELAY             (30000 + CONFIG_EXTERNAL_DSP_DELAY)
+#define BCST_QOS_DELAY             (80000)
 #else
 #define EXTERNAL_DSP_DELAY         (0)
 #define BCST_QOS_DELAY             (80000)
@@ -90,6 +90,9 @@ enum {
 	KEY_EVENT_LIGTH_ON,
 	KEY_EVENT_LIGTH_OFF,
 	KEY_EVENT_BT,
+	KEY_EVENT_BT_FORCE_ENTER,
+	KEY_EVENT_NEXT,
+	KEY_EVENT_PREV,
 	KEY_EVENT_POWER_OFF,
 };
 
@@ -490,9 +493,11 @@ int pawr_handle_response(u8_t stream_type, const u8_t *buf, u16_t len);
 #endif
 uint8_t get_pawr_enable(void);
 
+uint8_t broadcast_tws_is_key_need_transfer(uint32_t key_event);
+uint8_t broadcast_tws_is_ready_for_past();
 void broadcast_tws_vnd_send_ack(uint8_t ack_cmdid,uint8_t StatusCode);
 void broadcast_tws_vnd_send_key(uint32_t key);
-int broadcast_tws_vnd_rx_cb(const uint8_t *buf, uint16_t len);
+int broadcast_tws_vnd_rx_cb(uint16_t handle,const uint8_t *buf, uint16_t len);
 void broadcast_tws_vnd_request_past_info(void);
 void broadcast_tws_vnd_send_sys_event(uint8_t event);
 void broadcast_tws_vnd_set_dev_info(struct lasting_stereo_device_info *info);

@@ -23,6 +23,8 @@
 static bool bat_user_set = false;
 static u8_t bat_percents = 100;
 static u8_t model_id = BOX_DEFAULT_MODEL_ID;
+#define MUTE_PLAYER_TIMEOUT	120
+
 static u8_t selfapp_get_bat_cap(void)
 {
 	if (bat_user_set) {
@@ -99,10 +101,19 @@ u8_t selfapp_get_bat_level(void)
 int selfapp_set_indication(u8_t dev_idx)
 {
 	int ret = -1;
+	selfapp_context_t *selfctx = self_get_context();
+	if (NULL == selfctx) {
+		return ret;
+	}
 
 	if (dev_idx == 0) {
 		if(!selfapp_get_lasting_stereo_mode()){
 			selfapp_mute_player(1);
+			if (thread_timer_is_running(&selfctx->mute_timer)){
+				thread_timer_stop(&selfctx->mute_timer);
+			}
+			thread_timer_init(&selfctx->mute_timer, self_mute_handler,NULL);
+			thread_timer_start(&selfctx->mute_timer, MUTE_PLAYER_TIMEOUT * 1000, 0);
 		}
 		sys_event_notify_single(SYS_EVENT_STEREO_GROUP_INDICATION);
 		ret = 0;

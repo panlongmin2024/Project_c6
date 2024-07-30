@@ -1029,7 +1029,7 @@ static int spk_set_auracast_group(u8_t * Payload, u16_t PayloadLen)
 				if (thread_timer_is_running(&selfctx->mute_timer)){
 					thread_timer_stop(&selfctx->mute_timer);
 				}
-				//TODO:use callback??
+
 				thread_timer_init(&selfctx->mute_timer, self_mute_handler,NULL);
 				thread_timer_start(&selfctx->mute_timer, (selfctx->time_out + 1) * 1000, 0);
 			}else{

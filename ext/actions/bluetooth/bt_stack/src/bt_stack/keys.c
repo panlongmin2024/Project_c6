@@ -266,6 +266,40 @@ struct bt_keys *bt_keys_find_irk(uint8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
+static void match_le_conn(struct bt_conn *conn, void *data)
+{
+	struct bt_keys *keys = (struct bt_keys *)data;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	__ASSERT_NO_MSG(conn != NULL);
+	__ASSERT_NO_MSG(data != NULL);
+
+	if (!bt_addr_le_is_rpa(addr)) {
+		return;
+	}
+
+	if (conn->state == BT_CONN_CONNECTED
+		&& bt_rpa_irk_matches(keys->irk.val, &addr->a)) {
+		BT_INFO("key %s matches conn %s",
+			bt_addr_le_str(&keys->addr),
+			bt_addr_le_str(addr));
+
+		bt_addr_copy(&keys->irk.rpa, &addr->a);
+
+		if (conn->le.keys && (conn->le.keys != keys)) {
+			bt_keys_clear(conn->le.keys);
+			conn->le.keys = NULL;
+		}
+		conn->le.keys = keys;
+		BT_INFO("match keys:%p\n",keys);
+	}
+}
+
+void bt_keys_match_le_conn(struct bt_keys *keys)
+{
+	bt_conn_foreach(BT_CONN_TYPE_LE, match_le_conn, (void *)keys);
+}
+
 struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr)
 {
 	int i;

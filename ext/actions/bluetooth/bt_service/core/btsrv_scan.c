@@ -308,6 +308,10 @@ static void btsrv_scan_check_state(void)
         }
         else
 #endif
+        if((btsrv_autoconn_is_phone_first_reconnect()== true)){
+            exp_discoverable = 0;
+        }
+        else
         {
             exp_discoverable = 1;
         }
@@ -399,6 +403,15 @@ static void btsrv_scan_check_state(void)
 	else if(pair_state & BT_PAIR_STATUS_PAIR_MODE){
 		ext_connectable = 1;
 	}
+    else if(pair_state & BT_PAIR_STATUS_RECONNECT){
+        if((btsrv_autoconn_is_phone_first_reconnect()== true)){
+            ext_connectable = 0;
+        }
+        else
+        {
+            ext_connectable = 1;
+        }
+    }
 	else if(pair_state & BT_PAIR_STATUS_WAIT_CONNECT){
 		ext_connectable = 1;
 	} 		

@@ -463,7 +463,15 @@ int lemusic_start_playback(void)
 			media_player_audio_track_trigger_callback,audio_system_get_track());
 	}
 
-	media_player_fade_in(slave->playback_player, 100);
+	if (lemusic_get_app()->mute_player) {
+		audio_track_mute(audio_system_get_track(), 1);
+	}else{
+#ifdef CONFIG_EXTERNAL_DSP_DELAY
+		media_player_fade_in(slave->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
+#else
+		media_player_fade_in(slave->playback_player, 200);
+#endif
+	}
 	media_player_play(slave->playback_player);
 	/*
 	 * NOTE: sleep for resample page miss, capture/playback are
@@ -692,9 +700,11 @@ int lemusic_bms_init_capture(void)
 		goto exit;
 	}
 #if (BROADCAST_NUM_BIS == 2)
-	source_stream2 = broadcast_create_source_stream(OUTPUT_CAPTURE2, 6);
-	if (!source_stream2) {
-		goto exit;
+	if(bms->num_of_broad_chan == 2){
+		source_stream2 = broadcast_create_source_stream(OUTPUT_CAPTURE2, 6);
+		if (!source_stream2) {
+			goto exit;
+		}
 	}
 #endif
 
@@ -715,8 +725,8 @@ int lemusic_bms_init_capture(void)
 	init_param.capture_sample_bits = 32;
 	//to do?
 	init_param.capture_channels_input = 2;	//BROADCAST_CH;   // chan_info.channels;
-	init_param.capture_channels_output = 2;	//BROADCAST_CH;  // chan_info.channels;
-	init_param.capture_bit_rate = chan_info.kbps*BROADCAST_NUM_BIS;	//BROADCAST_KBPS;
+	init_param.capture_channels_output = bms->num_of_broad_chan;	//BROADCAST_CH;  // chan_info.channels;
+	init_param.capture_bit_rate = chan_info.kbps*bms->num_of_broad_chan;	//BROADCAST_KBPS;
 	init_param.capture_input_stream = input_stream;
 	init_param.capture_output_stream = source_stream;
 	init_param.capture_output_stream2 = source_stream2;
@@ -734,10 +744,10 @@ int lemusic_bms_init_capture(void)
 	}
 
 	SYS_LOG_INF
-	    ("format: %d, sample: %d, channels: %d, kbps: %d, duration: %d,handle:%d,id:%d,tl_owner:%p\n",
+	    ("f: %d,s: %d,c: %d,k: %d,d: %d,h: %d,id: %d,t: %p,b: %d\n",
 	     chan_info.format, chan_info.sample, chan_info.channels,
 	     chan_info.kbps, chan_info.duration, chan->handle, chan->id,
-	     chan_info.chan);
+	     chan_info.chan,bms->num_of_broad_chan);
 
 	bms->player = media_player_open(&init_param);
 	if (!bms->player) {

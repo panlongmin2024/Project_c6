@@ -239,5 +239,7 @@ void selfapp_eq_cmd_update(u8_t id, const u8_t* data, u16_t len);
 int selfapp_eq_cmd_switch_eq(u8_t id, u8_t pre_id, const u8_t *data, u8_t len);
 void selfapp_set_user_bat_cap(u8_t bat);
 void selfapp_report_secondary_device_info(void);
+void self_mute_handler(struct thread_timer *ttimer,
+				   void *expiry_fn_arg);
 
 #endif

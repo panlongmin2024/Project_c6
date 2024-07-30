@@ -273,6 +273,10 @@ err_exit:
 	if (audio_record->pcm_buff)
 		mem_free(audio_record->pcm_buff);
 
+	if (audio_record->timeline) {
+		timeline_release(audio_record->timeline);
+	} 
+
 	mem_free(audio_record);
 
 	return NULL;

@@ -1375,11 +1375,11 @@ static int bt_manager_device_is_stoped(uint16_t handle)
 {
 #if (CONFIG_MUTI_POINT_USER_PAUSE_POLICY == 1)
 	bt_mgr_dev_info_t* a2dp_dev = bt_mgr_find_dev_info_by_hdl(handle);
-	if(!a2dp_dev->a2dp_status_playing) {
+	if(!btif_a2dp_stream_is_open(handle)) {
 		return 1;
 	}
 
-	if(!btif_a2dp_stream_is_open(handle)) {
+	if(!a2dp_dev->a2dp_status_playing) {
 		return 1;
 	}
 #else
@@ -1762,6 +1762,7 @@ static int ascs_connceted(uint16_t handle)
 		SYS_LOG_INF("same dev, no tts\n");
 	}
 
+	bt_manager_check_phone_connected();
 	bt_manager_lea_policy_event_notify(LEA_POLICY_EVENT_CONNECT, (void *)le_addr, param_len);
 
 	SYS_LOG_INF("%p, hdl: %d\n", audio_conn, handle);

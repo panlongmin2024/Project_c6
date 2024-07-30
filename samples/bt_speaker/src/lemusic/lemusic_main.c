@@ -98,8 +98,13 @@ static void lemusic_switch_bmr_handler(struct thread_timer *ttimer, void *expiry
 	if (NULL == p_lemusic) {
 		return;
 	}
+	int8_t temp_role = 0;
+#ifdef CONFIG_BT_LETWS
+	temp_role = bt_manager_letws_get_dev_role();
+#endif
 
-	if (1 == lemusic_get_auracast_mode() && p_lemusic->bms.cur_stream == BT_AUDIO_STREAM_NONE) {
+	if (1 == lemusic_get_auracast_mode() && p_lemusic->bms.cur_stream == BT_AUDIO_STREAM_NONE
+		&& temp_role == BTSRV_TWS_NONE) {
 		lemusic_set_auracast_mode(2);
 	}
 }
@@ -348,9 +353,16 @@ static int lemusic_bms_source_init(void)
 	struct bt_broadcast_qos *qos = bms->qos;
 	uint8_t audio_chan = BMS_DEFAULT_AUDIO_CHAN;
 	uint8_t kbps = BMS_DEFAULT_KBPS;
+	uint16_t temp_acl_handle = 0;
+	u8_t ch = 0;
 
 	if (!p_lemusic)
 		return -EINVAL;
+
+#ifdef CONFIG_BT_SELF_APP
+	ch = selfapp_get_channel();
+#endif
+	temp_acl_handle = bt_manager_audio_get_letws_handle();
 
 	if (thread_timer_is_running(&bms->broadcast_start_timer))
 		thread_timer_stop(&bms->broadcast_start_timer);
@@ -395,7 +407,11 @@ static int lemusic_bms_source_init(void)
 	bms->iso_interval = bms_broadcast_param.iso_interval;
 
 #if (BROADCAST_NUM_BIS == 2)
-	subgroup.num_bis = 2;
+	if ((ch) && (temp_acl_handle)) {
+	    subgroup.num_bis = 1;
+	} else {
+	    subgroup.num_bis = 2;
+	}
 #else
 	subgroup.num_bis = 1;
 #endif
@@ -461,11 +477,17 @@ static int lemusic_bms_source_init(void)
 	param.per_adv_param = &per_adv_param;
 	param.adv_param = &adv_param;
 
+	if (temp_acl_handle) {
+		param.past_enable = 1;
+		param.acl_handle = temp_acl_handle;
+		bms->use_past = 1;
+	} else {
+		bms->use_past = 0;
+	}
+
 	ret = bt_manager_broadcast_source_create(&param);
 	if (ret < 0) {
 		SYS_LOG_ERR("failed");
-		thread_timer_init(&bms->broadcast_start_timer, lemusic_bms_start_handler,
-				  NULL);
 		thread_timer_start(&bms->broadcast_start_timer, 300, 0);
 		return ret;
 	}
@@ -554,9 +576,13 @@ void lemusic_set_auracast_mode(int mode)
 		lemusic_update_dvfs(LE_BCST_FREQ);
 #endif
 		//wait for past req
-		//lemusic_bms_source_init();
-		p_lemusic->wait_for_past_req = 1;
-		system_app_set_auracast_mode(3);
+		if(broadcast_tws_is_ready_for_past()){
+			system_app_set_auracast_mode(3);
+			lemusic_bms_source_init();
+		}else{
+			p_lemusic->bms.wait_for_past_req = 1;
+			system_app_set_auracast_mode(3);
+		}
 	} else {
 		system_app_set_auracast_mode(mode);
 		system_app_launch_switch(DESKTOP_PLUGIN_ID_LE_MUSIC,DESKTOP_PLUGIN_ID_BMR);
@@ -600,6 +626,8 @@ static int _lemusic_init(void *p1, void *p2, void *p3)
 	memset(p_lemusic, 0, sizeof(struct lemusic_app_t));
 	bms->qos = &source_qos;
 	thread_timer_init(&p_lemusic->switch_bmr_timer, lemusic_switch_bmr_handler, NULL);
+	thread_timer_init(&bms->broadcast_start_timer, lemusic_bms_start_handler,
+					  NULL);
 
 	if(tts_manager_is_playing()){
 		p_lemusic->tts_playing = 1;
@@ -614,8 +642,13 @@ static int _lemusic_init(void *p1, void *p2, void *p3)
 #endif
 		if(temp_role == BTSRV_TWS_MASTER){
 			//wait for past req
-			p_lemusic->wait_for_past_req = 1;
-			system_app_set_auracast_mode(3);
+			if(broadcast_tws_is_ready_for_past()){
+				system_app_set_auracast_mode(3);
+				lemusic_bms_source_init();
+			}else{
+				p_lemusic->bms.wait_for_past_req = 1;
+				system_app_set_auracast_mode(3);
+			}
 		}else if(temp_role == BTSRV_TWS_NONE){
 			system_app_set_auracast_mode(1);
 			lemusic_bms_source_init();

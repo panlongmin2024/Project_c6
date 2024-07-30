@@ -1073,11 +1073,11 @@ int bt_manager_hid_send_ctrl_data(uint8_t report_type, uint8_t *data, uint32_t l
 int bt_manager_hid_take_photo(void);
 
 /**
- * @brief bt manager get connected phone device num
+ * @brief bt manager get br connected phone device num
  *
- * This routine provides to get connected device num.
+ * This routine provides to get br connected device num.
  *
- * @return number of connected device
+ * @return number of br connected device
  */
 int bt_manager_get_connected_dev_num(void);
 
@@ -1654,8 +1654,5 @@ void bt_manager_init_dev_volume(void);
 void bt_manager_clear_dev_volume(void);
 void bt_manager_set_autoconn_info_need_update(uint8_t need_update);
 int bt_manager_a2dp_get_status_check_avrcp_status(void);
-
-void bt_manager_set_smartcontrol_vol_sync(uint8_t sync);
-uint8_t bt_manager_get_smartcontrol_vol_sync(void);
 #endif
 

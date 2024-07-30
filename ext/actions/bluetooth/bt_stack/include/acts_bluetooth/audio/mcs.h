@@ -313,6 +313,7 @@ struct bt_mcs_client {
 
     bool busy;
     uint8_t opcode;
+	bool ctrl_busy;
     struct bt_gatt_subscribe_params mpn_sub_params;
     struct bt_gatt_subscribe_params tc_sub_params;
     struct bt_gatt_subscribe_params tt_sub_params;

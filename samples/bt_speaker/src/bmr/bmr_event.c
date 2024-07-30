@@ -35,9 +35,13 @@ static int bmr_sync_padv_volume(u8_t sync_vol)
 			}
 		} else {
 			if (synced_vol == INVALID_VOL) {
+				u8_t  tmpvol = sync_vol;
+				if (sync_vol > CONFIG_BROCAST_SAFE_LIMIT_VOLUME) {
+					tmpvol = CONFIG_BROCAST_SAFE_LIMIT_VOLUME;
+				}
 				//First time, sync to exact volume level.
-				SYS_LOG_INF("sync to %d firstly", sync_vol);
-				system_volume_set(AUDIO_STREAM_LE_AUDIO, sync_vol, false);
+				SYS_LOG_INF("sync to %d firstly%s", tmpvol, (tmpvol == sync_vol) ? "" : ", safevol limited");
+				system_volume_set(AUDIO_STREAM_LE_AUDIO, tmpvol, false);
 			} else {
 				//Sync diff volume instead of exact volume level.
 				int vol;
@@ -774,6 +778,12 @@ void bmr_input_event_proc(struct app_msg *msg)
 		if((!bmr->broadcast_sink_enabled) || (bmr->player_paused))
 			bt_manager_media_play_previous();
 		break;
+	case MSG_AURACAST_ENTER:
+		SYS_LOG_INF("MSG_AURACAST_ENTER: %d\n", system_app_get_auracast_mode());
+		if(system_app_get_auracast_mode() == 2){
+			break;
+		}
+		//fall though
 	case MSG_BMR_PLAY_APP_EXIT:
 #ifdef CONFIG_BT_LETWS
 		if(4 == system_app_get_auracast_mode()){

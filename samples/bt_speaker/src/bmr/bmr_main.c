@@ -112,8 +112,6 @@ int bmr_sink_init(void)
 		btif_br_disconnect_device(BTSRV_DISCONNECT_PHONE_MODE);
 		bt_manager_broadcast_past_subscribe(temp_acl_handle);
 		broadcast_tws_vnd_request_past_info();
-		//TODO:just send one time
-		broadcast_tws_vnd_notify_dev_info();
 		return 0;
 	} else {
 		struct bt_le_scan_param param = {0};

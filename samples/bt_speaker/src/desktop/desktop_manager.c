@@ -333,6 +333,10 @@ int desktop_manager_app_switch(struct app_msg *msg)
 			ctx->last_plugin_id = DESKTOP_PLUGIN_ID_CHARGER;
 			desktop_manager_add(msg->value);
 		}
+		#ifdef CONFIG_BT_SELF_APP
+		extern void otadfu_SetForce_exit_ota(void);
+		otadfu_SetForce_exit_ota();
+		#endif
 		#endif
 		return -EINVAL;
 	}

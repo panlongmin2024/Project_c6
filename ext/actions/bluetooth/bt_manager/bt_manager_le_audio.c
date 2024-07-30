@@ -167,6 +167,7 @@ static int bt_manager_init_adv_data(struct bt_audio_config* cfg)
 		if (cfg->target_announcement) {
 			ann_type = UNICAST_ANNOUNCEMENT_TARGETED;
 		}
+		SYS_LOG_INF("ann_type:%d\n",ann_type);
 		data[entry].type = BT_DATA_SVC_DATA16;
 		data[entry].data_len = 8;
 		data[entry].data = &adv_buf[len];

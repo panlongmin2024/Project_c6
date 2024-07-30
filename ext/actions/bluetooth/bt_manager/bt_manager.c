@@ -403,13 +403,13 @@ static void bt_manager_notify_connected(struct bt_mgr_dev_info *info)
 	}
 #endif
 
-	if (!info->notified_tts) {
-		info->notified_tts = 1;
-		dev_connect_notify(&info->addr, tmp_flag);
-	}
-
+	/* already notify */
 	if (info->notify_connected) {
-		/* already notify */
+		//ACL isn't disconnected, connecting Bluetooth again, need to play TTS
+		if (!info->notified_tts) {
+			info->notified_tts = 1;
+			dev_connect_notify(&info->addr, tmp_flag);
+		}
 		return;
 	}
 
@@ -813,7 +813,7 @@ static void bt_manager_auto_reconnect_complete(void)
 		{
 			return;
 		}
-        if (bt_manager_get_connected_dev_num() > 0){
+        if (bt_manager_audio_get_cur_dev_num()> 0){
             return;
         }
 		#ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
@@ -960,6 +960,7 @@ int bt_manager_set_status_ext(int state,uint8_t flag, bd_address_t* addr)
 	{
 		bt_manager->connected_phone_num++;
 		bt_manager_check_phone_connected();
+		dev_connect_notify(addr, flag);
 		break;
 	}
 	case BT_STATUS_DISCONNECTED:
@@ -1593,7 +1594,6 @@ void bt_manager_dump_info(void)
 	printk("ntc = %d\n",logic_mcu_read_ntc_status());
 	printk("num %d, tws_mode %d, bt_state 0x%x, playing %d\n", bt_manager->connected_phone_num,
 		bt_manager->tws_mode, bt_manager->bt_state, (bt_manager_a2dp_get_status() == BT_STATUS_PLAYING));
-
 	for (i = 0; i < MAX_MGR_DEV; i++) {
 		if (bt_manager->dev[i].used) {
 			printk("Dev hdl 0x%x name %s, tws %d snoop role %d notify_connected %d\n",
@@ -1612,19 +1612,4 @@ void bt_manager_dump_info(void)
 void bt_manager_set_aesccm_mode(uint8_t mode)
 {
 	ctrl_set_br_aesccm_mode(mode);
-}
-
-void bt_manager_set_smartcontrol_vol_sync(uint8_t sync)
-{
-	btmgr_feature_cfg_t *cfg_feature = bt_manager_get_feature_config();
-	cfg_feature->smartcontrol_vol_syn = sync;
-	printk("\n%s,smartcontrol_vol_syn:%d\n",__func__,sync);
-}
-
-uint8_t bt_manager_get_smartcontrol_vol_sync(void)
-{
-	btmgr_feature_cfg_t *cfg_feature = bt_manager_get_feature_config();
-	
-	printk("\n%s,smartcontrol_vol_syn:%d\n",__func__,cfg_feature->smartcontrol_vol_syn);
-	return cfg_feature->smartcontrol_vol_syn;
 }

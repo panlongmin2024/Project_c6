@@ -44,6 +44,11 @@ enum DeviceInfo_TokenID_e {
 	TokenID_GroupName = 0xc2,        // RW dynamic
 };
 
+static uint8_t ready_for_past = 0;
+uint8_t broadcast_tws_is_ready_for_past(){
+	return ready_for_past;
+}
+
 int broad_tws_send_message_to_front(uint8_t msg_type, uint8_t cmd, uint8_t reserved)
 {
 	struct app_msg  msg = {0};
@@ -53,6 +58,17 @@ int broad_tws_send_message_to_front(uint8_t msg_type, uint8_t cmd, uint8_t reser
 	msg.reserve = reserved;
 
 	return send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
+}
+
+uint8_t broadcast_tws_is_key_need_transfer(uint32_t key_event){
+	u32_t key_type = key_event  & KEY_MAX;
+	if(key_type == KEY_VOLUMEUP || key_type == KEY_VOLUMEDOWN || key_type == KEY_NEXTSONG
+		|| key_type == KEY_PREVIOUSSONG || key_type == KEY_BT || key_type == KEY_PAUSE_AND_RESUME
+		|| (key_event == (KEY_POWER | KEY_TYPE_SHORT_UP))){
+		return 1;
+	}else{
+		return 0;
+	}
 }
 
 static void key_event_handler(uint8_t key_val)
@@ -86,6 +102,16 @@ static void key_event_handler(uint8_t key_val)
 	   case KEY_EVENT_BT:
 	   SYS_LOG_INF("BT:");
 	   sys_event_report_input(KEY_BT|KEY_TYPE_SHORT_UP);
+	   break;
+
+	   case KEY_EVENT_NEXT:
+	   SYS_LOG_INF("NEXT:");
+	   sys_event_report_input(KEY_NEXTSONG|KEY_TYPE_SHORT_UP);
+	   break;
+
+	   case KEY_EVENT_PREV:
+	   SYS_LOG_INF("PREV:");
+	   sys_event_report_input(KEY_PREVIOUSSONG|KEY_TYPE_SHORT_UP);
 	   break;
 
 	   case KEY_EVENT_POWER_OFF:
@@ -309,84 +335,94 @@ void broadcast_tws_vnd_send_resp_eqinfo(u8_t send)
 	bt_manager_audio_le_vnd_send(temp_acl_handle, eqcmdbuf, eqcmdbuf[2] + 3);
 }
 
-int broadcast_tws_vnd_rx_cb(const uint8_t *buf, uint16_t len)
+int broadcast_tws_vnd_rx_cb(uint16_t handle,const uint8_t *buf, uint16_t len)
 {
 	int i;
 	u8_t cmd_length = 0;
 	u8_t cmd_id = 0;
 	u8_t send_ack = 0;
-	//tws_message_t rep = {0};
-	
+
 	SYS_LOG_INF("buf: %p, len: %d\n", buf, len);
 
-	for (i = 0; i < len; i++) {
-		printk("%02x ", buf[i]);
-	}
-	printk("\n");
+	if(buf){
+		for (i = 0; i < len; i++) {
+			printk("%02x ", buf[i]);
+		}
+		printk("\n");
 
-	if (buf[0] != COMMAND_IDENTIFIER) {
-		SYS_LOG_INF("Unknow data service.");
-		return -1;
-	}
+		if (buf[0] != COMMAND_IDENTIFIER) {
+			SYS_LOG_INF("Unknow data service.");
+			return -1;
+		}
 
-	cmd_id = buf[1];
-	cmd_length = buf[2];
+		cmd_id = buf[1];
+		cmd_length = buf[2];
 
-	SYS_LOG_INF("ll_cmd_id:0x%x len:%d", cmd_id, cmd_length);
-    
-	switch (cmd_id)
-	{
-		case COMMAND_SETKEYEVENT:
-			SYS_LOG_INF("key_event:%d\n", buf[3]);
-			key_event_handler(buf[3]);
-			send_ack = 1;
-			break;
-		case COMMAND_REQ_PASTINFO:
-			SYS_LOG_INF("req past info\n");
-			broad_tws_send_message_to_front(MSG_TWS_EVENT,TWS_EVENT_REQ_PAST_INFO,0);
-			send_ack = 1;
-			break;
-		case COMMAND_SENDSYSEVENT:
-			SYS_LOG_INF("sys_event:%d\n", buf[3]);
-			sys_event_notify_single(buf[3]);
-			send_ack = 1;
-			break;
-		case COMMAND_SETDEVINFO:
-			SYS_LOG_INF("set dev info\n");
-			broadcast_tws_vnd_handle_set_dev_info(&buf[4],cmd_length - 1);
-			send_ack = 1;
-			break;
-		case COMMAND_REQDEVINFO:
-			SYS_LOG_INF("req dev info\n");
-			broadcast_tws_vnd_notify_dev_info();
-			break;
-		case COMMAND_RSPDEVINFO:
-			SYS_LOG_INF("rsp dev info\n");
-			broadcast_tws_vnd_handle_dev_info_rsp(&buf[4],cmd_length - 1);
-			break;
-		case COMMAND_SETLIGHTINFO:
-			SYS_LOG_INF("set light info\n");
-			send_ack = 1;
-			break;
-		case COMMAND_REQUSEREQ:
-			SYS_LOG_INF("resp eq info\n");
-			broadcast_tws_vnd_send_resp_eqinfo(0);
-			break;
-		case COMMAND_SETUSEREQ:
-			SYS_LOG_INF("set eq info\n");
-			broadcast_tws_vnd_handle_set_eqinfo(&buf[3], cmd_length);
-			send_ack = 1;
-			break;
-		case COMMAND_DEVACK:
-			SYS_LOG_INF("recv ack for cmd 0x%x \n",buf[3]);
-			break;
-		default:
-			SYS_LOG_INF("Unkown type");
-			break;
-	}
+		SYS_LOG_INF("ll_cmd_id:0x%x len:%d", cmd_id, cmd_length);
 
-	if(send_ack){
-		broadcast_tws_vnd_send_ack(cmd_id,0);
+		switch (cmd_id)
+		{
+			case COMMAND_SETKEYEVENT:
+				SYS_LOG_INF("key_event:%d\n", buf[3]);
+				key_event_handler(buf[3]);
+				send_ack = 1;
+				break;
+			case COMMAND_REQ_PASTINFO:
+				SYS_LOG_INF("req past info\n");
+				ready_for_past = 1;
+				broad_tws_send_message_to_front(MSG_TWS_EVENT,TWS_EVENT_REQ_PAST_INFO,0);
+				send_ack = 1;
+				break;
+			case COMMAND_SENDSYSEVENT:
+				SYS_LOG_INF("sys_event:%d\n", buf[3]);
+				sys_event_notify_single(buf[3]);
+				send_ack = 1;
+				break;
+			case COMMAND_SETDEVINFO:
+				SYS_LOG_INF("set dev info\n");
+				broadcast_tws_vnd_handle_set_dev_info(&buf[4],cmd_length - 1);
+				send_ack = 1;
+				break;
+			case COMMAND_REQDEVINFO:
+				SYS_LOG_INF("req dev info\n");
+				broadcast_tws_vnd_notify_dev_info();
+				break;
+			case COMMAND_RSPDEVINFO:
+				SYS_LOG_INF("rsp dev info\n");
+				broadcast_tws_vnd_handle_dev_info_rsp(&buf[4],cmd_length - 1);
+				break;
+			case COMMAND_SETLIGHTINFO:
+				SYS_LOG_INF("set light info\n");
+				send_ack = 1;
+				break;
+			case COMMAND_REQUSEREQ:
+				SYS_LOG_INF("resp eq info\n");
+				broadcast_tws_vnd_send_resp_eqinfo(0);
+				break;
+			case COMMAND_SETUSEREQ:
+				SYS_LOG_INF("set eq info\n");
+				broadcast_tws_vnd_handle_set_eqinfo(&buf[3], cmd_length);
+				send_ack = 1;
+				break;
+			case COMMAND_DEVACK:
+				SYS_LOG_INF("recv ack for cmd 0x%x \n",buf[3]);
+				break;
+			default:
+				SYS_LOG_INF("Unkown type");
+				break;
+		}
+
+		if(send_ack){
+			broadcast_tws_vnd_send_ack(cmd_id,0);
+		}
+	}else if(!len){
+		if(handle){
+			if(BTSRV_TWS_SLAVE == bt_manager_letws_get_dev_role()){
+				broadcast_tws_vnd_notify_dev_info();
+			}
+		}else{
+			ready_for_past = 0;
+		}
 	}
 
 	return 0;
@@ -432,6 +468,12 @@ void broadcast_tws_vnd_send_key(uint32_t key)
 		case KEY_BT|KEY_TYPE_SHORT_UP:
 			key = KEY_EVENT_BT;
 			break;
+		case KEY_NEXTSONG|KEY_TYPE_SHORT_UP:
+			key = KEY_EVENT_NEXT;
+			break;
+		case KEY_PREVIOUSSONG|KEY_TYPE_SHORT_UP:
+			key = KEY_EVENT_PREV;
+			break;
 		default:
 		   SYS_LOG_INF("Unkown key:%x \n",key);
 		   return;
@@ -476,6 +518,7 @@ void broadcast_tws_vnd_request_past_info(){
 		SYS_LOG_ERR("tws link loss:");
 		return;
 	}
+	ready_for_past = 1;
 
 	cmd[0] = COMMAND_IDENTIFIER;
     cmd[1] = COMMAND_REQ_PASTINFO;

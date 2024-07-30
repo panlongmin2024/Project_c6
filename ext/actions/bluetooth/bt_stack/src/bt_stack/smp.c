@@ -1176,7 +1176,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		keys->flags &= ~BT_KEYS_AUTHENTICATED;
 	}
 
-	BT_INFO("LTK derived from LinkKey");
+	BT_INFO("LTK derived from LinkKey:%p",keys);
 }
 
 static struct net_buf *smp_br_create_pdu(struct bt_smp_br *smp, uint8_t op,
@@ -1487,8 +1487,6 @@ static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 
 	BT_DBG("");
 
-	/* TODO should we resolve LE address if matching RPA is connected? */
-
 	/*
 	 * For dualmode devices LE address is same as BR/EDR address and is of
 	 * public type.
@@ -1503,6 +1501,9 @@ static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 	}
 
 	memcpy(keys->irk.val, req->irk, sizeof(keys->irk.val));
+
+	/* resolve LE address if matching RPA is connected */
+	bt_keys_match_le_conn(keys);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
 

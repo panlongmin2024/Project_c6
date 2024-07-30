@@ -105,8 +105,8 @@ static void lemusic_rx_start(uint16_t handle, uint8_t id, uint16_t audio_handle)
 			uint8_t delta = (time_diff < bis_delay) ?
 							(bis_delay - time_diff) : (time_diff - bis_delay);
 			delta = ((uint32_t)bms->iso_interval * 1250 / 1000 > delta) ? 0 : 1;
-			printk("rx start last:%u,now:%u,time_diff:%u,bis_delay:%u\n",
-				bms->last_time, now_time, time_diff, bis_delay);
+			//printk("rx start last:%u,now:%u,time_diff:%u,bis_delay:%u\n",
+			//	bms->last_time, now_time, time_diff, bis_delay);
 			if (time_diff < bis_delay && delta) {
 				return;
 			}
@@ -479,11 +479,10 @@ static int lemusic_handle_enable(struct bt_audio_report *rep)
 	/* slave */
 	SYS_LOG_INF("slave %d %d\n",rep->handle,rep->id);
 
-		if (lemusic_get_auracast_mode()
-			&& !bms->chan) {
-			SYS_LOG_ERR("broad_chan not config\n");
-			return -EINVAL;
-		}
+	if (lemusic_get_auracast_mode() && !bms->chan) {
+		SYS_LOG_ERR("broad_chan not config\n");
+		return -EINVAL;
+	}
 
 	int dir = bt_manager_audio_stream_dir(rep->handle, rep->id);
 	SYS_EVENT_INF(EVENT_LEMUSIC_ENABLE,dir,rep->handle,rep->id,lemusic_get_app()->tts_playing);
@@ -1531,7 +1530,12 @@ static int lemusic_handle_letws_disconnected(uint8_t *reason)
 #ifdef CONFIG_BT_LETWS
 	struct lemusic_app_t *lemusic = lemusic_get_app();
 
-	if(*reason == 0x8){
+#ifdef CONFIG_BT_SELF_APP
+	//08 link loss or ungroup
+	if(*reason != 0x16 || !selfapp_get_group_id()){
+#else
+	if(*reason != 0x16){
+#endif
 		lemusic_stop_playback();
 		lemusic_exit_playback();
 
@@ -1556,7 +1560,7 @@ static int lemusic_handle_letws_disconnected(uint8_t *reason)
 		lemusic_set_auracast_mode(1);
 	}else{
 		system_app_set_auracast_mode(2);
-		system_app_launch_switch(DESKTOP_PLUGIN_ID_BR_MUSIC,DESKTOP_PLUGIN_ID_BMR);
+		system_app_launch_switch(DESKTOP_PLUGIN_ID_LE_MUSIC,DESKTOP_PLUGIN_ID_BMR);
 	}
 #endif
 	return 0;
@@ -1759,9 +1763,47 @@ static void lemusic_switch_auracast()
 	}
 }
 
+static void lemusic_player_reset()
+{
+	struct lemusic_app_t *lemusic = lemusic_get_app();
+	SYS_EVENT_INF(EVENT_LEMUSIC_PLAYER_RESET);
+	if (!lemusic->tts_playing) {
+		//stop
+		if (lemusic->slave.playback_player_run) {
+			lemusic_stop_playback();
+			lemusic_exit_playback();
+		}
+
+		if (lemusic->bms.player_run) {
+			lemusic_bms_stop_capture();
+			lemusic_bms_exit_capture();
+			lemusic_set_sink_chan_stream(NULL);
+		}
+
+		lemusic->bms.restart = 0;
+
+		//start
+		if (lemusic->slave.active_sink_chan) {
+			if (!lemusic->slave.playback_player_run) {
+				lemusic_init_playback();
+				lemusic_start_playback();
+			}
+
+			if (lemusic->bms.broadcast_source_enabled
+				&& (!lemusic->bms.player_run)) {
+				lemusic_bms_init_capture();
+				lemusic_bms_start_capture();
+			}
+			lemusic_set_sink_chan_stream(lemusic->slave.sink_stream);
+		}
+	}
+
+}
+
 void lemusic_input_event_proc(struct app_msg *msg)
 {
 	struct lemusic_app_t *lemusic = lemusic_get_app();
+	struct audio_track_t * track = NULL;
 
 	switch (msg->cmd) {
 	case MSG_BT_PLAY_PAUSE_RESUME:
@@ -1822,8 +1864,11 @@ void lemusic_input_event_proc(struct app_msg *msg)
 		}
 		break;
 	case MSG_AURACAST_ENTER:
-		if(system_app_get_auracast_mode() == 0){
+		SYS_LOG_INF("MSG_AURACAST_ENTER: %d\n", system_app_get_auracast_mode());
+		if(system_app_get_auracast_mode() != 1){
 			lemusic_switch_auracast();
+		} else if(system_app_get_auracast_mode() == 1){
+			lemusic_player_reset();
 		}
 		break;
 	case MSG_AURACAST_EXIT:
@@ -1832,7 +1877,42 @@ void lemusic_input_event_proc(struct app_msg *msg)
 			lemusic_switch_auracast();
 		}
 		break;
+	case MSG_MUTE_PLAYER:
+		track = audio_system_get_track();
 
+		if (NULL != track && lemusic->slave.playback_player_run) {
+			if (!lemusic->mute_player) {
+				media_player_fade_out(lemusic->slave.playback_player, 60);
+
+				/** reserve time to fade out*/
+				os_sleep(audio_policy_get_bis_link_delay_ms() + 80);
+				audio_track_mute(track, 1);
+				lemusic->mute_player = 1;
+			}
+		}else {
+			lemusic->mute_player = 1;
+		}
+		break;
+	case MSG_UNMUTE_PLAYER:
+		track = audio_system_get_track();
+
+		if (NULL != track && lemusic->slave.playback_player_run) {
+			if (lemusic->mute_player) {
+#ifdef CONFIG_EXTERNAL_DSP_DELAY
+				media_player_fade_in(lemusic->slave.playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
+#else
+				media_player_fade_in(lemusic->slave.playback_player, 200);
+#endif
+				audio_track_mute(track, 0);
+				lemusic->mute_player = 0;
+			}
+		}else {
+			lemusic->mute_player = 0;
+		}
+		break;
+	case MSG_PLAYER_RESET:
+		lemusic_player_reset();
+		break;
 	default:
 		break;
 	}
@@ -2000,43 +2080,11 @@ void lemusic_tts_event_proc(struct app_msg *msg)
 
 void lemusic_app_event_proc(struct app_msg *msg)
 {
-	struct lemusic_app_t *lemusic = lemusic_get_app();
-
 	SYS_LOG_INF("cmd: %d\n", msg->cmd);
 
 	switch (msg->cmd) {
 	case MSG_LEMUSIC_MESSAGE_CMD_PLAYER_RESET:
-		SYS_EVENT_INF(EVENT_LEMUSIC_PLAYER_RESET);
-		if (!lemusic->tts_playing) {
-			//stop
-			if (lemusic->slave.playback_player_run) {
-				lemusic_stop_playback();
-				lemusic_exit_playback();
-			}
-
-			if (lemusic->bms.player_run) {
-				lemusic_bms_stop_capture();
-				lemusic_bms_exit_capture();
-				lemusic_set_sink_chan_stream(NULL);
-			}
-
-			lemusic->bms.restart = 0;
-
-			//start
-			if (lemusic->slave.active_sink_chan) {
-				if (!lemusic->slave.playback_player_run) {
-					lemusic_init_playback();
-					lemusic_start_playback();
-				}
-
-				if (lemusic->bms.broadcast_source_enabled
-					&& (!lemusic->bms.player_run)) {
-					lemusic_bms_init_capture();
-					lemusic_bms_start_capture();
-				}
-				lemusic_set_sink_chan_stream(lemusic->slave.sink_stream);
-			}
-		}
+		lemusic_player_reset();
 		break;
 	}
 }
@@ -2049,12 +2097,12 @@ void lemusic_tws_event_proc(struct app_msg *msg)
 	switch (msg->cmd) {
 	case TWS_EVENT_REQ_PAST_INFO:
 		{
-			if (lemusic->wait_for_past_req){
+			if (bms->wait_for_past_req){
 				if (thread_timer_is_running(&bms->broadcast_start_timer)){
 					thread_timer_stop(&bms->broadcast_start_timer);
 				}
 				thread_timer_start(&bms->broadcast_start_timer, 0, 0);
-				lemusic->wait_for_past_req = 0;
+				bms->wait_for_past_req = 0;
 			}
 			break;
 		}

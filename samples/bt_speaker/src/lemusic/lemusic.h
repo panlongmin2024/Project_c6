@@ -38,6 +38,7 @@
 #include <ringbuff_stream.h>
 #include <media_mem.h>
 #include <audio_record.h>
+#include <audio_track.h>
 
 #include <soc_dvfs.h>
 #include <thread_timer.h>
@@ -51,6 +52,9 @@
 
 #ifdef CONFIG_PROPERTY
 #include <property_manager.h>
+#endif
+#ifdef CONFIG_BT_SELF_APP
+#include "selfapp_api.h"
 #endif
 
 #define NUM_OF_SINK_CHAN	2
@@ -160,6 +164,8 @@ struct lemusic_bms_device {
 	uint8_t encryption:1;
 	uint8_t dsp_run:1;
 	uint8_t enable:1;
+	uint8_t wait_for_past_req : 1;
+	uint8_t use_past:1;
 	uint8_t broadcast_retransmit_number;
 
 	uint32_t restart_count;
@@ -193,7 +199,7 @@ struct lemusic_app_t {
 #endif
 	uint32_t tts_playing : 1;
 	uint32_t playing : 1;
-	uint32_t wait_for_past_req : 1;
+	uint32_t mute_player:1;
 
 	struct lemusic_slave_device slave;
 

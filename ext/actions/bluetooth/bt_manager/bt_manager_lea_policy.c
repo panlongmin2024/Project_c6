@@ -615,6 +615,7 @@ static void bt_manager_lea_policy_event_cb(void *event_param)
 			break;
 		}
 
+		case LEA_POLICY_EVENT_EXIT_PAIRING:
 		case LEA_POLICY_EVENT_CONNECT:
 		{
 			/*check if need update adv data*/

@@ -544,6 +544,8 @@ void bt_manager_end_pair_mode(void)
 
     bt_manager_check_link_status();
 
+	bt_manager_lea_policy_event_notify(LEA_POLICY_EVENT_EXIT_PAIRING, NULL, 0);
+
 }
 
 
@@ -724,7 +726,7 @@ void bt_manager_enter_pair_mode_ex(void)
 			    }
 				break;
             case BT_PAIR_MODE_DISCONNECT_PHONE:
-				phone_num = bt_manager_get_connected_dev_num();
+				phone_num = bt_manager_audio_get_cur_dev_num();
                 if ((cfg_pair->clear_paired_list_when_enter_pair_mode) ||
                     (cfg_pair->disconnect_all_phones_when_enter_pair_mode)){
 					disc_mode = 1;
@@ -788,7 +790,7 @@ void bt_manager_enter_pair_mode_ex(void)
 				bt_manager->enter_pair_mode_state_update = true;
                 break;
 			case BT_PAIR_MODE_CHECK_PHONE:
-			    phone_num = bt_manager_get_connected_dev_num();
+			    phone_num = bt_manager_audio_get_cur_dev_num();
 
                 if(cfg_pair->clear_paired_list_when_enter_pair_mode
                     || cfg_pair->disconnect_all_phones_when_enter_pair_mode){
@@ -898,6 +900,7 @@ void bt_manager_enter_pair_mode(void)
 	bt_manager->stop_reconnect_tws_in_pair_mode = 1;
     bt_manager_enter_pair_mode_ex();
     bt_manager_audio_set_takeover_flag(0);
+	bt_manager_lea_policy_event_notify(LEA_POLICY_EVENT_PAIRING, NULL, 0);
 }
 
 void bt_manager_check_phone_connected(void)
@@ -906,7 +909,7 @@ void bt_manager_check_phone_connected(void)
 	btmgr_pair_cfg_t *cfg_pair = bt_manager_get_pair_config();
     btmgr_feature_cfg_t *cfg_feature = bt_manager_get_feature_config();
 
-    if ((bt_manager->connected_phone_num >= bt_manager_config_connect_phone_num())
+    if ((bt_manager_audio_get_cur_dev_num() >= bt_manager_config_connect_phone_num())
 		|| (cfg_pair->bt_not_discoverable_when_connected)
 		|| (cfg_feature->sp_dual_phone == 0)
         || ((bt_manager->connected_phone_num >= (cfg_feature->sp_device_num -1))
