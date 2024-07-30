@@ -1064,8 +1064,10 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
             {
                 bt_mcu_send_cmd_code(MCU_INT_TYPE_DC, MCU_INT_CMD_DC_IN);
 				SYS_LOG_INF("------> dc_in_OK\n");
-				pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);	
-
+				bool run_mode_is_demo(void);
+				if(!run_mode_is_demo()){
+					pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);	
+				}
             }else{
                 bt_mcu_send_cmd_code(MCU_INT_TYPE_DC, MCU_INT_CMD_DC_OUT);
 
