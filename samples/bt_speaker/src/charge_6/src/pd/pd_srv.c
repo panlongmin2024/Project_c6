@@ -149,7 +149,9 @@ void batt_led_manager_set_display(int led_status)
 	    if(run_mode_is_demo())
 	   	{
 	    	/// printk("batt_led_manager_set_display led_status = %d\n",led_status);
-			 if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_DISCHARGE_POWERON)
+			 if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_DISCHARGE_POWERON
+			 	||
+power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
 	    	 {
 	    	    printk("batt_led_manager_set_display led_status = %d\n",led_status);
 	    	   led_status = BATT_LED_NORMAL_OFF;
