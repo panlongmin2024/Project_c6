@@ -1657,7 +1657,7 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
     static u16_t mcu_one_secound_count = 0;
 	static u8_t set_fisrt_flag = 0;
 	static u8_t	two_secound_flalg = 0x00;
-
+	printk("[%s,%d]\n", __FUNCTION__, __LINE__);
 	led_status_manger_handle();
 
 	if(pd_mps52002->pd_65992_unload_flag)
