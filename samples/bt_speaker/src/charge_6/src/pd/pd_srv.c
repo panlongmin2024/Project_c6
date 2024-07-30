@@ -146,11 +146,15 @@ void batt_led_manager_set_display(int led_status)
 		   ||temp_status == POWER_SUPPLY_STATUS_FULL
 		  )
    	{
-	//    if(run_mode_is_demo())
-	//    	{
-	//    	 // printk("batt_led_manager_set_display led_status = %d\n",led_status);
-	//    	 led_status = BATT_LED_NORMAL_OFF;
-	//    	}
+	    if(run_mode_is_demo())
+	   	{
+	    	/// printk("batt_led_manager_set_display led_status = %d\n",led_status);
+			 if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_DISCHARGE_POWERON)
+	    	 {
+	    	    printk("batt_led_manager_set_display led_status = %d\n",led_status);
+	    	   led_status = BATT_LED_NORMAL_OFF;
+			 }
+    	}
    }
   printk("batt_led_manager_set_display led_status = %d\n",led_status);
   switch(led_status)

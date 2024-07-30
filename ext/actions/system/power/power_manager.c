@@ -780,7 +780,7 @@ int power_manager_early_init(void)
 
 	}
 
-	if(run_mode_is_demo())
+	if(0)//(run_mode_is_demo())
 	{
 		k_sleep(300);
 		SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
