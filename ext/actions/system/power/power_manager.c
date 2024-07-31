@@ -400,6 +400,7 @@ int power_manager_sync_slave_battery_state(void)
 			}
 			else if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_DISCHARGE_POWERON){
                  printk("[%s/%d], WLT_FILTER_DISCHARGE_POWERON !!!\n\n",__func__,__LINE__);
+				 
                  pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S); //display 10s
 			}
 			else if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_CHARGINE_WARNING){
