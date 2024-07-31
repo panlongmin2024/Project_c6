@@ -386,7 +386,7 @@ static int cdc_shell_ats_dsn_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
 
-	if(len!=16){
+	if(len<16 && len>30){
 		/* limit length 1-30 */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 		return 0;
@@ -408,7 +408,7 @@ static int cdc_shell_ats_dsn_write(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_dsn_read(struct device *dev, u8_t *buf, int len)
 {
 	int result;
-	u8_t buffer[16+1] = {0};
+	u8_t buffer[30+1] = {0};
 
 	result = ats_dsn_read(buffer, sizeof(buffer)-1);
 	if (result < 0)
@@ -430,7 +430,7 @@ static int cdc_shell_ats_psn_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
 
-	if(len!=16){
+	if(len<16 && len>30){
 		/* limit length 1-30 */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 		return 0;
@@ -544,7 +544,7 @@ static int cdc_shell_ats_sw_version_info_dump(struct device *dev, u8_t *buf, int
 }
 static int cdc_shell_ats_hw_version_info_dump(struct device *dev, u8_t *buf, int len)
 {
-	uint8_t buffer[] = "0000";
+	uint8_t buffer[] = "0001";
 	//uint8_t  vercode[4];    // 3Bytes is sw version, big endian, 1Byte is hw version
 	//uint8_t hwver = fw_version_get_hw_code();
 
