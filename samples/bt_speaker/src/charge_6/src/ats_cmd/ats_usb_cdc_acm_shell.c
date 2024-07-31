@@ -388,7 +388,7 @@ static int cdc_shell_ats_dsn_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
 
-	if(len<16 && len>30){
+	if(len<16 || len>30){
 		/* limit length 1-30 */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 		return 0;
@@ -432,7 +432,7 @@ static int cdc_shell_ats_psn_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
 
-	if(len<16 && len>30){
+	if(len<16 || len>30){
 		/* limit length 1-30 */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 		return 0;
