@@ -134,7 +134,7 @@ int system_btmgr_config_update_1st(void)
 	feature_config->enter_sniff_time 		 = 5000;//cfg_bt_mgr.Idle_Enter_Sniff_Time_Ms;// <"空闲进入 Sniff 模式时间 (毫秒)", 2000 ~ 20000, dev_mode>
 	feature_config->sniff_interval			 = 500;//cfg_bt_mgr.Sniff_Interval_Ms; <"Sniff 周期 (毫秒)", 100 ~ 500, dev_mode>
 	
-
+	feature_config->smartcontrol_vol_syn	= 1;
     return ret;
 }
 

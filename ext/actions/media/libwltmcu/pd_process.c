@@ -510,7 +510,6 @@ int bt_mcu_send_pw_cmd_standby(void)
 
 int bt_mcu_send_pw_cmd_powerdown(void)
 {
-	printf("------> send poweroff %d\n",__LINE__);
     return bt_mcu_send_cmd_code(MCU_INT_TYPE_POWER_KEY, MCU_INT_CMD_POWEROFF);
 }
 

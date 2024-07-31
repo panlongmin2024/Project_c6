@@ -80,7 +80,6 @@ static void bypass_led_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg
 #endif
 void self_music_effect_ctrl_info_dump_by_tts(void)
 {
-	SYS_LOG_INF("------> %s  %d\n",__func__,__LINE__);
     if (self_music_effect_ctrl_get_enable() == true)
     {
         sys_event_notify(SYS_EVENT_PLAY_MUSIC_EFFECT_ON_TTS);

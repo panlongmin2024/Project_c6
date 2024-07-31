@@ -1788,7 +1788,6 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			}
             break;
 		case PD_SUPPLY_PROP_SINK_HIGH_Z_STATE:
-			//printf("------> sink_flag  %d charging_flag %d\n",pd_mps52002->pd_52002_sink_flag,pd_mps52002->sink_charging_flag);
             val->intval = 0x00;  
 		  	if(pd_mps52002->pd_52002_sink_flag &&(!pd_mps52002->sink_charging_flag))
 		     	val->intval = 0x01;

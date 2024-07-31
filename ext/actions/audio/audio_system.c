@@ -437,7 +437,9 @@ int audio_system_set_stream_volume(int stream_type, int volume)
 
 	if (stream_type == AUDIO_STREAM_MUSIC || stream_type == AUDIO_STREAM_DEFAULT  || stream_type == AUDIO_STREAM_SOUNDBAR) {
 	    audio_system->music_volume = volume;
-	    _audio_system_save_volume(CFG_BTPLAY_VOLUME, volume);
+	    if(bt_manager_get_smartcontrol_vol_sync()){
+			_audio_system_save_volume(CFG_BTPLAY_VOLUME, volume);
+		}
 	}
 
 	if (stream_type == AUDIO_STREAM_LINEIN || stream_type == AUDIO_STREAM_DEFAULT) {

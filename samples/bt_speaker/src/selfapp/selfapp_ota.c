@@ -1374,6 +1374,7 @@ int otadfu_AppTriggerUpgrade(void)
 }
 extern u32_t fw_version_get_sw_code(void);
 extern u8_t fw_version_get_hw_code(void);
+#define HM_OTA_AUTO_TEST	1
 int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 {
 	u8_t *buf = self_get_sendbuf();
@@ -1392,6 +1393,15 @@ int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 			vercode[1] = (u8_t) (swver >> 8);
 			vercode[2] = (u8_t) swver;
 			vercode[3] = (u8_t) hwver;
+
+			#ifdef HM_OTA_AUTO_TEST
+			u32_t ota_swver = fw_version_get_code();
+			u32_t swver_index;
+			swver_index = (u8_t) swver + ((u8_t) (swver >> 8))*16 + ((u8_t) (swver >> 16))*256;
+			printk("ota get version %x %x\n",swver_index,ota_swver);
+			if((ota_swver - swver_index) % 2)
+				vercode[3] = 8;
+			#endif
 
 			selfapp_log_inf("dfu reqVer=0x%x_%x\n", hwver, swver);
 			sendlen +=

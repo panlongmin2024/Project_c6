@@ -99,6 +99,7 @@ typedef struct
 
     unsigned short enter_sniff_time;         //闲置进入sniff的时间
     unsigned short sniff_interval;           //sniff 周期
+    unsigned short smartcontrol_vol_syn: 1;         //smart control音量同步服务，0-表示不支持，1-表示支持    
 } btmgr_feature_cfg_t; 
 
 // 蓝牙配对连接配置
