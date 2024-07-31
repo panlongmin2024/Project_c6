@@ -1654,7 +1654,7 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 {
     // const struct wlt_pd_mps52002_config *cfg = p_pd_mps52002_dev->config->config_info;
    	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
-    static u16_t mcu_one_secound_count = 0;
+    static u16_t mcu_one_secound_count = 8;
 	static u8_t set_fisrt_flag = 0;
 	static u8_t	two_secound_flalg = 0x00;
 
