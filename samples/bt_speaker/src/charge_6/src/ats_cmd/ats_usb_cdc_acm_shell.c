@@ -532,7 +532,7 @@ static int cdc_shell_ats_sw_version_info_dump(struct device *dev, u8_t *buf, int
 		+ (((swver>>16)&0xf)*10000);//0x1070->0x42e
 	
 	hex_to_string_4(swver_hex,buffer);//0x42e->"1070"
-	buffer[3] = (hwver%10)+'0';
+	buffer[3] = (hwver%10)+'0';//"1070"->sw+hw
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_SW_VERSION_INFO_DUMP, sizeof(ATS_CMD_RESP_SW_VERSION_INFO_DUMP)-1, 
