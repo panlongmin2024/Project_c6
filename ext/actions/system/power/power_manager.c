@@ -621,6 +621,16 @@ static int _power_manager_work_handle(void)
 			return 0;
 		}
 		power_manager->current_cap = power_manager_get_battery_capacity();
+
+		if(run_mode_is_demo())
+		{
+			if((power_manager->current_cap<=DEFAULT_NOPOWER_CAP_LEVEL) && pd_get_sink_charging_state())
+			{
+				SYS_LOG_INF("[%d] current_cap%d, charging state:%d; too low power off\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
+				goto _POWER_OFF_;
+			}
+		}
+
 		if(power_manager->last_cap != power_manager->current_cap)
 		{
 			SYS_LOG_INF("[%d] current_cap%d, last_cap:%d \n", __LINE__, power_manager->current_cap, power_manager->last_cap);

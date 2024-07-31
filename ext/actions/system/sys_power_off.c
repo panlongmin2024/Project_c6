@@ -82,7 +82,8 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 #endif
 
 		/** if usb charge not realy power off , goto card reader mode*/
-	if (sys_pm_get_power_5v_status() != 1) {
+	// if (sys_pm_get_power_5v_status() != 1) 				// logic ic changed
+	{
 
 		#ifdef BOARD_POWER_LOCK_GPIO
 		board_power_lock_enable(false);
@@ -109,18 +110,19 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 		while(1);
 		#endif
 		sys_pm_poweroff();
-	} else {
-		#ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-		sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_NORMAL);
-		#else
-		//bt_ui_charging_warning_handle(BT_LED_STATUS_OFF);
-		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,REBOOT_LED_STATUS);
-		k_sleep(200);
-		sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_USER_ENTER_CHARGE);
-		// extern int charge_app_enter_cmd(void);
-		// charge_app_enter_cmd();
-		#endif
-		}
+	} 
+	// else {
+	// 	#ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	// 	sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_NORMAL);
+	// 	#else
+	// 	//bt_ui_charging_warning_handle(BT_LED_STATUS_OFF);
+	// 	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,REBOOT_LED_STATUS);
+	// 	k_sleep(200);
+	// 	sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_USER_ENTER_CHARGE);
+	// 	// extern int charge_app_enter_cmd(void);
+	// 	// charge_app_enter_cmd();
+	// 	#endif
+	// 	}
 	}else{
 		int reason = msg->value;
 #ifdef CONFIG_TTS_MANAGER
