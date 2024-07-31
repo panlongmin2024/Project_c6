@@ -1582,16 +1582,6 @@ void bt_manager_dump_info(void)
     struct bt_manager_context_t *bt_manager = bt_manager_get_context();
 
 	printk("Bt manager info\n");
-	void battery_hw_test(void);
-	battery_hw_test();//////
-	int logic_mcu_read_ntc_status(void);
-	extern int pd_manager_test_set_sink_charge_current(u8_t step);
-	u32_t fw_version_get_sw_code(void);
-	u32_t fw_version_get_hw_code(void);
-	uint32_t swver = fw_version_get_sw_code();
-	u8_t hwver = fw_version_get_hw_code();
-	printk("swver = %d  hwver = %d\n",swver,hwver);
-	printk("ntc = %d\n",logic_mcu_read_ntc_status());
 	printk("num %d, tws_mode %d, bt_state 0x%x, playing %d\n", bt_manager->connected_phone_num,
 		bt_manager->tws_mode, bt_manager->bt_state, (bt_manager_a2dp_get_status() == BT_STATUS_PLAYING));
 	for (i = 0; i < MAX_MGR_DEV; i++) {

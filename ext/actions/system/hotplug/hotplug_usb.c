@@ -901,15 +901,13 @@ static int hotplug_usb_process(int device_state)
 static int hotplug_usb_device_get_state(void)
 {
 	if (otg_b_peripheral_exiting == 1) {
-		printf("------> %s hotplug out\n",__func__);
 		return HOTPLUG_OUT;
 	}
 
 	if (otg_state == OTG_STATE_B_PERIPHERAL) {
-		printf("------> %s hotplug in\n",__func__);
 		return HOTPLUG_IN;
 	}
-	printf("------> %s hotplug out\n",__func__);
+
 	return HOTPLUG_OUT;
 }
 
@@ -926,10 +924,9 @@ static const struct hotplug_device_t hotplug_usb_device = {
 static int hotplug_usb_host_get_state(void)
 {
 	if (otg_state == OTG_STATE_A_HOST) {
-		printf("------> %s hotplug in\n",__func__);
 		return HOTPLUG_IN;
 	}
-	printf("------> %s hotplug out\n",__func__);
+
 	return HOTPLUG_OUT;
 }
 

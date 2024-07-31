@@ -298,9 +298,13 @@ void btmusic_set_auracast_mode(int mode)
 		soc_dvfs_set_level(p_btmusic_app->set_dvfs_level, "bms_br");
 #endif
 		//wait for past req
-		//btmusic_bms_source_init();
-		p_btmusic_app->wait_for_past_req = 1;
-		system_app_set_auracast_mode(mode);
+		if(broadcast_tws_is_ready_for_past()){
+			system_app_set_auracast_mode(mode);
+			btmusic_bms_source_init();
+		}else{
+			p_btmusic_app->wait_for_past_req = 1;
+			system_app_set_auracast_mode(mode);
+		}
 	}
 }
 
@@ -408,8 +412,13 @@ static int _btmusic_init(void *p1, void *p2, void *p3)
 #endif
 		if(temp_role == BTSRV_TWS_MASTER){
 			//wait for past req
-			p_btmusic_app->wait_for_past_req = 1;
-			system_app_set_auracast_mode(3);
+			if(broadcast_tws_is_ready_for_past()){
+				system_app_set_auracast_mode(3);
+				btmusic_bms_source_init();
+			}else{
+				p_btmusic_app->wait_for_past_req = 1;
+				system_app_set_auracast_mode(3);
+			}
 		}else if(temp_role == BTSRV_TWS_NONE){
 			system_app_set_auracast_mode(1);
 			btmusic_bms_source_init();

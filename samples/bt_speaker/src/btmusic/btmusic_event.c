@@ -510,8 +510,12 @@ static int btmusic_handle_letws_disconnected(uint8_t *reason)
 #ifdef CONFIG_BT_LETWS
 	struct btmusic_app_t *btmusic = btmusic_get_app();
 
+#ifdef CONFIG_BT_SELF_APP
 	//08 link loss or ungroup
 	if(*reason != 0x16 || !selfapp_get_group_id()){
+#else
+	if(*reason != 0x16){
+#endif
 		btmusic_stop_playback();
 		btmusic_exit_playback();
 
@@ -1020,7 +1024,8 @@ void btmusic_input_event_proc(struct app_msg *msg)
 
 
 	case MSG_AURACAST_ENTER:
-		if(system_app_get_auracast_mode() == 0){
+		SYS_LOG_INF("MSG_AURACAST_ENTER: %d\n", system_app_get_auracast_mode());
+		if(system_app_get_auracast_mode() != 1){
 			btmusic_switch_auracast();
 		} else if(system_app_get_auracast_mode() == 1){
 			btmusic_player_reset();
@@ -1146,19 +1151,6 @@ void btmusic_tws_event_proc(struct app_msg *msg)
 				}
 				thread_timer_start(&btmusic->broadcast_start_timer, 0, 0);
 				btmusic->wait_for_past_req = 0;
-#if 0
-				struct lasting_stereo_device_info info;
-#ifdef CONFIG_BT_SELF_APP
-				memset(&info,0,sizeof(info));
-				info.ch = selfapp_get_channel();
-				if(info.ch){
-					info.ch = info.ch == 1 ? 2 : 1;
-				}
-				info.id = selfapp_get_group_id();
-				selfapp_get_group_name(info.name,sizeof(info.name));
-#endif
-				broadcast_tws_vnd_set_dev_info(&info);
-#endif
 			}
 			break;
 		}

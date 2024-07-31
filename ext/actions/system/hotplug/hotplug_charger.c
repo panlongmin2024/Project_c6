@@ -40,7 +40,7 @@ int _charger_get_state(void)
 	} else {
 		state = HOTPLUG_OUT;
 	}
-	
+
 	return state;
 }
 

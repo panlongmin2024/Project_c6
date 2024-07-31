@@ -48,7 +48,7 @@ int _sdcard_get_state(void)
 	} else {
 		sdcard_state = HOTPLUG_OUT;
 	}
-	printf("------> %s hotplug %d\n",__func__,sdcard_state);
+
 	return sdcard_state;
 }
 
@@ -120,6 +120,6 @@ int hotplug_sdcard_init(void)
 		sdcard_detect_state.stable_state = HOTPLUG_OUT;
 	}
 #endif
-	printf("------> %s hotplug %d\n",__func__,sdcard_state);
+
 	return hotplug_device_register(&sdcard_hotplug_device);
 }

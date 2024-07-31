@@ -227,7 +227,7 @@ void btmusic_view_init(void)
 	seg_led_manager_clear_screen(LED_CLEAR_ALL);
 #endif
 
-	if (bt_manager_get_connected_dev_num() == 0) {
+	if (bt_manager_audio_get_cur_dev_num() == 0) {
 #ifdef CONFIG_SEG_LED_MANAGER
 		seg_led_display_string(SLED_NUMBER2, "bL", true);
 		seg_led_display_string(SLED_NUMBER4, " ", false);
@@ -267,7 +267,7 @@ void btmusic_view_init(void)
 	if (desktop_manager_get_last_plugin_id() != DESKTOP_PLUGIN_ID_BR_CALL) {
 		if(!btmusic_get_auracast_mode()){
 			sys_event_notify(SYS_EVENT_ENTER_BTMUSIC);
-			if (bt_manager_get_connected_dev_num() == 0) {
+			if (bt_manager_audio_get_cur_dev_num() == 0) {
 				sys_event_notify(SYS_EVENT_BT_WAIT_PAIR);
 			}
 		}
