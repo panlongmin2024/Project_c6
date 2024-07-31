@@ -1671,8 +1671,8 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 		{
 
 			batt_led_display_timeout();
-          extern void power_manager_battery_led_fn(void);
-	      power_manager_battery_led_fn();
+			extern void power_manager_battery_led_fn(void);
+			power_manager_battery_led_fn();
 			if(mcu_ui_ota_deal()){	 
 				return;
 			}
