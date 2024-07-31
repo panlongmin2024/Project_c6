@@ -524,7 +524,6 @@ static int cdc_shell_ats_read_bt_dev_mac_addr(struct device *dev, u8_t *buf, int
 static int cdc_shell_ats_sw_version_info_dump(struct device *dev, u8_t *buf, int len)
 {
 	uint8_t buffer[] = "0000";
-	uint8_t  vercode[4];    // 3Bytes is sw version, big endian, 1Byte is hw version
 	uint32_t swver = fw_version_get_sw_code();//0x0165->1650
 	swver>>=4;//0x10700->0x1070
 	hex_to_string_4(swver,buffer);
