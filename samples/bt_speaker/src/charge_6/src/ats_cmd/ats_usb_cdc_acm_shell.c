@@ -52,6 +52,8 @@ extern void hm_ext_pa_select_left_speaker(void);
 extern void hm_ext_pa_select_right_speaker(void);
 extern int pd_manager_test_set_sink_charge_current(u8_t step);
 extern int pd_manager_test_get_sink_charge_current(u8_t *sink_charge_step);
+extern u32_t fw_version_get_sw_code(void);
+extern u8_t fw_version_get_hw_code(void);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -523,17 +525,9 @@ static int cdc_shell_ats_sw_version_info_dump(struct device *dev, u8_t *buf, int
 {
 	uint8_t buffer[] = "0000";
 	uint8_t  vercode[4];    // 3Bytes is sw version, big endian, 1Byte is hw version
-	uint32_t swver = fw_version_get_code();//0x0165->1650
-
-	vercode[0] = (u8_t)((swver >> 8)&0x0f);
-	vercode[1] = (u8_t)((swver >> 4)&0x00f);
-	vercode[2] = (u8_t)(swver&0x0f);
-	vercode[3] = 0;
-
-	buffer[0] += vercode[0];
-	buffer[1] += vercode[1];
-	buffer[2] += vercode[2];
-	buffer[3] += vercode[3];
+	uint32_t swver = fw_version_get_sw_code();//0x0165->1650
+	swver>>=4;//0x10700->0x1070
+	hex_to_string_4(swver,buffer);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_SW_VERSION_INFO_DUMP, sizeof(ATS_CMD_RESP_SW_VERSION_INFO_DUMP)-1, 
@@ -544,19 +538,10 @@ static int cdc_shell_ats_sw_version_info_dump(struct device *dev, u8_t *buf, int
 }
 static int cdc_shell_ats_hw_version_info_dump(struct device *dev, u8_t *buf, int len)
 {
-	uint8_t buffer[] = "0001";
-	//uint8_t  vercode[4];    // 3Bytes is sw version, big endian, 1Byte is hw version
-	//uint8_t hwver = fw_version_get_hw_code();
+	uint8_t buffer[] = "0000";
+	u8_t hwver = fw_version_get_hw_code();
 
-	/*vercode[0] = (u8_t)((swver >> 8)&0x0f);
-	vercode[1] = (u8_t)((swver >> 4)&0x00f);
-	vercode[2] = (u8_t)(swver&0x0f);
-	vercode[3] = 0;
-
-	buffer[0] += vercode[0];
-	buffer[1] += vercode[1];
-	buffer[2] += vercode[2];
-	buffer[3] += vercode[3];*/
+	hex_to_string_2(hwver,buffer+2);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_HW_VERSION_INFO_DUMP, sizeof(ATS_CMD_RESP_HW_VERSION_INFO_DUMP)-1, 
