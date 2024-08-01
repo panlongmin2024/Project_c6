@@ -1584,7 +1584,7 @@ uint8_t ReadODM(void)
 
 }
 
-void pd_init_and_disable_charge(bool flag)//change user name change user email
+void pd_init_and_disable_charge(bool flag)
 {
 
     if(!ReadODM()){

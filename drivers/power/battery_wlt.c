@@ -443,8 +443,8 @@ static int battery_get_charge_status(struct acts_battery_info *bat, const void *
 		// 	}
 		// }
 
-		if(charge_full_cnt >= 10*10){	//10S
-			charge_full_cnt = 10*10;
+		if(charge_full_cnt >= 3*10){	//10S
+			charge_full_cnt = 3*10;
 			charge_status = POWER_SUPPLY_STATUS_FULL;
 		}
 		else{
