@@ -24,7 +24,7 @@ extern void main_app(void);
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 static bool enter_att_flag = false;
-int get_autotest_connect_status(void);
+
 extern void check_adfu_gpio_key(void);
 
 bool main_get_enter_att_state(void)
@@ -36,7 +36,7 @@ static void main_is_enter_att(void)
 {
 	int property_get = -1;
 	printk("\n %s , enter ---",__func__);
-
+	int get_autotest_connect_status(void);
 	property_get = property_get_int(CFG_AUTO_ENTER_ATS_MODULE, 0);
 	printk("------> get_dat =  %d  att_status %d\n",property_get,get_autotest_connect_status());
     if(get_autotest_connect_status() == 0)
