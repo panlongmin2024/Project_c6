@@ -104,6 +104,7 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 			hotplug_charger_init();	
 			charge_app_state = CHARGING_APP_OK;
 			if(charge_app_force_power_off == 1){
+				SYS_LOG_INF("------> pwroff reaseon %d\n",__LINE__);
 				pd_manager_deinit(0);		
 				sys_pm_poweroff();
 			}	
@@ -269,6 +270,7 @@ static int charge_app_msg_pro(struct app_msg *msg)
 	switch (msg->type) {
 	case MSG_EXIT_APP:
 		//_charge_app_exit();
+		SYS_LOG_INF("------> pwroff reaseon %d\n",__LINE__);
 		charge_app_force_power_off = 1;
 		if(charge_app_state == CHARGING_APP_OK){
 			pd_manager_deinit(0);		
