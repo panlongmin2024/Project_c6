@@ -24,7 +24,7 @@ extern void main_app(void);
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 static bool enter_att_flag = false;
-extern int get_autotest_connect_status(void);
+int get_autotest_connect_status(void);
 extern void check_adfu_gpio_key(void);
 
 bool main_get_enter_att_state(void)
