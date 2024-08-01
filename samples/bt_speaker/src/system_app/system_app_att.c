@@ -58,7 +58,7 @@ Gets whether the stub was successfully connected
 int get_autotest_connect_status(void)
 {
 	int ret;
-
+	return 0;//
 #ifdef CONFIG_ATT_USB_STUB
 	extern uint8_t usb_phy_get_vbus(void);
 	if (usb_phy_get_vbus()) {
@@ -119,6 +119,34 @@ int get_autotest_connect_status(void)
 
 	} else {
 		printk(" not found UART_STUB\n");
+	}
+#endif
+
+#ifdef CONFIG_WLT_DEV_UART
+#ifdef CONFIG_ACTIONS_TRACE
+	/* stub uart and trace both use uart0, forbidden trace dma mode */
+	trace_dma_print_set(false);
+#endif
+	stub_dev = device_get_binding(CONFIG_STUB_DEV_UART_NAME);
+	if (stub_dev != NULL) {
+		ret = stub_open(stub_dev);
+		if (ret != 0) {
+#ifdef CONFIG_ACTIONS_TRACE
+			/* enable dma print */
+			trace_dma_print_set(true);
+#endif
+			//Failed to start the UART stub
+			printk("failed to open UART_WLT: %d\n", ret);
+		} else {
+			printk("UART_WLT ATT\n");
+
+			tool_set_dev_type(TOOL_DEV_TYPE_UART0);
+
+			goto stub_connected;
+		}
+
+	} else {
+		printk(" not found UART_WLT\n");
 	}
 #endif
 
