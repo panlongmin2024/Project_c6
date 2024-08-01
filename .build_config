@@ -1,0 +1,4 @@
+# Build config
+BOARD=ats2875h_charge_6
+APPLICATION=bt_speaker
+CONFIG=charge6
