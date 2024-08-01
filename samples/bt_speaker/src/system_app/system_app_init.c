@@ -408,7 +408,7 @@ void system_app_init(void)
 #endif
 	)	
 	{
-		int property_get = property_get_int(CFG_AUTO_ENTER_ATS_MODULE, 0);
+		int property_get = property_get(CFG_AUTO_ENTER_ATS_MODULE, 0);
 		printf("------> property_get %d\n",property_get);
 		if(property_get != 6){
 			pd_srv_sync_init();

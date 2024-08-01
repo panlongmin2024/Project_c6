@@ -1232,7 +1232,7 @@ static int cdc_shell_ats_nosignal_test_mode(struct device *dev, u8_t *buf, int l
 		dev, ATS_CMD_RESP_NOSIGTESTMODE_IN, sizeof(ATS_CMD_RESP_NOSIGTESTMODE_IN)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
-    result = property_set_factory(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
+    result = property_set(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
 	
 	if (result != 0)
 	{
