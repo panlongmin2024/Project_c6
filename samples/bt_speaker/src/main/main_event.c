@@ -441,7 +441,7 @@ void main_hotplug_event_handle(struct app_msg *msg)
 			}
 			else
 			{
-		
+				SYS_LOG_INF("------>isRealExit %d\n",pd_manager_get_source_change_state());
 				if(!pd_manager_get_source_change_state())
 				{
 	
