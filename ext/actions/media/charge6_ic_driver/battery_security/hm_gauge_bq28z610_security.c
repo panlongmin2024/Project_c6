@@ -420,38 +420,7 @@ se_bool is_backup_authenticated(se_uint8* sn, se_uint8* rsn)
 
     return ret;
 }
+
+
 #endif
-
-void battery_hw_test(void)
-{
-	//se_uint8 cmd_id[] = {0x01,0x00};
-	se_uint8 cmd_Chemical_ID0[] = {0x70,0x00};
-    se_uint8 cmd_Chemical_ID1[] = {0x71,0x00};
-    se_uint8 cmd_Chemical_ID2[] = {0x72,0x00};
-    se_uint8 cmd_Chemical_ID3[] = {0x73,0x00};
-    se_uint8 cmd_Chemical_ID4[] = {0x74,0x00};
-	static se_uint8 output_string[40] = {0};
-	
-    i2c_write_data(bq28z610_i2c_addr, sec_Register_AltManufacturerAccess_L, cmd_Chemical_ID0, 2);
-	i2c_read_data(bq28z610_i2c_addr,sec_Register_AltManufacturerAccess_L,output_string,32);
-	//print_buffer_lazy("output_string:", output_string, 32);
-
-    i2c_write_data(bq28z610_i2c_addr, sec_Register_AltManufacturerAccess_L, cmd_Chemical_ID1, 2);
-	i2c_read_data(bq28z610_i2c_addr,sec_Register_AltManufacturerAccess_L,output_string,32);
-	//print_buffer_lazy("output_string:", output_string, 32);    
-
-    i2c_write_data(bq28z610_i2c_addr, sec_Register_AltManufacturerAccess_L, cmd_Chemical_ID2, 2);
-	i2c_read_data(bq28z610_i2c_addr,sec_Register_AltManufacturerAccess_L,output_string,14);
-	//print_buffer_lazy("output_string:", output_string, 14);  
-
-    i2c_write_data(bq28z610_i2c_addr, sec_Register_AltManufacturerAccess_L, cmd_Chemical_ID3, 2);
-	i2c_read_data(bq28z610_i2c_addr,sec_Register_AltManufacturerAccess_L,output_string,24);
-	//print_buffer_lazy("output_string:", output_string, 24);     
-
-    i2c_write_data(bq28z610_i2c_addr, sec_Register_AltManufacturerAccess_L, cmd_Chemical_ID4, 2);
-	i2c_read_data(bq28z610_i2c_addr,sec_Register_AltManufacturerAccess_L,output_string,24);
-	//print_buffer_lazy("output_string:", output_string, 24);              
-}
-
-
 
