@@ -58,7 +58,6 @@ Gets whether the stub was successfully connected
 int get_autotest_connect_status(void)
 {
 	int ret;
-	return 0;//
 #ifdef CONFIG_ATT_USB_STUB
 	extern uint8_t usb_phy_get_vbus(void);
 	if (usb_phy_get_vbus()) {
