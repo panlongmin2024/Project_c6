@@ -391,6 +391,7 @@ static int _ls8a10049t_check_power_key_pressed(struct logic_mcu_ls8a10049t_devic
 	if(buf[0] == 6){
 		u8_t buffer[1+1] = {8,0};
 		property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffer,1);
+		property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
 		power_key_press = 1;
 		return power_key_press;
 	}
