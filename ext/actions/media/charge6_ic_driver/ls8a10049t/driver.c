@@ -1449,7 +1449,7 @@ static int mcu_ls8a10049t_input_event_report(void)
 				/* plm add: exit wlt test mode! */
 				////start
 				int ats_module_test_mode_write(uint8_t *buf, int size);
-				char buffer[2] = "8";
+				char buffer[2] = {8,0};
 				ats_module_test_mode_write(buffer,sizeof(buffer)-1);
 				////end
 	             dev->mcu_notify(MCU_INT_TYPE_POWER_KEY, &para);

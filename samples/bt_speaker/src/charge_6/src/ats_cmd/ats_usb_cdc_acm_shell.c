@@ -1320,7 +1320,7 @@ static int cdc_shell_ats_get_usb_water(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_enter_module_test_mode(struct device *dev, u8_t *buf, int len)
 {	
 	int result;
-	char buffer[1+1] = "6";
+	char buffer[1+1] = {6,0};
 	result = ats_module_test_mode_write(buffer, sizeof(buffer-1));
 
 	ats_usb_cdc_acm_cmd_response_at_data(
@@ -1332,7 +1332,7 @@ static int cdc_shell_ats_enter_module_test_mode(struct device *dev, u8_t *buf, i
 static int cdc_shell_ats_exit_module_test_mode(struct device *dev, u8_t *buf, int len)
 {	
 	int result;
-	char buffer[1+1] = "8";
+	char buffer[1+1] = {8,0};
 	result = ats_module_test_mode_write(buffer, sizeof(buffer-1));
 
 	ats_usb_cdc_acm_cmd_response_at_data(

@@ -610,7 +610,7 @@ int ats_module_test_mode_write(uint8_t *buf, int size)
     {
         SYS_LOG_ERR("nvram set err\n");
     }
-
+	ret = property_flush(CFG_USER_IN_OUT_ATS_MODULE);
     return ret;
 }
 
