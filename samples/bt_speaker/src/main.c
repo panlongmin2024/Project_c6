@@ -34,11 +34,12 @@ bool main_get_enter_att_state(void)
 
 static void main_is_enter_att(void)
 {
-	char buf[3]={0};
+	char buf[8]={0};
 	int ret,fac_dat_ats;
 	printk("\n %s , enter ---\n",__func__);
 
-	ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
+	ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 4);
+	print_buffer_lazy("------>get user data ", buf, 8);
 	fac_dat_ats = property_get_int(CFG_AUTO_ENTER_ATS_MODULE,1);
 	printk("------> get_dat=%d fac_dat_ats = %d att_status %d\n",buf[0],fac_dat_ats,get_autotest_connect_status());
 
