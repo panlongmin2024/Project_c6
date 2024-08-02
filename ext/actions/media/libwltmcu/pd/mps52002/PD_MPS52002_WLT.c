@@ -929,7 +929,7 @@ int WLT_OTA_PD(bool flag)
 			}
 		}
 		SYS_LOG_INF("[%d] PD OTA FAIL!!! \n\n", __LINE__);
-		sys_pm_reboot(REBOOT_TYPE_NORMAL);
+		//sys_pm_reboot(REBOOT_TYPE_NORMAL);
 	}
 	return ret;
 }

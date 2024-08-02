@@ -39,9 +39,8 @@ static void main_is_enter_att(void)
 	printk("\n %s , enter ---\n",__func__);
 
 	ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
-	print_buffer_lazy("------>get user data ", buf, 2);
 	fac_dat_ats = property_get_int(CFG_AUTO_ENTER_ATS_MODULE,1);
-	printk("------> get_dat=%d fac_dat_ats = %d att_status %d\n",buf[0],fac_dat_ats,get_autotest_connect_status());
+	printk("------> get_dat=%d fac_dat_ats=%d att_status=%d\n",buf[0],fac_dat_ats,get_autotest_connect_status());
 
 	if(fac_dat_ats!=0){
 		printk("\n %s , clear old ats flag!\n",__func__);
