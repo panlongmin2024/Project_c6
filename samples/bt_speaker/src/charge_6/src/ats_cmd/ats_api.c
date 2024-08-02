@@ -605,7 +605,7 @@ int ats_module_test_mode_write(uint8_t *buf, int size)
 
     SYS_LOG_INF("ats_module_test_mode_write\n");
 
-    ret = property_set_factory(CFG_AUTO_ENTER_ATS_MODULE, buf, 1);
+    ret = property_set(CFG_USER_IN_OUT_ATS_MODULE, buf, 1);
     if (ret != 0)
     {
         SYS_LOG_ERR("nvram set err\n");
@@ -620,7 +620,7 @@ int ats_module_test_mode_read(uint8_t *buf, int size)
 
     SYS_LOG_INF("ats_module_test_mode_read\n");
 
-    ret = property_get_int(CFG_AUTO_ENTER_ATS_MODULE, 0);
+    ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, size);
     if (ret < 0)
     {
         SYS_LOG_ERR("auto_enter_ats_module get err:%d\n", ret);

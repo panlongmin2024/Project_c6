@@ -34,11 +34,23 @@ bool main_get_enter_att_state(void)
 
 static void main_is_enter_att(void)
 {
-	int property_get = -1;
-	printk("\n %s , enter ---",__func__);
+	char buf[3]={0};
+	int ret,fac_dat_ats;
+	printk("\n %s , enter ---\n",__func__);
 
-	property_get = property_get_int(CFG_AUTO_ENTER_ATS_MODULE, 0);
-	printk("------> get_dat =  %d  att_status %d\n",property_get,get_autotest_connect_status());
+	ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
+	fac_dat_ats = property_get_int(CFG_AUTO_ENTER_ATS_MODULE,1);
+	printk("------> get_dat=%d fac_dat_ats = %d att_status %d\n",buf[0],fac_dat_ats,get_autotest_connect_status());
+
+	if(fac_dat_ats!=0){
+		printk("\n %s , clear old ats flag!\n",__func__);
+		char buffer[2] = "0";
+		int result = property_set_factory(CFG_AUTO_ENTER_ATS_MODULE, buffer, 1);
+		if(result!=0){
+			result = property_set_factory(CFG_AUTO_ENTER_ATS_MODULE, buffer, 1);
+		}	
+	}
+	
     if(get_autotest_connect_status() == 0)
     {
         enter_att_flag = true;
