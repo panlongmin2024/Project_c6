@@ -409,7 +409,7 @@ void system_app_init(void)
 	)	
 	{
 		char buf[3] = {0};
-		int ret  = property_get_int(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
+		int ret  = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
 		printf("------> ret %d read_dat %d\n",ret,buf[0]);
 		if(ret != 0 || buf[0] != 6){
 			pd_srv_sync_init();
