@@ -71,14 +71,15 @@ static void main_pre_init(void)
 	int terminaltion = false;
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #ifdef CONFIG_ACTIONS_IMG_LOAD
-	int property_nosignal_test_get = property_get_int(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, 0);
-	printf("------> property_nosignal_test_get %d\n",property_nosignal_test_get);
-	if(property_nosignal_test_get == 6){
+	char buf[2]
+	int ret = property_get_int(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE,buf, 1);
+	printf("------> ret %d nosignal_flag\n",ret,buf[0]);
+	if(buf[0] == 6){
 		/* clear enter nosignale flag! */
-		u8_t buffer[1+1] = "0";
-		int result = property_set_factory(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
+		u8_t buffer[1+1] = {0};
+		int result = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
 		if(result!=0){
-			result = property_set_factory(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
+			result = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
 		}
 
 		mcu_ui_power_hold_fn();
