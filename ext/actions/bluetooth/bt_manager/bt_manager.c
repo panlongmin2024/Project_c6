@@ -1592,6 +1592,9 @@ void bt_manager_dump_info(void)
 	int ret = ats_module_test_mode_write(buf_w, 1);
 	printk("------> set ret = %d\n",ret);
 
+	ret = property_flush(CFG_USER_IN_OUT_ATS_MODULE);
+	SYS_LOG_INF("------>property_flush ret %d\n",ret);
+
 	ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf_r, 1);
 	printk("------> get ret = %d dat = %d\n",ret,buf_r[0]);
 
