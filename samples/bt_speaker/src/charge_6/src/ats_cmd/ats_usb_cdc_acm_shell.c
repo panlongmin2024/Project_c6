@@ -201,14 +201,14 @@ static int cdc_shell_ats_exit_ats_and_reset(struct device *dev, u8_t *buf, int l
 
 static int cdc_shell_ats_reboot(struct device *dev, u8_t *buf, int len)
 {
-	u8_t buffre[1+1] = "6";
+	u8_t buffre[1+1] = {6,0};
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_DUT_REBOOT, sizeof(ATS_CMD_RESP_DUT_REBOOT)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 	
 	/* save reboot flag! */
-	property_set_factory(CFG_AUTO_USER_ATS_REBOOT,buffre,1);
-
+	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
+	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
 	sys_pm_reboot(0);
 	return 0;
 }
@@ -1226,13 +1226,14 @@ static int cdc_shell_ats_exit_auracast(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_nosignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
 	int result;
-	u8_t buffer[1+1] = "6";
+	u8_t buffer[1+1] = {6,0};
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_NOSIGTESTMODE_IN, sizeof(ATS_CMD_RESP_NOSIGTESTMODE_IN)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
-    result = property_set_factory(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
+    result = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
+	property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
 	
 	if (result != 0)
 	{
@@ -1320,7 +1321,7 @@ static int cdc_shell_ats_get_usb_water(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_enter_module_test_mode(struct device *dev, u8_t *buf, int len)
 {	
 	int result;
-	char buffer[1+1] = "6";
+	char buffer[1+1] = {6,0};
 	result = ats_module_test_mode_write(buffer, sizeof(buffer-1));
 
 	ats_usb_cdc_acm_cmd_response_at_data(
@@ -1332,7 +1333,7 @@ static int cdc_shell_ats_enter_module_test_mode(struct device *dev, u8_t *buf, i
 static int cdc_shell_ats_exit_module_test_mode(struct device *dev, u8_t *buf, int len)
 {	
 	int result;
-	char buffer[1+1] = "8";
+	char buffer[1+1] = {8,0};
 	result = ats_module_test_mode_write(buffer, sizeof(buffer-1));
 
 	ats_usb_cdc_acm_cmd_response_at_data(

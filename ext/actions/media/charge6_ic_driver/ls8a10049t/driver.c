@@ -385,15 +385,16 @@ static int _ls8a10049t_check_power_key_pressed(struct logic_mcu_ls8a10049t_devic
 
 	/* plm add: for factory test! */
 	////start
-	int property_read_reboot = property_get_int(CFG_AUTO_USER_ATS_REBOOT,0);
-	printf("------> property_read_reboot %d\n",property_read_reboot);
-	if(property_read_reboot == 6){
-		u8_t buffer[1+1] = "8";
-		property_set_factory(CFG_AUTO_USER_ATS_REBOOT,buffer,1);
+	char buf[2]={0};
+	int ret = property_get(CFG_USER_ATS_REBOOT_SYSTEM,buf,1);
+	printf("------> ret %d reboot_dat %d\n",ret,buf[0]);
+	if(buf[0] == 6){
+		u8_t buffer[1+1] = {8,0};
+		property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffer,1);
+		property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
 		power_key_press = 1;
 		return power_key_press;
 	}
-
 	////end
 
     return power_key_press;
@@ -1449,7 +1450,7 @@ static int mcu_ls8a10049t_input_event_report(void)
 				/* plm add: exit wlt test mode! */
 				////start
 				int ats_module_test_mode_write(uint8_t *buf, int size);
-				char buffer[2] = "8";
+				char buffer[2] = {8,0};
 				ats_module_test_mode_write(buffer,sizeof(buffer)-1);
 				////end
 	             dev->mcu_notify(MCU_INT_TYPE_POWER_KEY, &para);

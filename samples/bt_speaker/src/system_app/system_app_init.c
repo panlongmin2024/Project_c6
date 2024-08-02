@@ -408,9 +408,10 @@ void system_app_init(void)
 #endif
 	)	
 	{
-		int property_get = property_get_int(CFG_AUTO_ENTER_ATS_MODULE, 0);
-		printf("------> property_get %d\n",property_get);
-		if(property_get != 6){
+		char buf[2] = {0};
+		int ret  = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
+		printf("------> ret %d read_dat %d\n",ret,buf[0]);
+		if(buf[0] != 6){
 			pd_srv_sync_init();
 		}
 	}

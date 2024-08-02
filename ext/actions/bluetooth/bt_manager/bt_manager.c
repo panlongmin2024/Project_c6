@@ -1582,6 +1582,24 @@ void bt_manager_dump_info(void)
     struct bt_manager_context_t *bt_manager = bt_manager_get_context();
 
 	printk("Bt manager info\n");
+
+	printk(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+	char buf_r[2] = {0};
+	char buf_w[2] = {0};
+
+	//int ret = property_set(CFG_USER_IN_OUT_ATS_MODULE, buf_w, 1);
+	int ats_module_test_mode_write(uint8_t *buf, int size);
+	int ret = ats_module_test_mode_write(buf_w, 1);
+	printk("------> set ret = %d\n",ret);
+
+	ret = property_flush(CFG_USER_IN_OUT_ATS_MODULE);
+	printk("------>property_flush ret %d\n",ret);
+
+	ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf_r, 1);
+	printk("------> get ret = %d dat = %d\n",ret,buf_r[0]);
+
+	printk("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+	
 	printk("num %d, tws_mode %d, bt_state 0x%x, playing %d\n", bt_manager->connected_phone_num,
 		bt_manager->tws_mode, bt_manager->bt_state, (bt_manager_a2dp_get_status() == BT_STATUS_PLAYING));
 	for (i = 0; i < MAX_MGR_DEV; i++) {

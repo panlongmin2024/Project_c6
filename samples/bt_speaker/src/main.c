@@ -26,7 +26,7 @@ extern void main_app(void);
 static bool enter_att_flag = false;
 extern int get_autotest_connect_status(void);
 extern void check_adfu_gpio_key(void);
-
+extern int property_get(const char *key, char *value, int value_len);
 bool main_get_enter_att_state(void)
 {
 	return (enter_att_flag == true);
@@ -34,16 +34,28 @@ bool main_get_enter_att_state(void)
 
 static void main_is_enter_att(void)
 {
-	int property_get = -1;
-	printk("\n %s , enter ---",__func__);
+	char buf[2]={0};
+	int ret,fac_dat_ats;
+	printk("\n %s , enter ---\n",__func__);
 
-	property_get = property_get_int(CFG_AUTO_ENTER_ATS_MODULE, 0);
-	printk("------> get_dat =  %d  att_status %d\n",property_get,get_autotest_connect_status());
+	ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
+	fac_dat_ats = property_get_int(CFG_AUTO_ENTER_ATS_MODULE,1);
+	printk("------> get_dat=%d fac_dat_ats=%d att_status=%d\n",buf[0],fac_dat_ats,get_autotest_connect_status());
+
+	if(fac_dat_ats!=0){
+		printk("\n %s , clear old ats flag!\n",__func__);
+		char buffer[2] = {0};
+		int result = property_set_factory(CFG_AUTO_ENTER_ATS_MODULE, buffer, 1);
+		if(result!=0){
+			result = property_set_factory(CFG_AUTO_ENTER_ATS_MODULE, buffer, 1);
+		}	
+	}
+	
     if(get_autotest_connect_status() == 0)
     {
         enter_att_flag = true;
 		int ats_module_test_mode_write(uint8_t *buf, int size);
-		char buffer[2] = "6";
+		char buffer[2] = {6,0};
 		ats_module_test_mode_write(buffer,sizeof(buffer)-1);		
         return;
     }	
@@ -59,16 +71,17 @@ static void main_pre_init(void)
 	int terminaltion = false;
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #ifdef CONFIG_ACTIONS_IMG_LOAD
-	int property_nosignal_test_get = property_get_int(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, 0);
-	printf("------> property_nosignal_test_get %d\n",property_nosignal_test_get);
-	if(property_nosignal_test_get == 6){
+	char buf[2]={0};
+	int ret = property_get(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE,buf, 1);
+	printf("------> ret %d nosignal_flag %d\n",ret,buf[0]);
+	if(buf[0] == 6){
 		/* clear enter nosignale flag! */
-		u8_t buffer[1+1] = "0";
-		int result = property_set_factory(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
+		u8_t buffer[1+1] = {0};
+		int result = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
 		if(result!=0){
-			result = property_set_factory(CFG_ATS_ENTER_NOSIGNAL_TEST_MODE, buffer, 1);
+			result = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
 		}
-
+		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
 		mcu_ui_power_hold_fn();
 		extern int run_test_image(void);
 		run_test_image();
