@@ -208,7 +208,7 @@ static int cdc_shell_ats_reboot(struct device *dev, u8_t *buf, int len)
 	
 	/* save reboot flag! */
 	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
-
+	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
 	sys_pm_reboot(0);
 	return 0;
 }
@@ -1233,6 +1233,7 @@ static int cdc_shell_ats_nosignal_test_mode(struct device *dev, u8_t *buf, int l
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
     result = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
+	property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
 	
 	if (result != 0)
 	{

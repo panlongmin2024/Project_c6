@@ -81,7 +81,7 @@ static void main_pre_init(void)
 		if(result!=0){
 			result = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
 		}
-
+		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
 		mcu_ui_power_hold_fn();
 		extern int run_test_image(void);
 		run_test_image();
