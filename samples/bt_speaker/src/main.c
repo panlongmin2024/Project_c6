@@ -50,7 +50,6 @@ static void main_is_enter_att(void)
 			result = property_set_factory(CFG_AUTO_ENTER_ATS_MODULE, buffer, 1);
 		}	
 	}
-	
     if(get_autotest_connect_status() == 0)
     {
         enter_att_flag = true;
@@ -71,6 +70,7 @@ static void main_pre_init(void)
 	int terminaltion = false;
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #ifdef CONFIG_ACTIONS_IMG_LOAD
+
 	char buf[2]={0};
 	int ret = property_get(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE,buf, 1);
 	printf("------> ret %d nosignal_flag %d\n",ret,buf[0]);
