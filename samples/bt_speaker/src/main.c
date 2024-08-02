@@ -71,7 +71,7 @@ static void main_pre_init(void)
 	int terminaltion = false;
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #ifdef CONFIG_ACTIONS_IMG_LOAD
-	char buf[2]
+	char buf[2]={0};
 	int ret = property_get(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE,buf, 1);
 	printf("------> ret %d nosignal_flag\n",ret,buf[0]);
 	if(buf[0] == 6){
