@@ -1585,8 +1585,8 @@ void bt_manager_dump_info(void)
 
 	printk(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 	char buf_r[3] = {0};
-	char buf_w[3] = {0};
-	buf_w[0] = 16;
+	static char buf_w[3] = {0};
+	buf_w[0]++;
 	//int ret = property_set(CFG_USER_IN_OUT_ATS_MODULE, buf_w, 1);
 	int ats_module_test_mode_write(uint8_t *buf, int size);
 	int ret = ats_module_test_mode_write(buf_w, 1);
