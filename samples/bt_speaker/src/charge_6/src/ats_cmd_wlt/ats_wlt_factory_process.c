@@ -22,9 +22,9 @@ void ats_wlt_enter(void)
 {
 	SYS_LOG_INF("check wlt ats !\n");
 	uint8_t ReadODM(void);
-	if(ReadODM() == 1){
+	if(ReadODM() == 0){
 		k_sleep(20);
-		if(ReadODM() == 1){
+		if(ReadODM() == 0){
 			/* is wlt factory test ! */
 
 			isWltAtsMode = true;
@@ -361,7 +361,7 @@ int ats_wlt_init(void)
 	}
 
 	trace_dma_print_set(false);//disable system printf
-	//ret = ats_wlt_uart_init(p_ats_info->ats_uart_dev);
+	ret = ats_wlt_uart_init(p_ats_info->ats_uart_dev);
 
     p_ats_info->enabled = true;
 
