@@ -146,7 +146,7 @@ int ats_wlt_response_at_data(struct device *dev, u8_t *cmd, int cmd_len, u8_t *e
 int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
-	int target_index;
+	//int target_index;
 	static u8_t init_flag;
 
 	if (init_flag == 0){
@@ -169,7 +169,7 @@ __exit_exit:
 
 static int wlt_read_data_handler(struct device *dev)
 {
-	ats_uart_t * ats_uart = &ats_uart_context;
+	ats_wlt_uart * ats_uart = &ats_uart_context;
 	int rx_size=0;
 	 
 	int s1;
@@ -184,7 +184,7 @@ static int wlt_read_data_handler(struct device *dev)
 		return 0;
 	}
 	if(dev == NULL){
-		ats_usb_cdc_acm_write_data("dev == NULL",sizeof("dev == NULL")-1);
+		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
 		return 0;
 	}
 	ats_wlt_command_handler(dev, p_ats_info->data_buf, rx_size);
@@ -193,7 +193,7 @@ static int wlt_read_data_handler(struct device *dev)
 
 void ats_wlt_write_data(unsigned char *buf, int len)
 {
-  ats_uart_t * ats_uart = &ats_uart_context;
+  ats_wlt_uart * ats_uart = &ats_uart_context;
   stream_write(ats_uart->uio, buf, len);	
 }
 
@@ -253,7 +253,7 @@ __thread_exit:
 
 int ats_wlt_uart_init(struct device *dev)
 {
-    ats_uart_t * ats_uart = &ats_uart_context;
+    ats_wlt_uart * ats_uart = &ats_uart_context;
     struct uart_stream_param uparam;
 
     console_input_deinit(dev);
