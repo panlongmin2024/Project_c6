@@ -95,6 +95,7 @@ static void main_pre_init(void)
 #endif
 
 #ifdef CONFIG_WLT_ATS_ENABLE
+11
 	/* check if need enter wlt factory test !! */
 	ats_wlt_enter();
 #endif
