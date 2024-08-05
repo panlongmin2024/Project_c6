@@ -9,6 +9,9 @@ static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
 static bool isWltAtsMode = false;
 
+struct thread_timer user_test_timer;
+
+
 extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
 extern struct device *uart_console_dev;
@@ -203,6 +206,11 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 	wlt_read_data_handler(dev);
 }
 
+static void user_test_timer_func(void)
+{
+	SYS_LOG_INF("------> \n");
+	ats_wlt_write_data("------> uart\n",20);
+}
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
     os_sem *callback_sem = (os_sem *)p1;
@@ -223,6 +231,10 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 
 	thread_timer_init(&p_ats_info->rx_timer, wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_info->rx_timer, 0, 10);
+
+	thread_timer_init(&user_test_timer, user_test_timer_func, dev);
+    thread_timer_start(&user_test_timer, 0, 1000);
+	
 	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
 	while (p_ats_info->enabled) 
     {
