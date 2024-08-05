@@ -13,7 +13,6 @@
 #include <property_manager.h>
 
 #include <trace.h>
-#include "debug_inner.h"
 
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
