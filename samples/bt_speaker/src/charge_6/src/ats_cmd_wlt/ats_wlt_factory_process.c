@@ -145,8 +145,59 @@ int ats_wlt_response_at_data(struct device *dev, u8_t *cmd, int cmd_len, u8_t *e
 	return 0;
 }
 
+static int ats_wlt_shell_set_btedr_mac(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_set_btble_mac(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_get_btble_mac(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_set_btedr_name(struct device *dev, u8_t *buf, int len)
+{
+	
+}static int ats_wlt_shell_set_btble_name(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_get_btedr_name(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_get_btble_name(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, int len)
+{
+	
+}
+static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf, int len)
+{
+	
+}
 
-int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
+int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
 	//int target_index;
@@ -157,8 +208,44 @@ int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
 	   ats_wlt_resp_init();
 	}
 
-	if (!memcmp(&buf[index], ATS_AT_CMD_BTEDR_MAC, sizeof(ATS_AT_CMD_BTEDR_MAC)-1)){
-		
+	if (!memcmp(&buf[index], ATS_AT_CMD_SET_BTEDR_MAC, sizeof(ATS_AT_CMD_SET_BTEDR_MAC)-1)){
+		ats_wlt_shell_set_btedr_mac(dev, buf, size);
+	}
+	else if (!memcmp(&buf[index], ATS_AT_CMD_SET_BTBLE_MAC, sizeof(ATS_AT_CMD_SET_BTBLE_MAC)-1)){
+		ats_wlt_shell_set_btble_mac(dev, buf, size);
+	}	
+	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_BTEDR_MAC, sizeof(ATS_AT_CMD_GET_BTEDR_MAC)-1)){
+		ats_wlt_shell_get_btedr_mac(0, 0, 0);
+	}	
+	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_BTBLE_MAC, sizeof(ATS_AT_CMD_GET_BTBLE_MAC)-1)){
+		ats_wlt_shell_get_btble_mac(0, 0, 0);
+	}
+	else if (!memcmp(&buf[index], ATS_AT_CMD_SET_BTEDR_NAME, sizeof(ATS_AT_CMD_SET_BTEDR_NAME)-1)){
+		ats_wlt_shell_set_btedr_name(dev, buf, size);
+	}
+	else if (!memcmp(&buf[index], ATS_AT_CMD_SET_BTBLE_NAME, sizeof(ATS_AT_CMD_SET_BTBLE_NAME)-1)){
+		ats_wlt_shell_set_btble_name(dev, buf, size);
+	}	
+	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_BTEDR_NAME, sizeof(ATS_AT_CMD_GET_BTEDR_NAME)-1)){
+		ats_wlt_shell_get_btedr_name(0, 0, 0);
+	}	
+	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_BTBLE_NAME, sizeof(ATS_AT_CMD_GET_BTBLE_NAME)-1)){
+		ats_wlt_shell_get_btble_name(0, 0, 0);
+	}	
+	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_FIRMWARE_VERSION, sizeof(ATS_AT_CMD_GET_FIRMWARE_VERSION)-1)){
+		ats_wlt_shell_get_firmware_version(0, 0, 0);
+	}	
+	else if (!memcmp(&buf[index], ATS_AT_CMD_GPIO, sizeof(ATS_AT_CMD_GPIO)-1)){
+		ats_wlt_shell_gpio_test(0, 0, 0);
+	}	
+	else if (!memcmp(&buf[index], ATS_AT_CMD_SET_HARMAN_KEY, sizeof(ATS_AT_CMD_SET_HARMAN_KEY)-1)){
+		ats_wlt_shell_harman_key_write(0, 0, 0);
+	}
+	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_SIGNAL, sizeof(ATS_AT_CMD_ENTER_SIGNAL)-1)){
+		ats_wlt_shell_enter_signal_test_mode(0, 0, 0);
+	}
+	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_NON_SIGNAL, sizeof(ATS_AT_CMD_ENTER_NON_SIGNAL)-1)){
+		ats_wlt_shell_enter_nonsignal_test_mode(0, 0, 0);
 	}
 	else{
 	    ats_wlt_cmd_response_ok_or_fail(dev, 0);
@@ -190,7 +277,8 @@ static int wlt_read_data_handler(struct device *dev)
 		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
 		return 0;
 	}
-	ats_wlt_command_handler(dev, p_ats_info->data_buf, rx_size);
+	stream_write(ats_uart->uio, p_ats_info->data_buf, rx_size);
+	ats_wlt_command_shell_handler(dev, p_ats_info->data_buf, rx_size);
 	return 0;
 }
 
@@ -206,12 +294,6 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 	wlt_read_data_handler(dev);
 }
 
-/*static void user_test_timer_func(struct thread_timer *timer, void* pdata)
-{
-	SYS_LOG_INF("------> \n");
-	ats_wlt_write_data("------> uart\n",20);
-	trace_dma_print_set(false);
-}*/
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
     os_sem *callback_sem = (os_sem *)p1;
@@ -232,9 +314,6 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 
 	thread_timer_init(&p_ats_info->rx_timer, wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_info->rx_timer, 0, 10);
-
-	//thread_timer_init(&user_test_timer, user_test_timer_func, dev);
-    //thread_timer_start(&user_test_timer, 0, 1000);
 	
 	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
 	while (p_ats_info->enabled) 
