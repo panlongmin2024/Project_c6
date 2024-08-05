@@ -38,6 +38,7 @@ static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 	static u32_t tiemr_cnt=0;
 	SYS_LOG_INF("------> \n");
 	if(++tiemr_cnt>=10){
+		extern int trace_dma_print_set(unsigned int dma_enable);
 		trace_dma_print_set(false);
 	}
 }
