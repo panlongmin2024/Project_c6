@@ -533,7 +533,7 @@ void system_app_init(void)
 	}
 #endif
 #endif
-	int trace_dma_print_set(unsigned int dma_enable)
+	int trace_dma_print_set(unsigned int dma_enable);
 	trace_dma_print_set(false);
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	user_app_later_init();
