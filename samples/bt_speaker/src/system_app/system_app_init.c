@@ -480,6 +480,9 @@ void system_app_init(void)
 						//trace_dma_print_set(false);
 					}
 #endif
+#ifdef CONFIG_WLT_ATS_ENABLE
+					if(!get_enter_wlt_ats_state())
+#endif
 					trace_init();
 				}
 #endif
@@ -521,6 +524,9 @@ void system_app_init(void)
 			/* stub uart and trace both use uart0, forbidden trace dma mode */
 			//trace_dma_print_set(false);
 		}
+#endif
+#ifdef CONFIG_WLT_ATS_ENABLE
+		if(!get_enter_wlt_ats_state())
 #endif
 		trace_init();
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
