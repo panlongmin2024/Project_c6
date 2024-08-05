@@ -228,6 +228,11 @@ extern u8_t g_reboot_reason;
 extern void user_app_later_init(void);
 extern bool main_get_enter_att_state(void);
 #endif
+#ifdef CONFIG_WLT_ATS_ENABLE
+extern void ats_wlt_enter(void);
+extern bool get_enter_wlt_ats_state(void);
+extern void ats_wlt_start(void);
+#endif
 
 #ifdef CONFIG_CHARGER_APP
 static void system_notify_enter_charger_mode(void)
@@ -402,18 +407,16 @@ void system_app_init(void)
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)
-#endif		 
+#endif	
+#ifdef CONFIG_WLT_ATS_ENABLE
+	&& (!get_enter_wlt_ats_state())
+#endif
 #if (defined CONFIG_TOOL && defined CONFIG_ACTIONS_ATT)
 	&& (!main_get_enter_att_state())
 #endif
 	)	
 	{
-		char buf[2] = {0};
-		int ret  = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
-		printf("------> ret %d read_dat %d\n",ret,buf[0]);
-		if(buf[0] != 6){
-			pd_srv_sync_init();
-		}
+		pd_srv_sync_init();
 	}
 
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
@@ -441,6 +444,12 @@ void system_app_init(void)
 #endif
 #endif
 
+#ifdef CONFIG_WLT_ATS_ENABLE
+		/* wlt factory test start!!! */
+		if(get_enter_wlt_ats_state()){
+			ats_wlt_start();
+		}
+#endif
 		system_app_ota_init();
 
 

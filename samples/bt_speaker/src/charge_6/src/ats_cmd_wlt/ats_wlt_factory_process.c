@@ -1,11 +1,10 @@
 
 #include "ats_wlt_factory_process.h"
 
+#ifdef CONFIG_WLT_ATS_ENABLE
 ats_wlt_uart ats_uart_context;
 static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
-
-
 
 static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
@@ -16,6 +15,14 @@ extern struct device *uart_console_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
 void ats_wlt_write_data(unsigned char *buf, int len);
 
+void ats_wlt_enter(void)
+{
+	
+}
+bool get_enter_wlt_ats_state(void)
+{
+	
+}
 
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
@@ -39,18 +46,6 @@ void hex_to_string_2(u32_t num, u8_t *buf) {
 }
 void string_to_hex_u8(u8_t *buf,u8_t *num) {
 	*num = (buf[0]-'0')*10 + (buf[1]-'0');
-}
-static int cdc_shell_ats_init(void)
-{
-	if (ats_wlt_cmd_resp_buf == NULL){
-		ats_wlt_cmd_resp_buf = malloc(ats_wlt_cmd_resp_buf_size);
-		if (ats_wlt_cmd_resp_buf == NULL){
-			return 0;
-		}
-		memset(ats_wlt_cmd_resp_buf, 0, ats_wlt_cmd_resp_buf_size);
-	}
-
-	return 0;
 }
 
 static int ats_wlt_cmd_response_ok_or_fail(struct device *dev, u8_t is_ok)
@@ -262,22 +257,22 @@ int ats_pre_init(void)
         goto err_exit;
     }
     memset(p_ats_var, 0, sizeof(struct _ats_wlt_var));
-    p_ats_var->ats_wlt_cmd_resp_buf = malloc(ATS_WLT_UART_TX_LEN_MAX);
-    if (p_ats_var->ats_wlt_cmd_resp_buf == NULL){
+    p_ats_var->ats_cmd_resp_buf = malloc(ATS_WLT_UART_TX_LEN_MAX);
+    if (p_ats_var->ats_cmd_resp_buf == NULL){
         SYS_LOG_ERR("buf malloc fail\n");
         ret = -1;
         goto err_exit;
     }
-    memset(p_ats_var->ats_wlt_cmd_resp_buf, 0, ATS_WLT_UART_TX_LEN_MAX);
+    memset(p_ats_var->ats_cmd_resp_buf, 0, ATS_WLT_UART_TX_LEN_MAX);
     os_mutex_init(ats_get_mutex());
 
     goto exit;
 
 err_exit:
     if (p_ats_var){
-        if (p_ats_var->ats_wlt_cmd_resp_buf){
-            free(p_ats_var->ats_wlt_cmd_resp_buf);
-            p_ats_var->ats_wlt_cmd_resp_buf = NULL;
+        if (p_ats_var->ats_cmd_resp_buf){
+            free(p_ats_var->ats_cmd_resp_buf);
+            p_ats_var->ats_cmd_resp_buf = NULL;
         }
         free(p_ats_var);
         p_ats_var = NULL;
@@ -397,6 +392,12 @@ int ats_wlt_deinit(void)
 }
 
 
+void ats_wlt_start(void)
+{
+	ats_wlt_init();
+}
 
+
+#endif
 
 

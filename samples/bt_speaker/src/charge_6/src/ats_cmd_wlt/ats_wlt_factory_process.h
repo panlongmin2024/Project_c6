@@ -18,7 +18,7 @@
 
 #include <logging/sys_log.h>
 
-
+#ifdef CONFIG_WLT_ATS_ENABLE
 #define CFG_WLT_INFO_0   			"WLT_INFO_0"
 #define CFG_WLT_INFO_1   			"WLT_INFO_1"
 
@@ -76,7 +76,7 @@ struct _ats_wlt_thread_msg_t {
 
 
 
-
+#endif
 
 
 
