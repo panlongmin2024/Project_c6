@@ -108,7 +108,7 @@ static void main_pre_init(void)
 #ifdef CONFIG_WLT_ATS_ENABLE
 	/* check if need enter wlt factory test !! */
 	//ats_wlt_enter();
-	thread_timer_init(&main_test_timer, main_test_timer_func, dev);
+	thread_timer_init(&main_test_timer, main_test_timer_func, NULL);
     thread_timer_start(&main_test_timer, 0, 1000);
 #endif
 	user_app_early_init();
