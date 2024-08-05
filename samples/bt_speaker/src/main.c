@@ -51,13 +51,13 @@ static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 	if(tiemr_cnt==2){
 		//trace_mode_set(TRACE_MODE_DISABLE);
 		//trace_dma_print_set(false);
-		ats_wlt_start();
+		//ats_wlt_start();
 		//ats_init();
 		//ats_usb_cdc_acm_init();
 	}
 	else if(tiemr_cnt==20){
 		//trace_mode_set(TRACE_MODE_DMA);
-		trace_dma_print_set(true);
+		//trace_dma_print_set(true);
 	}
 }
 /***************/
@@ -125,7 +125,7 @@ static void main_pre_init(void)
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 	/* check if need enter wlt factory test !! */
-	//ats_wlt_enter();
+	ats_wlt_enter();
 	thread_timer_init(&main_test_timer, main_test_timer_func, NULL);
     thread_timer_start(&main_test_timer, 0, 1000);
 #endif
