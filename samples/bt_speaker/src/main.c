@@ -46,11 +46,11 @@ static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 	if(tiemr_cnt>20)tiemr_cnt=0;
 	if(tiemr_cnt==10){
 		//trace_mode_set(TRACE_MODE_DISABLE);
-		trace_dma_print_set(false);
+		//trace_dma_print_set(false);
 	}
 	else if(tiemr_cnt==20){
 		//trace_mode_set(TRACE_MODE_DMA);
-		trace_dma_print_set(true);
+		//trace_dma_print_set(true);
 	}
 }
 /***************/
