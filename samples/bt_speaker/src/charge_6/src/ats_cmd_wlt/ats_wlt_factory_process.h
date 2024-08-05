@@ -15,7 +15,7 @@
 #include <data_analy.h>
 #include <fw_version.h>
 #include <nvram_config.h>
-
+#include <uart_stream.h>
 #include <logging/sys_log.h>
 
 #ifdef CONFIG_WLT_ATS_ENABLE
