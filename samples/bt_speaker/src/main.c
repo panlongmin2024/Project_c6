@@ -48,7 +48,7 @@ static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 	SYS_LOG_INF("------> tiemr_cnt %d\n",tiemr_cnt);
 	++tiemr_cnt;
 	if(tiemr_cnt>20)tiemr_cnt=0;
-	if(tiemr_cnt==10){
+	if(tiemr_cnt==2){
 		//trace_mode_set(TRACE_MODE_DISABLE);
 		//trace_dma_print_set(false);
 		ats_wlt_start();
