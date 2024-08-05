@@ -481,9 +481,9 @@ void system_app_init(void)
 					}
 #endif
 #ifdef CONFIG_WLT_ATS_ENABLE
-					if(!get_enter_wlt_ats_state())
+					//if(!get_enter_wlt_ats_state())
 #endif
-					trace_init();
+					//trace_init();
 				}
 #endif
 #endif
@@ -526,9 +526,9 @@ void system_app_init(void)
 		}
 #endif
 #ifdef CONFIG_WLT_ATS_ENABLE
-		if(!get_enter_wlt_ats_state())
+		//if(!get_enter_wlt_ats_state())
 #endif
-		trace_init();
+		//trace_init();
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	}
 #endif
