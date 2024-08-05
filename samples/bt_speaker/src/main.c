@@ -51,9 +51,9 @@ static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 	if(tiemr_cnt==10){
 		//trace_mode_set(TRACE_MODE_DISABLE);
 		//trace_dma_print_set(false);
-		//ats_wlt_start();
-		ats_init();
-		ats_usb_cdc_acm_init();
+		ats_wlt_start();
+		//ats_init();
+		//ats_usb_cdc_acm_init();
 	}
 	else if(tiemr_cnt==20){
 		//trace_mode_set(TRACE_MODE_DMA);
