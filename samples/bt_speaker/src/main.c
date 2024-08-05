@@ -170,6 +170,6 @@ static void main_pre_init(void)
 void main(void)
 {
 	main_pre_init();
-
+	
 	main_app();
 }

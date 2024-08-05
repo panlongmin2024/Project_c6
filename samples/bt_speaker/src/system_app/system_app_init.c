@@ -480,10 +480,7 @@ void system_app_init(void)
 						//trace_dma_print_set(false);
 					}
 #endif
-#ifdef CONFIG_WLT_ATS_ENABLE
-					//if(!get_enter_wlt_ats_state())
-#endif
-					//trace_init();
+					trace_init();
 				}
 #endif
 #endif
@@ -525,16 +522,12 @@ void system_app_init(void)
 			//trace_dma_print_set(false);
 		}
 #endif
-#ifdef CONFIG_WLT_ATS_ENABLE
-		//if(!get_enter_wlt_ats_state())
-#endif
-		//trace_init();
+		trace_init();
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	}
 #endif
 #endif
-	int trace_dma_print_set(unsigned int dma_enable);
-	trace_dma_print_set(false);
+
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	user_app_later_init();
 	tts_manager_add_event_lisener(main_system_tts_event_nodify);

@@ -329,7 +329,7 @@ int ats_wlt_init(void)
 
 	int msg_num = 20;
 	int msg_size = sizeof(struct _ats_wlt_thread_msg_t);
-
+	SYS_LOG_INF("------>\n");
 	if(ats_pre_init()){
 		/* pre init fail */
         SYS_LOG_INF("ats_pre_init failed\n");
