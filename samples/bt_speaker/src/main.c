@@ -147,6 +147,8 @@ static void main_pre_init(void)
 void main(void)
 {
 	main_pre_init();
-	
+#ifdef CONFIG_WLT_ATS_ENABLE
+asdfasdfasdfadsfjalsdjfaljdsflajdlfkajdslfajskdlfjasf
+#endif
 	main_app();
 }
