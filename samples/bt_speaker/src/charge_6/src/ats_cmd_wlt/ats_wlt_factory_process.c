@@ -147,54 +147,54 @@ int ats_wlt_response_at_data(struct device *dev, u8_t *cmd, int cmd_len, u8_t *e
 
 static int ats_wlt_shell_set_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_set_btble_mac(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_get_btble_mac(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_set_btedr_name(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }static int ats_wlt_shell_set_btble_name(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_get_btedr_name(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_get_btble_name(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
-	
+	return 0;
 }
 
 int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
