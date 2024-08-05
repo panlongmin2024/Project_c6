@@ -5,9 +5,9 @@
 ats_wlt_uart ats_uart_context;
 static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
-
 static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
+static bool isWltAtsMode = false;
 
 extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
@@ -17,11 +17,21 @@ void ats_wlt_write_data(unsigned char *buf, int len);
 
 void ats_wlt_enter(void)
 {
-	
+	SYS_LOG_INF("check wlt ats !\n");
+	if(ReadODM() == 0){
+		k_sleep(20);
+		if(ReadODM() == 0){
+			/* is wlt factory test ! */
+
+			isWltAtsMode = true;
+			SYS_LOG_INF("real enter wlt ats !\n");
+		}
+	}
 }
 bool get_enter_wlt_ats_state(void)
 {
-	
+	SYS_LOG_INF("check wlt ats !\n");
+	return isWltAtsMode;
 }
 
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
@@ -230,7 +240,6 @@ int ats_wlt_uart_init(struct device *dev)
 
     console_input_deinit(dev);
 	
-
     ats_uart->uio_opened = 0;
 
     uparam.uart_dev_name = "UART_0";

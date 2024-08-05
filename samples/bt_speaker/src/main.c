@@ -68,7 +68,7 @@ extern void ats_wlt_enter(void);
 extern bool get_enter_wlt_ats_state(void);
 #endif
 static void main_pre_init(void)
-{111
+{
 	struct app_msg msg;
 	int terminaltion = false;
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE

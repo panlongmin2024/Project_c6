@@ -229,7 +229,6 @@ extern void user_app_later_init(void);
 extern bool main_get_enter_att_state(void);
 #endif
 #ifdef CONFIG_WLT_ATS_ENABLE
-extern void ats_wlt_enter(void);
 extern bool get_enter_wlt_ats_state(void);
 extern void ats_wlt_start(void);
 #endif
