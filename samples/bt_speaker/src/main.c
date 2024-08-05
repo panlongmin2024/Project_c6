@@ -35,17 +35,21 @@ bool main_get_enter_att_state(void)
 	return (enter_att_flag == true);
 }
 /***************/
+extern int trace_dma_print_set(unsigned int dma_enable);
+int trace_mode_set(unsigned int trace_mode);
 struct thread_timer main_test_timer;
 static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 {
 	static u32_t tiemr_cnt=0;
-	SYS_LOG_INF("------> \n");
-	if(++tiemr_cnt>=10){
-		extern int trace_dma_print_set(unsigned int dma_enable);
-		int trace_mode_set(unsigned int trace_mode);
+	SYS_LOG_INF("------> tiemr_cnt %d\n",tiemr_cnt);
+	++tiemr_cnt;
+	if(tiemr_cnt>20)tiemr_cnt=0;
+	if(tiemr_cnt==10){
 		trace_mode_set(TRACE_MODE_DISABLE);
-		trace_dma_print_set(false);
-	
+		//trace_dma_print_set(false);
+	}
+	else if(tiemr_cnt==20){
+		trace_mode_set(TRACE_MODE_DMA);
 	}
 }
 /***************/
