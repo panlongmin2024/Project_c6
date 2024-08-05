@@ -443,15 +443,6 @@ void system_app_init(void)
 #endif
 #endif
 
-#ifdef CONFIG_WLT_ATS_ENABLE
-#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-		/* wlt factory test start!!! */
-		if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
-			mcu_ui_power_hold_fn();
-			ats_wlt_start();
-		}
-#endif
-#endif
 		system_app_ota_init();
 
 
@@ -503,6 +494,17 @@ void system_app_init(void)
 
 		system_ready();
 	}
+
+#ifdef CONFIG_WLT_ATS_ENABLE
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+			/* wlt factory test start!!! */
+			if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
+				mcu_ui_power_hold_fn();
+				ats_wlt_start();
+			}
+#endif
+#endif
+
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	printf("%s:%d led_manager_set_display\n", __func__, __LINE__);
