@@ -206,7 +206,7 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 	wlt_read_data_handler(dev);
 }
 
-static void user_test_timer_func(void)
+static void user_test_timer_func(struct thread_timer *timer, void* pdata)
 {
 	SYS_LOG_INF("------> \n");
 	ats_wlt_write_data("------> uart\n",20);
