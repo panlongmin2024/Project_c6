@@ -533,7 +533,7 @@ void system_app_init(void)
 	}
 #endif
 #endif
-
+	trace_dma_print_set(false);
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	user_app_later_init();
 	tts_manager_add_event_lisener(main_system_tts_event_nodify);
