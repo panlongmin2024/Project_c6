@@ -39,7 +39,10 @@ static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 	SYS_LOG_INF("------> \n");
 	if(++tiemr_cnt>=10){
 		extern int trace_dma_print_set(unsigned int dma_enable);
+		int trace_mode_set(unsigned int trace_mode);
+		trace_mode_set(TRACE_MODE_DISABLE);
 		trace_dma_print_set(false);
+	
 	}
 }
 /***************/
