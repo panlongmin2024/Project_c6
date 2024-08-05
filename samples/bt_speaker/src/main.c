@@ -12,6 +12,10 @@
 #include "charger/charger.h"
 #include <property_manager.h>
 
+#include <trace.h>
+#include "debug_inner.h"
+
+
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #include <wltmcu_manager_supply.h>
 extern void user_app_early_init(void);
