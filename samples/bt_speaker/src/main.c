@@ -38,6 +38,9 @@ bool main_get_enter_att_state(void)
 extern int trace_dma_print_set(unsigned int dma_enable);
 int trace_mode_set(unsigned int trace_mode);
 extern void ats_wlt_start(void);
+extern int ats_init(void);
+extern int ats_usb_cdc_acm_init(void);
+
 struct thread_timer main_test_timer;
 static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 {
@@ -47,8 +50,10 @@ static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 	if(tiemr_cnt>20)tiemr_cnt=0;
 	if(tiemr_cnt==10){
 		//trace_mode_set(TRACE_MODE_DISABLE);
-		trace_dma_print_set(false);
-		ats_wlt_start();
+		//trace_dma_print_set(false);
+		//ats_wlt_start();
+		ats_init();
+		ats_usb_cdc_acm_init();
 	}
 	else if(tiemr_cnt==20){
 		//trace_mode_set(TRACE_MODE_DMA);

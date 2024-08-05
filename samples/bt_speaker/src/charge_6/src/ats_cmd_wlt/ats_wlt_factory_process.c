@@ -42,7 +42,7 @@ struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
 	return &p_ats_info->msgq;
 }
-static inline os_mutex *ats_get_mutex(void)
+static inline os_mutex *ats_wlt_get_mutex(void)
 {
     return &p_ats_var->ats_mutex;
 }
@@ -304,7 +304,7 @@ int ats_pre_init(void)
         goto err_exit;
     }
     memset(p_ats_var->ats_cmd_resp_buf, 0, ATS_WLT_UART_TX_LEN_MAX);
-    os_mutex_init(ats_get_mutex());
+    os_mutex_init(ats_wlt_get_mutex());
 
     goto exit;
 
