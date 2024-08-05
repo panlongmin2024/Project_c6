@@ -1,39 +1,5 @@
-#include <zephyr.h>
-#include <device.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include "ats_cmd/ats.h"
-#include "common/sys_reboot.h"
-#include <mem_manager.h>
-#include <property_manager.h>
-#include <bt_manager.h>
-#include "soft_version/soft_version.h"
-#include <power_manager.h>
-#include <board.h>
-#include "audio_policy.h"
-#include "volume_manager.h"
-#include "audio_system.h"
-#include "self_media_effect/self_media_effect.h"
-#include <hex_str.h>
-#include <data_analy.h>
-#include <app_ui.h>
-#include <fw_version.h>
-#include <sys_manager.h>
-#include <nvram_config.h>
 
-#include<led_manager.h>
-#include<bt_manager_inner.h>
-#define SYS_LOG_NO_NEWLINE
-#ifdef SYS_LOG_DOMAIN
-#undef SYS_LOG_DOMAIN
-#endif
-#define SYS_LOG_DOMAIN "ats_cdc_shell"
-#include <logging/sys_log.h>
-
-#include <app_launch.h>
-#include <wltmcu_manager_supply.h>
-
+#include "ats_wlt_factory_process.h"
 
 ats_wlt_uart ats_uart_context;
 static struct _wlt_driver_ctx_t *p_ats_info;
