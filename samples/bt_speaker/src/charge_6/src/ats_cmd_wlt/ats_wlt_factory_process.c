@@ -210,6 +210,7 @@ static void user_test_timer_func(struct thread_timer *timer, void* pdata)
 {
 	SYS_LOG_INF("------> \n");
 	ats_wlt_write_data("------> uart\n",20);
+	trace_dma_print_set(false);
 }
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
