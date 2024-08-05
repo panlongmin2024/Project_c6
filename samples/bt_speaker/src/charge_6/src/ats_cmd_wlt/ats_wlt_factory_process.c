@@ -18,6 +18,7 @@ void ats_wlt_write_data(unsigned char *buf, int len);
 void ats_wlt_enter(void)
 {
 	SYS_LOG_INF("check wlt ats !\n");
+	uint8_t ReadODM(void);
 	if(ReadODM() == 0){
 		k_sleep(20);
 		if(ReadODM() == 0){
@@ -89,7 +90,7 @@ static int ats_wlt_cmd_response_ok_or_fail(struct device *dev, u8_t is_ok)
 	}
 	memcpy(&ats_wlt_cmd_resp_buf[index], ATS_AT_CMD_WLT_TAIL, sizeof(ATS_AT_CMD_WLT_TAIL)-1);
 
-	ats_wlt_write_data(dev, ats_wlt_cmd_resp_buf, ats_wlt_cmd_resp_buf_size);
+	ats_wlt_write_data(ats_wlt_cmd_resp_buf, ats_wlt_cmd_resp_buf_size);
 
 	return 0;
 }
@@ -119,7 +120,7 @@ int ats_wlt_response_at_data(struct device *dev, u8_t *cmd, int cmd_len, u8_t *e
 	}
 	
     memcpy(&ats_wlt_cmd_resp_buf[index], ATS_AT_CMD_WLT_TAIL, sizeof(ATS_AT_CMD_WLT_TAIL)-1);
-	ats_wlt_write_data(dev, ats_wlt_cmd_resp_buf, ats_wlt_cmd_resp_buf_size);
+	ats_wlt_write_data(ats_wlt_cmd_resp_buf, ats_wlt_cmd_resp_buf_size);
 
 	return 0;
 }
