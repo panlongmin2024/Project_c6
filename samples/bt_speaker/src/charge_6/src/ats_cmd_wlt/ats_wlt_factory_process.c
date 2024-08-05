@@ -2,7 +2,7 @@
 #include "ats_wlt_factory_process.h"
 
 #ifdef CONFIG_WLT_ATS_ENABLE
-ats_wlt_uart ats_uart_context;
+ats_wlt_uart ats_wlt_uart_context;
 static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
 static uint8_t *ats_wlt_cmd_resp_buf;
@@ -41,11 +41,11 @@ struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 }
 static inline os_mutex *ats_get_mutex(void)
 {
-    return &p_ats_var>ats_mutex;
+    return &p_ats_var->ats_mutex;
 }
 
 // 
-void hex_to_string_4(u32_t num, u8_t *buf) {
+/*void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
 	buf[1] = '0' + num%1000/100;
 	buf[2] = '0' + num%100/10;
@@ -57,7 +57,7 @@ void hex_to_string_2(u32_t num, u8_t *buf) {
 }
 void string_to_hex_u8(u8_t *buf,u8_t *num) {
 	*num = (buf[0]-'0')*10 + (buf[1]-'0');
-}
+}*/
 
 static int ats_wlt_resp_init(void)
 {
@@ -169,7 +169,7 @@ __exit_exit:
 
 static int wlt_read_data_handler(struct device *dev)
 {
-	ats_wlt_uart * ats_uart = &ats_uart_context;
+	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
 	int rx_size=0;
 	 
 	int s1;
@@ -193,7 +193,7 @@ static int wlt_read_data_handler(struct device *dev)
 
 void ats_wlt_write_data(unsigned char *buf, int len)
 {
-  ats_wlt_uart * ats_uart = &ats_uart_context;
+  ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
   stream_write(ats_uart->uio, buf, len);	
 }
 
@@ -253,7 +253,7 @@ __thread_exit:
 
 int ats_wlt_uart_init(struct device *dev)
 {
-    ats_wlt_uart * ats_uart = &ats_uart_context;
+    ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
     struct uart_stream_param uparam;
 
     console_input_deinit(dev);
@@ -338,7 +338,7 @@ int ats_wlt_init(void)
 		goto err_exit;
 	}
 
-	memset(p_ats_info, 0, sizeof(struct _ats_usb_cdc_acm_driver_ctx_t));
+	memset(p_ats_info, 0, sizeof(struct _wlt_driver_ctx_t));
 
 	p_ats_info->ats_uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 	if (p_ats_info->ats_uart_dev == NULL)
