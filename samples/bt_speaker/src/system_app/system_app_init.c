@@ -444,10 +444,12 @@ void system_app_init(void)
 #endif
 
 #ifdef CONFIG_WLT_ATS_ENABLE
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 		/* wlt factory test start!!! */
-		if(get_enter_wlt_ats_state()){
+		if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
 			ats_wlt_start();
 		}
+#endif
 #endif
 		system_app_ota_init();
 

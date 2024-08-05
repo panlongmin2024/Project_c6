@@ -19,9 +19,9 @@ void ats_wlt_enter(void)
 {
 	SYS_LOG_INF("check wlt ats !\n");
 	uint8_t ReadODM(void);
-	if(ReadODM() == 0){
+	if(ReadODM() == 1){
 		k_sleep(20);
-		if(ReadODM() == 0){
+		if(ReadODM() == 1){
 			/* is wlt factory test ! */
 
 			isWltAtsMode = true;
@@ -41,7 +41,7 @@ struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 }
 static inline os_mutex *ats_get_mutex(void)
 {
-    return &p_ats_var>ats_mutex;
+    return &p_ats_var->ats_mutex;
 }
 
 // 
