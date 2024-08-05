@@ -58,6 +58,23 @@ void string_to_hex_u8(u8_t *buf,u8_t *num) {
 	*num = (buf[0]-'0')*10 + (buf[1]-'0');
 }
 
+static int ats_wlt_resp_init(void)
+{
+
+	if (ats_wlt_cmd_resp_buf == NULL)
+	{
+		ats_wlt_cmd_resp_buf = malloc(ats_wlt_cmd_resp_buf_size);
+		if (ats_wlt_cmd_resp_buf == NULL)
+		{
+	
+			return 0;
+		}
+		memset(ats_wlt_cmd_resp_buf, 0, ats_wlt_cmd_resp_buf_size);
+	}
+
+	return 0;
+}
+
 static int ats_wlt_cmd_response_ok_or_fail(struct device *dev, u8_t is_ok)
 {
 	int index = 0;
@@ -133,14 +150,14 @@ int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
 
 	if (init_flag == 0){
 	   init_flag = 1;
-	   cdc_shell_ats_init();
+	   ats_wlt_resp_init();
 	}
 
 	if (!memcmp(&buf[index], ATS_AT_CMD_BTEDR_MAC, sizeof(ATS_AT_CMD_BTEDR_MAC)-1)){
 		
 	}
 	else{
-	    ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+	    ats_wlt_cmd_response_ok_or_fail(dev, 0);
 		goto __exit_exit;
 	}
 	return 0;
