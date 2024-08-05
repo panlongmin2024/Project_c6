@@ -31,7 +31,17 @@ bool main_get_enter_att_state(void)
 {
 	return (enter_att_flag == true);
 }
-
+/***************/
+struct thread_timer main_test_timer;
+static void main_test_timer_func(struct thread_timer *timer, void* pdata)
+{
+	static u32_t tiemr_cnt=0;
+	SYS_LOG_INF("------> \n");
+	if(++tiemr_cnt>=10){
+		trace_dma_print_set(false);
+	}
+}
+/***************/
 static void main_is_enter_att(void)
 {
 	char buf[2]={0};
@@ -96,7 +106,9 @@ static void main_pre_init(void)
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 	/* check if need enter wlt factory test !! */
-	ats_wlt_enter();
+	//ats_wlt_enter();
+	thread_timer_init(&main_test_timer, main_test_timer_func, dev);
+    thread_timer_start(&main_test_timer, 0, 1000);
 #endif
 	user_app_early_init();
 	system_pre_init();
