@@ -1,5 +1,5 @@
 
-#include "ats_wlt_factory_process.h"
+#include "ats_wlt_factory.h"
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 ats_wlt_uart ats_wlt_uart_context;
@@ -9,8 +9,9 @@ static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
 static bool isWltAtsMode_readIO = false;
 //static bool isWltAtsMode_comm = false;
-
+struct device *ats_wlt_enter_uart_dev;
 struct thread_timer user_test_timer;
+struct thread_timer enter_ats_wlt_timer;
 
 
 extern int trace_print_disable_set(unsigned int print_disable);
@@ -20,26 +21,6 @@ extern int trace_dma_print_set(unsigned int dma_enable);
 void ats_wlt_write_data(unsigned char *buf, int len);
 int ats_wlt_deinit(void);
 
-
-void ats_wlt_enter(void)
-{
-	SYS_LOG_INF("check wlt ats !\n");
-	uint8_t ReadODM(void);
-	if(ReadODM() == 1){
-		k_sleep(20);
-		if(ReadODM() == 1){
-			/* is wlt factory test ! */
-
-			isWltAtsMode_readIO = true;
-			SYS_LOG_INF("real enter wlt ats !\n");
-		}
-	}
-}
-bool get_enter_wlt_ats_state(void)
-{
-	SYS_LOG_INF("check wlt ats ! isWltAtsMode_readIO %d\n",isWltAtsMode_readIO);
-	return isWltAtsMode_readIO;
-}
 
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
@@ -305,12 +286,11 @@ static int wlt_read_data_handler(struct device *dev)
 	return 0;
 }
 
-void ats_wlt_write_data(unsigned char *buf, int len)
+static void ats_wlt_write_data(unsigned char *buf, int len)
 {
   ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
   stream_write(ats_uart->uio, buf, len);	
 }
-
 static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
@@ -456,14 +436,8 @@ int ats_wlt_init(void)
 		goto err_exit;		
 	}
 
-	if (p_ats_info)
-	{
-        SYS_LOG_INF("already init\n");
-		return 0;
-	}
-
 	os_sem_init(&callback_sem, 0, 1);
-
+	
 	p_ats_info = malloc(sizeof(struct _wlt_driver_ctx_t));
 	if (p_ats_info == NULL)
 	{

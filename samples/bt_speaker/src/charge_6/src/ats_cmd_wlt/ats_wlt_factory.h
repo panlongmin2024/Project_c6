@@ -48,6 +48,8 @@
 #define ATS_AT_CMD_ENTER_NON_SIGNAL	            "WLT_ENTER_BT_NON_SIGNAL"
 #define ATS_AT_CMD_ENTER_ADFU		            "WLT_ENTER_ADFU"
 #define ATS_AT_CMD_DEVICE_RESET		            "WLT_DEVICE_RESET"
+#define ATS_AT_CMD_ENTER_WLT_ATS	            "TL_ENTER_FAC_MODE_OK"
+
 /* wlt factory test command end */
 
 struct _ats_wlt_var {

@@ -413,13 +413,13 @@ void system_app_init(void)
 #endif			
 		//trace_init();
 		//mcu_ui_power_hold_fn();
-		ats_wlt_start();
+		//ats_wlt_start();
 		//k_sleep(500);//wait 1000ms
 		//trace_init();
 	}
 #endif
 #endif
-
+	k_sleep(5000);
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)
