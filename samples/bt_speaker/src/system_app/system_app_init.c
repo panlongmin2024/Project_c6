@@ -412,8 +412,8 @@ void system_app_init(void)
 		tts_manager_lock();
 #endif			
 		//trace_init();
-		mcu_ui_power_hold_fn();
-		ats_wlt_start();
+		//mcu_ui_power_hold_fn();
+		//ats_wlt_start();
 		//k_sleep(500);//wait 1000ms
 		trace_init();
 	}
