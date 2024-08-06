@@ -5,8 +5,6 @@
 static bool isWltAtsMode_readIO = false;
 //static bool isWltAtsMode_comm = false;
 static struct _wlt_driver_ctx_t *p_ats_wlt_info;
-static struct thread_timer enter_ats_wlt_timer;
-
 
 ats_wlt_uart ats_wlt_uart_enter;
 static void ats_wlt_enter_write_data(unsigned char *buf, int len);
@@ -62,11 +60,11 @@ static void ats_wlt_enter_write_data(unsigned char *buf, int len)
   stream_write(ats_uart->uio, buf, len);	
 }
 /* check wlt ats enter? */
-static void ats_wlt_enter_timer_cb(struct thread_timer *timer, void* pdata)
+/*static void ats_wlt_enter_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
 	ats_wlt_enter_comm_data_handler(dev);
-}
+}*/
 
 static int ats_wlt_enter_uart_init(struct device *dev)
 {
