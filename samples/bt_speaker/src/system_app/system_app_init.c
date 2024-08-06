@@ -411,14 +411,15 @@ void system_app_init(void)
 #ifdef CONFIG_PLAYTTS
 		tts_manager_lock();
 #endif			
-		trace_init();
+		//trace_init();
 		mcu_ui_power_hold_fn();
 		ats_wlt_start();
 		k_sleep(1000);//wait 1000ms
+		trace_init();
 	}
 #endif
 #endif
-		trace_init();
+
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)
