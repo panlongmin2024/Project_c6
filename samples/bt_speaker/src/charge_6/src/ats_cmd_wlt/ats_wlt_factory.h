@@ -53,6 +53,7 @@
 
 
 #define ATS_SEND_ENTER_WLT_ATS	            	"TL_ENTER_FAC_MODE<CR><LF>"
+#define ATS_SEND_ENTER_WLT_ATS_ACK            	"TL_ENTER_FAC_MODE_OKOK<CR><LF>"
 
 /* wlt factory test command end */
 

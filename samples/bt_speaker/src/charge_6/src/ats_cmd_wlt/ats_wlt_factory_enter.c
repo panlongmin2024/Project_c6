@@ -15,6 +15,7 @@ static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
 	//void mcu_ui_power_hold_fn(void);
 	//mcu_ui_power_hold_fn();
+	ats_wlt_enter_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
 	isWltAtsMode_comm = true;
 }
 
@@ -96,8 +97,11 @@ static int ats_wlt_wait_comm(struct device *dev)
 	int times = 25;
 	while(times--){
 		ats_wlt_enter_write_data(ATS_SEND_ENTER_WLT_ATS,sizeof(ATS_SEND_ENTER_WLT_ATS)-1);
-
+	
 		ats_wlt_enter_comm_data_handler(dev);
+		if(isWltAtsMode_comm){
+			break;
+		}
 		k_sleep(20);
 	}
 	return ret;
@@ -130,6 +134,7 @@ int ats_wlt_enter(void)
 			}
 			ats_wlt_enter_uart_init(p_ats_wlt_info->ats_uart_dev);
 			ret = ats_wlt_wait_comm(p_ats_wlt_info->ats_uart_dev);
+			console_input_deinit(p_ats_wlt_info->ats_uart_dev);
 		}
 	}
 	return ret;
