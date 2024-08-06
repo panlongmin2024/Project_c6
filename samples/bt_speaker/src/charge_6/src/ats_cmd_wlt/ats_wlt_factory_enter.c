@@ -13,7 +13,8 @@ static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 
 static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
-	
+	void mcu_ui_power_hold_fn(void);
+	mcu_ui_power_hold_fn();
 }
 
 static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
