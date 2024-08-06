@@ -107,9 +107,9 @@ int ats_wlt_enter(void)
 	int ret = -1;
 	SYS_LOG_INF("check wlt ats ! odm=%d\n",ReadODM());
 	
-	if(ReadODM() == 0){
+	if(ReadODM() == 1){
 		k_sleep(20);
-		if(ReadODM() == 0){
+		if(ReadODM() == 1){
 			/* is wlt factory test ! */
 
 			isWltAtsMode_readIO = true;
