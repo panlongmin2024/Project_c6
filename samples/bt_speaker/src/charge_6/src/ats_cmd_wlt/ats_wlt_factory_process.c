@@ -205,10 +205,6 @@ static int ats_wlt_shell_enter_adfu(struct device *dev, u8_t *buf, int len)
 static int ats_wlt_shell_system_reset(struct device *dev, u8_t *buf, int len)
 {
 	u8_t buffre[1+1] = {6,0};
-	ats_wlt_response_at_data(
-		dev, ATS_CMD_RESP_DUT_REBOOT, sizeof(ATS_CMD_RESP_DUT_REBOOT)-1, 
-		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
-	
 	/* save reboot flag! */
 	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
 	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
