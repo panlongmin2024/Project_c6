@@ -134,6 +134,17 @@ int ats_wlt_enter(void)
 	}
 	return ret;
 }
+
+
+int ats_wlt_check_adfu(void)
+{
+	u32_t value;
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+    gpio_pin_configure(gpio_dev, 2, GPIO_DIR_IN | GPIO_POL_NORMAL);
+    gpio_pin_read(gpio_dev, 2, &value);	
+	SYS_LOG_INF("------>  value=0x%x\n",value);
+}
+
 bool get_enter_wlt_ats_state(void)
 {
 	SYS_LOG_INF("check wlt ats ! isWltAtsMode_readIO %d isWltAtsMode_comm %d\n",isWltAtsMode_readIO,isWltAtsMode_comm);

@@ -94,6 +94,7 @@ static void main_is_enter_att(void)
 #endif
 #ifdef CONFIG_WLT_ATS_ENABLE
 extern int ats_wlt_enter(void);
+extern int ats_wlt_check_adfu(void);
 extern bool get_enter_wlt_ats_state(void);
 #endif
 static void main_pre_init(void)
@@ -126,6 +127,7 @@ static void main_pre_init(void)
 #ifdef CONFIG_WLT_ATS_ENABLE
 	/* check if need enter wlt factory test !! */
 	ats_wlt_enter();
+	ats_wlt_check_adfu();
 	//thread_timer_init(&main_test_timer, main_test_timer_func, NULL);
     //thread_timer_start(&main_test_timer, 0, 100);
 #endif
