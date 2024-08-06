@@ -434,7 +434,7 @@ void system_app_init(void)
 #endif
 	)	
 	{
-		pd_srv_sync_init();
+		//pd_srv_sync_init();
 	}
 	
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
