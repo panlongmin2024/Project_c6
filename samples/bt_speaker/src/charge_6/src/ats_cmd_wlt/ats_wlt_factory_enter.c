@@ -1,5 +1,5 @@
 
-#include "ats_wlt_factory_process.h"
+#include "ats_wlt_factory.h"
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 static bool isWltAtsMode_readIO = false;

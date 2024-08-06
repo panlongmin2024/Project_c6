@@ -16,7 +16,7 @@ extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
 extern struct device *uart_console_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
-void ats_wlt_write_data(unsigned char *buf, int len);
+static void ats_wlt_write_data(unsigned char *buf, int len);
 int ats_wlt_deinit(void);
 
 
