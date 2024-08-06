@@ -143,6 +143,7 @@ int ats_wlt_check_adfu(void)
     gpio_pin_configure(gpio_dev, 2, GPIO_DIR_IN | GPIO_POL_NORMAL);
     gpio_pin_read(gpio_dev, 2, &value);	
 	SYS_LOG_INF("------>  value=0x%x\n",value);
+	return 0;
 }
 
 bool get_enter_wlt_ats_state(void)
