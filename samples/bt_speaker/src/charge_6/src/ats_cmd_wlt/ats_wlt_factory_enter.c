@@ -93,7 +93,7 @@ static int ats_wlt_wait_comm(struct device *dev)
 	int ret = -1;
 	int times = 50;
 	char ats_comm_send[30];
-	int index;
+	int index = 0;
 	while(times--){
 		k_sleep(20);
 		index += sizeof(ATS_AT_CMD_ENTER_WLT_ATS)-1;
