@@ -2,9 +2,11 @@
 #include "ats_wlt_factory_process.h"
 
 #ifdef CONFIG_WLT_ATS_ENABLE
+static bool isWltAtsMode_readIO = false;
+//static bool isWltAtsMode_comm = false;
 
 ats_wlt_uart ats_wlt_uart_enter;
-
+static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 
 static void ats_wlt_enter_success(void)
 {
@@ -41,7 +43,7 @@ static int ats_wlt_enter_comm_data_handler(struct device *dev)
 		return 0;
 	}
 	if(dev == NULL){
-		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
+		ats_wlt_enter_write_data("dev == NULL",sizeof("dev == NULL")-1);
 		return 0;
 	}
 	stream_write(ats_uart->uio, p_ats_info->data_buf, rx_size);
@@ -49,7 +51,7 @@ static int ats_wlt_enter_comm_data_handler(struct device *dev)
 	return 0;
 }
 
-static void ats_wlt_write_data(unsigned char *buf, int len)
+static void ats_wlt_enter_write_data(unsigned char *buf, int len)
 {
   ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
   stream_write(ats_uart->uio, buf, len);	

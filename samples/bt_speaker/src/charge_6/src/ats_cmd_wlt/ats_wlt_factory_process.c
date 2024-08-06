@@ -7,8 +7,6 @@ static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
 static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
-static bool isWltAtsMode_readIO = false;
-//static bool isWltAtsMode_comm = false;
 struct device *ats_wlt_enter_uart_dev;
 struct thread_timer user_test_timer;
 struct thread_timer enter_ats_wlt_timer;
@@ -288,8 +286,8 @@ static int wlt_read_data_handler(struct device *dev)
 
 static void ats_wlt_write_data(unsigned char *buf, int len)
 {
-  ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
-  stream_write(ats_uart->uio, buf, len);	
+	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
+	stream_write(ats_uart->uio, buf, len);	
 }
 static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
