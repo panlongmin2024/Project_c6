@@ -428,14 +428,14 @@ void system_app_init(void)
 		&&(!att_enter_bqb_flag)
 #endif	
 #ifdef CONFIG_WLT_ATS_ENABLE
-	//&& (!get_enter_wlt_ats_state())
+	&& (!get_enter_wlt_ats_state())
 #endif
 #if (defined CONFIG_TOOL && defined CONFIG_ACTIONS_ATT)
 	&& (!main_get_enter_att_state())
 #endif
 	)	
 	{
-		//pd_srv_sync_init();
+		pd_srv_sync_init();
 	}
 	
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {

@@ -3,7 +3,7 @@
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 static bool isWltAtsMode_readIO = false;
-//static bool isWltAtsMode_comm = false;
+static bool isWltAtsMode_comm = false;
 static struct _wlt_driver_ctx_t *p_ats_wlt_info;
 
 ats_wlt_uart ats_wlt_uart_enter;
@@ -15,6 +15,7 @@ static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
 	//void mcu_ui_power_hold_fn(void);
 	//mcu_ui_power_hold_fn();
+	isWltAtsMode_comm = true;
 }
 
 static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
@@ -135,8 +136,8 @@ int ats_wlt_enter(void)
 }
 bool get_enter_wlt_ats_state(void)
 {
-	SYS_LOG_INF("check wlt ats ! isWltAtsMode_readIO %d\n",isWltAtsMode_readIO);
-	return isWltAtsMode_readIO;
+	SYS_LOG_INF("check wlt ats ! isWltAtsMode_readIO %d isWltAtsMode_comm %d\n",isWltAtsMode_readIO,isWltAtsMode_comm);
+	return (isWltAtsMode_readIO&&isWltAtsMode_comm);
 }
 
 #endif
