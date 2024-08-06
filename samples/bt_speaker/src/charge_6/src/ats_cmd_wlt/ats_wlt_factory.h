@@ -50,6 +50,9 @@
 #define ATS_AT_CMD_DEVICE_RESET		            "WLT_DEVICE_RESET"
 #define ATS_AT_CMD_ENTER_WLT_ATS	            "TL_ENTER_FAC_MODE_OK"
 
+
+#define ATS_SEND_ENTER_WLT_ATS	            	"TL_ENTER_FAC_MODE<CR><LF>"
+
 /* wlt factory test command end */
 
 struct _ats_wlt_var {
