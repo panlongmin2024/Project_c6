@@ -403,6 +403,8 @@ void system_app_init(void)
 	}
 #endif
 
+	//k_sleep(2000);
+
 #ifdef CONFIG_WLT_ATS_ENABLE
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	/* wlt factory test start!!! */
@@ -419,7 +421,7 @@ void system_app_init(void)
 	}
 #endif
 #endif
-	k_sleep(5000);
+
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)
