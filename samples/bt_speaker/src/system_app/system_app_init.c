@@ -414,6 +414,7 @@ void system_app_init(void)
 		trace_init();
 		mcu_ui_power_hold_fn();
 		ats_wlt_start();
+		k_sleep(1000);//wait 1000ms
 	}
 #endif
 #endif
