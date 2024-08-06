@@ -418,13 +418,13 @@ void system_app_init(void)
 	}
 #endif
 #endif
-
+		trace_init();
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)
 #endif	
 #ifdef CONFIG_WLT_ATS_ENABLE
-	&& (!get_enter_wlt_ats_state())
+	//&& (!get_enter_wlt_ats_state())
 #endif
 #if (defined CONFIG_TOOL && defined CONFIG_ACTIONS_ATT)
 	&& (!main_get_enter_att_state())
