@@ -105,7 +105,7 @@ static int ats_wlt_wait_comm(struct device *dev)
 int ats_wlt_enter(void)
 {
 	int ret = -1;
-	SYS_LOG_INF("check wlt ats !\n");
+	SYS_LOG_INF("check wlt ats ! odm=%d\n",ReadODM());
 	uint8_t ReadODM(void);
 	if(ReadODM() == 1){
 		k_sleep(20);
