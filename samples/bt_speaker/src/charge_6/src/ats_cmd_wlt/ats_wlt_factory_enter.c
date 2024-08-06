@@ -4,11 +4,13 @@
 #ifdef CONFIG_WLT_ATS_ENABLE
 static bool isWltAtsMode_readIO = false;
 //static bool isWltAtsMode_comm = false;
+static struct _wlt_driver_ctx_t *p_ats_wlt_info;
+
 
 ats_wlt_uart ats_wlt_uart_enter;
 static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 
-static void ats_wlt_enter_success(void)
+static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
 	
 }
@@ -37,7 +39,7 @@ static int ats_wlt_enter_comm_data_handler(struct device *dev)
 		rx_size += s1;
 	} while (s1 > 0);
 
-	memcpy(p_ats_info->data_buf, ats_uart->rx_buffer, rx_size);
+	memcpy(p_ats_wlt_info->data_buf, ats_uart->rx_buffer, rx_size);
 
 	if (rx_size == 0){
 		return 0;
@@ -46,8 +48,8 @@ static int ats_wlt_enter_comm_data_handler(struct device *dev)
 		ats_wlt_enter_write_data("dev == NULL",sizeof("dev == NULL")-1);
 		return 0;
 	}
-	stream_write(ats_uart->uio, p_ats_info->data_buf, rx_size);
-	ats_wlt_command_handler(dev, p_ats_info->data_buf, rx_size);
+	stream_write(ats_uart->uio, p_ats_wlt_info->data_buf, rx_size);
+	ats_wlt_command_handler(dev, p_ats_wlt_info->data_buf, rx_size);
 	return 0;
 }
 
@@ -85,6 +87,8 @@ static int ats_wlt_enter_uart_init(struct device *dev)
     return ats_uart->uio_opened;
 }
 
+
+
 void ats_wlt_enter(void)
 {
 	SYS_LOG_INF("check wlt ats !\n");
@@ -95,8 +99,13 @@ void ats_wlt_enter(void)
 			/* is wlt factory test ! */
 
 			isWltAtsMode_readIO = true;
-			SYS_LOG_INF("real enter wlt ats !\n");
+			SYS_LOG_INF("real entering wlt ats !\n");
 
+			p_ats_wlt_info = malloc(sizeof(struct _wlt_driver_ctx_t));
+			if(p_ats_wlt_info == NULL){
+				SYS_LOG_ERR("uart device not found\n");
+				return;				
+			}
 			/* init uart! */
 			ats_wlt_enter_uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 			if (ats_wlt_enter_uart_dev == NULL)
