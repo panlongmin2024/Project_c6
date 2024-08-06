@@ -91,10 +91,17 @@ static int ats_wlt_enter_uart_init(struct device *dev)
 static int ats_wlt_wait_comm(struct device *dev)
 {
 	int ret = -1;
-	int times = 20;
+	int times = 50;
+	char ats_comm_send[30];
+	int index;
 	while(times--){
 		k_sleep(20);
-		ats_wlt_enter_write_data("ATS_AT_CMD_ENTER_WLT_ATS",sizeof(ATS_AT_CMD_ENTER_WLT_ATS));
+		index += sizeof(ATS_AT_CMD_ENTER_WLT_ATS)-1;
+		memcpy(ats_comm_send,ATS_AT_CMD_ENTER_WLT_ATS,index);
+		index += sizeof(ATS_AT_CMD_WLT_TAIL)-1;
+		memcpy(ats_comm_send,ATS_AT_CMD_WLT_TAIL,index);
+		ats_wlt_enter_write_data(ats_comm_send,index);
+
 
 		ats_wlt_enter_comm_data_handler(dev);
 	}
