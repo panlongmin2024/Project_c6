@@ -7,7 +7,8 @@ static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
 static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
-static bool isWltAtsMode = false;
+static bool isWltAtsMode_readIO = false;
+static bool isWltAtsMode_comm = false;
 
 struct thread_timer user_test_timer;
 
@@ -22,20 +23,20 @@ void ats_wlt_enter(void)
 {
 	SYS_LOG_INF("check wlt ats !\n");
 	uint8_t ReadODM(void);
-	if(ReadODM() == 1){
+	if(ReadODM() == 0){
 		k_sleep(20);
-		if(ReadODM() == 1){
+		if(ReadODM() == 0){
 			/* is wlt factory test ! */
 
-			isWltAtsMode = true;
+			isWltAtsMode_readIO = true;
 			SYS_LOG_INF("real enter wlt ats !\n");
 		}
 	}
 }
 bool get_enter_wlt_ats_state(void)
 {
-	SYS_LOG_INF("check wlt ats ! isWltAtsMode %d\n",isWltAtsMode);
-	return isWltAtsMode;
+	SYS_LOG_INF("check wlt ats ! isWltAtsMode_readIO %d\n",isWltAtsMode_readIO);
+	return isWltAtsMode_readIO;
 }
 
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
