@@ -7,9 +7,7 @@ static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
 static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
-struct device *ats_wlt_enter_uart_dev;
 struct thread_timer user_test_timer;
-struct thread_timer enter_ats_wlt_timer;
 
 
 extern int trace_print_disable_set(unsigned int print_disable);

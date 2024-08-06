@@ -5,10 +5,13 @@
 static bool isWltAtsMode_readIO = false;
 //static bool isWltAtsMode_comm = false;
 static struct _wlt_driver_ctx_t *p_ats_wlt_info;
+static struct device *ats_wlt_enter_uart_dev;
+static struct thread_timer enter_ats_wlt_timer;
 
 
 ats_wlt_uart ats_wlt_uart_enter;
 static void ats_wlt_enter_write_data(unsigned char *buf, int len);
+extern void console_input_deinit(struct device *dev);
 
 static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
