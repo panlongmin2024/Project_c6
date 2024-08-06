@@ -421,7 +421,7 @@ void system_app_init(void)
 	}
 #endif
 #endif
-
+	k_sleep(2000);
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)
@@ -436,7 +436,7 @@ void system_app_init(void)
 	{
 		pd_srv_sync_init();
 	}
-
+	
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
 		bool enter_stub_tool = false;
 
