@@ -23,9 +23,9 @@ void ats_wlt_enter(void)
 {
 	SYS_LOG_INF("check wlt ats !\n");
 	uint8_t ReadODM(void);
-	if(ReadODM() == 0){
+	if(ReadODM() == 1){
 		k_sleep(20);
-		if(ReadODM() == 0){
+		if(ReadODM() == 1){
 			/* is wlt factory test ! */
 
 			isWltAtsMode_readIO = true;
