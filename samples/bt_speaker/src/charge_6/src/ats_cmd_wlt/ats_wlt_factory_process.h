@@ -46,6 +46,8 @@
 #define ATS_AT_CMD_SET_HARMAN_KEY		        "WLT_SET_HARMAN_KEY"
 #define ATS_AT_CMD_ENTER_SIGNAL		            "WLT_ENTER_BT_SIGNAL"
 #define ATS_AT_CMD_ENTER_NON_SIGNAL	            "WLT_ENTER_BT_NON_SIGNAL"
+#define ATS_AT_CMD_ENTER_ADFU		            "WLT_ENTER_ADFU"
+#define ATS_AT_CMD_DEVICE_RESET		            "WLT_DEVICE_RESET"
 /* wlt factory test command end */
 
 struct _ats_wlt_var {

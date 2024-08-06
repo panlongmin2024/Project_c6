@@ -197,6 +197,24 @@ static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf
 {
 	return 0;
 }
+static int ats_wlt_shell_enter_adfu(struct device *dev, u8_t *buf, int len)
+{
+	sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	return 0;
+}
+static int ats_wlt_shell_system_reset(struct device *dev, u8_t *buf, int len)
+{
+	u8_t buffre[1+1] = {6,0};
+	ats_wlt_response_at_data(
+		dev, ATS_CMD_RESP_DUT_REBOOT, sizeof(ATS_CMD_RESP_DUT_REBOOT)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+	
+	/* save reboot flag! */
+	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
+	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
+	sys_pm_reboot(0);
+	return 0;
+}
 
 int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -248,6 +266,12 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_NON_SIGNAL, sizeof(ATS_AT_CMD_ENTER_NON_SIGNAL)-1)){
 		ats_wlt_shell_enter_nonsignal_test_mode(0, 0, 0);
 	}
+	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_ADFU, sizeof(ATS_AT_CMD_ENTER_ADFU)-1)){
+		ats_wlt_shell_enter_adfu(0, 0, 0);
+	}	
+	else if (!memcmp(&buf[index], ATS_AT_CMD_DEVICE_RESET, sizeof(ATS_AT_CMD_DEVICE_RESET)-1)){
+		ats_wlt_shell_system_reset(0, 0, 0);
+	}	
 	else{
 	    ats_wlt_cmd_response_ok_or_fail(dev, 0);
 		goto __exit_exit;
