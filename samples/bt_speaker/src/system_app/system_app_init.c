@@ -348,6 +348,7 @@ void system_app_init(void)
 
 	void user_uuid_init(void);
 	user_uuid_init();
+	mcu_ui_power_hold_fn();
 #ifdef CONFIG_BT_MANAGER
 	system_btmgr_configs_update();
 #endif
