@@ -421,7 +421,7 @@ void system_app_init(void)
 	}
 #endif
 #endif
-	k_sleep(2000);
+
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)

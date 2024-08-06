@@ -5,13 +5,13 @@
 static bool isWltAtsMode_readIO = false;
 //static bool isWltAtsMode_comm = false;
 static struct _wlt_driver_ctx_t *p_ats_wlt_info;
-static struct device *ats_wlt_enter_uart_dev;
 static struct thread_timer enter_ats_wlt_timer;
 
 
 ats_wlt_uart ats_wlt_uart_enter;
 static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 extern void console_input_deinit(struct device *dev);
+static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 
 static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
@@ -89,11 +89,22 @@ static int ats_wlt_enter_uart_init(struct device *dev)
 
     return ats_uart->uio_opened;
 }
-
-
-
-void ats_wlt_enter(void)
+/* wait communicate from PC! */
+static bool ats_wlt_wait_comm(struct device *dev)
 {
+	int ret = -1;
+	int times = 20;
+	while(times--){
+		k_sleep(20);
+		ats_wlt_enter_write_data("ATS_AT_CMD_ENTER_WLT_ATS",sizeof(ATS_AT_CMD_ENTER_WLT_ATS));
+
+		ats_wlt_enter_comm_data_handler(dev);
+	}
+}
+
+int ats_wlt_enter(void)
+{
+	int ret = -1;
 	SYS_LOG_INF("check wlt ats !\n");
 	uint8_t ReadODM(void);
 	if(ReadODM() == 1){
@@ -110,18 +121,17 @@ void ats_wlt_enter(void)
 				return;				
 			}
 			/* init uart! */
-			ats_wlt_enter_uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-			if (ats_wlt_enter_uart_dev == NULL)
+			p_ats_wlt_info->ats_uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+			if (p_ats_wlt_info->ats_uart_dev == NULL)
 			{
 				SYS_LOG_ERR("uart device not found\n");
 				return;
 			}
-			ats_wlt_enter_uart_init(ats_wlt_enter_uart_dev);
-			
-			thread_timer_init(&enter_ats_wlt_timer, ats_wlt_enter_timer_cb, ats_wlt_enter_uart_dev);
-		    thread_timer_start(&enter_ats_wlt_timer, 0, 10);			
+			ats_wlt_enter_uart_init(p_ats_wlt_info->ats_uart_dev);
+			ret = ats_wlt_wait_comm();
 		}
 	}
+	return ret;
 }
 bool get_enter_wlt_ats_state(void)
 {
