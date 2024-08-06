@@ -8,7 +8,7 @@ static struct _ats_wlt_var *p_ats_var;
 static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
 static bool isWltAtsMode_readIO = false;
-static bool isWltAtsMode_comm = false;
+//static bool isWltAtsMode_comm = false;
 
 struct thread_timer user_test_timer;
 
