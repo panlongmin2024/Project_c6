@@ -410,7 +410,7 @@ void system_app_init(void)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	/* wlt factory test start!!! */
 	if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
-		init_bt_manager = false;
+		//init_bt_manager = false;
 #ifdef CONFIG_PLAYTTS
 		//tts_manager_lock();
 #endif			
