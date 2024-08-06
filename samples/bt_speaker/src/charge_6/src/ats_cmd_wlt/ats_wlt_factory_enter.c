@@ -10,7 +10,7 @@ ats_wlt_uart ats_wlt_uart_enter;
 static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 extern void console_input_deinit(struct device *dev);
 static void ats_wlt_enter_write_data(unsigned char *buf, int len);
-
+extern uint8_t ReadODM(void);
 static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
 	//void mcu_ui_power_hold_fn(void);
@@ -106,7 +106,7 @@ int ats_wlt_enter(void)
 {
 	int ret = -1;
 	SYS_LOG_INF("check wlt ats ! odm=%d\n",ReadODM());
-	uint8_t ReadODM(void);
+	
 	if(ReadODM() == 1){
 		k_sleep(20);
 		if(ReadODM() == 1){
