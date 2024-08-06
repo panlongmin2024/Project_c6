@@ -67,7 +67,8 @@ struct _wlt_driver_ctx_t {
 	struct k_msgq msgq;
 	char *msg_buf;
 	struct thread_timer rx_timer;
-
+	struct thread_timer handle_timer;
+	
 	char data_buf[ATS_WLT_UART_RX_LEN_MAX];
 };
 

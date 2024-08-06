@@ -403,6 +403,21 @@ void system_app_init(void)
 	}
 #endif
 
+#ifdef CONFIG_WLT_ATS_ENABLE
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	/* wlt factory test start!!! */
+	if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
+		init_bt_manager = false;
+#ifdef CONFIG_PLAYTTS
+		tts_manager_lock();
+#endif			
+		trace_init();
+		mcu_ui_power_hold_fn();
+		ats_wlt_start();
+	}
+#endif
+#endif
+
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)
@@ -439,21 +454,6 @@ void system_app_init(void)
 			tts_manager_lock();
 #endif
 			autotest_start();
-		}
-#endif
-#endif
-
-#ifdef CONFIG_WLT_ATS_ENABLE
-#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-		/* wlt factory test start!!! */
-		if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
-			init_bt_manager = false;
-#ifdef CONFIG_PLAYTTS
-			tts_manager_lock();
-#endif			
-			trace_init();
-			mcu_ui_power_hold_fn();
-			ats_wlt_start();
 		}
 #endif
 #endif
