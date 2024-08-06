@@ -90,7 +90,7 @@ static int ats_wlt_enter_uart_init(struct device *dev)
     return ats_uart->uio_opened;
 }
 /* wait communicate from PC! */
-static bool ats_wlt_wait_comm(struct device *dev)
+static int ats_wlt_wait_comm(struct device *dev)
 {
 	int ret = -1;
 	int times = 20;
@@ -100,6 +100,7 @@ static bool ats_wlt_wait_comm(struct device *dev)
 
 		ats_wlt_enter_comm_data_handler(dev);
 	}
+	return ret;
 }
 
 int ats_wlt_enter(void)
@@ -118,17 +119,17 @@ int ats_wlt_enter(void)
 			p_ats_wlt_info = malloc(sizeof(struct _wlt_driver_ctx_t));
 			if(p_ats_wlt_info == NULL){
 				SYS_LOG_ERR("uart device not found\n");
-				return;				
+				return -1;				
 			}
 			/* init uart! */
 			p_ats_wlt_info->ats_uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 			if (p_ats_wlt_info->ats_uart_dev == NULL)
 			{
 				SYS_LOG_ERR("uart device not found\n");
-				return;
+				return -1;	
 			}
 			ats_wlt_enter_uart_init(p_ats_wlt_info->ats_uart_dev);
-			ret = ats_wlt_wait_comm();
+			ret = ats_wlt_wait_comm(p_ats_wlt_info->ats_uart_dev);
 		}
 	}
 	return ret;
