@@ -2,8 +2,7 @@
 #include "ats_wlt_factory.h"
 
 #ifdef CONFIG_WLT_ATS_ENABLE
-static bool isWltAtsMode_readIO = false;
-static bool isWltAtsMode_comm = false;
+static bool isWltAtsMode = false;
 static struct _wlt_driver_ctx_t *p_ats_wlt_info;
 
 ats_wlt_uart ats_wlt_uart_enter;
@@ -16,7 +15,7 @@ static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 	//void mcu_ui_power_hold_fn(void);
 	//mcu_ui_power_hold_fn();
 	ats_wlt_enter_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
-	isWltAtsMode_comm = true;
+	isWltAtsMode = true;
 }
 
 static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
@@ -117,7 +116,6 @@ int ats_wlt_enter(void)
 		if(ReadODM() == 1){
 			/* is wlt factory test ! */
 
-			isWltAtsMode_readIO = true;
 			SYS_LOG_INF("real entering wlt ats !\n");
 
 			p_ats_wlt_info = malloc(sizeof(struct _wlt_driver_ctx_t));
@@ -148,13 +146,16 @@ int ats_wlt_check_adfu(void)
     gpio_pin_configure(gpio_dev, 2, GPIO_DIR_IN | GPIO_POL_NORMAL);
     gpio_pin_read(gpio_dev, 2, &value);	
 	SYS_LOG_INF("------>  value=0x%x\n",value);
+	if(!value){
+		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	}
 	return 0;
 }
 
 bool get_enter_wlt_ats_state(void)
 {
-	SYS_LOG_INF("check wlt ats ! isWltAtsMode_readIO %d isWltAtsMode_comm %d\n",isWltAtsMode_readIO,isWltAtsMode_comm);
-	return (isWltAtsMode_readIO&&isWltAtsMode_comm);
+	SYS_LOG_INF("check wlt ats ! isWltAtsMode %d\n",isWltAtsMode);
+	return isWltAtsMode;
 }
 
 #endif
