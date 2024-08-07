@@ -145,7 +145,10 @@ static int shell_reset_pa_test(int argc, char *argv[])
 }
 static int shell_user_set_mac(int argc, char *argv[])
 {
-	printk("------> %s argc %d len %d\n",__func__,argc,sizeof(argv[1]));
+	for(int i=0;i<6;i++){
+		printk("------> %s argc %d len %d %s\n",__func__,argc,sizeof(argv[i]),argv[i]);
+	}
+
 	if(sizeof(argv[1])==12){
 		
 	}
