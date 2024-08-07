@@ -284,6 +284,10 @@ static int wlt_read_data_handler(struct device *dev)
 		SYS_LOG_INF("------>1\n");
 		return 0;
 	}
+	else{
+		SYS_LOG_INF("------>3\n");
+		return 0;
+	}
 	if(dev == NULL){
 		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
 		SYS_LOG_INF("------>2\n");
