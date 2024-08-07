@@ -281,7 +281,7 @@ static int wlt_read_data_handler(struct device *dev)
 	memcpy(p_ats_info->data_buf, ats_uart->rx_buffer, rx_size);
 
 	if (rx_size == 0){
-		SYS_LOG_INF("------>1\n");
+		//SYS_LOG_INF("------>1\n");
 		return 0;
 	}
 	else{
