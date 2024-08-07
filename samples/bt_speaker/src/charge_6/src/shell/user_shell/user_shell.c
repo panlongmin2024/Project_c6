@@ -154,7 +154,7 @@ static int shell_user_set_mac(int argc, char *argv[])
 }
 static int shell_user_set_name(int argc, char *argv[])
 {
-	for(int i=0,i<6;i++){
+	for(int i=0;i<6;i++){
 		printk("------> %s argc %d len %d %s\n",__func__,argc,sizeof(argv[i]),argv[i]);
 	}
 
