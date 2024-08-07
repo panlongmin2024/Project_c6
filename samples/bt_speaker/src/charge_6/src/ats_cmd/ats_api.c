@@ -17,6 +17,7 @@
 #endif
 #define SYS_LOG_DOMAIN "ats_api"
 #include <logging/sys_log.h>
+#include <nvram_config.h>
 
 struct _ats_ctx {
     os_mutex ats_mutex;
@@ -673,3 +674,4 @@ int ats_mac_write(uint8_t *buf, int size)
 	
     return ret;
 }
+
