@@ -97,6 +97,11 @@ typedef enum
 	WLT_ATS_EXIT,
 }ats_wlt_type_e;
 
+enum 
+{
+	RET_NG,
+	RET_OK,
+};
 
 
 #endif

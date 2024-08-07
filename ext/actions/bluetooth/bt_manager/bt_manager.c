@@ -1584,20 +1584,11 @@ void bt_manager_dump_info(void)
 	printk("Bt manager info\n");
 
 	printk(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-	char buf_r[2] = {0};
-	char buf_w[2] = {0};
-
-	//int ret = property_set(CFG_USER_IN_OUT_ATS_MODULE, buf_w, 1);
-	int ats_module_test_mode_write(uint8_t *buf, int size);
-	int ret = ats_module_test_mode_write(buf_w, 1);
-	printk("------> set ret = %d\n",ret);
-
-	ret = property_flush(CFG_USER_IN_OUT_ATS_MODULE);
-	printk("------>property_flush ret %d\n",ret);
-
-	ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf_r, 1);
-	printk("------> get ret = %d dat = %d\n",ret,buf_r[0]);
-
+	u32_t fw_version_get_sw_code(void);
+	u32_t fw_version_get_hw_code(void);
+	uint32_t swver = fw_version_get_sw_code();
+	uint8_t hwver = fw_version_get_hw_code();	
+	printk("------> sw_ver 0x%x , hw_ver 0x%x\n",swver,hwver);
 	printk("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 	
 	printk("num %d, tws_mode %d, bt_state 0x%x, playing %d\n", bt_manager->connected_phone_num,
