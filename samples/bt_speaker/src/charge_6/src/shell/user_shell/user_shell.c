@@ -146,8 +146,8 @@ static int shell_reset_pa_test(int argc, char *argv[])
 static int shell_user_set_mac(int argc, char *argv[])
 {
 	printk("------> %s argc %d\n",__func__,argc);
-	for(int i=0;i<10;i++){
-		printk("------> argv[%d] %c\n",i,argv[i]);
+	for(int i=0;i<3;i++){
+		printk("------> argv[%d] %s\n",i,argv[i]);
 	}
 	
 	return 0;
