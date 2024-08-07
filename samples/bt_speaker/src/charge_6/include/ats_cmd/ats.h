@@ -61,5 +61,6 @@ int ats_module_test_mode_write(uint8_t *buf, int size);
 int ats_module_test_mode_read(uint8_t *buf, int size);
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size);
+int ats_mac_write(uint8_t *buf, int size);
 
 #endif
