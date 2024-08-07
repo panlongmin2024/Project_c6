@@ -143,6 +143,14 @@ static int shell_reset_pa_test(int argc, char *argv[])
      hm_ext_pa_init();
 	return 0;
 }
+static int shell_user_set_mac(int argc, char *argv[])
+{
+	static uint8_t wakelocks_dump_delayed_work_start_flag;
+
+	printk("------> %s argc %d\n",__func__,argc);
+	printk("------> argv %s\n",argv);
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -161,6 +169,7 @@ static const struct shell_cmd commands[] = {
 	{ "enter_bqb", shell_enter_bqb, "enter bqb"},
 	{ "TL_ATS_IN", shell_uart_test, "enter uart test"},
 	{ "reset_pa", shell_reset_pa_test, "test reset pa"},
+	{ "setmac", shell_user_set_mac, "user set mac"},
 	{ NULL, NULL, NULL }
 };
 
