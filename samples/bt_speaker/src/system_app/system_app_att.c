@@ -496,11 +496,11 @@ static int set_nvram_bt_addr(const u8_t * addr)
 
 	hex_to_str((char *)mac_str, (char *)addr_rev, 6);
 
-	ret_val = property_set(CFG_BT_MAC, (char *)mac_str, 12);
+	ret_val = property_set_factory(CFG_BT_MAC, (char *)mac_str, 12);
 	if (ret_val < 0)
 		return ret_val;
 
-	property_flush(CFG_BT_MAC);
+	//property_flush(CFG_BT_MAC);
 
 	return 0;
 }

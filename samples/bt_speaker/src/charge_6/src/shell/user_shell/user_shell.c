@@ -145,10 +145,11 @@ static int shell_reset_pa_test(int argc, char *argv[])
 }
 static int shell_user_set_mac(int argc, char *argv[])
 {
-	for(int i=0;i<6;i++){
+	for(int i=0;i<argc;i++){
 		printk("------> %s argc %d len %d %s\n",__func__,argc,sizeof(argv[i]),argv[i]);
 	}
-
+	int ret_val = property_set_factory(CFG_BT_MAC, (char *)argv[1], 12);
+	printk("------> ret = %d\n",ret_val);
 	if(sizeof(argv[1])==12){
 		
 	}
@@ -157,7 +158,7 @@ static int shell_user_set_mac(int argc, char *argv[])
 }
 static int shell_user_set_name(int argc, char *argv[])
 {
-	for(int i=0;i<6;i++){
+	for(int i=0;i<argc;i++){
 		printk("------> %s argc %d len %d %s\n",__func__,argc,sizeof(argv[i]),argv[i]);
 	}
 
