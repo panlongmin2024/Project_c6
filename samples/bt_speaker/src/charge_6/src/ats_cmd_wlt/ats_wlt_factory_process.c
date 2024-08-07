@@ -295,7 +295,7 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 /* 100ms user timer handle */
 static void wlt_timer_handle(struct thread_timer *timer, void* pdata)
 {
-	static u8_t timer_cnt = 0;
+	//static u8_t timer_cnt = 0;
 	ats_wlt_write_data("------>wle user timer\n",25);
 	/*if(++timer_cnt==8){
 		struct _ats_wlt_thread_msg_t ats_wlt_msg = {0};
