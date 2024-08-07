@@ -661,7 +661,7 @@ int ats_mac_write(uint8_t *buf, int size)
         return -1;
     }
 	SYS_LOG_INF("read mac from flash rw!\n");
-	nvram_config_get_factory(CFG_BT_MAC, read_mac_fac , 12;
+	nvram_config_get_factory(CFG_BT_MAC, read_mac_fac , 12);
 
 	
 	if(memcmp(read_mac_user, read_mac_fac, 12)){
