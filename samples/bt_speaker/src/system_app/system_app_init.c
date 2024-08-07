@@ -348,7 +348,6 @@ void system_app_init(void)
 
 	void user_uuid_init(void);
 	user_uuid_init();
-
 #ifdef CONFIG_BT_MANAGER
 	system_btmgr_configs_update();
 #endif

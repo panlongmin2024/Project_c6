@@ -98,7 +98,7 @@ static int ats_wlt_wait_comm(struct device *dev)
 		ats_wlt_enter_write_data(ATS_SEND_ENTER_WLT_ATS,sizeof(ATS_SEND_ENTER_WLT_ATS)-1);
 	
 		ats_wlt_enter_comm_data_handler(dev);
-		if(isWltAtsMode_comm){
+		if(isWltAtsMode){
 			break;
 		}
 		k_sleep(20);
