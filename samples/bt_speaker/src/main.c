@@ -96,8 +96,8 @@ static void main_pre_init(void)
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 	/* check if need enter wlt factory test !! */
-	//ats_wlt_enter();
-	//ats_wlt_check_adfu();
+	ats_wlt_enter();
+	ats_wlt_check_adfu();
 #endif
 	user_app_early_init();
 	system_pre_init();
