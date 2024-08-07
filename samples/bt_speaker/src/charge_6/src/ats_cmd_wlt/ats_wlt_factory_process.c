@@ -289,19 +289,6 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 	struct device *dev = (struct device *)pdata;
 	wlt_read_data_handler(dev);
 }
-/* 100ms user timer handle */
-static void wlt_timer_handle(struct thread_timer *timer, void* pdata)
-{
-	//static u8_t timer_cnt = 0;
-	ats_wlt_write_data("------>wle user timer\n",25);
-	/*if(++timer_cnt==8){
-		struct _ats_wlt_thread_msg_t ats_wlt_msg = {0};
-		ats_wlt_msg.type = WLT_ATS_EXIT;
-		ats_wlt_msg.value = 0;
-		k_msgq_put(get_ats_wlt_factory_thread_msgq(), &ats_wlt_msg, K_NO_WAIT);	
-	}*/
-}
-
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
     os_sem *callback_sem = (os_sem *)p1;
@@ -322,10 +309,7 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 
 	thread_timer_init(&p_ats_info->rx_timer, wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_info->rx_timer, 0, 10);
-	
-	//thread_timer_init(&p_ats_info->handle_timer, wlt_timer_handle, dev);
-    //thread_timer_start(&p_ats_info->handle_timer, 0, 1000);
-	
+
 	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
 	while (p_ats_info->enabled) 
     {
