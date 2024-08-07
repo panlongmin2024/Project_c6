@@ -408,7 +408,8 @@ void system_app_init(void)
 #ifdef CONFIG_WLT_ATS_ENABLE
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	/* wlt factory test start!!! */
-	if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
+	//if(get_enter_wlt_ats_state() && (!main_get_enter_att_state()))
+	{
 		init_bt_manager = false;
 #ifdef CONFIG_PLAYTTS
 		tts_manager_lock();
@@ -432,7 +433,7 @@ void system_app_init(void)
 #endif
 	)	
 	{
-		pd_srv_sync_init();
+		//pd_srv_sync_init();
 	}
 	
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
