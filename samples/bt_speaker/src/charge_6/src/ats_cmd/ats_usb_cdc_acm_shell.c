@@ -1398,7 +1398,7 @@ static int cdc_shell_ats_bt_mac_write(struct device *dev, u8_t *buf, int len)
 {
 	int result;
 
-	if(len!12){
+	if(len!=12){
 		/* limit length 12 */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 		return 0;
