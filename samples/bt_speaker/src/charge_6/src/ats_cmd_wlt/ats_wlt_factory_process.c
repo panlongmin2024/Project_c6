@@ -281,7 +281,6 @@ static int wlt_read_data_handler(struct device *dev)
 	memcpy(p_ats_info->data_buf, ats_uart->rx_buffer, rx_size);
 
 	if (rx_size == 0){
-		ats_wlt_write_data("123",3);
 		return 0;
 	}
 	if(dev == NULL){
@@ -302,6 +301,7 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
 	wlt_read_data_handler(dev);
+	SYS_LOG_INF("------>n");
 }
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
