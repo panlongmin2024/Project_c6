@@ -287,6 +287,7 @@ static int wlt_read_data_handler(struct device *dev)
 		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
 		return 0;
 	}
+	SYS_LOG_INF("------>n");
 	stream_write(ats_uart->uio, p_ats_info->data_buf, rx_size);
 	ats_wlt_command_shell_handler(dev, p_ats_info->data_buf, rx_size);
 	return 0;
@@ -301,7 +302,6 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
 	wlt_read_data_handler(dev);
-	SYS_LOG_INF("------>n");
 }
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
