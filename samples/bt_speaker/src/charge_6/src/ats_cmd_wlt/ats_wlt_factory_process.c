@@ -301,6 +301,7 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
 	wlt_read_data_handler(dev);
+	ats_wlt_write_data("123",3);
 }
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
