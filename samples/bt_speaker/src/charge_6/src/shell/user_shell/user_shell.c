@@ -145,11 +145,25 @@ static int shell_reset_pa_test(int argc, char *argv[])
 }
 static int shell_user_set_mac(int argc, char *argv[])
 {
-	printk("------> %s argc %d\n",__func__,argc);
-	for(int i=0;i<3;i++){
-		printk("------> argv[%d] %s\n",i,argv[i]);
+	printk("------> %s argc %d len %d\n",__func__,argc,sizeof(argv[1]));
+	if(sizeof(argv[1])==12){
+		
 	}
 	
+	return 0;
+}
+static int shell_user_set_name(int argc, char *argv[])
+{
+	for(int i=0,i<6;i++){
+		printk("------> %s argc %d len %d %s\n",__func__,argc,sizeof(argv[i]),argv[i]);
+	}
+
+	return 0;
+}
+static int shell_user_set_mac_name(int argc, char *argv[])
+{
+	printk("------> %s argc %d\n",__func__,argc);
+
 	return 0;
 }
 
@@ -170,7 +184,9 @@ static const struct shell_cmd commands[] = {
 	{ "enter_bqb", shell_enter_bqb, "enter bqb"},
 	{ "TL_ATS_IN", shell_uart_test, "enter uart test"},
 	{ "reset_pa", shell_reset_pa_test, "test reset pa"},
-	{ "setmac", shell_user_set_mac, "user set mac"},
+	{ "set_mac", shell_user_set_mac, "user set mac"},
+	{ "set_name", shell_user_set_name, "user set name"},
+	{ "set_mac_name", shell_user_set_mac_name, "user set mac name"},
 	{ NULL, NULL, NULL }
 };
 
