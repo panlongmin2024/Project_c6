@@ -303,7 +303,7 @@ void bt_manager_bt_mac(uint8_t *mac_str)
 		}
 
 		hex_to_str(mac_str,mac, 6);
-
+		111
 		property_set_factory(CFG_BT_MAC, mac_str, (MAC_STR_LEN-1));
 	} else {
 		str_to_hex(mac,mac_str, 12);
