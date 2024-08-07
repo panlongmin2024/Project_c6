@@ -1354,8 +1354,6 @@ static int cdc_shell_ats_haman_battery_key_check(struct device *dev, u8_t *buf, 
 	return 0;
 }
 
-
-
 static int cdc_shell_ats_usb_ntc_read_status(struct device *dev, u8_t *buf, int len)
 {	
 	char buffer[2+1] = "00";
@@ -1394,6 +1392,29 @@ static int cdc_shell_ats_select_one_speaker(struct device *dev, u8_t *buf, int l
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
 	return 0;
+}
+
+static int cdc_shell_ats_bt_mac_write(struct device *dev, u8_t *buf, int len)
+{
+	int result;
+
+	if(len!12){
+		/* limit length 12 */
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+		return 0;
+	}
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev,ATS_CMD_RESP_MAC_SET,sizeof(ATS_CMD_RESP_MAC_SET)-1,
+		buf,len);
+
+	result = ats_mac_write(buf, len);
+	if(result<0){
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	}
+	return 0;	
 }
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
@@ -1769,6 +1790,13 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* get sink charge current */
 		cdc_shell_ats_get_sink_charge_current(dev, NULL, 0);	
+	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_MAC_WRITE, sizeof(ATS_AT_CMD_MAC_WRITE)-1))
+	{		   
+		/* set bt mac */
+        index += sizeof(ATS_AT_CMD_MAC_WRITE)-1;
+		target_index = index;
+		cdc_shell_ats_bt_mac_write(dev, &buf[target_index], size-target_index-2);
 	}	
 	else	
 	{

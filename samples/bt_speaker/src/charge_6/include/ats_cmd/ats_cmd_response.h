@@ -75,4 +75,7 @@
 #define ATS_CMD_RESP_GET_USB_NTC_STATUS       			"TL_GET_USB_NTC="
 #define ATS_CMD_RESP_TURN_ON_ONE_SPEAKER       			"TL_SPK_ON_XX="
 
+#define ATS_CMD_RESP_MAC_SET                         	"TL_SET_MAC="
+
+
 #endif

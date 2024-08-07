@@ -633,3 +633,43 @@ int ats_module_test_mode_read(uint8_t *buf, int size)
 
     return ret;
 }
+
+int ats_mac_write(uint8_t *buf, int size)
+{
+    int ret = 0;
+	char read_mac_fac[12]={0};
+	char read_mac_user[12]={0};
+
+    SYS_LOG_INF("write mac to flash rw!\n");
+	ret = property_set_factory(CFG_BT_MAC, buf, 12);
+    if (ret != 0){
+        return -1;
+    }
+	SYS_LOG_INF("write mac to flash user!\n");
+	ret = property_set(CFG_BT_MAC, buf, 12);
+    if (ret != 0){
+        return -1;
+    }
+	ret = property_flush(CFG_USER_IN_OUT_ATS_MODULE);
+    if (ret != 0){
+        return -1;
+    }	
+	SYS_LOG_INF("read mac from flash user!\n");
+	ret = property_get(CFG_BT_MAC, read_mac_user, 12);
+    if (ret != 0){
+        return -1;
+    }
+	SYS_LOG_INF("read mac from flash rw!\n");
+	nvram_config_get_factory(CFG_BT_MAC, read_mac_fac , 12;
+
+	
+	if(memcmp(read_mac_user, read_mac_fac, 12)){
+		return -1;
+	}
+		
+	if(memcmp(buf, read_mac_fac, 12)){
+		return -1;
+	}
+	
+    return ret;
+}
