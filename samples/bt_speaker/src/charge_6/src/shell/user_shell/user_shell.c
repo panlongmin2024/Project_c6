@@ -145,10 +145,11 @@ static int shell_reset_pa_test(int argc, char *argv[])
 }
 static int shell_user_set_mac(int argc, char *argv[])
 {
-	static uint8_t wakelocks_dump_delayed_work_start_flag;
-
 	printk("------> %s argc %d\n",__func__,argc);
-	printk("------> argv %s\n",argv);
+	for(int i=0;i<10;i++){
+		printk("------> argv[%d] %c\n",i,argv[i]);
+	}
+	
 	return 0;
 }
 
