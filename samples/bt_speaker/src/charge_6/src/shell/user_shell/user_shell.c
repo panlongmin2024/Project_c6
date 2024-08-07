@@ -143,6 +143,8 @@ static int shell_reset_pa_test(int argc, char *argv[])
      hm_ext_pa_init();
 	return 0;
 }
+
+extern int property_set_factory(const char *key, char *value, int value_len);
 static int shell_user_set_mac(int argc, char *argv[])
 {
 	for(int i=0;i<argc;i++){
