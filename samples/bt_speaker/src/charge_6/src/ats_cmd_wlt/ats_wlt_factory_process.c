@@ -281,13 +281,15 @@ static int wlt_read_data_handler(struct device *dev)
 	memcpy(p_ats_info->data_buf, ats_uart->rx_buffer, rx_size);
 
 	if (rx_size == 0){
+		SYS_LOG_INF("------>1\n");
 		return 0;
 	}
 	if(dev == NULL){
 		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
+		SYS_LOG_INF("------>2\n");
 		return 0;
 	}
-	SYS_LOG_INF("------>n");
+	SYS_LOG_INF("------>123\n");
 	stream_write(ats_uart->uio, p_ats_info->data_buf, rx_size);
 	ats_wlt_command_shell_handler(dev, p_ats_info->data_buf, rx_size);
 	return 0;
