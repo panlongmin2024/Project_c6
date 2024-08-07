@@ -151,7 +151,7 @@ static int shell_user_set_mac(int argc, char *argv[])
 {
 	int ret_val = property_set_factory(CFG_BT_MAC, (char *)argv[1], 12);
 	
-	return 0;
+	return ret_val;
 }
 static int shell_user_set_name(int argc, char *argv[])
 {
