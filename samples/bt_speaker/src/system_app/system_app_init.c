@@ -419,7 +419,7 @@ void system_app_init(void)
 #endif
 	)	
 	{
-		//pd_srv_sync_init();
+		pd_srv_sync_init();
 	}
 	
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
@@ -450,9 +450,11 @@ void system_app_init(void)
 #ifdef CONFIG_WLT_ATS_ENABLE
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 			/* wlt factory test start!!! */
-			//if(get_enter_wlt_ats_state() && (!main_get_enter_att_state()))
+			bool enter_ats_wlt_flag = false;
+			if(get_enter_wlt_ats_state() && (!main_get_enter_att_state()))
 			{
 				init_bt_manager = false;
+				enter_ats_wlt_flag = true;
 #ifdef CONFIG_PLAYTTS
 				tts_manager_lock();
 #endif			
@@ -466,8 +468,12 @@ void system_app_init(void)
 
 		system_app_ota_init();
 
-
+#ifdef CONFIG_WLT_ATS_ENABLE
+		if (enter_stub_tool == false && enter_ats_wlt_flag == false) {
+#else
 		if (enter_stub_tool == false) {
+#endif
+		
 #ifdef CONFIG_CARD_READER_APP
 			if (usb_hotplug_device_mode()
 			    && !(reason == REBOOT_REASON_NORMAL)) {
