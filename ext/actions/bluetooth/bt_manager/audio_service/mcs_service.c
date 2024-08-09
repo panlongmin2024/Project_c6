@@ -13,7 +13,7 @@ const struct bt_gatt_service_static mcs_svc = {
 
 #else /* CONFIG_BT_MCS_SERVICE */
 
-#if ((defined(CONFIG_BT_PTS_TEST)) || (defined(CONFIG_BT_LE_AUDIO_MASTER)))
+#if ((defined(CONFIG_BT_LEA_PTS_TEST)) || (defined(CONFIG_BT_LE_AUDIO_MASTER)))
 static void mcs_media_player_name_cfg_changed(struct bt_conn *conn, uint8_t conn_type,
 										const struct bt_gatt_attr *attr, uint16_t value)
 {
@@ -109,7 +109,7 @@ BT_GATT_SERVICE_DEFINE(mcs_svc,
 			       bt_mcs_read_playback_speed, bt_mcs_write_playback_speed, NULL),
 	BT_GATT_CCC(mcs_playback_speed_cfg_changed,
             BT_GATT_PERM_READ | BT_AUDIO_GATT_PERM_WRITE),
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_MEDIA_STATE,               	
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_MEDIA_STATE,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_AUDIO_GATT_PERM_READ,
 			       bt_mcs_read_media_state, NULL, NULL),
@@ -133,11 +133,11 @@ BT_GATT_SERVICE_DEFINE(mcs_svc,
                    BT_AUDIO_GATT_PERM_READ,
                    bt_mcs_read_ccid, NULL, NULL),
 );
-#else /* CONFIG_BT_LE_AUDIO_MASTER || CONFIG_BT_PTS_TEST */
+#else /* CONFIG_BT_LE_AUDIO_MASTER || CONFIG_BT_LEA_PTS_TEST */
 const struct bt_gatt_service_static mcs_svc = {
 	.attrs = NULL,
 	.attr_count = 0,
 };
-#endif /* CONFIG_BT_LE_AUDIO_MASTER || CONFIG_BT_PTS_TEST */
+#endif /* CONFIG_BT_LE_AUDIO_MASTER || CONFIG_BT_LEA_PTS_TEST */
 
 #endif /* CONFIG_BT_MCS_SERVICE */

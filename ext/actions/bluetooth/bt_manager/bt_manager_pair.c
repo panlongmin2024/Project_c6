@@ -843,7 +843,9 @@ void bt_manager_enter_pair_mode_ex(void)
                 }
                 #endif
 
-                btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_PHONE);
+                if(!bt_manager->auto_reconnect_timeout){
+                    btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_PHONE);
+                }
 
                 bt_manager->pair_mode_state = BT_PAIR_MODE_START_PAIR;
                 bt_manager->enter_pair_mode_state_update = true;

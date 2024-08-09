@@ -78,7 +78,8 @@ void charge_app_view_deinit(void)
 #ifdef CONFIG_LED_MANAGER
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);		
+	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+	pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));		
 #endif
 #endif	
 	SYS_LOG_INF("ok\n");

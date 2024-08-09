@@ -244,12 +244,6 @@ int init_key_based_pairing(uint8_t* packet, int packet_length)
 		}
 	} 
 	else if (packet_length == AES_BLOCK_SIZE + ECDH_PUBLIC_KEY_SIZE){
-		if (!bluetooth_provider->is_pairing()) {
-			// If we are not in pairing mode, exit immediately because anti-spoofing
-			// key pairing should only be done in pairing mode.
-			SYS_LOG_INF("not in pairing mode\n");
-			goto keybase_pair_exit;
-		}
 
 		// Copy the public key from the last 64 bytes of the packet and get the
 		// headset's private key.
@@ -265,7 +259,16 @@ int init_key_based_pairing(uint8_t* packet, int packet_length)
 		
 		// Decrypt the first 16-bytes of the packet.
 		crypto_provider->decrypt(key, packet);
-		
+
+        if (!bluetooth_provider->is_pairing()) {
+            // If we are not in pairing mode, exit immediately because anti-spoofing
+            // key pairing should only be done in pairing mode.
+            if ((packet[1] & RETROACTIVELY_WRITING_ACCOUNT_KEY) == 0){
+                SYS_LOG_INF("not in pairing mode\n");
+                goto keybase_pair_exit;
+            }
+        }
+
 		// Verify that it matches the headset's public or BLE address.
 		uint8_t ble_address[MAC_ADDRESS_LENGTH];
 		uint8_t public_address[MAC_ADDRESS_LENGTH];

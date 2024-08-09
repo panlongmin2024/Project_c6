@@ -539,6 +539,11 @@ int btif_audio_vnd_connected(uint16_t handle)
 					MSG_BTSRV_AUDIO_VND_CONNECTED, handle);
 }
 
+int btif_audio_get_remote_name(uint16_t handle, get_remote_lea_name_cb callback)
+{
+	return btsrv_audio_get_remote_name(handle, callback);
+}
+
 int btif_audio_adv_cb_register(bt_audio_adv_cb start, bt_audio_adv_cb stop)
 {
 	struct btsrv_audio_adv_cb cb = {

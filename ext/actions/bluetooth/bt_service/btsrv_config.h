@@ -10,7 +10,6 @@
 #ifndef __BTSRV_CONFIG_H__
 #define __BTSRV_CONFIG_H__
 
-#define CONFIG_MAX_BT_NAME_LEN      32
 #define CONFIG_MAX_BT_ISO_RX_LEN            200
 #define CONFIG_MAX_BT_ISO_TX_LEN            200
 #if 1	// TODO: not used

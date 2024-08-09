@@ -620,6 +620,19 @@ bool tts_manager_is_locked(void)
 	return result;
 }
 
+void tts_manager_os_mutex_lock(void)
+{
+	struct tts_manager_ctx_t *tts_ctx = _tts_get_ctx();
+
+	os_mutex_lock(&tts_ctx->tts_mutex, OS_FOREVER);
+}
+
+void tts_manager_os_mutex_unlock(void)
+{
+	struct tts_manager_ctx_t *tts_ctx = _tts_get_ctx();
+
+	os_mutex_unlock(&tts_ctx->tts_mutex);
+}
 
 #if 0
 void tts_manager_filter_music_unlock(const char *log_str)

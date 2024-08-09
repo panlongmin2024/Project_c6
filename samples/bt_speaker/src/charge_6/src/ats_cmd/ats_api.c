@@ -669,4 +669,3 @@ int ats_mac_write(uint8_t *buf, int size)
 	
     return ret;
 }
-

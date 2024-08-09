@@ -153,7 +153,7 @@ extern int btsnoop_init(void);
 extern int btsnoop_write_packet(u8_t type, const u8_t *packet, bool is_received);
 #endif
 
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 extern int pts_btsrv_cis_send(uint16_t handle, uint8_t *buf, uint16_t *len);
 extern int pts_btsrv_cis_recv(uint16_t handle, uint8_t *buf, uint16_t len,
 			struct bt_cis_recv_report *rx_rpt);
@@ -1628,7 +1628,7 @@ int btdrv_init(btdrv_rx_cb_t rx_cb)
     btdrv_recieve_data_cbk = rx_cb;
     cfg.deliver_data_from_c2h = btdrv_recive_data;
 
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
     cfg.cis_send = pts_btsrv_cis_send;
     cfg.cis_recv = pts_btsrv_cis_recv;
 #else

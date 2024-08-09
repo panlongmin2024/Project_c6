@@ -16,6 +16,8 @@
 #include "broadcast.h"
 #include "app_common.h"
 
+int8_t broadcast_sq_mode = 0;
+
 int broadcast_get_broadcast_id(void)
 {
 	int v;
@@ -77,6 +79,163 @@ int broadcast_get_tws_sync_offset(struct bt_broadcast_qos *qos)
 	SYS_LOG_INF("%dus\n", offset);
 	return offset;
 }
+
+int broadcast_get_source_param(uint16_t kbps, uint8_t audio_chan,uint16_t iso_interval,struct broadcast_param_t *broadcast_param)
+{
+	if (!broadcast_param) {
+		SYS_LOG_ERR("param NULL\n");
+		return -1;
+	}
+
+	if (audio_chan != 1 && audio_chan != 2) {
+		SYS_LOG_ERR("unsupport audio chan:%d\n",audio_chan);
+		return -1;
+	}
+
+	if (!iso_interval) {
+		iso_interval = BROADCAST_DEFAULT_ISO_INTERVAL;
+	}
+
+	broadcast_param->iso_interval = iso_interval;
+	broadcast_param->audio_chan = audio_chan;
+	broadcast_param->kbps = kbps * audio_chan;
+
+	switch(iso_interval) {
+		case BROADCAST_ISO_INTERVAL_7_5MS:
+		{
+			broadcast_param->sdu = 90 * audio_chan;
+			broadcast_param->pdu = 90 * audio_chan;
+			broadcast_param->octets = 90;
+			broadcast_param->sdu_interval = 7500;
+			broadcast_param->nse = 3;
+			broadcast_param->bn = 1;
+			broadcast_param->irc = 3;
+			broadcast_param->pto = 0;
+			broadcast_param->latency = 8;
+			broadcast_param->duration = BT_FRAME_DURATION_7_5MS;
+#if defined(CONFIG_BT_PAWR)
+			broadcast_param->nse = 2;
+			broadcast_param->irc = 2;
+#endif
+			broadcast_param->pa_interval = 72; //90ms
+			break;
+		}
+
+		case BROADCAST_ISO_INTERVAL_10MS:
+		{
+			uint16_t octets = 0;
+			octets = (kbps/8)*10;
+			if (kbps == 80) {
+				octets = 100;
+				broadcast_param->nse = 4;
+				broadcast_param->irc = 4;
+			} else {
+				octets = 120;
+				broadcast_param->nse = 3;
+				broadcast_param->irc = 3;
+			}
+#if defined(CONFIG_BT_PAWR)
+			broadcast_param->nse = 2;
+			broadcast_param->irc = 2;
+#endif
+			broadcast_param->sdu = octets * audio_chan;
+			broadcast_param->pdu = octets * audio_chan;
+			broadcast_param->octets = octets;
+			broadcast_param->sdu_interval = 10000;
+			broadcast_param->bn = 1;
+			broadcast_param->pto = 0;
+			broadcast_param->latency = 10;
+			broadcast_param->duration = BT_FRAME_DURATION_10MS;
+			broadcast_param->pa_interval = 80; //100ms
+			break;
+		}
+
+		case BROADCAST_ISO_INTERVAL_15MS:
+		{
+			broadcast_param->sdu = 90 * audio_chan;
+			broadcast_param->pdu = 90 * audio_chan;
+			broadcast_param->octets = 90;
+			broadcast_param->sdu_interval = 7500;
+			broadcast_param->nse = 6;
+			broadcast_param->bn = 2;
+			broadcast_param->irc = 3;
+			broadcast_param->pto = 0;
+			broadcast_param->latency = 15;
+			broadcast_param->duration = BT_FRAME_DURATION_7_5MS;
+#if defined(CONFIG_BT_PAWR)
+			broadcast_param->nse = 4;
+			broadcast_param->irc = 2;
+#endif
+			broadcast_param->pa_interval = 72; //90ms
+			break;
+		}
+
+		case BROADCAST_ISO_INTERVAL_20MS:
+		{
+			uint16_t octets = 0;
+			octets = (kbps/8)*10;
+
+			broadcast_param->sdu = octets * audio_chan;
+			broadcast_param->pdu = octets * audio_chan;
+			broadcast_param->octets = octets;
+			broadcast_param->sdu_interval = 10000;
+			broadcast_param->nse = 8;
+			broadcast_param->bn = 2;
+			broadcast_param->irc = 4;
+			broadcast_param->pto = 0;
+			broadcast_param->latency = 20;
+			broadcast_param->duration = BT_FRAME_DURATION_10MS;
+			broadcast_param->pa_interval = 80; //100ms
+
+			break;
+		}
+
+		case BROADCAST_ISO_INTERVAL_30MS:
+		{
+			uint16_t octets = 0;
+			octets = (kbps/8)*10;
+
+			broadcast_param->sdu = octets * audio_chan;
+			broadcast_param->pdu = octets * audio_chan;
+			broadcast_param->octets = octets;
+			broadcast_param->sdu_interval = 10000;
+			broadcast_param->nse = 9;
+			broadcast_param->bn = 3;
+			broadcast_param->irc = 3;
+			broadcast_param->pto = 0;
+			broadcast_param->latency = 40;
+			broadcast_param->duration = BT_FRAME_DURATION_10MS;
+			broadcast_param->pa_interval = 72; //90ms
+			break;
+		}
+
+		default:
+			SYS_LOG_ERR("unsupport iso_interval:%d\n", iso_interval);
+			return -1;
+	}
+	SYS_LOG_INF("kbps:%d,ch:%d,iso:%d,oct:%d,sdu:%d,pa_interval:%d,nse:%d,bn:%d,irc:%d",
+	broadcast_param->kbps,broadcast_param->audio_chan,broadcast_param->iso_interval,broadcast_param->octets,
+	broadcast_param->sdu,broadcast_param->pa_interval,broadcast_param->nse,broadcast_param->bn,broadcast_param->irc);
+
+	return 0;
+}
+
+int8_t broadcast_get_sq_mode()
+{
+	return broadcast_sq_mode;
+}
+
+/*
+ 0:disable
+ 1:enable
+*/
+int8_t broadcast_set_sq_mode(int8_t sq_mode)
+{
+	broadcast_sq_mode = sq_mode;
+	SYS_LOG_INF("%d",broadcast_sq_mode);
+	return 0;
+}
+
 
 #if ENABLE_PADV_APP
 #define INVALID_VOL 0xFF

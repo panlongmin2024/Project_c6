@@ -4,7 +4,7 @@
 #include <acts_bluetooth/audio/vcs.h>
 #include "audio_service.h"
 
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 #include "vocs_service.h"
 #endif
 
@@ -29,7 +29,7 @@ static void flags_cfg_changed(struct bt_conn *conn, uint8_t conn_type,
 	printk("value 0x%04x\n", value);
 }
 
-#if (defined(CONFIG_BT_PTS_TEST) && defined(CONFIG_BT_VOCS))
+#if (defined(CONFIG_BT_LEA_PTS_TEST) && defined(CONFIG_BT_VOCS))
 BT_VOCS_SERVICE_DEFINE(vocs_svc);
 #endif
 
@@ -51,7 +51,7 @@ BT_GATT_SERVICE_DEFINE(vcs_svc,
 			       bt_vcs_read_flags, NULL, NULL),
 	BT_GATT_CCC(flags_cfg_changed,
 		    BT_GATT_PERM_READ | BT_AUDIO_GATT_PERM_WRITE),
-#if (defined(CONFIG_BT_PTS_TEST) && defined(CONFIG_BT_VOCS))
+#if (defined(CONFIG_BT_LEA_PTS_TEST) && defined(CONFIG_BT_VOCS))
 	BT_GATT_INCLUDE_SERVICE((void *)attr_vocs_svc),
 #endif
 );

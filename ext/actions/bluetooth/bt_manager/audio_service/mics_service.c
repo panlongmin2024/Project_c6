@@ -4,11 +4,11 @@
 #include <acts_bluetooth/audio/mics.h>
 #include "audio_service.h"
 
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 #include "aics_service.h"
 #endif
 
-#ifndef CONFIG_BT_PTS_TEST
+#ifndef CONFIG_BT_LEA_PTS_TEST
 /* FIXME: not support AICS yet */
 const struct bt_gatt_service_static mics_aics_svc0 = {
 	.attrs = NULL,
@@ -21,7 +21,7 @@ const struct bt_gatt_service_static mics_aics_svc1 = {
 	.attr_count = 0,
 };
 
-#if defined(CONFIG_BT_PTS_TEST)&&(!defined(CONFIG_BT_MICS_SERVICE))
+#if defined(CONFIG_BT_LEA_PTS_TEST)&&(!defined(CONFIG_BT_MICS_SERVICE))
 #define CONFIG_BT_MICS_SERVICE
 #endif
 
@@ -40,7 +40,7 @@ static void mics_mute_cfg_changed(struct bt_conn *conn, uint8_t conn_type,
 	printk("mics state 0x%04x\n", value);
 }
 
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 BT_AICS_SERVICE_DEFINE(mics_aics_svc0);
 #endif
 
@@ -53,7 +53,7 @@ BT_GATT_SERVICE_DEFINE(mics_svc,
     BT_GATT_CCC(mics_mute_cfg_changed,
                    BT_GATT_PERM_READ | BT_AUDIO_GATT_PERM_WRITE),
 
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 	BT_GATT_INCLUDE_SERVICE((void *)attr_mics_aics_svc0),
 #endif
 );
