@@ -93,7 +93,7 @@ static int ats_wlt_enter_uart_init(struct device *dev)
 static int ats_wlt_wait_comm(struct device *dev)
 {
 	int ret = -1;
-	int times = 25;
+	int times = 100;
 	while(times--){
 		ats_wlt_enter_write_data(ATS_SEND_ENTER_WLT_ATS,sizeof(ATS_SEND_ENTER_WLT_ATS)-1);
 	
@@ -132,7 +132,7 @@ int ats_wlt_enter(void)
 			}
 			ats_wlt_enter_uart_init(p_ats_wlt_info->ats_uart_dev);
 			ret = ats_wlt_wait_comm(p_ats_wlt_info->ats_uart_dev);
-			console_input_deinit(p_ats_wlt_info->ats_uart_dev);
+			//console_input_deinit(p_ats_wlt_info->ats_uart_dev);
 		}
 	}
 	return ret;
