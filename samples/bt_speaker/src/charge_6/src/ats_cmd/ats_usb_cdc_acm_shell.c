@@ -1793,7 +1793,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* set bt mac */
         index += sizeof(ATS_AT_CMD_MAC_WRITE)-1;
 		target_index = index;
-		cdc_shell_ats_bt_mac_write(dev, &buf[target_index], size-target_index-1);
+		cdc_shell_ats_bt_mac_write(dev, &buf[target_index], size-target_index-2);
 	}	
 	else	
 	{
