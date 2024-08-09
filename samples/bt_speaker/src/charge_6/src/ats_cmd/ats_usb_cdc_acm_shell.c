@@ -524,15 +524,12 @@ static int cdc_shell_ats_read_bt_dev_mac_addr(struct device *dev, u8_t *buf, int
 static int cdc_shell_ats_sw_version_info_dump(struct device *dev, u8_t *buf, int len)
 {
 	uint8_t buffer[] = "0000";
-	uint32_t swver = fw_version_get_sw_code();
+	uint32_t swver = fw_version_get_sw_code(); //for example 0x010700-1.7.0
 	uint8_t hwver = fw_version_get_hw_code();
 	uint32_t swver_hex;
-	swver>>=4;//0x10700->0x1070
-	swver_hex = (swver&0xf) + (((swver>>4)&0xf)*10) + (((swver>>8)&0xf)*100) + (((swver>>12)&0xf)*1000) 
-		+ (((swver>>16)&0xf)*10000);//0x1070->0x42e
-	
-	hex_to_string_4(swver_hex,buffer);//0x42e->"1070"
-	buffer[3] = (hwver%10)+'0';//"1070"->sw+hw
+	swver_hex = (((swver>>0)&0xf)*10) + (((swver>>8)&0xf)*100) + (((swver>>16)&0xf)*1000) 
+	hex_to_string_4(swver_hex,buffer);
+	buffer[3] = (hwver%10)+'0';//sw + hw
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_SW_VERSION_INFO_DUMP, sizeof(ATS_CMD_RESP_SW_VERSION_INFO_DUMP)-1, 
