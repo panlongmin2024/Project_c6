@@ -19,7 +19,7 @@
 #include <logging/sys_log.h>
 #include <trace.h>
 #include <gpio.h>
-
+#include "board.h"
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 #define CFG_WLT_INFO_0   			"WLT_INFO_0"
