@@ -18,6 +18,8 @@
 #include <uart_stream.h>
 #include <logging/sys_log.h>
 #include <trace.h>
+#include <gpio.h>
+#include "board.h"
 
 
 #ifdef CONFIG_WLT_ATS_ENABLE
