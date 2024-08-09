@@ -59,6 +59,8 @@ void ats_wlt_enter(void)
 }
 #endif
 static struct _wlt_driver_ctx_t *p_ats_wlt_info;
+ats_wlt_uart ats_wlt_uart_enter;
+
 static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 
 static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
