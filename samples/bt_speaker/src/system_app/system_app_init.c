@@ -443,7 +443,7 @@ void system_app_init(void)
 #endif
 #endif
 
-#if 0//def CONFIG_WLT_ATS_ENABLE
+#ifdef CONFIG_WLT_ATS_ENABLE
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 			/* wlt factory test start!!! */
 			bool enter_ats_wlt_flag = false;
@@ -455,7 +455,6 @@ void system_app_init(void)
 				tts_manager_lock();
 #endif			
 				trace_init();
-				//mcu_ui_power_hold_fn();
 				ats_wlt_start();
 			}
 #endif
@@ -517,17 +516,6 @@ void system_app_init(void)
 
 		system_ready();
 	}
-
-
-#ifdef CONFIG_WLT_ATS_ENABLE
-	/* wlt factory test start!!! */
-	if(get_enter_wlt_ats_state())
-	{		
-		trace_init();
-		ats_wlt_start();
-	}
-#endif
-
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	printf("%s:%d led_manager_set_display\n", __func__, __LINE__);
