@@ -41,7 +41,7 @@ extern void ats_wlt_start(void);
 extern int ats_init(void);
 extern int ats_usb_cdc_acm_init(void);
 
-struct thread_timer main_test_timer;
+/*struct thread_timer main_test_timer;
 static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 {
 	static u32_t tiemr_cnt=0;
@@ -59,7 +59,7 @@ static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 		//trace_mode_set(TRACE_MODE_DMA);
 		//trace_dma_print_set(true);
 	}
-}
+}*/
 /***************/
 static void main_is_enter_att(void)
 {
@@ -127,9 +127,9 @@ static void main_pre_init(void)
 #ifdef CONFIG_WLT_ATS_ENABLE
 	/* check if need enter wlt factory test !! */
 	ats_wlt_enter();
-	ats_wlt_check_adfu();
-	thread_timer_init(&main_test_timer, main_test_timer_func, NULL);
-    thread_timer_start(&main_test_timer, 0, 1000);
+	//ats_wlt_check_adfu();
+	//thread_timer_init(&main_test_timer, main_test_timer_func, NULL);
+    //thread_timer_start(&main_test_timer, 0, 1000);
 #endif
 	user_app_early_init();
 	system_pre_init();
