@@ -68,7 +68,7 @@ static void ats_wlt_enter_write_data(unsigned char *buf, int len)
 	ats_wlt_enter_comm_data_handler(dev);
 }*/
 
-static int ats_wlt_enter_uart_init(struct device *dev)
+/*static int ats_wlt_enter_uart_init(struct device *dev)
 {
     ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
     struct uart_stream_param uparam;
@@ -88,9 +88,9 @@ static int ats_wlt_enter_uart_init(struct device *dev)
     ats_uart->uio_opened = 1;
 
     return ats_uart->uio_opened;
-}
+}*/
 /* wait communicate from PC! */
-static int ats_wlt_wait_comm(struct device *dev)
+/*static int ats_wlt_wait_comm(struct device *dev)
 {
 	int ret = -1;
 	int times = 100;
@@ -104,7 +104,7 @@ static int ats_wlt_wait_comm(struct device *dev)
 		k_sleep(20);
 	}
 	return ret;
-}
+}*/
 
 int ats_wlt_enter(void)
 {
