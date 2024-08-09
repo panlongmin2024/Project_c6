@@ -159,6 +159,9 @@ int ats_wlt_check_adfu(void)
 
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	u32_t val;
+	gpio_pin_configure(gpio_dev, 21, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
+	gpio_pin_configure(gpio_dev, 39, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
+	k_sleep(10);
 	gpio_pin_read(gpio_dev, 21, &val);
 	key_vol_up = (bool)val;
 	gpio_pin_read(gpio_dev, 39, &val);
