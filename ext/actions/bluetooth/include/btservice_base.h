@@ -23,4 +23,6 @@ typedef struct {
 //#define CONFIG_SUPPORT_TWS_ROLE_CHANGE
 #define CONFIG_SNOOP_LINK_TWS 1
 
+#define CONFIG_MAX_BT_NAME_LEN      32
+
 #endif

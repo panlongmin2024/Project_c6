@@ -265,6 +265,7 @@ struct bt_avdtp_conn {
 	uint8_t get_rsid_cap_index;
 	uint8_t pending_ahead_start:1;
 	uint8_t media_session_int:1;
+    uint8_t media_session_work_valid:1;
 	struct net_buf *pending_resp_buf;
 	struct k_delayed_work media_session_timeout_work;
 };

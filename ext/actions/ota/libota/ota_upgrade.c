@@ -354,6 +354,35 @@ static int ota_encrypt_data_verify(struct ota_upgrade_info *ota, struct ota_file
 	return 0;
 }
 
+static int ota_update_temp_partition_flag(struct ota_upgrade_info *ota, struct ota_file *file)
+{
+	uint8_t *data_ptr = (uint8_t *)ota_rx_in_buf;
+
+	const struct partition_entry * part;
+
+	if(file->file_id != PARTITION_FILE_ID_OTA_TEMP){
+		return 0;
+	}
+
+	part = partition_get_part(file->file_id);
+
+	ota_storage_read(ota->storage, file->offset, data_ptr, OTA_ERASE_ALIGN_SIZE);
+
+	if(data_ptr[0] != 0x41 && data_ptr[1] != 0x4F \
+		&& data_ptr[2] != 0x54 && data_ptr[3] != 0x41){
+
+		data_ptr[0] = 0x41;
+		data_ptr[1] = 0x4F;
+		data_ptr[2] = 0x54;
+		data_ptr[3] = 0x41;
+
+		ota_storage_write(ota->storage, file->offset, data_ptr, 4);
+	}
+
+
+	return 0;
+}
+
 static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 {
 	uint32_t crc_calc, crc_orig;
@@ -371,6 +400,9 @@ static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 			return -1;
 		}
 	}else{
+
+		ota_update_temp_partition_flag(ota, file);
+
 		ota->temp_image_offset = file->offset;
 		if(ota_use_secure_boot(ota)) {
 			crc_calc = ota_secure_data_verify(ota, file);
@@ -690,6 +722,11 @@ static int ota_write_file_partition(struct ota_upgrade_info *ota, struct ota_fil
 			size -= wlen;
 		}
 	}else{
+
+		if(file->file_id == PARTITION_FILE_ID_OTA_TEMP && offs == 0){
+			memset(data, 0xFF, 4);
+		}
+
 		ret = ota_storage_write(storage, addr, data, size);
 		if (ret) {
 			SYS_LOG_ERR("storage write failed, addr 0x%x", addr);

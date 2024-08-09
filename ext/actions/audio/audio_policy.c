@@ -305,6 +305,10 @@ int audio_policy_get_out_input_start_threshold(uint8_t stream_type, int format, 
 					th = 100;
 				} else {
 					th = 210;
+					if (format == AAC_TYPE)
+						th += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_AAC_DYNAMIC_TIME);
+					else
+						th += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_SBC_DYNAMIC_TIME);
 				}
 			}
 		} else if (exf_stream_type == AUDIO_STREAM_USOUND) {
@@ -1288,19 +1292,19 @@ int audio_policy_get_reduce_threshold(int format, u8_t stream_type)
 				return 16 + audio_policy_get_bis_link_delay_ms();
 			#endif
 		} else {
+			int lth = 160;
 			if (stream_type == AUDIO_STREAM_SOUNDBAR) {
-				int lth = 170;
+				lth = 170;
 #if CONFIG_EXTERNAL_DSP_DELAY == 0
 				lth = 150;
 #endif
 				lth += audio_policy_get_bis_link_delay_ms();
-				if (format == AAC_TYPE)
-					lth += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_AAC_DYNAMIC_TIME);
-				else
-					lth += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_SBC_DYNAMIC_TIME);
-				return lth;
-			} else
-				return 160;
+			}
+			if (format == AAC_TYPE)
+				lth += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_AAC_DYNAMIC_TIME);
+			else
+				lth += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_SBC_DYNAMIC_TIME);
+			return lth;
 		}
 	}
 }
@@ -1348,21 +1352,19 @@ int audio_policy_get_increase_threshold(int format, u8_t stream_type)
 			}
 #endif
 		} else {
+			int hth = 260;
 			if (stream_type == AUDIO_STREAM_SOUNDBAR){
-				int hth = 270;
+				hth = 270;
 #if CONFIG_EXTERNAL_DSP_DELAY == 0
 				hth = 250;
 #endif
 				hth += audio_policy_get_bis_link_delay_ms();
-				if (format == AAC_TYPE)
-					hth += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_AAC_DYNAMIC_TIME);
-				else
-					hth += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_SBC_DYNAMIC_TIME);
-				return hth;
 			}
-			else {
-				return 260;
-			}
+			if (format == AAC_TYPE)
+				hth += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_AAC_DYNAMIC_TIME);
+			else
+				hth += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_SBC_DYNAMIC_TIME);
+			return hth;
 		}
 	}
 }

@@ -1067,7 +1067,7 @@ void pd_manager_over_temp_protect(void)
             SYS_LOG_INF("[%d] set current 1500ma \n", __LINE__);
             temp_ten_flag = 1;
             pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
-        }else
+        }else if((power_manager_get_battery_temperature() < 440) && (power_manager_get_battery_temperature() > 100))
         {
             SYS_LOG_INF("[%d] set current 2400ma \n", __LINE__);
             pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 0);
@@ -1083,7 +1083,7 @@ void pd_manager_over_temp_protect(void)
             pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
         }
 
-    }else 
+    }else if((power_manager_get_battery_temperature() < 440) && (power_manager_get_battery_temperature() > 100))
     {
         if(temp_ten_flag)
         {

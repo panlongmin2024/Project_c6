@@ -193,11 +193,12 @@ int btmusic_init_playback()
 	if(btmusic_get_auracast_mode()){
 		init_param.waitto_start = 1;
 		init_param.bind_to_capture = 1;
-#if (BROADCAST_DURATION == BT_FRAME_DURATION_7_5MS)
-		audio_policy_set_nav_frame_size_us(7500);
-#else
-		audio_policy_set_nav_frame_size_us(10000);
-#endif
+
+    if (btmusic->broadcast_duration == BT_FRAME_DURATION_7_5MS) {
+		audio_policy_set_nav_frame_size_us(7500);		
+	} else {
+		audio_policy_set_nav_frame_size_us(10000);	
+	}
 		audio_policy_set_bis_link_delay_ms(broadcast_get_bis_link_delay(btmusic->qos));
 
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
@@ -242,7 +243,7 @@ int btmusic_init_playback()
 	}
 #endif
 
-	if (btmusic->ios_pc) {
+	if (btmusic->ios_dev) {
 		audio_policy_set_user_dynamic_waterlevel_ms(100);
 	} else {
 		audio_policy_set_user_dynamic_waterlevel_ms(0);
@@ -274,7 +275,7 @@ int btmusic_init_playback()
 					  &freqpoint_energy_info);
 #endif
 
-	SYS_LOG_INF("Opened %p\n", btmusic->playback_player);
+	SYS_LOG_INF("iso:%d Opened %p\n", btmusic->ios_dev,btmusic->playback_player);
 
 	return 0;
 
@@ -452,11 +453,12 @@ int bt_music_a2dp_get_freqpoint_energy(media_freqpoint_energy_info_t * info)
 
 static io_stream_t broadcast_create_source_stream(int mem_type, int block_num)
 {
+	struct btmusic_app_t *btmusic = btmusic_get_app();
 	io_stream_t stream = NULL;
 	int buff_size;
 	int ret;
 
-	buff_size = media_mem_get_cache_pool_size_ext(mem_type, AUDIO_STREAM_SOUNDBAR, NAV_TYPE, BROADCAST_SDU, block_num);	// TODO: 3?
+	buff_size = media_mem_get_cache_pool_size_ext(mem_type, AUDIO_STREAM_SOUNDBAR, NAV_TYPE, btmusic->qos->max_sdu, block_num);	// TODO: 3?
 	if (buff_size <= 0) {
 		goto exit;
 	}
@@ -598,7 +600,7 @@ int btmusic_bms_init_capture(void)
 	// TODO: broadcast_source no need to get chan_info???
 	init_param.capture_format = NAV_TYPE;	// bt_manager_audio_codec_type(chan_info.format);
 	init_param.capture_sample_rate_input = 48;	// chan_info.sample;
-	init_param.capture_sample_rate_output = 48;	// chan_info.sample;
+	init_param.capture_sample_rate_output = btmusic->broadcast_sample_rate;	// chan_info.sample;
 	init_param.capture_sample_bits = 32;
 	//to do?
 	init_param.capture_channels_input = 2;	//BROADCAST_CH;   // chan_info.channels;

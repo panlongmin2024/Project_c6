@@ -27,7 +27,7 @@ obj-$(CONFIG_BT_BLE) += bt_manager_ble.o
 obj-$(CONFIG_BT_SPP) += bt_manager_sppble_stream.o
 obj-$(CONFIG_BT_BLE) += bt_manager_sppble_stream.o
 obj-$(CONFIG_BT_PTS_TEST) += bt_manager_pts_test.o
-obj-$(CONFIG_BT_PTS_TEST) += bt_manager_le_pts_test.o
+obj-$(CONFIG_BT_LEA_PTS_TEST) += bt_manager_le_pts_test.o
 obj-$(CONFIG_MGR_TEST_SAMPLE) += bt_manager_test_sample.o
 
 obj-y += bt_manager_base.o

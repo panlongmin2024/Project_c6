@@ -118,6 +118,10 @@ inline struct logic_mcu_ls8a10049t_device_data_t * logic_mcu_ls8a10049t_get_devi
 
 
 
+u8_t get_ls8a10049t_read_Version(void)
+{
+  return LS8A10049T_VERSION;
+}
 /**
  * @brief 开机成功锁电
  * @return: None
@@ -151,9 +155,12 @@ static void _ls8a10049t_poweron_hold(struct logic_mcu_ls8a10049t_device_data_t *
     SYS_LOG_INF("HOLD write done\n");
 	_ls8a10049t_power_hold_test(1);
 
-  	k_busy_wait(1000);					// otg disable
+ // if(get_ls8a10049t_read_Version() >0)
+  {
+    k_busy_wait(1000);					// otg disable
 	reg_7b.bit5 = 0;
 	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
+ }
 //	reg_7b.bit4 = 1;
 //	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
 
@@ -333,14 +340,6 @@ static void _ls8a10049t_gpio2_output(struct logic_mcu_ls8a10049t_device_data_t *
 	reg_7b.bit4 = (output_level != 0);
 	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
 }
-
-
-
-u8_t get_ls8a10049t_read_Version(void)
-{
-  return LS8A10049T_VERSION;
-}
-
 
 /**
  * @brief 获取 POWER 按键状态

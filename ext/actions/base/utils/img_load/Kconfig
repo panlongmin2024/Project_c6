@@ -24,4 +24,8 @@ config ACTIONS_IMG_RF_NS
     prompt "ACTIONS RF no signaling mode"
     default n
 
+config ACTIONS_IMG_TEST_ALWAYS
+    bool
+    prompt "ACTIONS imagine test always or not"
+    default n
 endmenu

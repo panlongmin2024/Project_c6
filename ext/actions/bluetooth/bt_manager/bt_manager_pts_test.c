@@ -46,7 +46,7 @@
 
 #define PTS_TEST_SHELL_MODULE		"pts"
 
-static int pts_connect_acl(int argc, char *argv[])
+static int pts_create_connect(uint8_t a2dp, uint8_t avrcp, uint8_t hfp)
 {
 	int cnt;
 	struct autoconn_info info[3];
@@ -61,10 +61,10 @@ static int pts_connect_acl(int argc, char *argv[])
     for (int i = 0; i < 3; i++) {
         if ((info[i].addr_valid) && (info[i].tws_role == 0)){
             info[i].addr_valid = 1;
-            info[i].a2dp = 0;
-            info[i].hfp = 0;
-            info[i].avrcp = 0;
-            info[i].hfp_first = 0;
+            info[i].a2dp = a2dp;
+            info[i].hfp = hfp;
+            info[i].avrcp = avrcp;
+            info[i].hfp_first = hfp ? 1 : 0;
             btif_br_set_auto_reconnect_info(info, 3);
 #ifdef CONFIG_PROPERTY
             property_flush(NULL);
@@ -77,123 +77,35 @@ static int pts_connect_acl(int argc, char *argv[])
 	return 0;
 }
 
+
+static int pts_connect_acl(int argc, char *argv[])
+{
+	return pts_create_connect(0, 0, 0);
+}
+
 static int pts_connect_acl_a2dp_avrcp(int argc, char *argv[])
 {
-	int cnt;
-	struct autoconn_info info[3];
-
-	memset(info, 0, sizeof(info));
-	cnt = btif_br_get_auto_reconnect_info(info, 3);
-	if (cnt == 0) {
-		SYS_LOG_WRN("Never connect to pts dongle\n");
-		return -1;
-	}
-
-	for (int i = 0; i < 3; i++) {
-		if ((info[i].addr_valid) && (info[i].tws_role == 0)){
-			info[i].addr_valid = 1;
-			info[i].a2dp = 1;
-			info[i].hfp = 0;
-			info[i].avrcp = 1;
-			info[i].hfp_first = 0;
-			btif_br_set_auto_reconnect_info(info, 3);
-#ifdef CONFIG_PROPERTY
-			property_flush(NULL);
-#endif
-			bt_manager_startup_reconnect();
-			break;
-		}
-	}
-	return 0;
+	return pts_create_connect(1, 1, 0);
 }
 
+#ifdef CONFIG_BT_HFP_HF
 static int pts_connect_acl_hfp(int argc, char *argv[])
 {
-	int cnt;
-	struct autoconn_info info[3];
-
-	memset(info, 0, sizeof(info));
-	cnt = btif_br_get_auto_reconnect_info(info, 3);
-	if (cnt == 0) {
-		SYS_LOG_WRN("Never connect to pts dongle\n");
-		return -1;
-	}
-
-	for (int i = 0; i < 3; i++) {
-		if ((info[i].addr_valid) && (info[i].tws_role == 0)) {
-			info[i].a2dp = 0;
-			info[i].hfp = 1;
-			info[i].avrcp = 0;
-			info[i].hfp_first = 1;
-			btif_br_set_auto_reconnect_info(info, 3);
-#ifdef CONFIG_PROPERTY
-			property_flush(NULL);
-#endif
-			bt_manager_startup_reconnect();
-			break;
-		}
-	}
-	return 0;
+	return pts_create_connect(0, 0, 1);
 }
+#endif
+
 static int pts_connect_a2dp(int argc, char *argv[])
 {
-	int cnt;
-	struct autoconn_info info[3];
-
-	memset(info, 0, sizeof(info));
-	cnt = btif_br_get_auto_reconnect_info(info, 3);
-	if (cnt == 0) {
-		SYS_LOG_WRN("Never connect to pts dongle\n");
-		return -1;
-	}
-
-	for (int i = 0; i < 3; i++) {
-		if ((info[i].addr_valid) && (info[i].tws_role == 0)) {
-		    info[i].addr_valid = 1;
-			info[i].a2dp = 1;
-			info[i].hfp = 0;
-			info[i].avrcp = 0;
-			info[i].hfp_first = 0;
-			btif_br_set_auto_reconnect_info(info, 3);
-#ifdef CONFIG_PROPERTY
-			property_flush(NULL);
-#endif
-			bt_manager_startup_reconnect();
-			break;
-		}
-	}
-	return 0;
+	return pts_create_connect(1, 0, 0);
 }
+
 static int pts_connect_avrcp(int argc, char *argv[])
 {
-	int cnt;
-	struct autoconn_info info[3];
-
-	memset(info, 0, sizeof(info));
-	cnt = btif_br_get_auto_reconnect_info(info, 3);
-	if (cnt == 0) {
-		SYS_LOG_WRN("Never connect to pts dongle\n");
-		return -1;
-	}
-
-	for (int i = 0; i < 3; i++) {
-		if ((info[i].addr_valid) && (info[i].tws_role == 0)) {
-		    info[i].addr_valid = 1;
-			info[i].a2dp = 0;
-			info[i].hfp = 0;
-			info[i].avrcp = 1;
-			info[i].hfp_first = 0;
-			btif_br_set_auto_reconnect_info(info, 3);
-#ifdef CONFIG_PROPERTY
-	property_flush(NULL);
-#endif
-			bt_manager_startup_reconnect();
-			break;
-		}
-	}
-	return 0;
+	return pts_create_connect(0, 1, 0);
 }
 
+#ifdef CONFIG_BT_HFP_HF
 static int pts_hfp_cmd(int argc, char *argv[])
 {
 	char *cmd;
@@ -241,12 +153,6 @@ static int pts_hfp_connect_sco(int argc, char *argv[])
 	return 0;
 }
 
-static int pts_disconnect(int argc, char *argv[])
-{
-	btif_br_disconnect_device(BTSRV_DISCONNECT_ALL_MODE);
-	return 0;
-}
-
 static int bt_pts_hfp_hf_connect(void)
 {
 	int cnt,i;
@@ -290,6 +196,13 @@ static int pts_hfp_hf_test(int argc, char *argv[])
 
 	return 0;
 }
+#endif
+
+static int pts_disconnect(int argc, char *argv[])
+{
+	btif_br_disconnect_device(BTSRV_DISCONNECT_ALL_MODE);
+	return 0;
+}
 
 static int pts_a2dp_test(int argc, char *argv[])
 {
@@ -331,14 +244,27 @@ static int pts_avrcp_test(int argc, char *argv[])
 			return -EINVAL;
 		}
 		value = strtoul(argv[2], NULL, 16);
-		btif_pts_avrcp_pass_through_cmd(value);
+		if (0x41 == value) {
+			value = BTSRV_AVRCP_CMD_VOLUMEUP;
+		} else if (0x41 == value) {
+			value = BTSRV_AVRCP_CMD_VOLUMEDOWN;
+		} else if (0x44 == value) {//play
+			value = BTSRV_AVRCP_CMD_PLAY;
+		} else if (0x46 == value) {//pause
+			value = BTSRV_AVRCP_CMD_PAUSE;
+		} else if (0x4B == value) {//forward
+			value = BTSRV_AVRCP_CMD_FORWARD;
+		} else if (0x4C == value) {//backward
+			value = BTSRV_AVRCP_CMD_BACKWARD;
+		}
+		btif_avrcp_send_command(value);
 	} else if (!strcmp(cmd, "volume")) {
 		if (argc < 3) {
 			SYS_LOG_INF("Used: pts avrcp volume 0xXX\n");
 			return -EINVAL;
 		}
 		value = strtoul(argv[2], NULL, 16);
-		btif_pts_avrcp_notify_volume_change(value);
+		btif_avrcp_notify_volume_change(value);
 	} else if (!strcmp(cmd, "regnotify")) {
 		btif_pts_avrcp_reg_notify_volume_change();
 	} else if (!strcmp(cmd, "setabsvol")) {
@@ -347,7 +273,7 @@ static int pts_avrcp_test(int argc, char *argv[])
 			return -EINVAL;
 		}
 		value = strtoul(argv[2], NULL, 16);
-		btif_pts_avrcp_set_abs_volume(value);
+		btif_avrcp_set_absolute_volume(&value, 1);
 	}
 
 	return 0;
@@ -562,7 +488,7 @@ static int pts_hog_register(int argc, char *argv[])
 static int pts_cts_set_ct(int argc, char *argv[])
 {
     uint32_t value = 0;
- 
+
 	if (argc < 3) {
 		return -EINVAL;
 	}
@@ -684,8 +610,9 @@ static int pts_reboot(int argc, char *argv[])
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_BT_LEA_PTS_TEST
 	pts_le_clear_keys();
-
+#endif
 	cmd = argv[1];
 	SYS_LOG_INF("recon:%s\n", cmd);
 
@@ -699,36 +626,6 @@ static int pts_reboot(int argc, char *argv[])
 	return 0;
 }
 
-int bt_pts_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
-{
-	SYS_LOG_INF("\n");
-	static struct bt_l2cap_chan pts_chan;
-	memset(&pts_chan, 0, sizeof(pts_chan));
-	*chan = &pts_chan;
-
-	return 0;
-}
-
-static struct bt_l2cap_server pts_server =
-{
-	.psm = 0x1001,
-	.sec_level = BT_SECURITY_L3,
-	.accept = bt_pts_l2cap_accept,
-};
-
-static int pts_set_sc_level(int argc, char* argv[])
-{
-	if (argc < 2) {
-		SYS_LOG_INF("Used: pts sc_level 1 ~ 4\n");
-		return -EINVAL;
-	}
-
-	pts_server.sec_level = (argv[1][0] - '0');
-	int ret = bt_l2cap_br_server_register(&pts_server);
-	SYS_LOG_INF("pts_server.sec_level: %d, ret: %d\n", pts_server.sec_level, ret);
-	return 0;
-}
-
 static const struct shell_cmd pts_test_commands[] = {
 	{ "reboot", pts_reboot, "pts reboot"},
 	{ "config", pts_config, "pts config"},
@@ -736,18 +633,20 @@ static const struct shell_cmd pts_test_commands[] = {
     { "connect_a2dp", pts_connect_a2dp, "pts active connect acl/a2dp"},
     { "connect_avrcp", pts_connect_avrcp, "pts active connect acl/avrcp"},
 	{ "connect_acl_a2dp_avrcp", pts_connect_acl_a2dp_avrcp, "pts active connect acl/a2dp/avrcp"},
-	{ "connect_acl_hfp", pts_connect_acl_hfp, "pts active connect acl/hfp"},
-	{ "hfp_cmd", pts_hfp_cmd, "pts hfp command"},
-	{ "hfp_connect_sco", pts_hfp_connect_sco, "pts hfp active connect sco"},
 	{ "disconnect", pts_disconnect, "pts do disconnect"},
 	{ "a2dp", pts_a2dp_test, "pts a2dp test"},
-	{ "hfp_hf", pts_hfp_hf_test, "pts hfp hf test"},
 	{ "avrcp", pts_avrcp_test, "pts avrcp test"},
 	{ "spp", pts_spp_test, "pts spp test"},
 	{ "scan", pts_scan_test, "pts scan test"},
 	{ "clean", pts_clean_test, "pts scan test"},
 	{ "auth", pts_auth_test, "pts auth test"},
-	{ "sc_level",pts_set_sc_level, "set sc level"},
+
+#ifdef CONFIG_BT_HFP_HF
+	{ "connect_acl_hfp", pts_connect_acl_hfp, "pts active connect acl/hfp"},
+	{ "hfp_cmd", pts_hfp_cmd, "pts hfp command"},
+	{ "hfp_connect_sco", pts_hfp_connect_sco, "pts hfp active connect sco"},
+	{ "hfp_hf", pts_hfp_hf_test, "pts hfp hf test"},
+#endif
 
 #ifdef CONFIG_BT_BAS
 	{ "bas_reg", pts_bas_register, "bas service register"},

@@ -80,6 +80,14 @@ long lasting stereo protocol
 #define COMMAND_SENDSYSEVENT       0xf2
 
 
+#define BROADCAST_ISO_INTERVAL_7_5MS   6
+#define BROADCAST_ISO_INTERVAL_10MS    8
+#define BROADCAST_ISO_INTERVAL_15MS    12
+#define BROADCAST_ISO_INTERVAL_20MS    16
+#define BROADCAST_ISO_INTERVAL_30MS    24
+#define BROADCAST_DEFAULT_ISO_INTERVAL BROADCAST_ISO_INTERVAL_20MS
+
+
 enum {
     KEY_EVENT_NONE = 0,
     KEY_EVENT_PLAY,
@@ -274,7 +282,7 @@ struct broadcast_param_t {
 #endif
 
 
-/* 32kbp 1ch 10ms iso_interval */
+/* 32kbp 1ch 20ms iso_interval */
 #if 0
 #define BROADCAST_KBPS	32
 #define BROADCAST_SDU	40
@@ -479,6 +487,8 @@ int broadcast_get_broadcast_id(void);
 int broadcast_get_bis_link_delay(struct bt_broadcast_qos *qos);
 int broadcast_get_bis_link_delay_ext(struct bt_broadcast_qos *qos, uint8_t iso_interval);
 int broadcast_get_tws_sync_offset(struct bt_broadcast_qos *qos);
+int broadcast_get_source_param(uint16_t kbps, uint8_t audio_chan,uint16_t iso_interval, struct broadcast_param_t *broadcast_param);
+int8_t broadcast_get_sq_mode();
 
 #ifdef ENABLE_PADV_APP
 int padv_tx_init(u32_t handle, u8_t stream_type);

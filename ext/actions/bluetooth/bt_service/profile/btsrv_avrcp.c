@@ -42,7 +42,7 @@ static void _btsrv_avrcp_ctrl_connected_cb(struct bt_conn *conn)
 {
 	char addr_str[BT_ADDR_STR_LEN];
 	bt_addr_t *bt_addr = NULL;
-	
+
 	btsrv_adapter_callback(BTSRV_REQ_HIGH_PERFORMANCE, NULL);
 	bt_addr = (bt_addr_t *)GET_CONN_BT_ADDR(conn);
 	hostif_bt_addr_to_str(bt_addr, addr_str, BT_ADDR_STR_LEN);
@@ -142,11 +142,11 @@ static void btsrv_avrcp_ctrl_event_notify_proc(void *in_param)
 			break;
 		case BT_AVRCP_PLAYBACK_STATUS_PLAYING:
 			cb_ev = BTSRV_AVRCP_PLAYING;
-			btsrv_rdm_set_avrcp_state(conn,1);			
+			btsrv_rdm_set_avrcp_state(conn,1);
 			break;
 		case BT_AVRCP_PLAYBACK_STATUS_PAUSED:
 			cb_ev = BTSRV_AVRCP_PAUSED;
-			btsrv_rdm_set_avrcp_state(conn,0);			
+			btsrv_rdm_set_avrcp_state(conn,0);
 			break;
 		case BT_AVRCP_PLAYBACK_STATUS_FWD_SEEK:
 		case BT_AVRCP_PLAYBACK_STATUS_REV_SEEK:
@@ -308,7 +308,7 @@ static void connected_dev_cb_check_ctrl_pass(struct bt_conn *base_conn, uint8_t 
 	if (!info){
 		return;
 	}
-	
+
 	if (info->op_id == 0 ||
 		info->pass_state == AVRCP_PASS_STATE_IDLE ||
 		info->pass_state == AVRCP_PASS_STATE_CONTINUE_START) {
@@ -461,11 +461,11 @@ static void btsrv_avrcp_sync_vol(void *param)
 
 #if 1
     uint16_t delay_ms = ((uint32_t)param >> 16);
-    
+
     SYS_LOG_DBG("delay_ms %d", delay_ms);
     btsrv_volume_sync_delay_ms() = delay_ms;
 #endif
-    
+
 	btsrv_rdm_set_avrcp_sync_volume_wait(conn, 1);
 	if (!thread_timer_is_running(&sync_volume_timer)) {
 		thread_timer_start(&sync_volume_timer, AVRCP_SYNC_TIMER_INTERVAL, AVRCP_SYNC_TIMER_INTERVAL);
@@ -533,7 +533,7 @@ static int _btsrv_avrcp_controller_process(uint16_t hdl, btsrv_avrcp_cmd_e cmd)
 	}
 
     if(!avrcp_conn && btsrv_info->cfg.pts_test_mode){
-        avrcp_conn = btsrv_rdm_avrcp_get_active_dev();
+        avrcp_conn = btsrv_rdm_avrcp_get_connected_dev();
     }
 	if (!avrcp_conn) {
 		return -EINVAL;
@@ -628,6 +628,10 @@ static int btsrv_avrcp_set_absolute_volume(uint32_t param)
 {
 	struct bt_conn *avrcp_conn = btsrv_rdm_a2dp_get_active_dev();
 
+	if (!avrcp_conn && btsrv_info->cfg.pts_test_mode) {
+		avrcp_conn = btsrv_rdm_avrcp_get_connected_dev();
+	}
+
 	if(!avrcp_conn) {
 		return -EIO;
 	}
@@ -635,6 +639,17 @@ static int btsrv_avrcp_set_absolute_volume(uint32_t param)
 	return hostif_bt_avrcp_ct_set_absolute_volume(avrcp_conn, param);
 }
 
+static int btsrv_avrcp_notify_volume_change(uint8_t volume)
+{
+	if (!btsrv_info->cfg.pts_test_mode) {
+		return -EIO;
+	}
+	struct bt_conn * avrcp_conn = btsrv_rdm_avrcp_get_connected_dev();
+	if(!avrcp_conn) {
+		return -EIO;
+	}
+	return hostif_bt_avrcp_tg_notify_change(avrcp_conn, volume);
+}
 
 int btsrv_avrcp_process(struct app_msg *msg)
 {
@@ -682,7 +697,7 @@ int btsrv_avrcp_process(struct app_msg *msg)
 		break;
 	case MSG_BTSRV_AVRCP_CONNECTED:
 		btsrv_avrcp_user_callback_ev(msg->ptr, BTSRV_AVRCP_CONNECTED, NULL);
-		btsrv_adapter_callback(BTSRV_RELEASE_HIGH_PERFORMANCE, NULL);		
+		btsrv_adapter_callback(BTSRV_RELEASE_HIGH_PERFORMANCE, NULL);
 		break;
 	case MSG_BTSRV_AVRCP_DISCONNECTED:
 		btsrv_avrcp_user_callback_ev(msg->ptr, BTSRV_AVRCP_DISCONNECTED, NULL);
@@ -703,6 +718,9 @@ int btsrv_avrcp_process(struct app_msg *msg)
 		SYS_LOG_INF("MSG_BTSRV_AVRCP_GET_PLAY_STATUS\n");
 		btsrv_avrcp_get_play_status(msg->ptr);
 		break;
+	case MSG_BTSRV_AVRCP_NOTIFY_VOLUME_CHANGE:
+		SYS_LOG_INF("MSG_BTSRV_AVRCP_NOTIFY_VOLUME_CHANGE\n");
+		btsrv_avrcp_notify_volume_change(msg->value);
 	default:
 		break;
 	}

@@ -18,7 +18,7 @@ static void bt_manager_le_audio_callback(btsrv_audio_event_e event,
 /* FIXME: move to Kconfig or any better way? */
 #define NUM_PACS_CLI_PAC_PER_CONN	2
 #define NUM_PACS_PAC_PER_CONN	4
-#ifndef CONFIG_BT_PTS_TEST
+#ifndef CONFIG_BT_LEA_PTS_TEST
 #define NUM_ASCS_CLI_ASE_PER_CONN	2
 #else
 #define NUM_ASCS_CLI_ASE_PER_CONN	4
@@ -41,7 +41,7 @@ static void bt_manager_le_audio_callback(btsrv_audio_event_e event,
 #define UNICAST_ANNOUNCEMENT_GENERAL    0x00
 #define UNICAST_ANNOUNCEMENT_TARGETED   0x01
 
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 static uint8_t bt_le_audio_buf[9680] __aligned(4) __in_section_unique(bthost.bss);
 #else
 static uint8_t bt_le_audio_buf[CONFIG_BT_LE_AUDIO_BUF_SIZE] __aligned(4) __in_section_unique(bthost.bss);
@@ -737,7 +737,7 @@ static void bt_manager_le_audio_callback(btsrv_audio_event_e event,
 		break;
 	}
 
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 	bt_manger_lea_event_pts_process(event, data, size);
 #endif
 }

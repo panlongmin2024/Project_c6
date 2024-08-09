@@ -8,7 +8,7 @@
  * @file
  * @brief bt ble manager.
  */
-#define SYS_LOG_DOMAIN "btmgr_gatt_over_br"
+#define SYS_LOG_DOMAIN "bt manager"
 
 #include <os_common_api.h>
 
@@ -115,7 +115,6 @@ static int bt_manager_gatt_over_br_setup_qos(struct bt_conn *conn)
 
 static int bt_manager_gatt_over_br_user_cb(struct bt_conn *conn, uint8_t connected)
 {
-	char addr[13];
 	struct bt_conn_info info;
 
 	if ((hostif_bt_conn_get_info(conn, &info) < 0) ||
@@ -123,16 +122,14 @@ static int bt_manager_gatt_over_br_user_cb(struct bt_conn *conn, uint8_t connect
 		return -1;
 	}
 
+    SYS_LOG_INF("connected:%d conn:%p", connected,conn);
+
 	if(connected) {
-		memset(addr, 0, 13);
-		hex_to_str(addr, (uint8_t *)(info.br.dst->val), 6);
-		SYS_LOG_INF("conn:%s,%p", addr, conn);
 		stream_ble_connect_cb(conn, BT_CONN_TYPE_BR, (uint8_t *)(info.br.dst->val), true);
 #ifdef GATT_OVER_BR_QOS_SETUP
         bt_manager_gatt_over_br_setup_qos(conn);
 #endif
 	}else {
-		SYS_LOG_INF("disconn: %p", conn);
 		stream_ble_connect_cb(conn, BT_CONN_TYPE_BR, (uint8_t *)(info.br.dst->val), false);
 		os_sem_give(&ind_sem);
 	}

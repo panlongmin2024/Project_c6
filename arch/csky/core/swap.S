@@ -17,9 +17,16 @@
 GTEXT(__swap)
 GTEXT(trap0_handler)
 GTEXT(__pendsv)
+GTEXT(write_400_reg)
 GDATA(_k_neg_eagain)
 
 GDATA(_kernel)
+
+SECTION_FUNC(TEXT, write_400_reg)
+    st.b      	r1, (r0, 0x0)
+    st.b      	r1, (r0, 0x0)
+    ld.b      	r1, (r0, 0x0)
+    rts
 
 /**
  *

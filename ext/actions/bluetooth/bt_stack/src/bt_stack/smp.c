@@ -928,30 +928,8 @@ static void sc_derive_link_key(struct bt_smp *smp)
 	struct bt_keys_link_key link_key;
 	struct bt_keys_link_key *exist_link_key = NULL;
 	uint8_t ilk[16];
-	struct bt_conn *br_conn;
 
 	BT_INFO("LTK to BR linkkey, LTK Type: %d", conn->le.keys->flags);
-
-	exist_link_key = bt_keys_find_link_key(&conn->le.dst.a);
-	if (!exist_link_key) {
-		if (!exist_link_key) {
-			exist_link_key = acts_bt_keys_find_link_key_store(&conn->le.dst.a);
-		}
-		if ((exist_link_key && (exist_link_key->flags & BT_LINK_KEY_AUTHENTICATED)) &&
-			(conn->le.keys->flags & BT_KEYS_AUTHENTICATED))
-		{
-			BT_WARN("link key is auth, but ltk not, don't derive linkkey");
-			return;
-		}
-	}
-
-	br_conn = bt_conn_lookup_addr_br(&conn->le.dst.a);
-	if (br_conn) {
-		/* BR already connected, not need derive link key */
-		BT_ERR("BR already connected, not need derive link key");
-		bt_conn_unref(br_conn);
-		return;
-	}
 
 	/* TODO handle errors? */
 
@@ -959,6 +937,19 @@ static void sc_derive_link_key(struct bt_smp *smp)
 	 * At this point remote device identity is known so we can use
 	 * destination address here
 	 */
+
+	exist_link_key = bt_keys_find_link_key(&conn->le.dst.a);
+	if (!exist_link_key) {
+		exist_link_key = acts_bt_keys_find_link_key_store(&conn->le.dst.a);
+	}
+
+	if ((exist_link_key && (exist_link_key->flags & BT_LINK_KEY_AUTHENTICATED)) &&
+		!(conn->le.keys->flags & BT_KEYS_AUTHENTICATED))
+	{
+		BT_WARN("link key is auth, but ltk not, don't derive linkkey");
+		return;
+	}
+
 	bt_addr_copy(&link_key.addr, &conn->le.dst.a);
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_CT2)) {
@@ -989,6 +980,11 @@ static void sc_derive_link_key(struct bt_smp *smp)
 		return;
 	}
 	bt_store_write_linkkey(&link_key.addr, link_key.val, (conn->le.keys->flags & BT_KEYS_AUTHENTICATED));
+
+	/* key pool overwrite */
+	if (exist_link_key) {
+		memcpy(exist_link_key, &link_key, sizeof(link_key));
+	}
 }
 
 static void smp_br_reset(struct bt_smp_br *smp)
@@ -1245,9 +1241,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		}
 
 		id_info = net_buf_add(buf, sizeof(*id_info));
-
 		memcpy(id_info->irk, bt_dev.irk[conn->id], 16);
-		memcpy(keys->local_irk.val, bt_dev.irk[conn->id], 16);
 
 		smp_br_send(smp, buf, NULL);
 
@@ -2209,7 +2203,6 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 		id_info = net_buf_add(buf, sizeof(*id_info));
 
 		memcpy(id_info->irk, bt_dev.irk[conn->id], 16);
-		memcpy(keys->local_irk.val, bt_dev.irk[conn->id], 16);
 
 		smp_send(smp, buf, NULL, NULL);
 

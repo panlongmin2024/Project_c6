@@ -31,34 +31,10 @@ int btif_pts_avrcp_get_play_status(void)
 	return 0;
 }
 
-int btif_pts_avrcp_pass_through_cmd(uint8_t opid)
-{
-	if (btsrv_is_pts_test()) {
-		btsrv_pts_avrcp_pass_through_cmd(opid);
-	}
-	return 0;
-}
-
-int btif_pts_avrcp_notify_volume_change(uint8_t volume)
-{
-	if (btsrv_is_pts_test()) {
-		btsrv_pts_avrcp_notify_volume_change(volume);
-	}
-	return 0;
-}
-
 int btif_pts_avrcp_reg_notify_volume_change(void)
 {
 	if (btsrv_is_pts_test()) {
 		btsrv_pts_avrcp_reg_notify_volume_change();
-	}
-	return 0;
-}
-
-int btif_pts_avrcp_set_abs_volume(uint8_t volume)
-{
-	if (btsrv_is_pts_test()) {
-		btsrv_pts_avrcp_set_abs_volume(volume);
 	}
 	return 0;
 }
@@ -72,6 +48,7 @@ int btif_pts_register_auth_cb(bool reg_auth)
 	return 0;
 }
 
+#ifdef CONFIG_BT_LEA_PTS_TEST
 int btif_pts_register_processer(void)
 {
 	int ret = 0;
@@ -241,3 +218,4 @@ int btif_pts_set_le_security_level(bt_security_t sec_level)
 {
 	return btsrv_pts_set_le_security_level(sec_level);
 }
+#endif

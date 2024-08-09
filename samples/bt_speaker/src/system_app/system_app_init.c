@@ -608,7 +608,7 @@ void system_app_init(void)
 #endif
 
 #ifdef CONFIG_BT_ADV_MANAGER
-#ifndef CONFIG_BT_PTS_TEST
+#ifndef CONFIG_BT_LEA_PTS_TEST
 	sys_ble_advertise_init();
 #endif
 #endif
@@ -678,7 +678,7 @@ void system_app_init_bte_ready(void)
 	act_att_notify_bt_engine_ready();
 #endif
 
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 	pts_le_audio_init();
 #else
 	bt_le_audio_init();

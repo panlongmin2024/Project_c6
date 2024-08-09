@@ -69,10 +69,12 @@ struct rdm_device {
 	uint8_t avrcp_sync_volume_wait:1;
 	uint8_t avrcp_playstatus:1; /*0:pause, 1:play*/
     uint8_t avrcp_connecting_pending:1;
+    uint8_t avrcp_playing_pending:1;
+    uint8_t avrcp_playing_pended:1;
 
 	uint32_t avrcp_set_absolute_volume;
 	os_delayed_work avrcp_set_absolute_volume_delay_work;
-	os_delayed_work avrcp_connecting_pending_delay_work;
+	os_delayed_work avrcp_status_pending_delay_work;
 
 	struct{
 		uint32_t song_len;
@@ -703,6 +705,11 @@ int btsrv_rdm_remove_dev(uint8_t *mac)
 
 	hostif_bt_conn_unref(dev->base_conn);
 	sys_slist_find_and_remove(&p_rdm->dev_list, &dev->node);
+
+	if(dev->avrcp_connecting_pending || dev->avrcp_playing_pending){
+		//TODO:use os_xx instead
+		k_delayed_work_cancel_sync(&dev->avrcp_status_pending_delay_work,K_FOREVER);
+    }
 	mem_free(dev);
 
 	hostif_bt_addr_to_str((const bt_addr_t *)mac, addr_str, BT_ADDR_STR_LEN);
@@ -1180,9 +1187,10 @@ int btsrv_rdm_set_avrcp_connected(struct bt_conn *base_conn, bool connected)
 		os_delayed_work_cancel(&dev->avrcp_set_absolute_volume_delay_work);
 	}
 
-    if(dev->avrcp_connecting_pending){
+    if(dev->avrcp_connecting_pending || dev->avrcp_playing_pending){
         dev->avrcp_connecting_pending = 0;
-        os_delayed_work_cancel(&dev->avrcp_connecting_pending_delay_work);
+        dev->avrcp_playing_pending = 0;
+        os_delayed_work_cancel(&dev->avrcp_status_pending_delay_work);
     }
 
 	return 0;
@@ -1309,7 +1317,7 @@ void btsrv_rdm_get_avrcp_playstatus_info(struct bt_conn *base_conn, uint32_t *so
 void btsrv_rdm_avrcp_connecting_pending_delay_proc(os_work *work)
 {
 	struct rdm_device* dev;
-	struct rdm_device* dev_tmp = CONTAINER_OF(work, struct rdm_device, avrcp_connecting_pending_delay_work);
+	struct rdm_device* dev_tmp = CONTAINER_OF(work, struct rdm_device, avrcp_status_pending_delay_work);
 
 	dev = btsrv_rdm_find_dev_by_conn(dev_tmp->base_conn);
 	if ((!dev)) {
@@ -1319,6 +1327,22 @@ void btsrv_rdm_avrcp_connecting_pending_delay_proc(os_work *work)
 
     SYS_LOG_WRN("timeout!\n");
     dev->avrcp_connecting_pending = 0;
+}
+
+void btsrv_rdm_avrcp_playing_pending_delay_proc(os_work *work)
+{
+	struct rdm_device* dev;
+	struct rdm_device* dev_tmp = CONTAINER_OF(work, struct rdm_device, avrcp_status_pending_delay_work);
+
+	dev = btsrv_rdm_find_dev_by_conn(dev_tmp->base_conn);
+	if ((!dev)) {
+		SYS_LOG_WRN("not connected??\n");
+		return;
+	}
+
+    SYS_LOG_WRN("timeout!\n");
+    dev->avrcp_playing_pending = 0;
+    dev->avrcp_playing_pended = 1;
 }
 
 void btsrv_rdm_set_avrcp_connecting_pending(struct bt_conn *base_conn)
@@ -1338,9 +1362,8 @@ void btsrv_rdm_set_avrcp_connecting_pending(struct bt_conn *base_conn)
     SYS_LOG_INF("pendinng!\n");
 
     dev->avrcp_connecting_pending = 1;
-    os_delayed_work_init(&dev->avrcp_connecting_pending_delay_work, btsrv_rdm_avrcp_connecting_pending_delay_proc);  
-    os_delayed_work_submit(&dev->avrcp_connecting_pending_delay_work, 3000);
-
+    os_delayed_work_init(&dev->avrcp_status_pending_delay_work, btsrv_rdm_avrcp_connecting_pending_delay_proc);
+    os_delayed_work_submit(&dev->avrcp_status_pending_delay_work, BTSRV_AVRCP_CONNECTING_PENDING);
 }
 
 bool btsrv_rdm_is_avrcp_connected_pending(struct bt_conn *base_conn)
@@ -1354,6 +1377,57 @@ bool btsrv_rdm_is_avrcp_connected_pending(struct bt_conn *base_conn)
 	}
 
     return dev->avrcp_connecting_pending;
+}
+
+void btsrv_rdm_set_avrcp_playing_pending(struct bt_conn *base_conn)
+{
+	struct rdm_device *dev;
+
+	dev = btsrv_rdm_find_dev_by_conn(base_conn);
+	if (dev == NULL) {
+		SYS_LOG_WRN("not connected??\n");
+		return;
+	}
+
+    if(!dev->avrcp_connected){
+        return;
+    }
+
+    if(dev->avrcp_playing_pending){
+        return;
+    }
+
+    SYS_LOG_INF("pendinng!\n");
+
+    dev->avrcp_playing_pending = 1;
+    os_delayed_work_init(&dev->avrcp_status_pending_delay_work, btsrv_rdm_avrcp_playing_pending_delay_proc);
+    os_delayed_work_submit(&dev->avrcp_status_pending_delay_work, BTSRV_AVRCP_PLAYING_PENDING);
+}
+
+bool btsrv_rdm_is_avrcp_playing_pending(struct bt_conn *base_conn)
+{
+	struct rdm_device *dev;
+
+	dev = btsrv_rdm_find_dev_by_conn(base_conn);
+	if (dev == NULL) {
+		SYS_LOG_WRN("not connected??\n");
+		return true;
+	}
+
+    return dev->avrcp_playing_pending;
+}
+
+bool btsrv_rdm_is_avrcp_playing_pended(struct bt_conn *base_conn)
+{
+	struct rdm_device *dev;
+
+	dev = btsrv_rdm_find_dev_by_conn(base_conn);
+	if (dev == NULL) {
+		SYS_LOG_WRN("not connected??\n");
+		return true;
+	}
+
+    return dev->avrcp_playing_pended;
 }
 
 int btsrv_rdm_set_hfp_connected(struct bt_conn *base_conn, bool connected)
@@ -2284,8 +2358,17 @@ int btsrv_rdm_set_avrcp_state(struct bt_conn *base_conn, uint8_t state)
 		return -ENODEV;
 	}
 
+    if(state){
+        if(dev->avrcp_playing_pending){
+            dev->avrcp_playing_pending = 0;
+            os_delayed_work_cancel(&dev->avrcp_status_pending_delay_work);
+        }
+    }
+
 	dev->avrcp_playstatus = state ? 1 : 0;
+    dev->avrcp_playing_pended = 0;
 	btif_a2dp_update_avrcp_state(base_conn, dev->avrcp_playstatus);
+
 	return 0;
 }
 

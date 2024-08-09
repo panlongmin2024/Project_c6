@@ -745,7 +745,7 @@ static int audio_in_dma_prepare(struct device *dev, ain_session_t *session)
 }
 
 /* @brief ASRC command and control */
-static int audio_in_asrc_ioctl(struct device *dev, void *handle, int cmd, void *param)
+int audio_in_asrc_ioctl(struct device *dev, void *handle, int cmd, void *param)
 {
 	const struct acts_audio_in_config *cfg = dev->config->config_info;
 	struct acts_audio_i2srx1 *i2srx1_reg = cfg->i2srx1;
