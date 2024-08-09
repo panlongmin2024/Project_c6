@@ -3,12 +3,11 @@
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 static bool isWltAtsMode = false;
-static struct _wlt_driver_ctx_t *p_ats_wlt_info;
+//static struct _wlt_driver_ctx_t *p_ats_wlt_info;
 
 ats_wlt_uart ats_wlt_uart_enter;
-static void ats_wlt_enter_write_data(unsigned char *buf, int len);
+//static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 extern void console_input_deinit(struct device *dev);
-static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 extern uint8_t ReadODM(void);
 /*static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
