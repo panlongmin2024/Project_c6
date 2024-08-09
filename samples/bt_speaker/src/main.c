@@ -60,6 +60,19 @@ static void main_test_timer_func(struct thread_timer *timer, void* pdata)
 		//trace_dma_print_set(true);
 	}
 }
+
+int ats_wlt_check_adfu(void)
+{
+	u32_t value;
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+    //gpio_pin_configure(gpio_dev, 2, GPIO_DIR_IN | GPIO_POL_NORMAL);
+    gpio_pin_read(gpio_dev, 2, &value);	
+	SYS_LOG_INF("------>  value=0x%x\n",value);
+	if(!value){
+		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	}
+	return 0;
+}
 /***************/
 static void main_is_enter_att(void)
 {
@@ -126,8 +139,10 @@ static void main_pre_init(void)
 #ifdef CONFIG_WLT_ATS_ENABLE
 	/* check if need enter wlt factory test !! */
 	ats_wlt_enter();
-	thread_timer_init(&main_test_timer, main_test_timer_func, NULL);
-    thread_timer_start(&main_test_timer, 0, 1000);
+	ats_wlt_check_adfu();
+
+	//thread_timer_init(&main_test_timer, main_test_timer_func, NULL);
+    //thread_timer_start(&main_test_timer, 0, 1000);
 #endif
 	user_app_early_init();
 	system_pre_init();
