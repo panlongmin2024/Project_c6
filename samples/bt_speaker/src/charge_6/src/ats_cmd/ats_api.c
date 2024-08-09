@@ -17,6 +17,7 @@
 #endif
 #define SYS_LOG_DOMAIN "ats_api"
 #include <logging/sys_log.h>
+#include <nvram_config.h>
 
 struct _ats_ctx {
     os_mutex ats_mutex;
@@ -634,3 +635,39 @@ int ats_module_test_mode_read(uint8_t *buf, int size)
 
     return ret;
 }
+
+int ats_mac_write(uint8_t *buf, int size)
+{
+    int ret = 0;
+	char read_mac_fac[12]={0};
+	char read_mac_user[12]={0};
+
+    SYS_LOG_INF("write mac to flash rw!\n");
+	ret = property_set_factory(CFG_BT_MAC, buf, 12);
+    if (ret != 0){
+        return -1;
+    }
+	SYS_LOG_INF("write mac to flash user!\n");
+	ret = property_set(CFG_BT_MAC, buf, 12);
+    if (ret != 0){
+        return -1;
+    }
+	ret = property_flush(CFG_BT_MAC);
+    if (ret != 0){
+        return -1;
+    }	
+
+	property_get(CFG_BT_MAC, read_mac_user, 12);
+	nvram_config_get_factory(CFG_BT_MAC, read_mac_fac , 12);
+	
+	if(memcmp(read_mac_user, read_mac_fac, 12)){
+		return -1;
+	}
+		
+	if(memcmp(buf, read_mac_fac, 12)){
+		return -1;
+	}
+	
+    return ret;
+}
+

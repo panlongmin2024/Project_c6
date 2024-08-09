@@ -524,15 +524,12 @@ static int cdc_shell_ats_read_bt_dev_mac_addr(struct device *dev, u8_t *buf, int
 static int cdc_shell_ats_sw_version_info_dump(struct device *dev, u8_t *buf, int len)
 {
 	uint8_t buffer[] = "0000";
-	uint32_t swver = fw_version_get_sw_code();
+	uint32_t swver = fw_version_get_sw_code(); //for example 0x010700-1.7.0
 	uint8_t hwver = fw_version_get_hw_code();
 	uint32_t swver_hex;
-	swver>>=4;//0x10700->0x1070
-	swver_hex = (swver&0xf) + (((swver>>4)&0xf)*10) + (((swver>>8)&0xf)*100) + (((swver>>12)&0xf)*1000) 
-		+ (((swver>>16)&0xf)*10000);//0x1070->0x42e
-	
-	hex_to_string_4(swver_hex,buffer);//0x42e->"1070"
-	buffer[3] = (hwver%10)+'0';//"1070"->sw+hw
+	swver_hex = (((swver>>0)&0xf)*10) + (((swver>>8)&0xf)*100) + (((swver>>16)&0xf)*1000);
+	hex_to_string_4(swver_hex,buffer);
+	buffer[3] = (hwver%10)+'0';//sw + hw
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_SW_VERSION_INFO_DUMP, sizeof(ATS_CMD_RESP_SW_VERSION_INFO_DUMP)-1, 
@@ -1354,8 +1351,6 @@ static int cdc_shell_ats_haman_battery_key_check(struct device *dev, u8_t *buf, 
 	return 0;
 }
 
-
-
 static int cdc_shell_ats_usb_ntc_read_status(struct device *dev, u8_t *buf, int len)
 {	
 	char buffer[2+1] = "00";
@@ -1394,6 +1389,29 @@ static int cdc_shell_ats_select_one_speaker(struct device *dev, u8_t *buf, int l
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
 	return 0;
+}
+
+static int cdc_shell_ats_bt_mac_write(struct device *dev, u8_t *buf, int len)
+{
+	int result;
+
+	if(len!=12){
+		/* limit length 12 */
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+		return 0;
+	}
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev,ATS_CMD_RESP_MAC_SET,sizeof(ATS_CMD_RESP_MAC_SET)-1,
+		buf,len);
+
+	result = ats_mac_write(buf, len);
+	if(result<0){
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	}
+	return 0;	
 }
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
@@ -1769,6 +1787,13 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* get sink charge current */
 		cdc_shell_ats_get_sink_charge_current(dev, NULL, 0);	
+	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_MAC_WRITE, sizeof(ATS_AT_CMD_MAC_WRITE)-1))
+	{		   
+		/* set bt mac */
+        index += sizeof(ATS_AT_CMD_MAC_WRITE)-1;
+		target_index = index;
+		cdc_shell_ats_bt_mac_write(dev, &buf[target_index], size-target_index-2);
 	}	
 	else	
 	{
