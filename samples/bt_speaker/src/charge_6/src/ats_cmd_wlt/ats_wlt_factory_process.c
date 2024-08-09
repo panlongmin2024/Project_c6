@@ -17,7 +17,18 @@ extern void console_input_deinit(struct device *dev);
 extern struct device *uart_console_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
 void ats_wlt_write_data(unsigned char *buf, int len);
-
+int ats_wlt_check_adfu(void)
+{
+	u32_t value;
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+    gpio_pin_configure(gpio_dev, 2, GPIO_DIR_IN | GPIO_POL_NORMAL);
+    gpio_pin_read(gpio_dev, 2, &value);	
+	SYS_LOG_INF("------>  value=0x%x\n",value);
+	if(!value){
+		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	}
+	return 0;
+}
 void ats_wlt_enter(void)
 {
 	SYS_LOG_INF("check wlt ats !\n");
