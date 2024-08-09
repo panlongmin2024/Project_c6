@@ -31,7 +31,7 @@ static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
 	return 0;
 }
 
-static int ats_wlt_enter_comm_data_handler(struct device *dev)
+/*static int ats_wlt_enter_comm_data_handler(struct device *dev)
 {
 	ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
 	int rx_size=0;
@@ -55,7 +55,7 @@ static int ats_wlt_enter_comm_data_handler(struct device *dev)
 	ats_wlt_command_handler(dev, p_ats_wlt_info->data_buf, rx_size);
 	return 0;
 }
-
+*/
 static void ats_wlt_enter_write_data(unsigned char *buf, int len)
 {
   ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
