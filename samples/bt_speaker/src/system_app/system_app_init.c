@@ -451,7 +451,7 @@ void system_app_init(void)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 			/* wlt factory test start!!! */
 			bool enter_ats_wlt_flag = false;
-			if(get_enter_wlt_ats_state() && (!main_get_enter_att_state()))
+			if(get_enter_wlt_ats_state())
 			{
 				init_bt_manager = false;
 				enter_ats_wlt_flag = true;
