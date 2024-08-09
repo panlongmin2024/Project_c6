@@ -18,7 +18,7 @@
 #include <uart_stream.h>
 #include <logging/sys_log.h>
 #include <trace.h>
-
+#include <gpio.h>
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 #define CFG_WLT_INFO_0   			"WLT_INFO_0"
