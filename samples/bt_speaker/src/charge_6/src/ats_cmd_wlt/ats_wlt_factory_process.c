@@ -310,9 +310,6 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
 	wlt_read_data_handler(dev);
-
-	mcu_ui_send_led_code(0x18,1);
-	mcu_ui_power_hold_fn();	
 }
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
@@ -334,10 +331,7 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 
 	thread_timer_init(&p_ats_info->rx_timer, wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_info->rx_timer, 0, 10);
-
-	mcu_ui_send_led_code(0x18,1);
-	mcu_ui_power_hold_fn();
-
+	
 	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
 	while (p_ats_info->enabled) 
     {
@@ -441,8 +435,14 @@ int ats_wlt_init(void)
 		goto err_exit;		
 	}
 
+	if (p_ats_info)
+	{
+        SYS_LOG_INF("already init\n");
+		return 0;
+	}
+
 	os_sem_init(&callback_sem, 0, 1);
-	
+
 	p_ats_info = malloc(sizeof(struct _wlt_driver_ctx_t));
 	if (p_ats_info == NULL)
 	{

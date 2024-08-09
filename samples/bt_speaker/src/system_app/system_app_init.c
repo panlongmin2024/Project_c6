@@ -403,10 +403,6 @@ void system_app_init(void)
 	}
 #endif
 
-	//k_sleep(2000);
-
-
-
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)
@@ -421,7 +417,7 @@ void system_app_init(void)
 	{
 		pd_srv_sync_init();
 	}
-	
+
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
 		bool enter_stub_tool = false;
 
@@ -447,33 +443,24 @@ void system_app_init(void)
 #endif
 #endif
 
-#if 0//def CONFIG_WLT_ATS_ENABLE
+#ifdef CONFIG_WLT_ATS_ENABLE
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-			/* wlt factory test start!!! */
-			bool enter_ats_wlt_flag = false;
-			if(get_enter_wlt_ats_state())
-			{
-				init_bt_manager = false;
-				enter_ats_wlt_flag = true;
+		/* wlt factory test start!!! */
+		if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
+			init_bt_manager = false;
 #ifdef CONFIG_PLAYTTS
-				tts_manager_lock();
+			tts_manager_lock();
 #endif			
-				trace_init();
-				//mcu_ui_power_hold_fn();
-				ats_wlt_start();
-			}
+			trace_init();
+			mcu_ui_power_hold_fn();
+			ats_wlt_start();
+		}
 #endif
 #endif
-
-
 		system_app_ota_init();
 
-#if 0//def CONFIG_WLT_ATS_ENABLE
-		if (enter_stub_tool == false && enter_ats_wlt_flag == false) {
-#else
+
 		if (enter_stub_tool == false) {
-#endif
-		
 #ifdef CONFIG_CARD_READER_APP
 			if (usb_hotplug_device_mode()
 			    && !(reason == REBOOT_REASON_NORMAL)) {
@@ -521,17 +508,6 @@ void system_app_init(void)
 
 		system_ready();
 	}
-
-
-#ifdef CONFIG_WLT_ATS_ENABLE
-	/* wlt factory test start!!! */
-	if(get_enter_wlt_ats_state())
-	{		
-		trace_init();
-		ats_wlt_start();
-	}
-#endif
-
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	printf("%s:%d led_manager_set_display\n", __func__, __LINE__);
