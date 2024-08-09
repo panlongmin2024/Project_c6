@@ -527,7 +527,7 @@ static int set_nvram_bt_addr(const u8_t * addr)
 	if (ret_val < 0)
 		return ret_val;
 
-	//property_flush(CFG_BT_MAC);
+	property_flush(CFG_BT_MAC);
 
 	return 0;
 }
