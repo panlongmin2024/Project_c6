@@ -115,7 +115,7 @@
 
 #define ATS_AT_CMD_ALL_WLED_ON              "TL_WLED_ALLON"
 
-#define ATS_AT_CMD_MAC_WRITE               	"TL_SET_MAC"
+#define ATS_AT_CMD_MAC_WRITE               	"TL_SET_MAC="
 
 
 #endif
