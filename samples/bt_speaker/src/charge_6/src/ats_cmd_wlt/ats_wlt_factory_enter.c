@@ -55,12 +55,12 @@ static int ats_wlt_enter_comm_data_handler(struct device *dev)
 	ats_wlt_command_handler(dev, p_ats_wlt_info->data_buf, rx_size);
 	return 0;
 }
-*/
+
 static void ats_wlt_enter_write_data(unsigned char *buf, int len)
 {
   ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
   stream_write(ats_uart->uio, buf, len);	
-}
+}*/
 /* check wlt ats enter? */
 /*static void ats_wlt_enter_timer_cb(struct thread_timer *timer, void* pdata)
 {
