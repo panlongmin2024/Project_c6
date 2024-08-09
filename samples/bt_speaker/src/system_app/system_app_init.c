@@ -590,7 +590,7 @@ void system_app_init(void)
 
 	if(get_enter_wlt_ats_state())
 	{		
-		//trace_init();
+		trace_init();
 		ats_wlt_start();
 	}
 
