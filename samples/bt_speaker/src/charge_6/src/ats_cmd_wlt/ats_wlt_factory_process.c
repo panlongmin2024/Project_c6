@@ -335,9 +335,6 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 	thread_timer_init(&p_ats_info->rx_timer, wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_info->rx_timer, 0, 10);
 
-	mcu_ui_send_led_code(0x18,1);
-	mcu_ui_power_hold_fn();
-
 	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
 	while (p_ats_info->enabled) 
     {

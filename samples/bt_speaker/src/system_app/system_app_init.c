@@ -454,7 +454,7 @@ void system_app_init(void)
 #ifdef CONFIG_PLAYTTS
 				tts_manager_lock();
 #endif			
-				trace_init();
+				//trace_init();
 				ats_wlt_start();
 			}
 #endif
