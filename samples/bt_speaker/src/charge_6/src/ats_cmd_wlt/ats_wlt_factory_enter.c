@@ -115,9 +115,9 @@ int ats_wlt_enter(void)
 		k_sleep(20);
 		if(ReadODM() == 0){
 			/* is wlt factory test ! */
-
+			
 			SYS_LOG_INF("real entering wlt ats !\n");
-
+#if 0
 			p_ats_wlt_info = malloc(sizeof(struct _wlt_driver_ctx_t));
 			if(p_ats_wlt_info == NULL){
 				SYS_LOG_ERR("uart device not found\n");
@@ -133,6 +133,9 @@ int ats_wlt_enter(void)
 			ats_wlt_enter_uart_init(p_ats_wlt_info->ats_uart_dev);
 			ret = ats_wlt_wait_comm(p_ats_wlt_info->ats_uart_dev);
 			//console_input_deinit(p_ats_wlt_info->ats_uart_dev);
+#else
+			isWltAtsMode = true;
+#endif			
 		}
 	}
 	return ret;
