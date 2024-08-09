@@ -392,7 +392,7 @@ int audio_system_set_stream_volume(int stream_type, int volume)
 	if (!audio_system)
 		return -ESRCH;
 
-	SYS_LOG_INF("stream=%d, vol=%d/%d\n", stream_type, volume, audio_policy_get_volume_level());
+	SYS_LOG_INF("stream=%d, vol=%d/%d", stream_type, volume, audio_policy_get_volume_level());
 
 	if (volume >= audio_policy_get_volume_level()) {
 		volume = audio_policy_get_volume_level();
@@ -491,7 +491,7 @@ int audio_system_set_stream_volume(int stream_type, int volume)
 	}
 	os_mutex_unlock(&audio_system->audio_system_mutex);
 
-	SYS_LOG_INF("ret=%d\n", ret);
+	SYS_LOG_INF("ret=%d", ret);
 
 	return ret;
 }

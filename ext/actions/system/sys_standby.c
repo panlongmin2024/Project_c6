@@ -195,7 +195,7 @@ static int _sys_standby_check_auto_powerdown(bool flag)
 		SYS_LOG_INF("[%d] vBus down!!!\n", __LINE__);
 
 	}else{
-		if (dc_power_in_status_read()) {
+		if (sys_pm_get_power_5v_status()) {
 			power_state = 0;
 			return 0;
 		}
@@ -310,17 +310,15 @@ static int _sys_standby_exit_s1(void)
 #ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	led_manager_wake_up();
 #else
-	if(dc_power_in_status_read()){
+	if(sys_pm_get_power_5v_status()){
 		/* 1106 remove this led ,start*/
-		if(system_get_power_run_mode() == 0)	
-			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+		//if(system_get_power_run_mode() == 0)	
+		//	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
 
-		bt_manager_update_led_display();
+		//bt_manager_update_led_display();
 		/* 1106 remove this led ,end*/
 		//if(system_app_get_auracast_mode())
 			//pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);
-	}else{
-		led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 	}
 #endif	
 #endif

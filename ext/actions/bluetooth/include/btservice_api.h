@@ -704,7 +704,7 @@ int btif_br_write_ori_linkkey(bd_address_t *addr, uint8_t *link_key);
  * This routine clean bt service linkkey from nvram.
  */
 void btif_br_clean_linkkey(void);
-
+ 
 int btif_br_clear_share_tws(void);
 bool btif_br_check_share_tws(void);
 void btif_br_get_local_mac(bd_address_t *addr);
@@ -780,7 +780,7 @@ typedef enum {
 	/** notifying that a2dp stream started */
 	BTSRV_A2DP_STREAM_STARTED,
 	/** notifying that a2dp stream check started */
-	BTSRV_A2DP_STREAM_CHECK_STARTED,
+	BTSRV_A2DP_STREAM_CHECK_STARTED,	
 	/** notifying that a2dp stream suspend */
 	BTSRV_A2DP_STREAM_SUSPEND,
 	/** notifying that a2dp stream data indicated */
@@ -795,9 +795,9 @@ typedef enum {
 	/** Notifying device need delay check start play.  */
 	BTSRV_A2DP_REQ_DELAY_CHECK_START,
 	/** notifying that a2dp stream suspend because a2dp disconnected */
-	BTSRV_A2DP_DISCONNECTED_STREAM_SUSPEND,
+	BTSRV_A2DP_DISCONNECTED_STREAM_SUSPEND,	
 	/** notifying that BR a2dp stream started but avrcp paused */
-	BTSRV_A2DP_STREAM_STARTED_AVRCP_PAUSED,
+	BTSRV_A2DP_STREAM_STARTED_AVRCP_PAUSED,		
 	/** notifying that BR non_prompt_tone start*/
 	BTSRV_A2DP_NON_PROMPT_TONE_STARTED,
 } btsrv_a2dp_event_e;
@@ -1025,8 +1025,6 @@ int btif_avrcp_send_command_by_hdl(uint16_t hdl, int command);
 int btif_avrcp_sync_vol(uint16_t hdl, uint16_t delay_ms);		/* Hdl as parameter, will use get_volume_cb get volume to sync */
 int btif_avrcp_get_id3_info();
 int btif_avrcp_set_absolute_volume(uint8_t *data, uint8_t len);
-int btif_avrcp_notify_volume_change(uint8_t volume);
-
 /*return 0:pause, 1:play*/
 int btif_avrcp_get_avrcp_status(uint16_t hdl);
 int btif_avrcp_get_play_status(struct bt_conn *conn);
@@ -1411,7 +1409,7 @@ enum {
 	/** BR/EDR SNOOP Connection Type */
 	BT_TYPE_BR_SNOOP = BIT(4),
 	/** SCO SNOOP Connection Type */
-	BT_TYPE_SCO_SNOOP = BIT(5),
+	BT_TYPE_SCO_SNOOP = BIT(5),	
 	/** All Connection Type */
 	BT_TYPE_ALL = BT_CONN_TYPE_LE | BT_CONN_TYPE_BR |
 			   BT_CONN_TYPE_SCO | BT_CONN_TYPE_ISO | BT_TYPE_BR_SNOOP | BT_TYPE_SCO_SNOOP,
@@ -2315,7 +2313,7 @@ struct bt_broadcast_source_create_param {
 
 	uint8_t num_subgroups;
 	struct bt_broadcast_subgroup *subgroup;
-
+     
 	uint8_t past_enable;
     uint16_t acl_handle;
 	/*
@@ -2456,10 +2454,6 @@ int btif_audio_call_accept(struct bt_audio_call *call);
 int btif_audio_call_hold(struct bt_audio_call *call);
 int btif_audio_call_retrieve(struct bt_audio_call *call);
 int btif_audio_call_terminate(struct bt_audio_call *call);
-
-typedef void (*get_remote_lea_name_cb)(uint16_t handle, uint8_t err, const void *data, uint16_t length);
-
-int btif_audio_get_remote_name(uint16_t handle, get_remote_lea_name_cb callback);
 
 typedef enum {
 	TBS_CHRC_PROVIDER_NAME = 0,
@@ -2632,11 +2626,13 @@ typedef enum
 int btif_pts_send_hfp_cmd(char *cmd);
 int btif_pts_hfp_active_connect_sco(void);
 int btif_pts_avrcp_get_play_status(void);
+int btif_pts_avrcp_pass_through_cmd(uint8_t opid);
+int btif_pts_avrcp_notify_volume_change(uint8_t volume);
 int btif_pts_avrcp_reg_notify_volume_change(void);
 int btif_pts_register_auth_cb(bool reg_auth);
 int btif_bt_set_pts_config(bool enable);
+int btif_pts_avrcp_set_abs_volume(uint8_t volume);
 
-#ifdef CONFIG_BT_LEA_PTS_TEST
 typedef enum
 {
 	PTS_ADV_TYPE_NONE,
@@ -2692,7 +2688,6 @@ int btif_pts_read_mcs_track_position(uint16_t handle);
 int btif_pts_write_mcs_track_position(uint16_t handle, int32_t position);
 int btif_pts_write_media_control(uint16_t handle, uint8_t opcode);
 int btif_pts_set_le_security_level(bt_security_t sec_level);
-#endif /* CONFIG_BT_LEA_PTS_TEST*/
 
 #endif /*CONFIG_BT_PTS_TEST*/
 

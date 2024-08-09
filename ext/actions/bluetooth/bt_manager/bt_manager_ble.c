@@ -143,8 +143,11 @@ void ble_advertise(void)
 	param.id = BT_ID_DEFAULT;
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
+#ifdef CONFIG_BT_LETWS	
+	param.options = (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME  | BT_LE_ADV_OPT_USE_IDENTITY);
+#else
 	param.options = (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME);
-
+#endif
 	ad = ble_ad_discov;
 	ad_len = ARRAY_SIZE(ble_ad_discov);
 
@@ -835,7 +838,7 @@ static bool ble_advertise_data(void)
 	param.id = BT_ID_DEFAULT;
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
-	param.options = BT_LE_ADV_OPT_CONNECTABLE;
+	param.options = (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_IDENTITY);
 
 	ctrl_set_le_legacy_adv_tx_pwr(ble_info.adv_power);
 	err = hostif_bt_le_adv_start(&param, (ad_len ? (const struct bt_data *)ad : NULL), ad_len,

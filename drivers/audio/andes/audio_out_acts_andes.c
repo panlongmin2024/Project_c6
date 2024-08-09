@@ -1074,7 +1074,7 @@ static int acts_audio_pa_class_select(struct device *dev, u8_t pa_class)
 }
 
 /* @brief ASRC command and control */
-int audio_out_asrc_ioctl(struct device *dev, void *handle, int cmd, void *param)
+static int audio_out_asrc_ioctl(struct device *dev, void *handle, int cmd, void *param)
 {
 	const struct acts_audio_out_config *cfg = dev->config->config_info;
 	struct acts_audio_i2stx0 *i2stx_reg = cfg->i2stx;

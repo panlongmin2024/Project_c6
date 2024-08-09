@@ -23,8 +23,6 @@
 #include <sys_event.h>
 #include <stream.h>
 #include <acts_bluetooth/host_interface.h>
-#include <hex_str.h>
-
 #ifdef CONFIG_ACT_EVENT
 #include <bt_act_event_id.h>
 #include <logging/log_core.h>
@@ -66,13 +64,9 @@ struct sppble_info_t {
 	struct bt_conn *conn;
 	struct conn_info_t conn_info;
 	void(*rxdata_cb)(void);
-	uint8_t write_attr_enable_ccc;
 };
 
 static void sppble_rx_data(io_stream_t handle, uint8_t *buf, uint16_t len);
-static ssize_t stream_ble_rx_set_notifyind_ex(struct bt_conn *conn, uint8_t conn_type,
-												const struct bt_gatt_attr *attr, uint16_t value);
-
 static io_stream_t sppble_create_stream[MAX_SPPBLE_STREAM] __IN_BT_SECTION;
 static OS_MUTEX_DEFINE(g_sppble_mutex);
 
@@ -189,30 +183,10 @@ static io_stream_t find_streame_by_ble_attr(const struct bt_gatt_attr *attr)
 	return NULL;
 }
 
-static int conn_info_find(struct conn_info_t *conn_info, struct bt_conn *conn)
-{
-	for (int i = 0; i < MAX_DEV_CNT; i++) {
-		if (conn_info->dev_conn[i] == conn) {
-			return 0;
-		}
-	}
-
-	return -1;
-}
-
 static int conn_info_add(struct conn_info_t *conn_info, struct bt_conn *conn, uint8_t connect_type)
 {
-	int ret = -1;
-
 	if (!conn) {
-		ret = -2;
-		goto exit;
-	}
-
-	//conn already exist
-	if (conn_info_find(conn_info, conn) >= 0) {
-		ret = -3;
-		goto exit;
+		return -2;
 	}
 
 	for (int i = 0; i < MAX_DEV_CNT; i++) {
@@ -221,16 +195,11 @@ static int conn_info_add(struct conn_info_t *conn_info, struct bt_conn *conn, ui
 			conn_info->connect_type[i] = connect_type;
 			conn_info->connect_num++;
 			SYS_LOG_INF("connect_num: %d, %d, %p", i, conn_info->connect_num, conn);
-			ret = 0;
-			goto exit;
+			return 0;
 		}
 	}
-exit:
-	if (ret < 0) {
-		SYS_LOG_WRN("add conn %p, ret %d", conn, ret);
-	}
 
-	return ret;
+	return -1;
 }
 
 static int conn_info_find_and_del(struct conn_info_t *conn_info, struct bt_conn *conn)
@@ -256,13 +225,12 @@ static int conn_info_count(struct conn_info_t *conn_info)
 	return conn_info->connect_num;
 }
 
-static int conn_info_find_next(struct conn_info_t *conn_info,struct bt_conn **conn,uint8_t *conn_type)
+static int conn_info_find_next(struct conn_info_t *conn_info,struct bt_conn *conn,uint8_t *conn_type)
 {
 	for (int i = 0; i < MAX_DEV_CNT; i++) {
 		if (conn_info->dev_conn[i] != NULL) {
-			SYS_LOG_INF("no:%d, conn:%p, connect_type:%d, conn_type:%d",
-						i, conn_info->dev_conn[i], conn_info->connect_type[i], *conn_type);
-			*conn = conn_info->dev_conn[i];
+			SYS_LOG_INF("no:%d, conn:%p, connect_type:%d", i, conn_info->dev_conn[i], conn_info->connect_type[i]);
+			conn = conn_info->dev_conn[i];
 			*conn_type = conn_info->connect_type[i];
 			return 0;
 		}
@@ -341,7 +309,6 @@ static ssize_t stream_ble_rx_data(struct bt_conn *conn,
 			      const void *buf, uint16_t len, uint16_t offset,
 			      uint8_t flags)
 {
-	uint8_t conn_type;
 	struct sppble_info_t *info;
 	io_stream_t stream = find_streame_by_ble_attr(attr);
 
@@ -349,16 +316,9 @@ static ssize_t stream_ble_rx_data(struct bt_conn *conn,
 	if (stream && stream->data) {
 		info = (struct sppble_info_t *)stream->data;
 
-		if ((info->write_attr_enable_ccc) &&
-			(conn_info_find(&(info->conn_info), conn) < 0)) {
-			conn_type = hostif_bt_conn_get_type(conn);
-			stream_ble_rx_set_notifyind_ex(conn, conn_type, attr, 1);
-		}
-
 		if((info->conn) && (conn != info->conn)) {
 			SYS_LOG_WRN("conn changed! %p->%p", info->conn, conn);
-			if ((info->connect_type == BLE_CONNECT_TYPE)||
-				(info->connect_type == GATT_OVER_BR_CONNECT_TYPE)) {
+			if(info->connect_type == GATT_OVER_BR_CONNECT_TYPE) {
 				if (NULL != info->rx_data_on_changed_con_cb) {
 					struct bt_conn *conn_back;
 					//switch info->conn for data write.
@@ -417,36 +377,21 @@ static void stream_ble_rx_set_notifyind(struct bt_conn *conn, uint8_t conn_type,
 				if (info->connect_cb) {
 					info->connect_cb(true, info->connect_type, (void *)conn);
 				}
+			}else {
+				SYS_LOG_WRN("Can't add conn: %p", conn);
 			}
 		} else {
 			SYS_LOG_WRN("Had connected: %d", info->connect_type);
 		}
 	}
 }
-
-static const uint8_t * conn_type_str[4] =
-{
-    "NONE",
-    "BLE",
-    "BR",
-    "OTHERS",
-};
-
-static const uint8_t * connect_type_str[4] =
-{
-	"NONE",
-	"SPP",
-	"BLE",
-	"GATT_OVER_BR",
-};
-
 static ssize_t stream_ble_rx_set_notifyind_ex(struct bt_conn *conn, uint8_t conn_type,
 												const struct bt_gatt_attr *attr, uint16_t value)
 {
 	uint8_t connect_type = BLE_CONNECT_TYPE;
 	struct sppble_info_t *info;
 	io_stream_t stream = find_streame_by_ble_attr(attr);
-    uint8_t conn_type_index = conn_type;
+
 	if(!stream){
 		SYS_LOG_WRN("should not happen\n");
 		return BT_GATT_ERR(BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
@@ -457,16 +402,11 @@ static ssize_t stream_ble_rx_set_notifyind_ex(struct bt_conn *conn, uint8_t conn
 	info = (struct sppble_info_t *)stream->data;
 	info->notify_ind_enable = (uint8_t)value;
 
-    if(conn_type_index > BT_CONN_TYPE_BR){
-        conn_type_index = 3;
-    }
-
-	SYS_LOG_INF("conn_type:%s,connect_type:%s", conn_type_str[conn_type_index],connect_type_str[info->connect_type]);
+	SYS_LOG_INF("conn_type:%d,connect_type:%d", conn_type,info->connect_type);
 
 	if (stream && stream->data) {
 		if (value) {
 			if ((info->connect_type == NONE_CONNECT_TYPE) ||
-				(info->connect_type == BLE_CONNECT_TYPE)  ||
 			    (info->connect_type == GATT_OVER_BR_CONNECT_TYPE)) {
 				if(conn_type == BT_CONN_TYPE_BR) {
 					connect_type = GATT_OVER_BR_CONNECT_TYPE;
@@ -476,14 +416,15 @@ static ssize_t stream_ble_rx_set_notifyind_ex(struct bt_conn *conn, uint8_t conn
 				}
 				info->connect_type = connect_type;
 				info->conn = conn;
-				if (conn_info_add(&(info->conn_info), conn, connect_type) >= 0) {
+				if (conn_info_add(&(info->conn_info), conn,connect_type) >= 0) {
 					if (info->connect_cb) {
 						info->connect_cb(true, info->connect_type, (void *)conn);
 					}
+				}else {
+					SYS_LOG_WRN("Can't add conn: %p", conn);
 				}
-			}
-			else {
-				SYS_LOG_WRN("Had connected:%s", connect_type_str[info->connect_type]);
+			} else {
+				SYS_LOG_WRN("Had connected: %d", info->connect_type);
 			}
 		}else {
 			if ((info->connect_type == BLE_CONNECT_TYPE) ||
@@ -512,18 +453,8 @@ void stream_ble_connect_cb(struct bt_conn *conn, uint8_t conn_type, uint8_t *mac
 	struct sppble_info_t *info;
 	int i;
     int err;
-    char addr[13];
-    uint8_t conn_type_index;
-    memset(addr, 0, 13);
-    hex_to_str(addr, mac, 6);
-
-    conn_type_index = conn_type;
-    if(conn_type_index > BT_CONN_TYPE_BR){
-        conn_type_index = 3;
-    }
-
-	SYS_LOG_INF("connected:%d addr:0x%s conn_type:%s", connected,addr,conn_type_str[conn_type_index]);
-
+	SYS_LOG_INF("%s type:%d", connected ? "connected" : "disconnected",conn_type);
+	SYS_LOG_INF("MAC %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	SYS_EVENT_INF(EVENT_STREAM_LE_CONNECT_CB, (mac[3]<<16)|(mac[4]<<8)|mac[5], connected);
 
 	os_mutex_lock(&g_sppble_mutex, OS_FOREVER);
@@ -532,33 +463,25 @@ void stream_ble_connect_cb(struct bt_conn *conn, uint8_t conn_type, uint8_t *mac
 			stream = sppble_create_stream[i];
 			if (stream) {
 				info = (struct sppble_info_t *)stream->data;
-				if ((conn_type == BT_CONN_TYPE_LE) || (conn_type == BT_CONN_TYPE_BR)) {
-					SYS_LOG_INF("conn_type:%s,connect_type:%s", conn_type_str[conn_type], connect_type_str[info->connect_type]);
-					if (conn_info_find_and_del(&(info->conn_info), conn) >= 0){
-						if (info->connect_cb) {
-							info->connect_cb(false, info->connect_type, (void *)conn);
-						}
+				if (((conn_type == BT_CONN_TYPE_LE) && (info->connect_type == BLE_CONNECT_TYPE)) ||
+					((conn_type == BT_CONN_TYPE_BR) && (info->connect_type == GATT_OVER_BR_CONNECT_TYPE))) {
+					if (conn_info_find_and_del(&(info->conn_info), conn) >= 0) {
 						if (conn_info_count(&(info->conn_info)) == 0) {
 							info->connect_type = NONE_CONNECT_TYPE;
 							info->conn = NULL;
 							os_sem_give(&info->read_sem);
 						}
 						else{
-						    // if have other conn, replace!
-                            if(conn_info_find_next(&(info->conn_info),&info->conn,&info->connect_type) != 0){
+                            if(conn_info_find_next(&(info->conn_info),info->conn,&info->connect_type) != 0){
                                 info->connect_type = NONE_CONNECT_TYPE;
                                 info->conn = NULL;
                                 os_sem_give(&info->read_sem);
                             }
-                            else{
-                                if(info->connect_cb){
-                                    info->connect_cb(false, info->connect_type, info->conn);
-                                    info->connect_cb(true, info->connect_type, info->conn);
-                                }
-                            }
 						}
-					}
-					else {
+						if (info->connect_cb) {
+							info->connect_cb(false, info->connect_type, (void *)conn);
+						}
+					}else {
 						SYS_LOG_WRN("Can't find conn: %p", conn);
 					}
 				}
@@ -572,7 +495,6 @@ void stream_ble_connect_cb(struct bt_conn *conn, uint8_t conn_type, uint8_t *mac
                 info = (struct sppble_info_t *)stream->data;
                 if (info->connect_filter_cb) {
                     if(info->connect_filter_cb((void *)conn,conn_type)){
-                        // ota running,disallowed new connect!
                         err = hostif_bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
                         if(err) {
                             SYS_LOG_INF("Disconnection failed (err %d)", err);
@@ -645,7 +567,6 @@ static int sppble_init(io_stream_t handle, void *param)
 	info->read_timeout = init_param->read_timeout;
 	info->write_timeout = init_param->write_timeout;
 	info->read_buf_size = init_param->read_buf_size;
-	info->write_attr_enable_ccc = init_param->write_attr_enable_ccc;
 	if (info->read_buf_size == 0) {
 		info->read_buf_size = SPPBLE_BUFF_SIZE;
 	}

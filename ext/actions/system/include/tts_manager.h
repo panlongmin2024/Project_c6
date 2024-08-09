@@ -266,11 +266,6 @@ void tts_manager_enable_filter(void);
 void tts_manager_disable_filter(void);
 int tts_manager_is_filter(void);
 
-#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-void tts_manager_os_mutex_lock(void);
-void tts_manager_os_mutex_unlock(void);
-#endif
-
 int key_tone_manager_init(void);
 
 int key_tone_play(void);
@@ -295,7 +290,6 @@ uint32_t tts_merge_manager_request_more_data(uint8_t *buf, uint32_t len);
 
 int tts_merge_manager_mix_get_gain(void);
 
-int tts_merge_manager_stop_ext(void);
 #endif
 
 /**

@@ -58,7 +58,6 @@ enum DeviceInfo_Role_e {
 #define SELF_RECVBUF_SIZE  (0x100)
 #define SELF_PACKET_MAX    (0x100)
 #define SELF_NVRAM_STA     "SELFSTA"
-#define SELF_NVRAM_STASZ   "SELFSTASZ"
 
 enum BT_Connect_Type_e {
 	CONCTYPE_NONE = 0x0,

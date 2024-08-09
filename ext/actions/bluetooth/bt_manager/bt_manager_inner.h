@@ -167,7 +167,7 @@ typedef struct
     u8_t  bt_call_vol;
 } bt_mgr_saved_dev_volume_t;
 
-typedef struct bt_mgr_dev_info {
+typedef struct bt_mgr_dev_info {	
 	bd_address_t addr;
 	uint16_t hdl;	/* Use hdl replace dev_no, hdl same as bt servcie and stack used */
 	uint8_t *name;
@@ -185,7 +185,7 @@ typedef struct bt_mgr_dev_info {
 	uint16_t halt_phone:1;
 	uint16_t dev_role:1;
 	uint16_t a2dp_singnaling_connected:1;
-
+	
     uint8_t  a2dp_codec_type;
     uint8_t  a2dp_sample_khz;
     uint8_t  a2dp_stream_started:1;
@@ -193,7 +193,6 @@ typedef struct bt_mgr_dev_info {
     uint8_t  new_dev:1;
     uint8_t  force_disconnect_by_remote:1;
     uint8_t  timeout_disconnected:1;
-    uint8_t  auto_reconnect:1;
     uint8_t  need_resume_play:1;
     uint8_t  a2dp_stream_is_check_started:1;
 
@@ -209,7 +208,7 @@ typedef struct bt_mgr_dev_info {
     uint8_t  hfp_remote_vol;
 	uint8_t  hfp_codec_id;
 	uint8_t  hfp_sample_rate;
-
+	
     uint8_t  bt_music_vol;
     uint8_t  bt_call_vol;
 
@@ -225,7 +224,7 @@ typedef struct bt_mgr_dev_info {
 
 	uint32_t a2dp_connect_time;
 	uint8_t notified_tts;
-
+	
 }bt_mgr_dev_info_t;
 
 typedef struct bt_manager_context_t {
@@ -244,7 +243,6 @@ typedef struct bt_manager_context_t {
     uint16_t clear_paired_list_state_update:1;
 	uint16_t enter_pair_mode_state_update:1;
 	uint16_t bt_temp_comp_stage:2;
-	uint16_t auto_reconnect_timeout:1;
 	int16_t  bt_comp_last_temp;
 	uint8_t bt_state;
 	uint8_t pair_mode_state;
@@ -431,7 +429,7 @@ void bt_manager_check_per_adv_synced(void);
 
 int bt_manager_disconnect_inactive_audio_conn(void);
 
-#ifdef CONFIG_BT_LEA_PTS_TEST
+#ifdef CONFIG_BT_PTS_TEST
 void bt_manger_lea_event_pts_process(btsrv_audio_event_e event, void *data, int size);
 #endif
 

@@ -120,14 +120,6 @@ int task_wdt_feed(uint32_t channel_id);
  */
 int task_wdt_feed_all(void);
 
-/**
- * @brief exit task wdt.
- *
- * @retval 0 If successful.
- * @retval -EINVAL If there is no installed timeout for supplied channel.
- */
-int task_wdt_exit(void);
-
 #ifdef __cplusplus
 }
 #endif

@@ -1379,11 +1379,8 @@ static int lemusic_bms_handle_source_config(struct bt_braodcast_configured *rep)
 		bt_manager_broadcast_stream_set_tws_sync_cb_offset(chan,
 								   broadcast_get_tws_sync_offset
 								   (bms->qos) - 3000 - 32 * 1000 / 48);
-		if(bms->use_past == 0){
-			bt_manager_broadcast_source_vnd_ext_send(chan->handle, vnd_buf,
-								 sizeof(vnd_buf), type);
-			SYS_LOG_INF("no use past:\n");
-		}
+		bt_manager_broadcast_source_vnd_ext_send(chan->handle, vnd_buf,
+							 sizeof(vnd_buf), type);
 		bms->chan = chan;
 		bt_manager_audio_stream_restore(BT_TYPE_LE);
 	}

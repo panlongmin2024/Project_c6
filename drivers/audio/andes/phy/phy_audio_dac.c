@@ -307,7 +307,7 @@ int PHY_audio_set_dac_gain(struct device *dev, uint32_t vol_pa_da)
 
 	cur_pa = (dac_reg->vol & 0x3f);
 
-	SYS_LOG_DBG("pa 0x%x->0x%x, dac_vol:0x%x", cur_pa, vol_pa, dac_reg->vol);
+	SYS_LOG_INF("pa 0x%x->0x%x, dac_vol:0x%x", cur_pa, vol_pa, dac_reg->vol);
 
 #ifdef EN_VOL_GRADUL_CHANGE
     do {
@@ -344,7 +344,7 @@ int PHY_audio_set_dac_gain(struct device *dev, uint32_t vol_pa_da)
 
 	cur_da = (dac_reg->vol_lch & 0x00ff);
 
-	SYS_LOG_DBG("da 0x%x->0x%x, vol_l/r:0x%x,0x%x", cur_da, vol_da, dac_reg->vol_lch, dac_reg->vol_rch);
+	SYS_LOG_INF("da 0x%x->0x%x, vol_l/r:0x%x,0x%x", cur_da, vol_da, dac_reg->vol_lch, dac_reg->vol_rch);
 
 #ifdef EN_VOL_GRADUL_CHANGE
 	do

@@ -868,7 +868,7 @@ int btsrv_adapter_disconnect(struct bt_conn *conn)
 	uint16_t hdl;
 
 	if (btsrv_rdm_get_tws_role(conn) == BTSRV_TWS_NONE) {
-        if(btsrv_rdm_get_avrcp_state(conn) && btsrv_rdm_is_a2dp_stream_open(conn)){
+        if(btsrv_rdm_get_avrcp_state(conn)){
             hdl = hostif_bt_conn_get_handle(conn);
             btif_avrcp_send_command_by_hdl(hdl,BTSRV_AVRCP_CMD_PAUSE);
             btsrv_rdm_set_wait_to_diconnect(conn, true);

@@ -36,11 +36,9 @@ static int bmr_sync_padv_volume(u8_t sync_vol)
 		} else {
 			if (synced_vol == INVALID_VOL) {
 				u8_t  tmpvol = sync_vol;
-			#if (CONFIG_BROCAST_SAFE_LIMIT_VOLUME > 0)
 				if (sync_vol > CONFIG_BROCAST_SAFE_LIMIT_VOLUME) {
 					tmpvol = CONFIG_BROCAST_SAFE_LIMIT_VOLUME;
 				}
-			#endif
 				//First time, sync to exact volume level.
 				SYS_LOG_INF("sync to %d firstly%s", tmpvol, (tmpvol == sync_vol) ? "" : ", safevol limited");
 				system_volume_set(AUDIO_STREAM_LE_AUDIO, tmpvol, false);
@@ -690,11 +688,6 @@ static int bmr_handle_volume(bool up)
 		}
 		stream_type = AUDIO_STREAM_MUSIC;
 	}
-	// playing, don't adjust secondary volume when primary muted(phone might send muted music)
-	else if (synced_vol == 0) {
-		SYS_LOG_INF("Abort: primary muted\n");
-		return 0;
-	}
 	ret = system_volume_get(stream_type);
 	if (ret < 0) {
 		SYS_LOG_ERR("%d\n", ret);
@@ -716,7 +709,7 @@ static int bmr_handle_volume(bool up)
 		}
 	}
 
-	SYS_LOG_INF("vol=%d/%d, stream %d\n", vol, max, stream_type);
+	SYS_LOG_INF("vol=%d/%d\n", vol, max);
 	//if((synced_vol != 0) || (get_pawr_enable()))
 		system_volume_set(stream_type, vol, true);
 

@@ -45,12 +45,6 @@ static void sysrq_handle_switch_jtag(int key)
 #endif
 }
 
-#include <soc_pm.h>
-static void sysrq_handle_reboot_device(int key)
-{
-	sys_pm_reboot(0);
-}
-
 static struct sysrq_key_op sysrq_key_table[] = {
 #ifdef CONFIG_STACK_BACKTRACE
 	{
@@ -66,13 +60,6 @@ static struct sysrq_key_op sysrq_key_table[] = {
 		.handler	= sysrq_handle_switch_jtag,
 		.help_msg	= "jtag(j)",
 		.action_msg	= "Switch JTAG",
-	},
-
-	{
-		.key		= 'r',
-		.handler	= sysrq_handle_reboot_device,
-		.help_msg	= "reboot device(b)",
-		.action_msg	= "reboot device",
 	},
 };
 

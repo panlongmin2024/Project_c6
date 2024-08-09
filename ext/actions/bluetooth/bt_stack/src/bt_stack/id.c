@@ -658,7 +658,7 @@ static int addr_res_enable(uint8_t enable)
 				    buf, NULL);
 }
 
-static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16])
+static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16], uint8_t local_irk[16])
 {
 	struct bt_hci_cp_le_add_dev_to_rl *cp;
 	struct net_buf *buf;
@@ -677,12 +677,7 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_le_copy(&cp->peer_id_addr, addr);
 	memcpy(cp->peer_irk, peer_irk, 16);
-
-#if defined(CONFIG_BT_PRIVACY)
-    (void)memcpy(cp->local_irk, &bt_dev.irk[id], 16);
-#else
-    (void)memset(cp->local_irk, 0, 16);
-#endif
+	memcpy(cp->local_irk, local_irk, 16);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
 }
@@ -798,7 +793,7 @@ void bt_id_add(struct bt_keys *keys)
 		goto done;
 	}
 
-	err = hci_id_add(keys->id, &keys->addr, keys->irk.val);
+	err = hci_id_add(keys->id, &keys->addr, keys->irk.val, keys->local_irk.val);
 	if (err) {
 		BT_ERR("Failed to add IRK to controller");
 		goto done;
@@ -852,7 +847,7 @@ done:
 static void keys_add_id(struct bt_keys *keys, void *data)
 {
 	if (keys->state & BT_KEYS_ID_ADDED) {
-		hci_id_add(keys->id, &keys->addr, keys->irk.val);
+		hci_id_add(keys->id, &keys->addr, keys->irk.val, keys->local_irk.val);
 	}
 }
 

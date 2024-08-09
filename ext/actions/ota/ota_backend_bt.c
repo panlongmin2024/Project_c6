@@ -38,11 +38,10 @@
 #define OTA_UNIT_BLE_SIZE		(230) // BLE Recommended value <= (244-10 = 234)
 #ifdef CONFIG_OTA_LEGACY_REQ_SIZE
 #define OTA_IOS_BLE_MAX_PKT		(1)
-#define OTA_SPPBLE_BUFF_SIZE	0
 #else
 #define OTA_IOS_BLE_MAX_PKT		(60)  // IOS BLE Recommended value <= 60
-#define OTA_SPPBLE_BUFF_SIZE	(OTA_UNIT_FRCOMM_SIZE*6 + 200) // OTA requires 6 block sizes
 #endif
+#define OTA_SPPBLE_BUFF_SIZE	(OTA_UNIT_FRCOMM_SIZE*6 + 200) // OTA requires 6 block sizes
 #define OTA_UNIT_GATT_SIZE      (502)
 
 #define TLV_MAX_DATA_LENGTH	0x3fff

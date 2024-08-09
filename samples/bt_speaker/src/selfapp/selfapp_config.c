@@ -22,11 +22,9 @@ typedef struct {
 	u8_t eq_bands[2*BAND_COUNT_MAX];
 	u8_t eq_data[EQ_DATA_SIZE];
 
+#ifdef SPEC_REMOTE_CONTROL
 	u8_t mfb_status;	// MFB_Status_e, 0x00 play/pause, 0x01 voice trigger
-	u8_t reserved[2];
-
-/* Below members are not saved on 20240726. New members must be added from here.*/
-
+#endif
 #ifdef SPEC_LED_PATTERN_CONTROL
 	u8_t led_brightness;	// 0x00 to 0xFF
 
@@ -63,16 +61,6 @@ void self_stamem_save(u8_t confirmed)
 		}
 #endif
 	}
-}
-
-void self_stamem_size_save(void)
-{
-#ifdef CONFIG_PROPERTY
-	u32_t size = sizeof(self_stamem_t);
-	property_set(SELF_NVRAM_STASZ, (char *)&size, sizeof(size));
-	property_flush(SELF_NVRAM_STASZ);
-#endif
-
 }
 
 int selfapp_config_set_ac_group(const struct AURACAST_GROUP* group)
@@ -363,7 +351,6 @@ void selfapp_config_init(void)
 	u8_t* addr;
 	u16_t size;
 	int ret = 0;
-	u32_t stasize = 0;
 
 	if (NULL == selfsta) {
 		return;
@@ -372,21 +359,11 @@ void selfapp_config_init(void)
 	os_mutex_init(&self_stamem_mutex);
 
 #ifdef CONFIG_PROPERTY
-	ret = property_get(SELF_NVRAM_STASZ, (char *)&stasize, sizeof(stasize));
-	if (ret < 0 || stasize == 0 || stasize > sizeof(self_stamem_t)) {
-		stasize = sizeof(self_stamem_t);
-		self_stamem_size_save();
-	}
-	ret = property_get(SELF_NVRAM_STA, (char *)selfsta, stasize);
+	ret = property_get(SELF_NVRAM_STA, (char *)selfsta, sizeof(self_stamem_t));
 #endif
-	if (ret < 0 /*|| selfsta->version != SELFAPP_CONFIG_VERSION*/) {
+
+	if(ret < 0 || selfsta->version != SELFAPP_CONFIG_VERSION) {
 		selfapp_config_reset();
-	}
-	else if (stasize > 0 && sizeof(self_stamem_t) > stasize) {
-		selfapp_log_inf("madd, %d_%d, %p %p\n", sizeof(self_stamem_t), stasize, selfsta, (char *)selfsta + stasize);
-		memset((char *)selfsta + stasize, 0, sizeof(self_stamem_t) - stasize);
-		self_stamem_size_save();
-		self_stamem_save(1);
 	}
 
 	selfapp_log_dump(selfsta, sizeof(self_stamem_t));

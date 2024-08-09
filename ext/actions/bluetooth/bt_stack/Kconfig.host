@@ -983,15 +983,9 @@ config BT_SDP_CLIENT
 
 config BT_PTS_TEST
 	bool "Bluetooth PTS test config"
-	default y
-	help
-	  This option enables Bluetooth PTS test
-
-config BT_LEA_PTS_TEST
-	bool "Bluetooth LE Audio PTS test config"
 	default n
 	help
-	  This option enables Bluetooth LE Audio PTS test
+	  This option enables Bluetooth PTS test
 
 config BT_STACK_BQB_TEST
 	bool "Bluetooth Stack bqb test config"

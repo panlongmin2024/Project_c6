@@ -23,27 +23,14 @@
 #define DIV_ROUND_UP(n, d)	(((n) + (d) - 1) / (d))
 #endif
 
-#define USB_REG_400_ADDR (0xC0080000+0x400)
 static inline uint8_t usb_read8(uint32_t addr)
 {
 	return *(volatile uint8_t *)addr;
 }
 
-//solve the problem: Random error signals appearing on the USB bus(host mode)
-extern void write_400_reg(uint32_t addr, uint8_t val);
-
 static inline void usb_write8(uint32_t addr, uint8_t val)
 {
-	uint32_t flags;
-	if (addr >= USB_REG_400_ADDR) {
-		//disable interrupt
-		flags = irq_lock();
-		write_400_reg(addr, val);
-		//enable interrupt
-		irq_unlock(flags);
-	} else {
-		*(volatile uint8_t *)addr = val;
-	}
+	*(volatile uint8_t *)addr = val;
 }
 
 static inline uint16_t usb_read16(uint32_t addr)
@@ -53,11 +40,7 @@ static inline uint16_t usb_read16(uint32_t addr)
 
 static inline void usb_write16(uint32_t addr, uint16_t val)
 {
-	if (addr >= USB_REG_400_ADDR) {
-		printk("Illegal usb access addr:0x%x\n", addr);
-	} else {
-		*(volatile uint16_t *)addr = val;
-	}
+	*(volatile uint16_t *)addr = val;
 }
 
 static inline uint32_t usb_read32(uint32_t addr)
@@ -67,11 +50,7 @@ static inline uint32_t usb_read32(uint32_t addr)
 
 static inline void usb_write32(uint32_t addr, uint32_t val)
 {
-	if (addr >= USB_REG_400_ADDR) {
-		printk("Illegal usb access addr:0x%x\n", addr);
-	} else {
-		sys_write32(val, addr);
-	}
+	sys_write32(val, addr);
 }
 
 static inline void usb_set_bit8(uint32_t addr, uint8_t val)

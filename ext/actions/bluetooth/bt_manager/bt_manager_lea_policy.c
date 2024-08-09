@@ -134,18 +134,7 @@ static int lea_policy_state_waiting_handler(btmgr_lea_policy_event_e event, void
 				/* switch state, and stop adv */
 				btmgr_lea_policy_ctx.lea_policy_state = LEA_POLICY_STATE_CONNECTED;
 				bt_manager_halt_ble();
-				break;
 			}
-			/*check if need update adv data*/
-			struct bt_audio_config * cfg = btif_audio_get_cfg_param();
-			if (cfg->target_announcement) {
-				cfg->target_announcement = 0;
-				bt_manager_le_update_adv_data(cfg);
-				bt_manager_halt_ble();
-				bt_manager_resume_ble();
-				bt_manager_le_audio_adv_enable();
-			}
-
 			break;
 		}
 		case LEA_POLICY_EVENT_DISCONNECT:
@@ -236,18 +225,7 @@ static int lea_policy_state_pairing_handler(btmgr_lea_policy_event_e event, void
 					hostif_bt_le_address_resolution_enable(1);
 #endif
 				}
-				break;
 			}
-			/*check if need update adv data*/
-			struct bt_audio_config * cfg = btif_audio_get_cfg_param();
-			if (cfg->target_announcement) {
-				cfg->target_announcement = 0;
-				bt_manager_le_update_adv_data(cfg);
-				bt_manager_halt_ble();
-				bt_manager_resume_ble();
-				bt_manager_le_audio_adv_enable();
-			}
-
 			break;
 		}
 		case LEA_POLICY_EVENT_PAIRING:
@@ -260,13 +238,6 @@ static int lea_policy_state_pairing_handler(btmgr_lea_policy_event_e event, void
 		case LEA_POLICY_EVENT_EXIT_PAIRING:
 		{
 			/* exit pairing */
-			/*check if need update adv data*/
-			struct bt_audio_config * cfg = btif_audio_get_cfg_param();
-			if (cfg->target_announcement) {
-				cfg->target_announcement = 0;
-				bt_manager_le_update_adv_data(cfg);
-			}
-
 			timeout_handler(NULL,NULL);
 			break;
 		}
@@ -644,6 +615,17 @@ static void bt_manager_lea_policy_event_cb(void *event_param)
 			break;
 		}
 
+		case LEA_POLICY_EVENT_EXIT_PAIRING:
+		case LEA_POLICY_EVENT_CONNECT:
+		{
+			/*check if need update adv data*/
+			struct bt_audio_config * cfg = btif_audio_get_cfg_param();
+			if (cfg->target_announcement) {
+				cfg->target_announcement = 0;
+				bt_manager_le_update_adv_data(cfg);
+			}
+			/*no need break*/
+		}
 		default:
 			if (btmgr_lea_policy_ctx.funcs && !btmgr_lea_policy_ctx.btoff) {
 				btmgr_lea_policy_ctx.funcs[btmgr_lea_policy_ctx.lea_policy_state]

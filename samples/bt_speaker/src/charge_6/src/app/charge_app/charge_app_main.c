@@ -104,6 +104,7 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 			hotplug_charger_init();	
 			charge_app_state = CHARGING_APP_OK;
 			if(charge_app_force_power_off == 1){
+				SYS_LOG_INF("------> pwroff reaseon %d\n",__LINE__);
 				pd_manager_deinit(0);		
 				sys_pm_poweroff();
 			}	
@@ -148,7 +149,6 @@ static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 		led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
-		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0));
 		set_power_first_factory_reset_flag(1);
 		set_property_factory_reset_flag(0);
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
@@ -178,9 +178,7 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 		led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
-		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0));
 	}else{
-		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
 		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_CONNECTED);
 		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_ON); // all led turn on
@@ -197,7 +195,7 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	bt_manager_auto_reconnect_stop();
 	bt_manager_end_pair_mode();
 	bt_manager_set_user_visual(1,0,0,0);
-	bt_manager_disconnect_all_device_power_off();
+	bt_manager_disconnect_all_device();
 	system_app_set_auracast_mode(0);
 	self_music_effect_ctrl_set_enable(1);
 	power_off_no_tts = 0;
@@ -272,6 +270,7 @@ static int charge_app_msg_pro(struct app_msg *msg)
 	switch (msg->type) {
 	case MSG_EXIT_APP:
 		//_charge_app_exit();
+		SYS_LOG_INF("------> pwroff reaseon %d\n",__LINE__);
 		charge_app_force_power_off = 1;
 		if(charge_app_state == CHARGING_APP_OK){
 			pd_manager_deinit(0);		

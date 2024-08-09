@@ -750,9 +750,6 @@ int audio_track_destory(struct audio_track_t *handle)
 
 	mem_free(handle);
 
-	if(tts_merge_manager_is_running()){
-		tts_merge_manager_stop_ext();
-	}
 	audio_system_mutex_unlock();
 	SYS_LOG_INF("destory %p ok", handle);
 	return 0;

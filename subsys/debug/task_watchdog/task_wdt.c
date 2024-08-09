@@ -223,14 +223,3 @@ int task_wdt_delet_all(void)
 
 	return 0;
 }
-
-int task_wdt_exit(void)
-{
-	for (int id = 0; id < ARRAY_SIZE(wdt_channels); id++) {
-		if(wdt_channels[id].reload_period != 0){
-			task_wdt_delete(id);
-		}
-	}
-
-	return 0;
-}

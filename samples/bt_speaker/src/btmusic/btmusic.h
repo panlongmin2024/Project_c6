@@ -107,7 +107,7 @@ struct btmusic_app_t {
 	uint8_t sbc_playing : 1;
 	uint8_t media_state : 1;
 	uint8_t user_pause:1;
-    uint8_t ios_dev:1;
+    uint8_t ios_pc:1;
 	uint8_t padv_tx_enable:1;
 	uint8_t wait_for_past_req:1;
 	uint8_t use_past:1;
@@ -127,8 +127,6 @@ struct btmusic_app_t {
 	struct bt_broadcast_chan broad_chan[NUM_OF_BROAD_CHAN];
 	struct bt_broadcast_chan *chan;
 	uint8_t num_of_broad_chan;
-	uint8_t broadcast_sample_rate;
-	uint8_t broadcast_duration;
 	int32_t broadcast_id;
 
 	uint8_t broadcast_code[16];
@@ -186,8 +184,6 @@ int btmusic_a2dp_get_freqpoint_energy(media_freqpoint_energy_info_t * info);
 int btmusic_get_auracast_mode(void);
 
 void btmusic_set_auracast_mode(int mode);
-
-int btmusic_bms_source_init(void);
 
 void btmusic_bt_event_proc(struct app_msg *msg);
 

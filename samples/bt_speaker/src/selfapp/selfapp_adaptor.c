@@ -314,7 +314,7 @@ static u16_t selfapp_get_src_dev_name_crc(void)
 	uint16_t crc;
 	char *name = NULL;
 
-	name = bt_manager_audio_get_last_connected_dev_name();
+	name = bt_manager_a2dp_get_last_connected_dev_name();
 	if (NULL != name) {
 		crc = self_crc16(0, name, strlen(name));
 		//selfapp_log_dbg("name: %s, 0x%x\n", name, crc);

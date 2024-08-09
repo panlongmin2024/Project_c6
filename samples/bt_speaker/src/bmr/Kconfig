@@ -1,6 +1,6 @@
 config BROCAST_SAFE_LIMIT_VOLUME
     int
     prompt "Brocast receiver safe volume limit level"
-    default 0
+    default 16
     help
     This option set the safe volume limit level

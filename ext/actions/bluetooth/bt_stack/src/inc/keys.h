@@ -58,6 +58,7 @@ struct bt_keys {
 	uint16_t                   keys;
 	struct bt_ltk           ltk;
 	struct bt_irk           irk;
+	struct bt_irk           local_irk;
 #if defined(CONFIG_BT_SIGNING)
 	struct bt_csrk          local_csrk;
 	struct bt_csrk          remote_csrk;

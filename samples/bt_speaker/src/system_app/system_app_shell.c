@@ -42,6 +42,7 @@
 #include "system_app.h"
 
 #define APP_SHELL "app"
+#include <mcu_manager_supply.h>
 
 #ifdef CONFIG_CONSOLE_SHELL
 static int shell_input_key_event(int argc, char *argv[])
@@ -420,7 +421,7 @@ static int shell_ble_adv_enable(int argc, char *argv[])
    	//bt_manager_audio_le_resume_adv();
 	//bt_manager_letws_adv_start(1);
 	bt_manager_letws_start_pair_search(BTSRV_TWS_SLAVE,60);
-	return 0;
+	return 0;    
 }
 
 static int shell_tws_reset(int argc, char *argv[])
@@ -479,41 +480,48 @@ static int shell_print_enable(int argc, char *argv[])
 	return 0;
 }
 
-#ifdef CONFIG_ACTIONS_IMG_LOAD
-static int shell_bin_test(int argc, char *argv[])
+static int shell_charge_on(int argc, char *argv[])
 {
-	if (argv[1] != NULL) {
-		u8_t id = strtoul(argv[1], (char**)NULL, 10);
-		int ret = property_set_int(CFG_BIN_TEST_ID, id);
-		if (ret == 0) {
-			property_flush(CFG_BIN_TEST_ID);
-			printk("bin test new id %d\n", id);
-			sys_pm_reboot(REBOOT_TYPE_GOTO_WIFISYS);
-		}
-
-	}
-
+	extern int pd_manager_send_cmd_code(uint8_t type, int code);
+	pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
 	return 0;
 }
 
-#endif
-
-extern int8_t broadcast_set_sq_mode(int8_t sq_mode);
-
-static int shell_sq_enable(int argc, char *argv[])
+static int shell_charge_off(int argc, char *argv[])
 {
-	if (argv[1] != NULL) {
-		if (memcmp(argv[1], "enable", sizeof("enable")) == 0) {
-			broadcast_set_sq_mode(true);
-		} else if ((memcmp(argv[1], "disable", sizeof("disable")) == 0)) {
-			broadcast_set_sq_mode(false);
-		}
-	}
-
+	extern int pd_manager_send_cmd_code(uint8_t type, int code);
+	pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 0);
 	return 0;
 }
 
-
+static int shell_charge_get(int argc, char *argv[])
+{
+	int16 volt,current;
+	extern int pd_manager_get_volt_cur_value(int16 *volt_value, int16 *cur_value);
+	pd_manager_get_volt_cur_value(&volt,&current);
+	printk("------> volt_value :%d,  cur_value :%d \n",volt, current);
+	return 0;
+}
+static int shell_user(int argc, char *argv[])
+{
+	extern bool ats_get_enter_key_check_record(void);
+	//sys_event_report_input_ats(KEY_PWRKEY);
+	printk("------> shell_user \n");
+	return 0;
+}
+static int shell_rssi(int argc, char *argv[])
+{
+    struct bt_conn *active_conn;
+	struct bt_conn *btsrv_rdm_a2dp_get_active_dev(void);
+	int hostif_bt_br_read_rssi(struct bt_conn *conn, complete_event_cb cb);
+	//void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len);
+    active_conn = btsrv_rdm_a2dp_get_active_dev();
+    if(active_conn){
+		printk("------> shell_rssi !n");
+        //hostif_bt_br_read_rssi(active_conn,btsrv_read_rssi_event_cb);
+    }
+	return 0;
+}
 static const struct shell_cmd app_commands[] = {
 	{"input", shell_input_key_event, "input key event"},
 	{"btinfo", shell_dump_bt_info, "dump bt info"},
@@ -558,12 +566,11 @@ static const struct shell_cmd app_commands[] = {
 
 	{"print", shell_print_enable, "print enable or disable"},
 
-#ifdef CONFIG_ACTIONS_IMG_LOAD
-	{"bin_test", shell_bin_test, "print enable or disable"},
-#endif
-
-	{"boardcast_sq", shell_sq_enable, "boardcast_sq enable or disable"},
-
+	{"charge_on", shell_charge_on, "charge on"},
+	{"charge_off", shell_charge_off, "charge off"},
+	{"charge_get", shell_charge_get, "charge current off"},
+	{"key_user", shell_user, "key user"},
+	{"user_rssi", shell_rssi, "user rssi"},
 	{NULL, NULL, NULL}};
 #endif
 

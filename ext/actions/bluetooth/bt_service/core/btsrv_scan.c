@@ -282,7 +282,7 @@ static void btsrv_scan_check_state(void)
     	}    
     }
 	else if(pair_state & BT_PAIR_STATUS_PAIR_MODE){
-		if((connected_dev == 0)
+		if((connected_dev == 0) 
 			|| (!btsrv_a2dp_is_stream_start()
 			&& !btsrv_sco_get_conn())){
 			scan_mode = BTSRV_SCAN_MODE_FAST_INQUIRY_PAGE;
@@ -292,10 +292,6 @@ static void btsrv_scan_check_state(void)
 		}
         else{
 			scan_mode = BTSRV_SCAN_MODE_NORMAL_PAGE;
-        }
-
-        if(pair_state & BT_PAIR_STATUS_RECONNECT){
-            scan_mode = BTSRV_SCAN_MODE_NORMAL_PAGE;
         }
 		exp_discoverable = 1;
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE

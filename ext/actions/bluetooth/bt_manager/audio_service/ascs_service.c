@@ -25,7 +25,7 @@ static void ase_ctrl_ccc_changed(struct bt_conn *conn, uint8_t conn_type,
 		if(value && bt_ascs_srv_cb->connect){
 			bt_ascs_srv_cb->connect(conn);
 		}
-
+		
 		if(!value && bt_ascs_srv_cb->disconnect)
 			bt_ascs_srv_cb->disconnect(conn);
 	}
@@ -67,7 +67,7 @@ BT_GATT_SERVICE_DEFINE(ascs_svc,
 	BT_GATT_CCC(ase_ccc_changed,
 			BT_GATT_PERM_READ | BT_AUDIO_GATT_PERM_WRITE),
 
-#if (defined(CONFIG_BT_LE_AUDIO_CALL) || defined(CONFIG_BT_LEA_PTS_TEST))
+#if (defined(CONFIG_BT_LE_AUDIO_CALL) || defined(CONFIG_BT_PTS_TEST))
 	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_SOURCE_ASE,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_AUDIO_GATT_PERM_READ,

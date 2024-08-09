@@ -86,19 +86,16 @@ void btmusic_delay_start(struct thread_timer *ttimer, void *expiry_fn_arg)
 	SYS_LOG_INF(":\n");
 }
 
-int btmusic_bms_source_init(void)
+
+
+static int btmusic_bms_source_init(void)
 {
 	struct bt_broadcast_source_create_param param = { 0 };
 	struct bt_broadcast_source_big_param big_param;
 	struct bt_le_per_adv_param per_adv_param = { 0 };
 	struct bt_le_adv_param adv_param = { 0 };
-	struct broadcast_param_t bms_broadcast_param = { 0 };
-	struct bt_broadcast_qos *qos = p_btmusic_app->qos;
 	uint16_t temp_acl_handle = 0;
 	u8_t ch = 0;
-	int8_t sq_mode_enable = 0;
-
-	sq_mode_enable = broadcast_get_sq_mode();
 
     ch = btmusic_get_stereo_channel();
 	temp_acl_handle = bt_manager_audio_get_letws_handle();
@@ -132,21 +129,6 @@ int btmusic_bms_source_init(void)
 	}
 #endif
 
-    if (sq_mode_enable) {
-		p_btmusic_app->broadcast_sample_rate = 16;
-		broadcast_get_source_param(32, BROADCAST_CH,BROADCAST_ISO_INTERVAL, &bms_broadcast_param);
-	}else {
-		p_btmusic_app->broadcast_sample_rate = 48;
-		broadcast_get_source_param(80, BROADCAST_CH,BROADCAST_ISO_INTERVAL, &bms_broadcast_param);
-	}
-	p_btmusic_app->broadcast_duration = bms_broadcast_param.duration;
-
-	qos->max_sdu = bms_broadcast_param.sdu;
-	qos->interval = bms_broadcast_param.sdu_interval;
-	qos->latency = bms_broadcast_param.latency;
-
-	SYS_LOG_INF("qos:%d,%d,%d,%d,%d",qos->max_sdu,qos->interval,qos->latency,qos->delay,qos->processing);
-
 #if (BROADCAST_NUM_BIS == 2)
 	if ((ch) && (temp_acl_handle)) {
 	    subgroup.num_bis = 1;		
@@ -157,10 +139,10 @@ int btmusic_bms_source_init(void)
 	subgroup.num_bis = 1;
 #endif
 	subgroup.format = BT_AUDIO_CODEC_LC3;
-	subgroup.frame_duration =  bms_broadcast_param.duration;
+	subgroup.frame_duration = BROADCAST_DURATION;
 	subgroup.blocks = 1;
-	subgroup.sample_rate = p_btmusic_app->broadcast_sample_rate;
-	subgroup.octets = bms_broadcast_param.octets;
+	subgroup.sample_rate = 48;
+	subgroup.octets = BROADCAST_OCTETS;
 #if (BROADCAST_NUM_BIS != 2)
 #if (BROADCAST_CH == 2)
 	subgroup.locations = BT_AUDIO_LOCATIONS_FL | BT_AUDIO_LOCATIONS_FR;
@@ -187,12 +169,12 @@ int btmusic_bms_source_init(void)
 	}
 #endif
 
-	big_param.iso_interval = bms_broadcast_param.iso_interval;
-	big_param.max_pdu = bms_broadcast_param.pdu;
-	big_param.nse = bms_broadcast_param.nse;
-	big_param.bn = bms_broadcast_param.bn;
-	big_param.irc = bms_broadcast_param.irc;
-	big_param.pto = bms_broadcast_param.pto;
+	big_param.iso_interval = BROADCAST_ISO_INTERVAL;
+	big_param.max_pdu = BROADCAST_PDU;
+	big_param.nse = BROADCAST_NSE;
+	big_param.bn = BROADCAST_BN;
+	big_param.irc = BROADCAST_IRC;
+	big_param.pto = BROADCAST_PTO;
 
 	/* BT_LE_EXT_ADV_NCONN */
 	adv_param.id = BT_ID_DEFAULT;
@@ -204,8 +186,8 @@ int btmusic_bms_source_init(void)
 	adv_param.sid = BT_EXT_ADV_SID_BROADCAST;
 
 	/* 100ms */
-	per_adv_param.interval_min = bms_broadcast_param.pa_interval;
-	per_adv_param.interval_max = bms_broadcast_param.pa_interval;
+	per_adv_param.interval_min = PA_INTERVAL;
+	per_adv_param.interval_max = PA_INTERVAL;
 
 #if ENABLE_ENCRYPTION
 	param.encryption = true;
@@ -245,7 +227,7 @@ int btmusic_bms_source_init(void)
 		return ret;
 	}
 
-	p_btmusic_app->broadcast_retransmit_number = (bms_broadcast_param.nse/bms_broadcast_param.bn);
+	p_btmusic_app->broadcast_retransmit_number = BROADCAST_TRANSMIT_NUMBER;
 	p_btmusic_app->broadcast_id = param.broadcast_id;
 
 	SYS_LOG_INF("name: %s %s 0x%x\n", local_name, broadcast_name,temp_acl_handle);
@@ -266,8 +248,6 @@ int btmusic_bms_source_init(void)
 
 int btmusic_bms_source_exit(void)
 {
-	if (!p_btmusic_app)
-		return 0;
 	if (thread_timer_is_running(&p_btmusic_app->broadcast_start_timer))
 		thread_timer_stop(&p_btmusic_app->broadcast_start_timer);
 	bt_manager_broadcast_source_disable(p_btmusic_app->broadcast_id);

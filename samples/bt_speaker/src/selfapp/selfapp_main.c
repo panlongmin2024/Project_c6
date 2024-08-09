@@ -185,37 +185,6 @@ static int selfapp_set_ble_connect(u8_t conc)
 	return 0;
 }
 
-static int selfapp_connect_prepare(void)
-{
-	selfapp_context_t *selfctx = self_get_context();
-	if (selfctx == NULL || selfctx->stream_hdl == NULL) {
-		return -1;
-	}
-
-	os_sched_lock();
-	if (selfctx->stream_opened == 0) {
-		if (stream_open(selfctx->stream_hdl, MODE_IN_OUT) != 0) {
-			goto exit;
-		}
-		selfctx->stream_opened = 1;
-	}
-	os_sched_unlock();
-
-	selfapp_log_inf("prepare: %d, %x\n", selfctx->connect_type, selfctx->connect_handle);
-	return 0;
-
- exit:
-	selfapp_log_inf("prepare_fail %d, %x\n", selfctx->stream_opened, selfctx->connect_handle);
-	if (selfctx->stream_opened) {
-		stream_close(selfctx->stream_hdl);
-		selfctx->stream_opened = 0;
-	}
-	os_sched_unlock();
-
-	return -1;
-}
-
-
 static int selfapp_connect_init(void)
 {
 	selfapp_context_t *selfctx = self_get_context();
@@ -223,17 +192,14 @@ static int selfapp_connect_init(void)
 		return -1;
 	}
 
-	os_sched_lock();
 	if (selfctx->stream_opened == 0) {
 		if (stream_open(selfctx->stream_hdl, MODE_IN_OUT) != 0) {
 			goto Label_conc_fail;
 		}
 		selfctx->stream_opened = 1;
 	} else {
-		if(selfctx->connect_handle != 0) {
-			selfapp_log_wrn("to flush %d bytes", stream_tell(selfctx->stream_hdl));
-			stream_flush(selfctx->stream_hdl);
-		}
+		selfapp_log_wrn("to flush %d bytes", stream_tell(selfctx->stream_hdl));
+		stream_flush(selfctx->stream_hdl);
 	}
 
 	if (selfctx->sendbuf == NULL) {
@@ -246,8 +212,6 @@ static int selfapp_connect_init(void)
 	selfctx->recvbuf = &(selfctx->sendbuf[SELF_SENDBUF_SIZE]);
 
 	selfctx->connect_type = CONCTYPE_BR_EDR;
-
-	os_sched_unlock();
 
 #ifdef SPEC_LED_PATTERN_CONTROL
 	ledpkg_init();
@@ -267,7 +231,6 @@ static int selfapp_connect_init(void)
 		stream_close(selfctx->stream_hdl);
 		selfctx->stream_opened = 0;
 	}
-	os_sched_unlock();
 	return -1;
 }
 
@@ -398,10 +361,6 @@ static void selfapp_connect_callback(int connected, uint8_t connect_type, u32_t 
 		return;
 	}
 
-	if ((connected) && (selfapp_connect_prepare() != 0)) {
-		return;
-	}
-
 	selfapp_send_msg(MSG_SELFAPP_APP_EVENT, SELFAPP_CMD_CALLBACK, (connected<<4)|(connect_type&0xF), handle);
 }
 
@@ -492,7 +451,6 @@ int selfapp_init(p_logsrv_callback_t cb)
 	stream_param.connect_filter_cb = connect_filter_cb;
 	stream_param.read_timeout = OS_NO_WAIT;
 	stream_param.write_timeout = OS_NO_WAIT;
-	stream_param.write_attr_enable_ccc = 1;
 
 	selfctx->stream_hdl = sppble_stream_create(&stream_param);
 	if (selfctx->stream_hdl == NULL) {
@@ -564,10 +522,10 @@ void selfapp_on_connect_event(u8_t connect, u8_t connect_type, u32_t handle)
 		if(handle != selfctx->connect_handle){
 			// When a new handle conneted, clear stream data.
 			self_stamem_save(1);
+			selfctx->connect_handle = handle;
 			if (selfapp_connect_init() != 0) {
 				return;
 			}
-			selfctx->connect_handle = handle;
 
 			if (connect_type == BLE_CONNECT_TYPE) {
 				// BLE connected

@@ -427,7 +427,6 @@ struct sppble_stream_init_param {
 	int32_t read_timeout;
 	int32_t write_timeout;
 	int32_t read_buf_size;
-	uint8_t write_attr_enable_ccc;
 };
 
 struct mgr_pbap_result {
@@ -549,6 +548,25 @@ int bt_manager_get_status(void);
  * @return 0 excute successed , others failed
  */
 int bt_manager_allow_sco_connect(bool allowed);
+
+/**
+ * @brief get a2dp device name
+ *
+ * This routine provides to get profile a2dp device name.
+ *
+ * @return codec id of a2dp profile
+ */
+
+char *bt_manager_a2dp_get_dev_name(void);
+
+/**
+ * @brief get last a2dp connected device name
+ *
+ * This routine provides to get profile last a2dp connected device name
+ *
+ * @return codec id of a2dp profile
+ */
+char *bt_manager_a2dp_get_last_connected_dev_name(void);
 
 /**
  * @brief get profile a2dp codec id
@@ -1151,7 +1169,7 @@ int bt_manager_br_disconnect(bd_address_t *bd);
  *
  */
 void bt_manager_disconnect_all_device(void);
-void bt_manager_disconnect_all_device_power_off(void);
+
 /**
  * @brief bt manager lock stream pool
  *
@@ -1406,13 +1424,13 @@ int bt_manager_bt_read_rssi(uint16_t handle);
 int bt_manager_bt_read_link_quality(uint16_t handle);
 
 /* pts test */
-#ifdef CONFIG_BT_LEA_PTS_TEST
+#ifdef CONFIG_BT_PTS_TEST
 int bt_manager_pts_test_start(void);
 uint8_t pts_test_is_adv_test_enable(void);
 int pts_le_audio_init(void);
 void pts_le_clear_keys(void);
 
-#endif /*CONFIG_BT_LEA_PTS_TEST*/
+#endif /*CONFIG_BT_PTS_TEST*/
 
 typedef int (*tws_config_expect_role_cb_t)(void);
 /**

@@ -1460,13 +1460,15 @@ int hostif_bt_avrcp_ct_get_play_status(struct bt_conn *conn)
 #endif
 }
 
-int hostif_bt_avrcp_ct_get_capabilities(struct bt_conn *conn)
+#ifdef CONFIG_BT_PTS_TEST
+
+int hostif_bt_pts_avrcp_ct_get_capabilities(struct bt_conn *conn)
 {
 #ifdef CONFIG_BT_AVRCP
 	int prio, ret;
 
 	prio = hostif_set_negative_prio();
-	ret = bt_avrcp_ct_get_capabilities(conn);
+	ret = bt_pts_avrcp_ct_get_capabilities(conn);
 	hostif_revert_prio(prio);
 
 	return ret;
@@ -1475,13 +1477,13 @@ int hostif_bt_avrcp_ct_get_capabilities(struct bt_conn *conn)
 #endif
 }
 
-int hostif_bt_avrcp_ct_register_notification(struct bt_conn *conn)
+int hostif_bt_pts_avrcp_ct_register_notification(struct bt_conn *conn)
 {
 #ifdef CONFIG_BT_AVRCP
 	int prio, ret;
 
 	prio = hostif_set_negative_prio();
-	ret = bt_avrcp_ct_register_notification(conn);
+	ret = bt_pts_avrcp_ct_register_notification(conn);
 	hostif_revert_prio(prio);
 
 	return ret;
@@ -1489,6 +1491,8 @@ int hostif_bt_avrcp_ct_register_notification(struct bt_conn *conn)
 	return -EIO;
 #endif
 }
+
+#endif /*CONFIG_BT_PTS_TEST*/
 
 uint8_t hostif_bt_pbap_client_get_phonebook(struct bt_conn *conn, char *path, struct bt_pbap_client_user_cb *cb)
 {
@@ -2725,21 +2729,21 @@ void hostif_bt_read_ble_mac(bt_addr_le_t *addr)
 {
 	int prio;
 
-	prio = hostif_set_negative_prio();
+	prio = hostif_set_negative_prio(); 
     bt_read_ble_mac(addr);
-	hostif_revert_prio(prio);
+	hostif_revert_prio(prio);    
 
 }
 
 /*
-  broadcast
+  broadcast 
 */
 int hostif_bt_iso_big_terminate(struct bt_iso_big *big)
 {
    int ret;
    int prio;
-
-   prio = hostif_set_negative_prio();
+   
+   prio = hostif_set_negative_prio();   
    ret = bt_iso_big_terminate(big);
    hostif_revert_prio(prio);
 
@@ -2779,7 +2783,7 @@ int hostif_bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
    int prio;
 
    prio = hostif_set_negative_prio();
-   ret =  bt_le_per_adv_set_param(adv,param);
+   ret =  bt_le_per_adv_set_param(adv,param);  
    hostif_revert_prio(prio);
 
    return ret;
@@ -2794,7 +2798,7 @@ int hostif_bt_le_per_adv_start(struct bt_le_ext_adv *adv)
    ret = bt_le_per_adv_start(adv);
    hostif_revert_prio(prio);
 
-   return ret;
+   return ret;  
 }
 
 int hostif_bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
@@ -2804,10 +2808,10 @@ int hostif_bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
    int prio;
 
    prio = hostif_set_negative_prio();
-   ret =  bt_le_ext_adv_start(adv,param);
+   ret =  bt_le_ext_adv_start(adv,param);  
    hostif_revert_prio(prio);
 
-   return ret;
+   return ret;  
 
 }
 
@@ -2821,7 +2825,7 @@ int hostif_bt_le_per_adv_set_subevent_data(const struct bt_le_ext_adv *adv, uint
    ret = bt_le_per_adv_set_subevent_data(adv, num_subevents,params);
    hostif_revert_prio(prio);
 
-   return ret;
+   return ret; 	
 }
 
 int hostif_bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
@@ -2848,7 +2852,7 @@ int hostif_bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sy
    ret = bt_le_per_adv_set_response_data(per_adv_sync,param,data);
    hostif_revert_prio(prio);
 
-   return ret;
+   return ret;       
 }
 
 int hostif_bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
@@ -2864,9 +2868,9 @@ int hostif_bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
    hostif_revert_prio(prio);
 
    return ret;
-#else
+#else 
 	return -EIO;
-#endif
+#endif 
 }
 
 int hostif_bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
@@ -2880,7 +2884,7 @@ int hostif_bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_
    ret = bt_le_per_adv_sync_transfer(per_adv_sync,conn,service_data);
    hostif_revert_prio(prio);
 
-   return ret;
+   return ret;  
 }
 
 int hostif_bt_le_per_adv_sync_transfer_subscribe(
@@ -2894,7 +2898,7 @@ int hostif_bt_le_per_adv_sync_transfer_subscribe(
    ret = bt_le_per_adv_sync_transfer_subscribe(conn,param);
    hostif_revert_prio(prio);
 
-   return ret;
+   return ret; 
 }
 
 int hostif_bt_le_per_adv_sync_transfer_unsubscribe(
@@ -2908,7 +2912,7 @@ int hostif_bt_le_per_adv_sync_transfer_unsubscribe(
    hostif_revert_prio(prio);
 
    return ret;
-}
+}	
 
 void hostif_bt_le_scan_cb_register(struct bt_le_scan_cb *cb)
 {
@@ -2917,7 +2921,7 @@ void hostif_bt_le_scan_cb_register(struct bt_le_scan_cb *cb)
    prio = hostif_set_negative_prio();
    bt_le_scan_cb_register(cb);
    hostif_revert_prio(prio);
-
+   	
 }
 
 void hostif_bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb)
@@ -2943,7 +2947,7 @@ int hostif_bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *para
 
    return ret;
 
-}
+}		
 
 int hostif_bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
 			   const struct bt_data *ad, size_t ad_len,
@@ -2953,7 +2957,7 @@ int hostif_bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
    int prio;
 
    prio = hostif_set_negative_prio();
-   ret = bt_le_ext_adv_set_data(adv,ad, ad_len,sd, sd_len);
+   ret = bt_le_ext_adv_set_data(adv,ad, ad_len,sd, sd_len);   
    hostif_revert_prio(prio);
 
    return ret;
@@ -2970,7 +2974,7 @@ int hostif_bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
    hostif_revert_prio(prio);
 
    return ret;
-}
+}			   
 
 
 void hostif_bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb)
@@ -2978,7 +2982,7 @@ void hostif_bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb)
    int prio;
 
    prio = hostif_set_negative_prio();
-   bt_le_scan_cb_unregister(cb);
+   bt_le_scan_cb_unregister(cb); 
    hostif_revert_prio(prio);
 
 }
@@ -3002,7 +3006,7 @@ int hostif_bt_le_per_adv_stop(struct bt_le_ext_adv *adv)
    ret = bt_le_per_adv_stop(adv);
    hostif_revert_prio(prio);
 
-   return ret;
+   return ret;  	
 }
 
 int hostif_bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
@@ -3014,7 +3018,7 @@ int hostif_bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
    ret = bt_le_ext_adv_stop(adv);
    hostif_revert_prio(prio);
 
-   return ret;
+   return ret;    	
 }
 
 int hostif_bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
@@ -3022,11 +3026,11 @@ int hostif_bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
    int ret;
    int prio;
 
-   prio = hostif_set_negative_prio();
+   prio = hostif_set_negative_prio();  
    ret = bt_le_ext_adv_delete(adv);
    hostif_revert_prio(prio);
 
-   return ret;
+   return ret;    
 }
 
 int hostif_bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
@@ -3067,7 +3071,7 @@ int hostif_bt_iso_big_create_test(struct bt_le_ext_adv *padv,
 	hostif_revert_prio(prio);
 
     return ret;
-}
+}				
 
 int hostif_bt_set_pts_enable(bool enable)
 {

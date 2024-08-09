@@ -81,9 +81,6 @@ static bool is_ota_need_poweroff;
 static struct ota_backend *backend_uart;
 #endif
 
-#include <wltmcu_manager_supply.h>
-struct thread_timer ota_led_timer;
-static u8_t power_led_cnt = 0 ,success; 
 static void ota_app_start(void)
 {
 	SYS_LOG_INF("ota app start");
@@ -360,10 +357,6 @@ void ota_app_notify(int state, int old_state)
 		if (ota_upgrade_get_backend_type(g_ota) == OTA_BACKEND_TYPE_SELFAPP) {
 			printk("selfapp ota don't auto reboot\n");
 			sys_event_notify(SYS_EVENT_OTA_FINISHED_REBOOT);
-			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
-			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
-			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
-			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 		} else
 #endif
 		{
@@ -449,20 +442,6 @@ static void ota_app_stop_ota_upgrade(void)
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }
 
-void ota_led_timer_pro(struct thread_timer *ttimer, void *expiry_fn_arg)
-{
-	power_led_cnt++;
-	if(power_led_cnt < 1){
-		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-	}else if(power_led_cnt < 3){
-		led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
-	}else{
-		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-		power_led_cnt = 0;
-	}
-
-}
-
 static int _ota_app_init(void *p1, void *p2, void *p3)
 {
 	SYS_LOG_INF("enter");
@@ -481,7 +460,6 @@ static int _ota_app_init(void *p1, void *p2, void *p3)
 	act_event_runtime_enable(false);
 #endif
 
-	thread_timer_init(&ota_led_timer, ota_led_timer_pro, NULL);
 	return 0;
 }
 
@@ -491,9 +469,7 @@ static int _ota_exit(void)
 		return 0;
 
 	ota_view_deinit();
-	thread_timer_stop(&ota_led_timer);
-	if(success == 0)
-		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+
 	return 0;
 }
 
@@ -602,12 +578,8 @@ static int _ota_proc_msg(struct app_msg *msg)
 		case MSG_OTA_APP_EVENT: {
 			if(msg->cmd == MSG_OTA_MESSAGE_CMD_INIT_APP){
 				_ota_create_sub_thread();
-				thread_timer_start(&ota_led_timer,500,500);
-				power_led_cnt = 0;
-				success = 0;
 			}else if(msg->cmd == MSG_OTA_MESSAGE_CMD_EXIT_APP){
 				_ota_destory_sub_thread();
-				thread_timer_stop(&ota_led_timer);
 			}
 			break;
 		}
@@ -628,11 +600,9 @@ static int _ota_proc_msg(struct app_msg *msg)
 			if(msg->value == TTS_EVENT_POWER_OFF){
 				if(!is_ota_need_poweroff){
 					sys_reboot_by_ota();
-					success = 1;
 				}else{
 					sys_poweroff_by_ota();
 				}
-				thread_timer_stop(&ota_led_timer);
 			}
 			break;
 

@@ -20,8 +20,6 @@
 #include <logging/sys_log.h>
 #include <ats_cmd/ats.h>
 
-#include <property_manager.h>
-
 int dolphin_set_vol(int argc, char *argv[]);
 int dolphin_read_frames_start(int argc, char *argv[]);
 int dolphin_read_frames_stop(int argc,char *argv[]);
@@ -146,30 +144,6 @@ static int shell_reset_pa_test(int argc, char *argv[])
 	return 0;
 }
 
-extern int property_set_factory(const char *key, char *value, int value_len);
-static int shell_user_set_mac(int argc, char *argv[])
-{
-	int ret_val = property_set_factory(CFG_BT_MAC, (char *)argv[1], 12);
-	
-	return ret_val;
-}
-static int shell_user_set_name(int argc, char *argv[])
-{
-	for(int i=0;i<argc;i++){
-		printk("------> %s argc %d len %d %s\n",__func__,argc,sizeof(argv[i]),argv[i]);
-	}
-
-	return 0;
-}
-static int shell_user_set_mac_name(int argc, char *argv[])
-{
-	for(int i=0;i<argc;i++){
-		printk("------> %s argc %d len %d %s\n",__func__,argc,sizeof(argv[i]),argv[i]);
-	}
-
-	return 0;
-}
-
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
     { "dvfs_info", shell_dvfs_info, "dump DVFS info" },
@@ -187,9 +161,6 @@ static const struct shell_cmd commands[] = {
 	{ "enter_bqb", shell_enter_bqb, "enter bqb"},
 	{ "TL_ATS_IN", shell_uart_test, "enter uart test"},
 	{ "reset_pa", shell_reset_pa_test, "test reset pa"},
-	{ "set_mac", shell_user_set_mac, "user set mac"},
-	{ "set_name", shell_user_set_name, "user set name"},
-	{ "set_mac_name", shell_user_set_mac_name, "user set mac name"},
 	{ NULL, NULL, NULL }
 };
 

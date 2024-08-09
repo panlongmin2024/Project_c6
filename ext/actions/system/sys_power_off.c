@@ -54,11 +54,6 @@
 #include "common/nvram.h"
 #include <wltmcu_manager_supply.h>
 #endif
-
-#ifdef CONFIG_TASK_WDT
-#include <debug/task_wdt.h>
-#endif
-
 static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 {
 	if(!msg->reserve){
@@ -70,10 +65,6 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 
 #ifdef CONFIG_PROPERTY
 		property_flush(NULL);
-#endif
-
-#ifdef CONFIG_TASK_WDT
-		task_wdt_exit();
 #endif
 
 		system_deinit();
@@ -98,7 +89,7 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 		board_power_lock_enable(false);
 		#endif
 
-		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE //vcc VBATÕ¨ ±µÙµÁ
+		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE //vcc VBATÂêåÊó∂ÊéâÁîµ
 		soc_dvfs_set_level(SOC_DVFS_LEVEL_FULL_PERFORMANCE, "poweroff");
 		#ifdef CONFIG_LOGIC_MCU_LS8A10023T
 		printk("[%s,%d] logic_mcu_ls8a10023t start\n", __FUNCTION__, __LINE__);
@@ -148,9 +139,6 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 		property_flush(NULL);
 #endif
 
-#ifdef CONFIG_TASK_WDT
-		task_wdt_exit();
-#endif
 		system_deinit();
 
 #ifdef CONFIG_OTA_UNLOAD

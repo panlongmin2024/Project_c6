@@ -100,7 +100,7 @@ static int btmusic_handle_start(struct bt_audio_report *rep)
 			tts_manager_enable_filter();
 		}
 		btmusic->playing = 1;
-		btmusic->ios_dev = bt_manager_audio_is_ios_dev(rep->handle);
+		btmusic->ios_pc = bt_manager_audio_is_ios_pc(rep->handle);
 
 #if ENABLE_BROADCAST
 		if(btmusic_get_auracast_mode()){
@@ -109,9 +109,6 @@ static int btmusic_handle_start(struct bt_audio_report *rep)
 			}
 			if (!btmusic->chan) {
 				SYS_LOG_INF("broad_chan not config:\n");
-				if(3 == btmusic_get_auracast_mode()){
-					btmusic_bms_source_init();
-				}
 				return -EINVAL;
 			}else{
 				if(!btmusic->broadcast_source_enabled){
@@ -167,14 +164,10 @@ static int btmusic_handle_stop(struct bt_audio_report *rep)
 			}
 			btmusic->tx_start = 0;
 			btmusic->tx_sync_start = 0;
-			if(3 == btmusic_get_auracast_mode()){
-				btmusic_bms_source_exit();
-			}else{
-				thread_timer_start(&btmusic->broadcast_switch_timer, 1000, 0);
-			}
+			thread_timer_start(&btmusic->broadcast_switch_timer, 1000, 0);
 		}
 #endif
-        btmusic->ios_dev = 0;
+        btmusic->ios_pc = 0;
 		return 0;
 	}
 

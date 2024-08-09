@@ -12,7 +12,7 @@
 #ifndef _BTSRV_INNER_H_
 #define _BTSRV_INNER_H_
 
-#ifndef SYS_LOG_DOMAIN
+#ifndef SYS_LOG_DOMAIN 
 #define SYS_LOG_DOMAIN "btsrv"
 #endif
 #ifndef SYS_LOG_LEVEL
@@ -34,9 +34,6 @@
 #define BTSRV_SAVE_AUTOCONN_NUM					(3)
 #define BT_MAC_LEN								(6)
 #define BTSRV_RECONNECT_DISCOVERABLE_REMAIN     (3)
-
-#define BTSRV_AVRCP_CONNECTING_PENDING	(3000)
-#define BTSRV_AVRCP_PLAYING_PENDING	(1000)
 
 enum {
 	LINK_ADJUST_IDLE,
@@ -145,8 +142,8 @@ struct btsrv_info_t {
     uint8_t share_mac_dev:1;
     uint8_t power_off:1;
     uint8_t link_idle:1;
-    uint8_t lea_connected:1;
-    uint8_t lea_is_foreground_dev:1;
+    uint8_t lea_connected:1;	
+    uint8_t lea_is_foreground_dev:1;	
     uint8_t pair_status;
     uint8_t quality_time;
     uint16_t bt_wake_lock;
@@ -501,9 +498,6 @@ void btsrv_rdm_get_avrcp_playstatus_info(struct bt_conn *base_conn, uint32_t *so
 void btsrv_rdm_set_avrcp_playstatus_info(struct bt_conn *base_conn, uint32_t *song_len, uint32_t *song_pos, uint8_t *play_state);
 void btsrv_rdm_set_avrcp_connecting_pending(struct bt_conn *base_conn);
 bool btsrv_rdm_is_avrcp_connected_pending(struct bt_conn *base_conn);
-void btsrv_rdm_set_avrcp_playing_pending(struct bt_conn *base_conn);
-bool btsrv_rdm_is_avrcp_playing_pending(struct bt_conn *base_conn);
-bool btsrv_rdm_is_avrcp_playing_pended(struct bt_conn *base_conn);
 
 int btsrv_rdm_set_hfp_connected(struct bt_conn *base_conn, bool connected);
 int btsrv_rdm_set_hfp_role(struct bt_conn *base_conn, uint8_t role);
@@ -749,7 +743,6 @@ enum {
 	MSG_BTSRV_AVRCP_GET_ID3_INFO,
 	MSG_BTSRV_AVRCP_SET_ABSOLUTE_VOLUME,
 	MSG_BTSRV_AVRCP_GET_PLAY_STATUS,
-	MSG_BTSRV_AVRCP_NOTIFY_VOLUME_CHANGE,
 
 	MSG_BTSRV_HFP_START,
 	MSG_BTSRV_HFP_STOP,
@@ -860,12 +853,12 @@ enum {
 	MSG_BTSRV_MAP_DISCONNECT,
 	MSG_BTSRV_MAP_SET_FOLDER,
 	MSG_BTSRV_MAP_GET_FOLDERLISTING,
-	MSG_BTSRV_MAP_GET_MESSAGESLISTING,
-	MSG_BTSRV_MAP_GET_MESSAGE,
-	MSG_BTSRV_MAP_ABORT_GET,
+	MSG_BTSRV_MAP_GET_MESSAGESLISTING,		
+	MSG_BTSRV_MAP_GET_MESSAGE,	
+	MSG_BTSRV_MAP_ABORT_GET,	
 	MSG_BTSRV_MAP_CONNECT_FAILED,
 	MSG_BTSRV_MAP_CONNECTED,
-	MSG_BTSRV_MAP_DISCONNECTED,
+	MSG_BTSRV_MAP_DISCONNECTED,   
 
 	MSG_BTSRV_DUMP_INFO,
 
@@ -986,8 +979,6 @@ int btsrv_pts_avrcp_notify_volume_change(uint8_t volume);
 int btsrv_pts_avrcp_reg_notify_volume_change(void);
 int btsrv_pts_register_auth_cb(bool reg_auth);
 int btsrv_pts_avrcp_set_abs_volume(uint8_t volume);
-
-#ifdef CONFIG_BT_LEA_PTS_TEST
 /* btsrv_pts_test.c */
 int btsrv_pts_process(struct app_msg *msg);
 void btsrv_pts_reset(void);
@@ -1022,7 +1013,7 @@ void btsrv_pts_mics_aics_set_gain_mode(uint8_t gain_mode);
 int btsrv_pts_mics_aics_state_notify(struct bt_conn *conn);
 
 int btsrv_pts_set_le_security_level(bt_security_t sec_level);
-#endif /*CONFIG_BT_LEA_PTS_TEST*/
+
 #endif /*CONFIG_BT_PTS_TEST*/
 
 /*
@@ -1150,7 +1141,7 @@ enum {
 
 	BTSRV_BROADCAST_STREAM_SET_TWS_SYNC_CB_OFFSET,
 	BTSRV_BROADCAST_STREAM_SET_MEDIA_DELAY,
-
+	
 	/* for broadcast_assistant */
 	BTSRV_BROADCAST_ASST_XXX,
 	BTSRV_BROADCAST_ASST_SCAN_START = 120,
@@ -1207,8 +1198,6 @@ ssize_t btsrv_audio_vnd_write(struct bt_conn *conn,
 				uint16_t len, uint16_t offset, uint8_t flags);
 
 int btsrv_audio_vnd_send(uint16_t handle, uint8_t *buf, uint16_t len);
-
-int btsrv_audio_get_remote_name(uint16_t handle, get_remote_lea_name_cb callback);
 
 int btsrv_ascs_stream_cb_register(struct bt_audio_stream_cb *cb);
 

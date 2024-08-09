@@ -1229,8 +1229,8 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
             else
             {
                 printk("mcu hw reset!!! \n");
-               // pd_manager_deinit(0);
-                //sys_pm_poweroff();    
+                pd_manager_deinit(0);
+                sys_pm_poweroff();    
             }
             break;
         default:
