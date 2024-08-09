@@ -12,6 +12,9 @@
 #include "charger/charger.h"
 #include <property_manager.h>
 
+#include <trace.h>
+
+
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #include <wltmcu_manager_supply.h>
 extern void user_app_early_init(void);
@@ -90,8 +93,8 @@ static void main_is_enter_att(void)
 }
 #endif
 #ifdef CONFIG_WLT_ATS_ENABLE
-extern int ats_wlt_enter(void);
-extern int ats_wlt_check_adfu(void);
+extern void ats_wlt_enter(void);
+extern bool get_enter_wlt_ats_state(void);
 #endif
 static void main_pre_init(void)
 {
@@ -123,7 +126,6 @@ static void main_pre_init(void)
 #ifdef CONFIG_WLT_ATS_ENABLE
 	/* check if need enter wlt factory test !! */
 	ats_wlt_enter();
-	ats_wlt_check_adfu();
 	thread_timer_init(&main_test_timer, main_test_timer_func, NULL);
     thread_timer_start(&main_test_timer, 0, 1000);
 #endif
