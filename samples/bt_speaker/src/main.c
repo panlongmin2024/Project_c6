@@ -12,6 +12,9 @@
 #include "charger/charger.h"
 #include <property_manager.h>
 
+#include <trace.h>
+
+
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #include <wltmcu_manager_supply.h>
 extern void user_app_early_init(void);
@@ -31,7 +34,33 @@ bool main_get_enter_att_state(void)
 {
 	return (enter_att_flag == true);
 }
+/***************/
+extern int trace_dma_print_set(unsigned int dma_enable);
+int trace_mode_set(unsigned int trace_mode);
+extern void ats_wlt_start(void);
+extern int ats_init(void);
+extern int ats_usb_cdc_acm_init(void);
 
+struct thread_timer main_test_timer;
+static void main_test_timer_func(struct thread_timer *timer, void* pdata)
+{
+	static u32_t tiemr_cnt=0;
+	SYS_LOG_INF("------> tiemr_cnt %d\n",tiemr_cnt);
+	++tiemr_cnt;
+	if(tiemr_cnt>20)tiemr_cnt=0;
+	if(tiemr_cnt==2){
+		//trace_mode_set(TRACE_MODE_DISABLE);
+		//trace_dma_print_set(false);
+		//ats_wlt_start();
+		//ats_init();
+		//ats_usb_cdc_acm_init();
+	}
+	else if(tiemr_cnt==20){
+		//trace_mode_set(TRACE_MODE_DMA);
+		//trace_dma_print_set(true);
+	}
+}
+/***************/
 static void main_is_enter_att(void)
 {
 	char buf[2]={0};
@@ -64,7 +93,8 @@ static void main_is_enter_att(void)
 }
 #endif
 #ifdef CONFIG_WLT_ATS_ENABLE
-extern int ats_wlt_enter(void);
+extern void ats_wlt_enter(void);
+extern bool get_enter_wlt_ats_state(void);
 extern int ats_wlt_check_adfu(void);
 #endif
 static void main_pre_init(void)
@@ -98,6 +128,9 @@ static void main_pre_init(void)
 	/* check if need enter wlt factory test !! */
 	ats_wlt_enter();
 	ats_wlt_check_adfu();
+
+	thread_timer_init(&main_test_timer, main_test_timer_func, NULL);
+    thread_timer_start(&main_test_timer, 0, 1000);
 #endif
 	user_app_early_init();
 	system_pre_init();

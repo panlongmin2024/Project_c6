@@ -1,5 +1,5 @@
 
-#include "ats_wlt_factory.h"
+#include "ats_wlt_factory_process.h"
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 ats_wlt_uart ats_wlt_uart_context;
@@ -7,6 +7,8 @@ static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
 static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
+static bool isWltAtsMode = false;
+
 struct thread_timer user_test_timer;
 
 
@@ -14,11 +16,61 @@ extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
 extern struct device *uart_console_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
-static void ats_wlt_write_data(unsigned char *buf, int len);
-int mcu_ui_send_led_code(uint8_t type, int code);
-void mcu_ui_power_hold_fn(void);
+void ats_wlt_write_data(unsigned char *buf, int len);
+int ats_wlt_check_adfu(void)
+{
+	bool key_bt_status;
+	bool key_vol_up;
+	bool dc_power_in_status;
 
-int ats_wlt_deinit(void);
+	/*SYS_LOG_INF("check adfu gpio key ok ?\n");
+
+	key_bt_status = key_bt_status_read();
+	key_vol_up = key_vol_up_status_read();
+	dc_power_in_status = dc_power_in_status_read();
+	SYS_LOG_INF("key_bt down:%d, key_vol_up down:%d, dc_power_in insert:%d\n",
+			key_bt_status, key_vol_up, dc_power_in_status);
+	if(key_bt_status == 1 && key_vol_up == 1 && dc_power_in_status == 1){
+		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	}*/
+
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+	u32_t val;
+	gpio_pin_configure(gpio_dev, 21, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
+	gpio_pin_configure(gpio_dev, 39, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
+	k_sleep(10);
+	gpio_pin_read(gpio_dev, 21, &val);
+	key_vol_up = (bool)val;
+	gpio_pin_read(gpio_dev, 39, &val);
+	key_bt_status = (bool)val;
+	dc_power_in_status = dc_power_in_status_read();
+	SYS_LOG_INF("key_bt down:%d, key_vol_up down:%d, dc_power_in insert:%d\n",
+			key_bt_status, key_vol_up, dc_power_in_status);	
+	if(key_bt_status == 1 && key_vol_up == 1 && dc_power_in_status == 1){
+		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	}	
+	return 0;
+}
+
+void ats_wlt_enter(void)
+{
+	SYS_LOG_INF("check wlt ats !\n");
+	uint8_t ReadODM(void);
+	if(ReadODM() == 1){
+		k_sleep(20);
+		if(ReadODM() == 1){
+			/* is wlt factory test ! */
+
+			isWltAtsMode = true;
+			SYS_LOG_INF("real enter wlt ats !\n");
+		}
+	}
+}
+bool get_enter_wlt_ats_state(void)
+{
+	SYS_LOG_INF("check wlt ats ! isWltAtsMode %d\n",isWltAtsMode);
+	return isWltAtsMode;
+}
 
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
@@ -46,15 +98,18 @@ void string_to_hex_u8(u8_t *buf,u8_t *num) {
 
 static int ats_wlt_resp_init(void)
 {
+
 	if (ats_wlt_cmd_resp_buf == NULL)
 	{
 		ats_wlt_cmd_resp_buf = malloc(ats_wlt_cmd_resp_buf_size);
 		if (ats_wlt_cmd_resp_buf == NULL)
 		{
+	
 			return 0;
 		}
 		memset(ats_wlt_cmd_resp_buf, 0, ats_wlt_cmd_resp_buf_size);
 	}
+
 	return 0;
 }
 
@@ -126,56 +181,45 @@ int ats_wlt_response_at_data(struct device *dev, u8_t *cmd, int cmd_len, u8_t *e
 
 static int ats_wlt_shell_set_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_set_btble_mac(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btble_mac(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_set_btedr_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }static int ats_wlt_shell_set_btble_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btedr_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btble_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, int len)
@@ -184,22 +228,6 @@ static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, i
 }
 static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
-	return 0;
-}
-static int ats_wlt_shell_enter_adfu(struct device *dev, u8_t *buf, int len)
-{
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
-	sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
-	return 0;
-}
-static int ats_wlt_shell_system_reset(struct device *dev, u8_t *buf, int len)
-{
-	u8_t buffre[1+1] = {6,0};
-	/* save reboot flag! */
-	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
-	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
-	sys_pm_reboot(0);
 	return 0;
 }
 
@@ -253,12 +281,6 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_NON_SIGNAL, sizeof(ATS_AT_CMD_ENTER_NON_SIGNAL)-1)){
 		ats_wlt_shell_enter_nonsignal_test_mode(0, 0, 0);
 	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_ADFU, sizeof(ATS_AT_CMD_ENTER_ADFU)-1)){
-		ats_wlt_shell_enter_adfu(0, 0, 0);
-	}	
-	else if (!memcmp(&buf[index], ATS_AT_CMD_DEVICE_RESET, sizeof(ATS_AT_CMD_DEVICE_RESET)-1)){
-		ats_wlt_shell_system_reset(0, 0, 0);
-	}	
 	else{
 	    ats_wlt_cmd_response_ok_or_fail(dev, 0);
 		goto __exit_exit;
@@ -283,34 +305,29 @@ static int wlt_read_data_handler(struct device *dev)
 	memcpy(p_ats_info->data_buf, ats_uart->rx_buffer, rx_size);
 
 	if (rx_size == 0){
-		//SYS_LOG_INF("------>1\n");
-		return 0;
-	}
-	else{
-		SYS_LOG_INF("------>3\n");
 		return 0;
 	}
 	if(dev == NULL){
 		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
-		SYS_LOG_INF("------>2\n");
 		return 0;
 	}
-	SYS_LOG_INF("------>123\n");
 	stream_write(ats_uart->uio, p_ats_info->data_buf, rx_size);
 	ats_wlt_command_shell_handler(dev, p_ats_info->data_buf, rx_size);
 	return 0;
 }
 
-static void ats_wlt_write_data(unsigned char *buf, int len)
+void ats_wlt_write_data(unsigned char *buf, int len)
 {
-	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
-	stream_write(ats_uart->uio, buf, len);	
+  ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
+  stream_write(ats_uart->uio, buf, len);	
 }
+
 static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
 	wlt_read_data_handler(dev);
 }
+
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
     os_sem *callback_sem = (os_sem *)p1;
@@ -331,7 +348,7 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 
 	thread_timer_init(&p_ats_info->rx_timer, wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_info->rx_timer, 0, 10);
-
+	
 	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
 	while (p_ats_info->enabled) 
     {
@@ -342,12 +359,9 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 
 			switch (msg.type) 
 			{
-				case WLT_ATS_ENTER_OK:
-					ats_wlt_write_data("------>enter OK!\n",20);
+				case 1:
+
 					break;
-				case WLT_ATS_EXIT:
-					ats_wlt_deinit();
-					break;					
 				default:
 					SYS_LOG_ERR("error: 0x%x\n", msg.type);
 					continue;
@@ -442,7 +456,7 @@ int ats_wlt_init(void)
 	}
 
 	os_sem_init(&callback_sem, 0, 1);
-	
+
 	p_ats_info = malloc(sizeof(struct _wlt_driver_ctx_t));
 	if (p_ats_info == NULL)
 	{
