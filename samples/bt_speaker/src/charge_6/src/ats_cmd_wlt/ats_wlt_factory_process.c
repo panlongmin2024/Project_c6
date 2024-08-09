@@ -170,45 +170,56 @@ int ats_wlt_response_at_data(struct device *dev, u8_t *cmd, int cmd_len, u8_t *e
 
 static int ats_wlt_shell_set_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_set_btble_mac(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btble_mac(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_set_btedr_name(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }static int ats_wlt_shell_set_btble_name(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btedr_name(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btble_name(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, int len)
@@ -217,6 +228,22 @@ static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, i
 }
 static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
+	return 0;
+}
+static int ats_wlt_shell_enter_adfu(struct device *dev, u8_t *buf, int len)
+{
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
+	sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	return 0;
+}
+static int ats_wlt_shell_system_reset(struct device *dev, u8_t *buf, int len)
+{
+	u8_t buffre[1+1] = {6,0};
+	/* save reboot flag! */
+	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
+	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
+	sys_pm_reboot(0);
 	return 0;
 }
 
@@ -270,6 +297,12 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_NON_SIGNAL, sizeof(ATS_AT_CMD_ENTER_NON_SIGNAL)-1)){
 		ats_wlt_shell_enter_nonsignal_test_mode(0, 0, 0);
 	}
+	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_ADFU, sizeof(ATS_AT_CMD_ENTER_ADFU)-1)){
+		ats_wlt_shell_enter_adfu(0, 0, 0);
+	}	
+	else if (!memcmp(&buf[index], ATS_AT_CMD_DEVICE_RESET, sizeof(ATS_AT_CMD_DEVICE_RESET)-1)){
+		ats_wlt_shell_system_reset(0, 0, 0);
+	}	
 	else{
 	    ats_wlt_cmd_response_ok_or_fail(dev, 0);
 		goto __exit_exit;
@@ -300,7 +333,7 @@ static int wlt_read_data_handler(struct device *dev)
 		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
 		return 0;
 	}
-	stream_write(ats_uart->uio, p_ats_info->data_buf, rx_size);
+	//stream_write(ats_uart->uio, p_ats_info->data_buf, rx_size);
 	ats_wlt_command_shell_handler(dev, p_ats_info->data_buf, rx_size);
 	return 0;
 }
@@ -348,9 +381,12 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 
 			switch (msg.type) 
 			{
-				case 1:
-
+				case WLT_ATS_ENTER_OK:
+					ats_wlt_write_data("------>enter OK!\n",20);
 					break;
+				case WLT_ATS_EXIT:
+					ats_wlt_deinit();
+					break;					
 				default:
 					SYS_LOG_ERR("error: 0x%x\n", msg.type);
 					continue;
