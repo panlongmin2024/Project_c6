@@ -114,8 +114,6 @@ int ats_wlt_enter(void)
 		k_sleep(20);
 		if(ReadODM() == 0){
 			/* is wlt factory test ! */
-			int mcu_ui_send_led_code(uint8_t type, int code);
-			mcu_ui_send_led_code(0x18,1);
 			SYS_LOG_INF("real entering wlt ats !\n");
 #if 0
 			p_ats_wlt_info = malloc(sizeof(struct _wlt_driver_ctx_t));
