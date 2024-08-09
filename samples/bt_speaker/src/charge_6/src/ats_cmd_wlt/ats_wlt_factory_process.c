@@ -17,6 +17,8 @@ extern void console_input_deinit(struct device *dev);
 extern struct device *uart_console_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
 void ats_wlt_write_data(unsigned char *buf, int len);
+int ats_wlt_deinit(void);
+
 int ats_wlt_check_adfu(void)
 {
 	bool key_bt_status;
