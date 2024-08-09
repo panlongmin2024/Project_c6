@@ -463,7 +463,7 @@ void system_app_init(void)
 
 		system_app_ota_init();
 
-#if 0//def CONFIG_WLT_ATS_ENABLE
+#ifdef CONFIG_WLT_ATS_ENABLE
 		if (enter_stub_tool == false && enter_ats_wlt_flag == false) {
 #else
 		if (enter_stub_tool == false) {
