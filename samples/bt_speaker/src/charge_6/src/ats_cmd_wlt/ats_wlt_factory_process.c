@@ -60,6 +60,7 @@ void ats_wlt_enter(void)
 #endif
 static struct _wlt_driver_ctx_t *p_ats_wlt_info;
 ats_wlt_uart ats_wlt_uart_enter;
+uint8_t ReadODM(void);
 
 static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 
@@ -114,12 +115,6 @@ static void ats_wlt_enter_write_data(unsigned char *buf, int len)
   ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
   stream_write(ats_uart->uio, buf, len);	
 }
-/* check wlt ats enter? */
-static void ats_wlt_enter_timer_cb(struct thread_timer *timer, void* pdata)
-{
-	struct device *dev = (struct device *)pdata;
-	ats_wlt_enter_comm_data_handler(dev);
-}
 
 static int ats_wlt_enter_uart_init(struct device *dev)
 {
@@ -162,7 +157,7 @@ static int ats_wlt_wait_comm(struct device *dev)
 int ats_wlt_enter(void)
 {
 	int ret = -1;
-	SYS_LOG_INF("check wlt ats ! \n");
+	SYS_LOG_INF("check wlt ats ! odm=%d\n",ReadODM());
 	
 	if(ReadODM() == 0){
 		k_sleep(20);
