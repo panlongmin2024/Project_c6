@@ -445,30 +445,22 @@ void system_app_init(void)
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-			/* wlt factory test start!!! */
-			bool enter_ats_wlt_flag = false;
-			if(get_enter_wlt_ats_state())
-			{
-				init_bt_manager = false;
-				enter_ats_wlt_flag = true;
+		/* wlt factory test start!!! */
+		if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
+			init_bt_manager = false;
 #ifdef CONFIG_PLAYTTS
-				tts_manager_lock();
+			tts_manager_lock();
 #endif			
-				//trace_init();
-				//ats_wlt_start();
-			}
+			trace_init();
+			mcu_ui_power_hold_fn();
+			ats_wlt_start();
+		}
 #endif
 #endif
-
-
 		system_app_ota_init();
 
-#ifdef CONFIG_WLT_ATS_ENABLE
-		if (enter_stub_tool == false && enter_ats_wlt_flag == false) {
-#else
+
 		if (enter_stub_tool == false) {
-#endif
-		
 #ifdef CONFIG_CARD_READER_APP
 			if (usb_hotplug_device_mode()
 			    && !(reason == REBOOT_REASON_NORMAL)) {
@@ -588,11 +580,6 @@ void system_app_init(void)
 	}
 #endif
 
-	if(get_enter_wlt_ats_state())
-	{		
-		trace_init();
-		ats_wlt_start();
-	}
 
 
 
@@ -601,7 +588,7 @@ void system_app_init(void)
 #endif
 
 #ifdef CONFIG_BT_ADV_MANAGER
-#ifndef CONFIG_BT_LEA_PTS_TEST
+#ifndef CONFIG_BT_PTS_TEST
 	sys_ble_advertise_init();
 #endif
 #endif
@@ -671,7 +658,7 @@ void system_app_init_bte_ready(void)
 	act_att_notify_bt_engine_ready();
 #endif
 
-#ifdef CONFIG_BT_LEA_PTS_TEST
+#ifdef CONFIG_BT_PTS_TEST
 	pts_le_audio_init();
 #else
 	bt_le_audio_init();

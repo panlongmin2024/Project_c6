@@ -435,6 +435,12 @@ int ats_wlt_init(void)
 		goto err_exit;		
 	}
 
+	if (p_ats_info)
+	{
+        SYS_LOG_INF("already init\n");
+		return 0;
+	}
+
 	os_sem_init(&callback_sem, 0, 1);
 	
 	p_ats_info = malloc(sizeof(struct _wlt_driver_ctx_t));
