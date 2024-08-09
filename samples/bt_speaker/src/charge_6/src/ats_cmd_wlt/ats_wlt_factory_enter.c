@@ -10,7 +10,7 @@ static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 extern void console_input_deinit(struct device *dev);
 static void ats_wlt_enter_write_data(unsigned char *buf, int len);
 extern uint8_t ReadODM(void);
-static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
+/*static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
 	//void mcu_ui_power_hold_fn(void);
 	//mcu_ui_power_hold_fn();
@@ -31,7 +31,7 @@ static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
 	return 0;
 }
 
-/*static int ats_wlt_enter_comm_data_handler(struct device *dev)
+static int ats_wlt_enter_comm_data_handler(struct device *dev)
 {
 	ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
 	int rx_size=0;
