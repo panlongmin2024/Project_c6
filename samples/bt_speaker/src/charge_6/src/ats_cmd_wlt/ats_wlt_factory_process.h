@@ -92,6 +92,12 @@ struct _ats_wlt_thread_msg_t {
     u32_t value;
 };
 
+typedef enum 
+{
+	WLT_ATS_ENTER_OK,
+	WLT_ATS_EXIT,
+}ats_wlt_type_e;
+
 enum 
 {
 	RET_NG,
