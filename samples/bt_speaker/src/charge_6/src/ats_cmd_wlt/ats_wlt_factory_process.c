@@ -308,6 +308,9 @@ static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
 	wlt_read_data_handler(dev);
+
+	mcu_ui_send_led_code(0x18,1);
+	mcu_ui_power_hold_fn();	
 }
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
