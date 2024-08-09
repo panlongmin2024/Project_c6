@@ -23,17 +23,6 @@ int ats_wlt_check_adfu(void)
 	bool key_vol_up;
 	bool dc_power_in_status;
 
-	/*SYS_LOG_INF("check adfu gpio key ok ?\n");
-
-	key_bt_status = key_bt_status_read();
-	key_vol_up = key_vol_up_status_read();
-	dc_power_in_status = dc_power_in_status_read();
-	SYS_LOG_INF("key_bt down:%d, key_vol_up down:%d, dc_power_in insert:%d\n",
-			key_bt_status, key_vol_up, dc_power_in_status);
-	if(key_bt_status == 1 && key_vol_up == 1 && dc_power_in_status == 1){
-		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
-	}*/
-
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	u32_t val;
 	gpio_pin_configure(gpio_dev, 21, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
