@@ -15,8 +15,10 @@ extern void console_input_deinit(struct device *dev);
 extern struct device *uart_console_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
 static void ats_wlt_write_data(unsigned char *buf, int len);
-int ats_wlt_deinit(void);
+int mcu_ui_send_led_code(uint8_t type, int code);
+void mcu_ui_power_hold_fn(void);
 
+int ats_wlt_deinit(void);
 
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
@@ -333,8 +335,6 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 	thread_timer_init(&p_ats_info->rx_timer, wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_info->rx_timer, 0, 10);
 
-	int mcu_ui_send_led_code(uint8_t type, int code);
-	void mcu_ui_power_hold_fn(void);
 	mcu_ui_send_led_code(0x18,1);
 	mcu_ui_power_hold_fn();
 
