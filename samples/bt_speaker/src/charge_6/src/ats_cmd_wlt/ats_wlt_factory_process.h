@@ -43,13 +43,21 @@
 #define ATS_AT_CMD_SET_BTBLE_NAME				"WLT_SET_BTBLE_NAME"
 #define ATS_AT_CMD_GET_BTEDR_NAME				"WLT_GET_BTEDR_NAME"
 #define ATS_AT_CMD_GET_BTBLE_NAME				"WLT_GET_BTBLE_NAME"
-
 #define ATS_AT_CMD_GET_FIRMWARE_VERSION         "WLT_GET_FIRMWARE_VER"
 #define ATS_AT_CMD_GPIO                			"WLT_TEST_GPIO"
 #define ATS_AT_CMD_SET_HARMAN_KEY		        "WLT_SET_HARMAN_KEY"
 #define ATS_AT_CMD_ENTER_SIGNAL		            "WLT_ENTER_BT_SIGNAL"
 #define ATS_AT_CMD_ENTER_NON_SIGNAL	            "WLT_ENTER_BT_NON_SIGNAL"
+#define ATS_AT_CMD_ENTER_ADFU		            "WLT_ENTER_ADFU"
+#define ATS_AT_CMD_DEVICE_RESET		            "WLT_DEVICE_RESET"
+#define ATS_AT_CMD_ENTER_WLT_ATS	            "TL_ENTER_FAC_MODE_OK"
+
+
+#define ATS_SEND_ENTER_WLT_ATS	            	"TL_ENTER_FAC_MODE<CR><LF>"
+#define ATS_SEND_ENTER_WLT_ATS_ACK            	"TL_ENTER_FAC_MODE_OKOK<CR><LF>"
+
 /* wlt factory test command end */
+
 
 struct _ats_wlt_var {
     os_mutex ats_mutex;
@@ -84,6 +92,11 @@ struct _ats_wlt_thread_msg_t {
     u32_t value;
 };
 
+enum 
+{
+	RET_NG,
+	RET_OK,
+};
 
 
 
