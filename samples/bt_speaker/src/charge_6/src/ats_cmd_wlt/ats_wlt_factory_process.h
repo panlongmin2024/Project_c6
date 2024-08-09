@@ -18,7 +18,6 @@
 #include <uart_stream.h>
 #include <logging/sys_log.h>
 #include <trace.h>
-#include <gpio.h>
 
 
 #ifdef CONFIG_WLT_ATS_ENABLE
@@ -42,19 +41,12 @@
 #define ATS_AT_CMD_SET_BTBLE_NAME				"WLT_SET_BTBLE_NAME"
 #define ATS_AT_CMD_GET_BTEDR_NAME				"WLT_GET_BTEDR_NAME"
 #define ATS_AT_CMD_GET_BTBLE_NAME				"WLT_GET_BTBLE_NAME"
+
 #define ATS_AT_CMD_GET_FIRMWARE_VERSION         "WLT_GET_FIRMWARE_VER"
 #define ATS_AT_CMD_GPIO                			"WLT_TEST_GPIO"
 #define ATS_AT_CMD_SET_HARMAN_KEY		        "WLT_SET_HARMAN_KEY"
 #define ATS_AT_CMD_ENTER_SIGNAL		            "WLT_ENTER_BT_SIGNAL"
 #define ATS_AT_CMD_ENTER_NON_SIGNAL	            "WLT_ENTER_BT_NON_SIGNAL"
-#define ATS_AT_CMD_ENTER_ADFU		            "WLT_ENTER_ADFU"
-#define ATS_AT_CMD_DEVICE_RESET		            "WLT_DEVICE_RESET"
-#define ATS_AT_CMD_ENTER_WLT_ATS	            "TL_ENTER_FAC_MODE_OK"
-
-
-#define ATS_SEND_ENTER_WLT_ATS	            	"TL_ENTER_FAC_MODE<CR><LF>"
-#define ATS_SEND_ENTER_WLT_ATS_ACK            	"TL_ENTER_FAC_MODE_OKOK<CR><LF>"
-
 /* wlt factory test command end */
 
 struct _ats_wlt_var {
@@ -74,8 +66,7 @@ struct _wlt_driver_ctx_t {
 	struct k_msgq msgq;
 	char *msg_buf;
 	struct thread_timer rx_timer;
-	struct thread_timer handle_timer;
-	
+
 	char data_buf[ATS_WLT_UART_RX_LEN_MAX];
 };
 
@@ -91,17 +82,7 @@ struct _ats_wlt_thread_msg_t {
     u32_t value;
 };
 
-typedef enum 
-{
-	WLT_ATS_ENTER_OK,
-	WLT_ATS_EXIT,
-}ats_wlt_type_e;
 
-enum 
-{
-	RET_NG,
-	RET_OK,
-};
 
 
 #endif
