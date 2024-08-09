@@ -527,7 +527,7 @@ static int cdc_shell_ats_sw_version_info_dump(struct device *dev, u8_t *buf, int
 	uint32_t swver = fw_version_get_sw_code(); //for example 0x010700-1.7.0
 	uint8_t hwver = fw_version_get_hw_code();
 	uint32_t swver_hex;
-	swver_hex = (((swver>>0)&0xf)*10) + (((swver>>8)&0xf)*100) + (((swver>>16)&0xf)*1000) 
+	swver_hex = (((swver>>0)&0xf)*10) + (((swver>>8)&0xf)*100) + (((swver>>16)&0xf)*1000);
 	hex_to_string_4(swver_hex,buffer);
 	buffer[3] = (hwver%10)+'0';//sw + hw
 
