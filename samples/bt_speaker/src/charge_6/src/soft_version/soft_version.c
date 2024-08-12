@@ -123,7 +123,7 @@ int fw_version_play_by_tts(void)
 		return -1;
 	} */
 
-	tts_manager_os_mutex_lock();
+	os_sched_lock();
 
 	SYS_LOG_INF("ok,ver:%x_%x_%x\n",sw_ver, hw_ver,pd_ver);
 
@@ -150,7 +150,7 @@ int fw_version_play_by_tts(void)
 		tts_manager_play("debug.mp3", mode);
 	}
 
-	tts_manager_os_mutex_unlock();
+	os_sched_unlock();
 
 	return 0;
 }
