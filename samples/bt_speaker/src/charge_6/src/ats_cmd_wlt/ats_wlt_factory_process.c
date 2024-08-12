@@ -3,7 +3,7 @@
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 
-#define	CONFIG_WLT_ATS_NEED_COMM	0
+#define	CONFIG_WLT_ATS_NEED_COMM	1
 
 ats_wlt_uart ats_wlt_uart_context;
 static struct _wlt_driver_ctx_t *p_ats_info;
@@ -165,7 +165,7 @@ int ats_wlt_enter(void)
 			ats_wlt_enter_uart_init(p_ats_wlt_info->ats_uart_dev);
 			ret = ats_wlt_wait_comm(p_ats_wlt_info->ats_uart_dev);
 			free(p_ats_wlt_info);
-			//console_input_deinit(p_ats_wlt_info->ats_uart_dev);
+			console_input_deinit(p_ats_wlt_info->ats_uart_dev);
 #else	
 			ats_wlt_enter_success(0,0,0);
 #endif
