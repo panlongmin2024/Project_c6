@@ -20,6 +20,7 @@
 #include <trace.h>
 #include <gpio.h>
 #include "board.h"
+#include "ats_cmd/ats.h"
 
 
 #ifdef CONFIG_WLT_ATS_ENABLE

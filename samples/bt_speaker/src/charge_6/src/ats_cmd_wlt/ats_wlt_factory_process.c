@@ -67,7 +67,7 @@ static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
 
-	if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_WLT_ATS, sizeof(ATS_AT_CMD_ENTER_WLT_ATS)-1)){
+	if (!memcmp(&buf[index], ATS_CMD_ENTER_WLT_ATS, sizeof(ATS_CMD_ENTER_WLT_ATS)-1)){
 		ats_wlt_enter_success(dev, buf, size);
 	}
 	else{
