@@ -126,8 +126,8 @@ typedef enum
 
 enum 
 {
-	RET_NG,
-	RET_OK,
+	ATS_WLT_RET_NG,
+	ATS_WLT_RET_OK,
 };
 
 
