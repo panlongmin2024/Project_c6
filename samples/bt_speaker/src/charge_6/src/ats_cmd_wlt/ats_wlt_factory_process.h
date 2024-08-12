@@ -21,6 +21,7 @@
 #include <gpio.h>
 #include "board.h"
 #include "ats_cmd/ats.h"
+#include "hex_str.h"
 
 
 #ifdef CONFIG_WLT_ATS_ENABLE
@@ -126,6 +127,19 @@ enum
 	RET_OK,
 };
 
+
+
+static inline void wlt_hex_to_string_4(u32_t num, u8_t *buf)
+{
+	buf[0] = '0' + num%10000/1000;
+	buf[1] = '0' + num%1000/100;
+	buf[2] = '0' + num%100/10;
+	buf[3] = '0' + num%10;	
+}
+static inline void wlt_hex_to_string_2(u32_t num, u8_t *buf) {
+	buf[0] = '0' + num%100/10;
+	buf[1] = '0' + num%10;
+}
 
 
 #endif

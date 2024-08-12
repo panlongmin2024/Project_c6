@@ -24,6 +24,8 @@ extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
 extern struct device *uart_console_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
+extern u32_t fw_version_get_sw_code(void);
+extern u8_t fw_version_get_hw_code(void);
 void ats_wlt_write_data(unsigned char *buf, int len);
 int ats_wlt_deinit(void);
 uint8_t ReadODM(void);
@@ -369,6 +371,19 @@ static int ats_wlt_shell_get_btble_name(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int len)
 {
+	uint8_t buffer[] = "0000";
+	uint32_t swver = fw_version_get_sw_code();
+	uint8_t hwver = fw_version_get_hw_code();
+	uint32_t swver_hex;
+	swver_hex = (((swver>>0)&0xf)*10) + (((swver>>8)&0xf)*100) + (((swver>>16)&0xf)*1000);
+	wlt_hex_to_string_4(swver_hex,buffer);
+	
+	buffer[3] = (hwver%10)+'0';//sw + hw
+
+	ats_wlt_response_at_data(
+		dev, ATS_CMD_RESP_SW_VERSION_INFO_DUMP, sizeof(ATS_CMD_RESP_SW_VERSION_INFO_DUMP)-1, 
+		buffer, sizeof(buffer)-1);
+
 	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
