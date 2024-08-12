@@ -121,6 +121,11 @@ static int ats_wlt_enter_uart_init(struct device *dev)
 
     return ats_uart->uio_opened;
 }
+static int ats_wlt_enter_uart_deinit(struct device *dev)
+{
+	ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
+	stream_close(ats_uart->uio);
+}
 /* wait communicate from PC! */
 static int ats_wlt_wait_comm(struct device *dev)
 {
@@ -166,6 +171,7 @@ int ats_wlt_enter(void)
 			ret = ats_wlt_wait_comm(p_ats_wlt_info->ats_uart_dev);
 			free(p_ats_wlt_info);
 			console_input_deinit(p_ats_wlt_info->ats_uart_dev);
+			ats_wlt_enter_uart_deinit();
 #else	
 			ats_wlt_enter_success(0,0,0);
 #endif
