@@ -581,6 +581,7 @@ void bt_manager_disconnected_reason(void *param)
 	struct bt_disconnect_reason *p_param = (struct bt_disconnect_reason *)param;
 	struct bt_set_autoconn reconnect_param;
 	btmgr_reconnect_cfg_t *cfg_reconnect = bt_manager_get_reconnect_config();
+	struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
 
 	SYS_LOG_INF("0x%x, tws_role %d reason 0x%x, %d",
 	    p_param->conn_type, p_param->tws_role,p_param->reason, os_uptime_get_32()
@@ -616,11 +617,12 @@ void bt_manager_disconnected_reason(void *param)
 		if(!bt_manager_is_ready())
 			return;
 		//btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_ALL);
-        memcpy(reconnect_param.addr.val, p_param->addr.val, sizeof(bd_address_t));
-        reconnect_param.strategy = BTSRV_AUTOCONN_ALTERNATE;
+		memcpy(reconnect_param.addr.val, p_param->addr.val, sizeof(bd_address_t));
+		reconnect_param.strategy = BTSRV_AUTOCONN_ALTERNATE;
+		struct bt_mgr_dev_info * info = bt_mgr_find_dev_info(&p_param->addr);
 
 		if (p_param->tws_role == BTSRV_TWS_NONE){
-            if ((p_param->reason == BT_HCI_ERR_CONN_TIMEOUT || 
+			if ((p_param->reason == BT_HCI_ERR_CONN_TIMEOUT || 
                     p_param->reason == BT_HCI_ERR_LL_RESP_TIMEOUT)
 			    && ((cfg_reconnect->enable_auto_reconnect & (1 << 1)) == 0)){
 			    return;
@@ -629,10 +631,14 @@ void bt_manager_disconnected_reason(void *param)
 			reconnect_param.base_try = cfg_reconnect->reconnect_times_by_timeout;
 			reconnect_param.reconnect_mode = BTSRV_TWS_RECONNECT_NONE;
 			reconnect_param.profile_try = BT_PROFILE_RECONNECT_TRY;
-		    reconnect_param.base_interval = cfg_reconnect->reconnect_phone_interval;
-		    reconnect_param.profile_interval = BT_PROFILE_RECONNECT_INTERVAL;
-            reconnect_param.reconnect_phone_timeout = cfg_reconnect->reconnect_phone_timeout;
-            reconnect_param.reconnect_tws_timeout = cfg_reconnect->reconnect_tws_timeout;
+			reconnect_param.base_interval = cfg_reconnect->reconnect_phone_interval;
+			reconnect_param.profile_interval = BT_PROFILE_RECONNECT_INTERVAL;
+			reconnect_param.reconnect_phone_timeout = cfg_reconnect->reconnect_phone_timeout;
+			reconnect_param.reconnect_tws_timeout = cfg_reconnect->reconnect_tws_timeout;
+			if(info){
+				info->auto_reconnect = 1;
+			}
+			bt_manager->auto_reconnect_timeout = 1;
 		}
         else{
             reconnect_param.reconnect_mode = BTSRV_TWS_RECONNECT_FAST_PAIR;
@@ -747,6 +753,18 @@ void bt_manager_disconnect_all_device(void)
 		os_sleep(10);
 	}
 }
+
+void bt_manager_disconnect_all_device_power_off(void)
+{
+	int time_out = 0;
+
+	btif_br_disconnect_device(BTSRV_DISCONNECT_ALL_MODE);
+
+	while (btif_br_get_connected_device_num() && time_out++ < 200) {
+		os_sleep(10);
+	}
+}
+
 
 void bt_manager_profile_disconnected_delay_proc(os_work* work)
 {

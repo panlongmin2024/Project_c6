@@ -575,7 +575,7 @@ void aw9523b_set_led_status(uint8_t num,uint8_t status)
     {
         SYS_LOG_INF("[%d] status:%d\n", __LINE__, status);
     }
-	SYS_LOG_INF("------>[%d] status:%d\n", __LINE__, status);
+
 }
 
 uint8_t aw9523b_get_led_status(uint8_t num)

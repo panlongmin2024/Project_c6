@@ -420,6 +420,8 @@ se_bool is_backup_authenticated(se_uint8* sn, se_uint8* rsn)
 
     return ret;
 }
+
+
 #endif
 
 void battery_hw_test(void)

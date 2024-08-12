@@ -193,6 +193,13 @@ int tts_merge_manager_start(char *name, uint8_t sample_rate, void (*stop_cb)(voi
 		return -EINVAL;
 	}
 #endif
+	audio_system_mutex_lock();
+	struct audio_track_t *track = audio_system_get_track();
+	if(!track){
+		audio_system_mutex_unlock();
+		stop_cb();
+		return -EINVAL; 
+	}
 
 	//SYS_LOG_INF("merge tts:%s %p %d %p\n", name, buffer.base, buffer.length, stop_cb);
 
@@ -210,8 +217,7 @@ int tts_merge_manager_start(char *name, uint8_t sample_rate, void (*stop_cb)(voi
 
 	os_mutex_unlock(&ctx->tts_merge_mutex);
 
-	return 0;
-
+	audio_system_mutex_unlock();
 
     return 0;
 }
@@ -263,3 +269,20 @@ int tts_merge_manager_mix_get_gain(void)
 	return mix_volume_table[TTS_MERGE_MIX_GAIN_LEVEL];
 }
 
+int tts_merge_manager_stop_ext(void)
+{
+	struct tts_manager_merge_ctx_t *ctx = tts_merge_manager_get_ctx();
+
+	SYS_LOG_INF();
+
+	os_mutex_lock(&ctx->tts_merge_mutex, OS_FOREVER);
+    ctx->running = false;
+	ctx->next_read_offset = 0;
+	if(ctx->stop_cb)
+		ctx->stop_cb();
+    os_mutex_unlock(&ctx->tts_merge_mutex);
+
+	media_player_fade_in(media_player_get_current_main_player(), 60);
+
+    return 0;
+}

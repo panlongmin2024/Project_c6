@@ -210,6 +210,20 @@ void main_input_event_handle(struct app_msg *msg)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	case MSG_FACTORY_RESET:
 		SYS_LOG_INF("factory reset\n");
+#ifdef CONFIG_BT_SELF_APP
+		//exit ota first
+		extern void otadfu_SetForce_exit_ota(void);
+		otadfu_SetForce_exit_ota();
+		int cnt = 0;
+		while(cnt++ < 100){
+			if(desktop_manager_get_plugin_id() != DESKTOP_PLUGIN_ID_OTA)
+				break;
+			k_sleep(10);	
+		}
+#endif
+		//lock the led first
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0));
+
 #ifdef CONFIG_BT_MANAGER
 		bt_manager_set_autoconn_info_need_update(0);
 		bt_manager_end_pair_mode();
@@ -225,8 +239,6 @@ void main_input_event_handle(struct app_msg *msg)
 #endif
 
 #ifdef CONFIG_BT_SELF_APP
-		extern void otadfu_SetForce_exit_ota(void);
-		otadfu_SetForce_exit_ota();
 		selfapp_config_reset();
 #endif
 
@@ -291,7 +303,7 @@ void main_input_event_handle(struct app_msg *msg)
 			run_mode_set(RUN_MODE_DEMO);
 			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
-
+			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 			//if(sys_pm_get_power_5v_status() != 2){
 				sys_event_notify(SYS_EVENT_POWER_OFF);
 	/* 		}else{

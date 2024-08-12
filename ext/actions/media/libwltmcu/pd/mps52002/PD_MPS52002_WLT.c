@@ -61,7 +61,7 @@
  * @}
  */
 
-#define mps_pd_current_version 0x44
+#define mps_pd_current_version 0x45
 #define I2C_DEV_ADDR        0x48                    //TODO
 #define I2C_PD_DEV_ADDR     0x28
 // #define DEF_MCU_WATER_INT_PIN 0
@@ -206,6 +206,7 @@ enum ti_pd_reg_address_t{
 	PD_MPS_DD_REG			= 0xdd,
     
 };
+
 void MPS_PB2_LOW(bool OnOFF);
 void MPS_ONOFF_BGATE(bool OnOFF);
 static u8_t ota_flag = 0;
@@ -516,7 +517,7 @@ u8_t crc8_calulate (const u8_t* buf, int length)
 	}
 	return (crc);
 }
-
+#if 0
 int OTA_PD(u8_t flag)
 {
 	// struct device *iic_dev;
@@ -531,6 +532,7 @@ int OTA_PD(u8_t flag)
 	u8_t request_cmd[] = { 0x4D, 0x50, 0x53, 0x53, 0x54, 0x41, 0x52, 0x54 };
 	
 	pd_mps52002_write_ota_value(PD_MPS_AA_REG, request_cmd, sizeof(request_cmd));
+	mps_ota_set_status(0x55);
 
 	printf("live  OTA_PD 333 \n");
 	k_sleep(850); //delay 850ms
@@ -552,8 +554,6 @@ int OTA_PD(u8_t flag)
 		k_sleep(100); //delay 100ms
 		printf("[%s %d]  count:%d \n", __func__, __LINE__, count);
 	}
-
-	mps_ota_set_status(0x55);
 
 	if( count <= 0 )
 	{
@@ -641,6 +641,11 @@ int OTA_PD(u8_t flag)
 		u8_t frame1[res+2];
 		frame1[0] = frame_index/4;
 		memcpy(&frame1[1], &fw_data[flowDataLen], res);
+		int res1 = data_len % 512;
+		if(res1 < 128)
+		{
+		  crc_value = crc8_calulate(&fw_data[crc_pre_index], res1);
+		}
 		frame1[res+1]=  crc_value;
 		if((pd_mps52002_write_ota_value(PD_MPS_AF_REG, frame1, res+2))<0)
 		{
@@ -732,7 +737,312 @@ int OTA_PD(u8_t flag)
 	k_sleep(1500); //delay 10ms
 	printf("[%s,%d] OTA_PD end\n", __FUNCTION__, __LINE__);
 	return 1;
-}	
+}
+#else
+u8_t power_led_cnt = 0;
+void pd_upgrade_display(u8_t flag,u8_t upgradeflag)
+{
+   if(upgradeflag)
+    {
+         if(power_led_cnt%6 == 0)
+		  { 		  
+			if((power_led_cnt/6)%2 == 0)
+			 {
+			   SYS_LOG_INF("LED_On \n	");
+			   led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+			 }
+			 else if((power_led_cnt/6)%2 == 1)
+			 {
+			  SYS_LOG_INF("LED_OFF	 \n");
+			 led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+			 }
+		  }
+  	}
+  else
+  	{
+	  if(!flag)
+		{
+		 led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+		}
+		else
+		 {
+		  led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+		 }
+  	}
+}
+
+u8_t cal_crc(int pre_index,u8_t flag)
+{
+  int data_len = sizeof(fw_data);//fw_data.Length;
+  u8_t crc_value = 0x00;
+ if(flag) 
+ {
+	  if((data_len % 512) >= 128 ) 
+	  {
+	   if(data_len -pre_index >=512)
+		{
+		   crc_value = crc8_calulate(&fw_data[pre_index], 512);
+		}
+		else
+		{
+		  crc_value = crc8_calulate(&fw_data[pre_index], (data_len - pre_index));
+		}
+	 }
+	 else
+	 {
+	      crc_value = crc8_calulate(&fw_data[pre_index], (data_len % 512));
+    }  
+ }
+ else
+ {
+
+       if(data_len -pre_index >=512)
+		{
+		   crc_value = crc8_calulate(&fw_data[pre_index], 512);
+		}
+		else
+		{
+		  crc_value = crc8_calulate(&fw_data[pre_index], (data_len - pre_index));
+		}
+
+
+ }
+  return crc_value;
+}
+u8_t page_check(u8_t index)
+{ 
+   u8_t HI_VER,LOW_VER;
+   u8_t cur_index;
+   u8_t check_result = 1;
+    pd_tps52002_read_ota_value(0x02, &HI_VER, 1);	 
+	pd_tps52002_read_ota_value(0x03, &LOW_VER, 1);	
+	printf("pd boot version = %x \n",(HI_VER<<8)|LOW_VER);
+	if(((HI_VER<<8)|LOW_VER) > 0)
+	{
+      pd_tps52002_read_ota_value(0xb1, &cur_index, 1);	
+	  printf("index = %x cur_index = %x \n",index,cur_index);
+	  if(index != cur_index )
+	    	check_result = 0 ;
+	}
+	return check_result;
+}
+
+ u8_t upgrade_fail_check(void)
+ { 
+	u8_t HI_VER,LOW_VER;
+	u8_t upgrade_check;
+    u8_t check_result = 1;
+	 pd_tps52002_read_ota_value(0x02, &HI_VER, 1);	  
+	 pd_tps52002_read_ota_value(0x03, &LOW_VER, 1); 
+	 
+	 if(((HI_VER<<8)|LOW_VER) > 0)
+	 {
+	   pd_tps52002_read_ota_value(0x01, &upgrade_check, 1);  
+	   if(upgrade_check == 0x11 )
+		{
+		  check_result = 0;
+		  printf("[%s %d]  upgrade fail \n", __func__, __LINE__);
+	   	}
+	   else if(upgrade_check == 0x22 )
+		{
+		   check_result = 1;
+		   printf("[%s %d]  upgrade succes \n", __func__, __LINE__);
+	   	}
+	 }
+	 
+  return check_result;
+ }
+
+ int OTA_PD(u8_t flag)
+ {
+	 // struct device *iic_dev;
+	 // union dev_config config = {0};
+	 struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+	 
+	 printf("Totti	OTA_PD start \n");
+	 gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
+	 k_sleep(10); //delay 10ms
+	 gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
+	 k_sleep(60); //delay 10ms		
+	 u8_t request_cmd[] = { 0x4D, 0x50, 0x53, 0x53, 0x54, 0x41, 0x52, 0x54 };
+	 
+	 pd_mps52002_write_ota_value(PD_MPS_AA_REG, request_cmd, sizeof(request_cmd));
+	 mps_ota_set_status(0x55);
+ 
+	 printf("live  OTA_PD 333 \n");
+	 k_sleep(850); //delay 850ms
+		 
+	 //Check on status regsiter 0xBA D[0] == 1
+	 int count = 5;
+	 u8_t readdata;
+	 
+	 while (count-- > 0)
+	 {
+		 if(pd_tps52002_read_ota_value(PD_MPS_BA_REG, &readdata, 1) >= 0x00)
+		 {	 
+			 if (readdata == 0x01)
+			 {
+				 break;
+			 }
+		 }
+ 
+		 k_sleep(100); //delay 100ms
+		 printf("[%s %d]  count:%d \n", __func__, __LINE__, count);
+	 }
+ 
+	 if( count <= 0 )
+	 {
+		 printf("[%s %d]  enter firmware update mode fail! \n", __func__, __LINE__);
+		 goto fail;
+	 }
+		 
+	 int data_len = sizeof(fw_data);//fw_data.Length;
+	 int res = data_len % 128;
+	 int frame_index = 0;	 
+	 int crc_pre_index = 0;
+	 printf("Totti	OTA_PD 444 data_len = %d \n",data_len);
+	 for(int i=0; i<(data_len-res); i+=128)
+	 {		 
+		 u8_t frame[130];
+		 frame[0]= frame_index/4;
+		 memcpy(&frame[1], &fw_data[i], 128);	 		 
+		 frame[129]=  cal_crc(crc_pre_index,0);		 
+		 if(pd_mps52002_write_ota_value(PD_MPS_AF_REG, frame, 130)<0)
+		 {
+			 printf("[%s:%d] live  write data error;\n", __func__, __LINE__);
+			 goto fail;
+		 }
+		 
+		 frame_index++;
+		 if(frame_index % 4 == 0)
+		 {
+			 crc_pre_index = i + 128;		 
+		     pd_upgrade_display(flag,1);
+			 power_led_cnt++;
+			 k_sleep(60); //delay 50ms before read index and crc status
+			 printf("[%s:%d] crc_pre_index = %d crc_value = %02x\n", __func__, __LINE__,crc_pre_index,cal_crc(crc_pre_index,0));
+			 if(!pd_tps52002_read_ota_value(PD_MPS_BA_REG, &readdata, 1))
+			  {
+			   if ((readdata & 0x0C) > 0)
+				{
+					printf("[%s %d]  crc fail \n", __func__, __LINE__);
+					goto fail;
+				}			  
+			  }
+			  else
+			  {
+				  printf("[%s %d] read crc fail \n", __func__, __LINE__);
+				  goto fail;
+			  }
+		 }
+		 
+		#ifdef CONFIG_TASK_WDT
+			 task_wdt_feed_all();
+		#endif
+	 }
+	 if (res > 0)
+	 {
+		 //u8_t data1[res];
+		 int flowDataLen = 0;
+		 flowDataLen = data_len-res;
+	 
+		 u8_t frame1[res+2];
+		 frame1[0] = frame_index/4;
+		 memcpy(&frame1[1], &fw_data[flowDataLen], res);
+		 frame1[res+1]=   cal_crc(crc_pre_index,1);
+		 if((pd_mps52002_write_ota_value(PD_MPS_AF_REG, frame1, res+2))<0)
+		 {
+			 printf("[%s:%d] live  write data error;\n", __func__, __LINE__);
+			 goto fail;
+		 }
+		
+		 k_sleep(60); //delay 50ms before read index and crc status
+		  if(!pd_tps52002_read_ota_value(PD_MPS_BA_REG, &readdata, 1))
+			{
+			   if ((readdata & 0x0C) > 0)
+				{
+					printf("[%s %d]  crc fail \n", __func__, __LINE__);
+					goto fail;;
+				}			  
+			}
+			  else
+		   {
+				  printf("[%s %d] read crc fail \n", __func__, __LINE__);
+				  goto fail;
+		   } 
+ 
+	 }
+	 
+	 k_sleep(30); //delay 50ms before read index and crc status
+	 //Terminate data transferring
+	 u8_t stop_cmd[] =	{0x4D, 0x50, 0x53, 0x45, 0x4E, 0x44, 0x53, 0x5A};
+	 // i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0xdd, stop_cmd  , sizeof(stop_cmd));
+	 if(pd_mps52002_write_ota_value(PD_MPS_DD_REG, stop_cmd, sizeof(stop_cmd))<0)
+	 {
+		 printf("[%s:%d] live  write stop cmd error;\n", __func__, __LINE__);
+		 goto fail;
+	 }
+	 
+	 if (!page_check(frame_index/4))
+	 	{
+	 	  	 printf("[%s:%d] live page check fail;\n", __func__, __LINE__);
+	 	     goto fail;
+	 	}
+	
+	 //Check on status regsiter 0xBA D[1] == 1
+	 count = 5;
+	 while (count-- > 0)
+	 {
+		 k_sleep(60); //delay 100ms 							 // totti modify on 2024-0722
+		 pd_tps52002_read_ota_value(PD_MPS_BA_REG, &readdata, 1);	 
+ 
+		 printf("readdata = 0x%02x\n",(readdata & 0x02));
+		 if ((readdata & 0x02) > 0)
+		 {
+			 break;
+		 }
+	 }
+ 
+	 if ( count <= 0) 
+	 {	  
+		goto fail;
+	 }
+	 else
+	 {
+	   if(upgrade_fail_check())
+		 {
+		  goto SUCCES;
+	   	}
+	    else
+	    {
+            goto fail;
+		}
+	 }
+  fail:	 
+  	   mps_ota_set_status(0x55);
+	   pd_upgrade_display(flag,0);
+	   printf("[%s %d] OTA_PD FAIL!!!!!!!!!!!!!!!!!!\n", __func__, __LINE__);
+	   return 0;
+	 //Jump to execute new Firmware; use hardware reset
+	 // u8_t jump_cmd = 0xAC;
+	 // pd_mps52002_write_ota_value(PD_MPS_BB_REG, &jump_cmd, 1);
+  SUCCES: 
+	     printf("[%s %d] OTA_PD SUCESS!!!!!!!!!!!!!!!!!!\n", __func__, __LINE__);
+	     mps_ota_set_status(0x88);
+		 k_sleep(10); //delay 10ms
+		 gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
+		 k_sleep(10); //delay 10ms
+		 gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
+		 k_sleep(200); //delay 10ms
+		#ifdef CONFIG_TASK_WDT
+		 task_wdt_feed_all();
+		#endif	 
+		 pd_upgrade_display(flag,0);
+		 k_sleep(1500); //delay 10ms
+		 printf("[%s,%d] OTA_PD end\n", __FUNCTION__, __LINE__);
+		 return 1;
+ }
+#endif
 #else
 
  int OTA_PD(u8_t flag)
@@ -914,10 +1224,18 @@ int OTA_PD(u8_t flag)
 int WLT_OTA_PD(bool flag)
 {
 	int ret = 0x00;
+
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	
 	if(flag)
 	{
 		ret = OTA_PD(flag);							// press combin key update pd;	
+		if(ret == 0)
+		{
+			gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
+		}
+
+
 	}else{											// auto update upon power on
 
 		for(int i=0; i<2; i++)
@@ -928,9 +1246,13 @@ int WLT_OTA_PD(bool flag)
 				return ret;
 			}
 		}
-		SYS_LOG_INF("[%d] PD OTA FAIL!!! \n\n", __LINE__);
-		//sys_pm_reboot(REBOOT_TYPE_NORMAL);
+        upgrade_fail_check();
+		gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
+		k_sleep(100); //delay 100ms
+	//	SYS_LOG_INF("[%d] PD OTA FAIL!!! \n\n", __LINE__);
+	//	sys_pm_reboot(REBOOT_TYPE_NORMAL);
 	}
+
 	return ret;
 }
 
@@ -940,12 +1262,16 @@ static void pd_mps52002_status_value(void)
     u8_t buf[4] = {0};
 	u8_t buf1[2] = {0x01,0x00};
 	u8_t buf2[2] = {0x02,0x00};
+	u8_t upgrade_regflag;
 	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
 
 	mps_ota_get_status(&ota_flag);
     printf("[%s %d] ota_flag:%d \n", __func__, __LINE__, ota_flag);
-    
-	if(!pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2) || ota_flag != 0x88)
+
+	if(ota_flag != 0x88)
+	{
+		WLT_OTA_PD(0);
+	}else if(!pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2))
 	{
 	   printf("live debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
 	   pd_mps52002->pd_version = buf[0];
@@ -954,14 +1280,17 @@ static void pd_mps52002_status_value(void)
 		{
 		  	WLT_OTA_PD(0);
 	    }
-		else
-		{
-		  if(ota_flag != 0x88)
-            {
-              mps_ota_set_status(0x88);
-		  	} 
-		}
-    }	
+    }
+	else
+	 {
+       if(!pd_tps52002_read_ota_value(0x01, &upgrade_regflag, 1))  
+       	{
+           if(upgrade_regflag == 0x11)
+           	{
+               WLT_OTA_PD(0);
+		    }
+	    }
+	 }
 	k_sleep(10);
 	//i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0x06, buf2, 2);
 	pd_mps52002_write_reg_value(PD_MOSFET_CTRL, buf2, 2);
@@ -979,7 +1308,6 @@ static void pd_mps52002_status_value(void)
 	k_sleep(10);
 	pd_tps52002_read_reg_value(PD_PD_STATUS, buf, 2);
     printf("live debug PD status:0x%x 0x%x \n",buf[0], buf[1]);
-
 	k_sleep(10);
    
 }
@@ -1312,19 +1640,6 @@ void pd_detect_event_report_MPS52002(void){
 			pd_mps52002->notify(PD_EVENT_OTG_MOBILE_DET, &para);
 		}
 		
-
-			// SYS_LOG_INF("[%d] otg mobile BTMODE_APP_MODE \n", __LINE__);
-
-            //  	// buf[0] =0x01;
-		    //  	// pd_mps52002_write_reg_value(PD_SYS_POWER_STATUS, buf);
-			//  	// buf[0] =0x00;
-			//  	// pd_mps52002_write_reg_value(PD_DISABLE_SOURCE, buf);
-	        // pd_mps52002->pd_52002_source_flag = 0;
-			// pd_mps52002->sink_charging_flag = 1;
-			//  pd_mps52002->pd_52002_HIZ_flag = 0;
-			//  pd_mps52002->pd_52002_sink_flag = 1;
-			//  para.pd_event_val = pd_mps52002->pd_52002_sink_flag;
-			//  pd_mps52002->notify(PD_EVENT_SOURCE_STATUS_CHG, &para);
 			
 	}else{
 		pd_mps52002->otg_mobile_flag = false;
@@ -1337,10 +1652,10 @@ void pd_detect_event_report_MPS52002(void){
 		if((readresult&0x01) != pd_mps52002->pd_52002_sink_flag)
 		{
 
-			if(source_sink_debunce < 2 )
+			if(source_sink_debunce < 6 )
 			{
 				source_sink_debunce++ ;
-				SYS_LOG_INF("[%d] source_sink_debunce:%d \n", __LINE__, source_sink_debunce);
+				SYS_LOG_INF("[%d] source_sink_debunce:%d readresult =%02x\n", __LINE__, source_sink_debunce,readresult);
 				return;
 			}
 
@@ -1397,7 +1712,7 @@ void pd_detect_event_report_MPS52002(void){
 			if(((readresult>>1) & 0x1) != pd_mps52002->pd_52002_source_flag)
 			{
 			
-				if(source_sink_debunce < 2 )
+				if(source_sink_debunce < 6 )
 				{
 					source_sink_debunce++ ;
 					SYS_LOG_INF("[%d] source_sink_debunce:%d \n", __LINE__, source_sink_debunce);
@@ -1798,7 +2113,7 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 		case PD_SUPPLY_PROP_OTG_MOBILE:		
 			  pd_tps52002_read_reg_value(PD_PD_STATUS, buf, 2);
 			  val->intval = (buf[0]>>2) & 0x01;
-			  SYS_LOG_INF("PD mobile status:%d", buf[0]);
+			  SYS_LOG_INF("PD mobile status:%x, val:%d \n", buf[0], val->intval);
 
 			break;	
 		case PD_SUPPLY_PROP_SOURCE_CURRENT_VAULE:

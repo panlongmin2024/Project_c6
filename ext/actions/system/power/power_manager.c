@@ -387,16 +387,12 @@ int power_manager_sync_slave_battery_state(void)
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
 	static int charge_status = 0;
 	int temp_status = power_manager_get_charge_status();
-	//printk("------> %s temp_status %d\n",__func__,temp_status);
 	if(charge_status != temp_status){
 		power_manager->battary_changed = 1;	
 		if(temp_status != POWER_SUPPLY_STATUS_UNKNOWN){
 			if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_CHARGINE_POWERON){
-				if( power_manager_get_battery_capacity() > BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1){
-					/* Avoid flashing red on low charge in charging */
-					printk("[%s/%d], WLT_FILTER_CHARGINE_POWERON !!!\n\n",__func__,__LINE__);
-					pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING); //display 10s
-				}
+				 printk("[%s/%d], WLT_FILTER_CHARGINE_POWERON !!!\n temp_status = %d\n",__func__,__LINE__,temp_status);
+			    pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S); //display 10s			
 			}
 			else if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_DISCHARGE_POWERON){
                  printk("[%s/%d], WLT_FILTER_DISCHARGE_POWERON !!!\n\n",__func__,__LINE__);
@@ -624,10 +620,21 @@ static int _power_manager_work_handle(void)
 
 		if(run_mode_is_demo())
 		{
-			if((power_manager->current_cap<=DEFAULT_NOPOWER_CAP_LEVEL) && pd_get_sink_charging_state())
+
+			static u8_t demo_low_cap_debounce = 0x00;
+			
+
+			SYS_LOG_INF("[%d] cur_cap:%d, charging state:%d; demo mode\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
+			if((power_manager->current_cap<=DEFAULT_NOPOWER_CAP_LEVEL) && (!pd_get_sink_charging_state()))
 			{
-				SYS_LOG_INF("[%d] current_cap%d, charging state:%d; too low power off\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
-				goto _POWER_OFF_;
+				if(demo_low_cap_debounce++ >= 5)
+				{
+					demo_low_cap_debounce = 0x00;
+					SYS_LOG_INF("[%d] current_cap:%d, charging state:%d; too low power off\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
+					goto _POWER_OFF_;
+				}
+			}else{
+				demo_low_cap_debounce = 0x00;
 			}
 		}
 

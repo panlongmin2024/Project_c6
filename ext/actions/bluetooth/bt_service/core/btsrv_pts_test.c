@@ -16,20 +16,6 @@
 
 #ifdef CONFIG_BT_PTS_TEST
 
-typedef struct
-{
-	btsrv_pts_callback p_cb;
-	uint8_t is_adv_enable;
-	uint8_t adv_ann_type;
-	struct bt_le_adv_param adv_param;
-	struct bt_data adv_data;
-	uint8_t data_value[10];
-	audio_core_evt_flags_e evt_flag;
-} btsrv_pts_ctx;
-
-static btsrv_pts_ctx s_pts_ctx = {0};
-static uint8_t pts_broadcast_code[16] = {0x01,0x02,0x68,0x05,0x53,0xF1,0x41,0x5A,0xA2,0x65,0xBB,0xAF,0xC6,0xEA,0x03,0xB8};
-
 extern int bt_pts_conn_creat_add_sco_cmd(struct bt_conn *brle_conn);
 
 int btsrv_pts_send_hfp_cmd(char *cmd)
@@ -68,32 +54,6 @@ int btsrv_pts_avrcp_get_play_status(void)
 	return 0;
 }
 
-int btsrv_pts_avrcp_pass_through_cmd(uint8_t opid)
-{
-	struct bt_conn *br_conn = btsrv_rdm_avrcp_get_connected_dev();
-
-	if (br_conn == NULL) {
-		return -EIO;
-	}
-
-	hostif_bt_avrcp_ct_pass_through_cmd(br_conn, opid, true);
-	os_sleep(5);
-	hostif_bt_avrcp_ct_pass_through_cmd(br_conn, opid, false);
-	return 0;
-}
-
-int btsrv_pts_avrcp_notify_volume_change(uint8_t volume)
-{
-	struct bt_conn *br_conn = btsrv_rdm_avrcp_get_connected_dev();
-
-	if (br_conn == NULL) {
-		return -EIO;
-	}
-
-	hostif_bt_avrcp_tg_notify_change(br_conn, volume);
-	return 0;
-}
-
 int btsrv_pts_avrcp_reg_notify_volume_change(void)
 {
 	struct bt_conn *br_conn = btsrv_rdm_avrcp_get_connected_dev();
@@ -102,24 +62,9 @@ int btsrv_pts_avrcp_reg_notify_volume_change(void)
 		return -EIO;
 	}
 
-	hostif_bt_pts_avrcp_ct_get_capabilities(br_conn);
+	hostif_bt_avrcp_ct_get_capabilities(br_conn);
 	os_sleep(100);
-	hostif_bt_pts_avrcp_ct_register_notification(br_conn);
-	return 0;
-}
-
-int btsrv_pts_avrcp_set_abs_volume(uint8_t volume)
-{
-	struct bt_conn *br_conn = btsrv_rdm_avrcp_get_connected_dev();
-    uint32_t param;
-
-	if (br_conn == NULL) {
-		return -EIO;
-	}
-
-	param = 0x01000000 | volume;
-    hostif_bt_avrcp_ct_set_absolute_volume(br_conn,param);
-
+	hostif_bt_avrcp_ct_register_notification(br_conn);
 	return 0;
 }
 
@@ -163,6 +108,21 @@ int btsrv_pts_register_auth_cb(bool reg_auth)
 
 	return 0;
 }
+
+#ifdef CONFIG_BT_LEA_PTS_TEST
+typedef struct
+{
+	btsrv_pts_callback p_cb;
+	uint8_t is_adv_enable;
+	uint8_t adv_ann_type;
+	struct bt_le_adv_param adv_param;
+	struct bt_data adv_data;
+	uint8_t data_value[10];
+	audio_core_evt_flags_e evt_flag;
+} btsrv_pts_ctx;
+
+static btsrv_pts_ctx s_pts_ctx = {0};
+static uint8_t pts_broadcast_code[16] = {0x01,0x02,0x68,0x05,0x53,0xF1,0x41,0x5A,0xA2,0x65,0xBB,0xAF,0xC6,0xEA,0x03,0xB8};
 
 void btsrv_pts_set_adv_ann_type(void)
 {
@@ -476,6 +436,8 @@ int btsrv_pts_process(struct app_msg *msg)
 	return 0;
 }
 
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
+
 #endif /*CONFIG_BT_PTS_TEST*/
 
 /*
@@ -483,7 +445,7 @@ int btsrv_pts_process(struct app_msg *msg)
  */
 void btsrv_pts_set_broadcast_code(uint8_t *p_broadcast_code)
 {
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 	if (p_broadcast_code)
 	{
 		memcpy(p_broadcast_code,pts_broadcast_code,sizeof(pts_broadcast_code));
@@ -493,29 +455,29 @@ void btsrv_pts_set_broadcast_code(uint8_t *p_broadcast_code)
 
 struct bt_data * btsrv_pts_set_adv_data(void)
 {
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 	return &s_pts_ctx.adv_data;
 #else
 	return NULL;
-#endif /*CONFIG_BT_PTS_TEST*/
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
 }
 
 uint8_t btsrv_pts_is_adv_enable(void)
 {
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 	return s_pts_ctx.is_adv_enable;
 #else
 	return 0;
-#endif /*CONFIG_BT_PTS_TEST*/
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
 }
 
 uint8_t btsrv_pts_is_le_audio_evt_flag(audio_core_evt_flags_e flag)
 {
-#ifdef CONFIG_BT_PTS_TEST
+#ifdef CONFIG_BT_LEA_PTS_TEST
 	return (s_pts_ctx.evt_flag & flag);
 #else
 	return 0;
-#endif /*CONFIG_BT_PTS_TEST*/
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
 }
 
 static uint8_t s_pts_test_flags = 0;

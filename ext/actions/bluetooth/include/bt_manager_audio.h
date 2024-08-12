@@ -1043,4 +1043,7 @@ int bt_manager_is_idle_status();
 void bt_manager_audio_set_scan_policy(uint8_t scan_type, uint8_t scan_policy_mode);
 
 int disconnect_inactive_audio_conn(void);
+
+char *bt_manager_audio_get_last_connected_dev_name(void);
+
 #endif /* __BT_MANAGER_AUDIO_H__ */

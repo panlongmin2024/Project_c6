@@ -121,34 +121,6 @@ int get_autotest_connect_status(void)
 	}
 #endif
 
-#ifdef CONFIG_WLT_DEV_UART
-#ifdef CONFIG_ACTIONS_TRACE
-	/* stub uart and trace both use uart0, forbidden trace dma mode */
-	trace_dma_print_set(false);
-#endif
-	stub_dev = device_get_binding(CONFIG_STUB_DEV_UART_NAME);
-	if (stub_dev != NULL) {
-		ret = stub_open(stub_dev);
-		if (ret != 0) {
-#ifdef CONFIG_ACTIONS_TRACE
-			/* enable dma print */
-			trace_dma_print_set(true);
-#endif
-			//Failed to start the UART stub
-			printk("failed to open UART_WLT: %d\n", ret);
-		} else {
-			printk("UART_WLT ATT\n");
-
-			tool_set_dev_type(TOOL_DEV_TYPE_UART0);
-
-			goto stub_connected;
-		}
-
-	} else {
-		printk(" not found UART_WLT\n");
-	}
-#endif
-
 	return -1;
  stub_connected:
 	return 0;
@@ -523,7 +495,7 @@ static int set_nvram_bt_addr(const u8_t * addr)
 
 	hex_to_str((char *)mac_str, (char *)addr_rev, 6);
 
-	ret_val = property_set(CFG_BT_MAC, (char *)mac_str, 12);
+	ret_val = property_set_factory(CFG_BT_MAC, (char *)mac_str, 12);
 	if (ret_val < 0)
 		return ret_val;
 

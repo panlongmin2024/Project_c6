@@ -251,11 +251,19 @@ static void _btsrv_a2dp_media_handler_cb(struct bt_conn *conn, uint8_t *data, ui
 	static uint16_t callback_handle;
 	uint8_t head_len, format, sample_rate, cp_type, padding_len;
 
-    if(!btsrv_is_pts_test() && !btsrv_rdm_is_avrcp_connected(conn)){
-        if(btsrv_rdm_is_avrcp_connected_pending(conn)){
-            return;
+    if(!btsrv_is_pts_test()){
+        if(!btsrv_rdm_is_avrcp_connected(conn)){
+            if(btsrv_rdm_is_avrcp_connected_pending(conn)){
+                return;
+            }
+        }
+        else{
+            if(btsrv_rdm_is_avrcp_playing_pending(conn)){
+                return;
+            }
         }
     }
+
 	if (btsrv_rdm_get_a2dp_pending_ahead_start(conn)) {
 		btsrv_a2dp_media_state_change(conn, BT_A2DP_MEDIA_STATE_START);
 	}
@@ -1091,13 +1099,19 @@ static int btsrv_a2dp_media_state_req_proc(struct bt_conn *conn, uint8_t state)
 		break;
 	case BT_A2DP_MEDIA_STATE_START:
         if(btsrv_rdm_is_avrcp_connected(conn)){
-            if(!btsrv_rdm_is_a2dp_stream_open(conn)){
-                ev_cb = BTSRV_A2DP_STREAM_STARTED;
+            if(!btsrv_rdm_get_avrcp_state(conn) && !btsrv_rdm_is_avrcp_playing_pended(conn)){
+                btsrv_rdm_set_a2dp_pending_ahead_start(conn, 1);
+                btsrv_rdm_set_avrcp_playing_pending(conn);
             }
-            else if (btsrv_rdm_get_a2dp_pending_ahead_start(conn)){
-                ev_cb = BTSRV_A2DP_STREAM_STARTED;
+            else{
+                if(!btsrv_rdm_is_a2dp_stream_open(conn)){
+                    ev_cb = BTSRV_A2DP_STREAM_STARTED;
+                }
+                else if (btsrv_rdm_get_a2dp_pending_ahead_start(conn)){
+                    ev_cb = BTSRV_A2DP_STREAM_STARTED;
+                }
+                btsrv_rdm_set_a2dp_pending_ahead_start(conn, 0);
             }
-            btsrv_rdm_set_a2dp_pending_ahead_start(conn, 0);
         }
         else{
             btsrv_rdm_set_a2dp_pending_ahead_start(conn, 1);

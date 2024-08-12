@@ -78,6 +78,11 @@ int btif_avrcp_set_absolute_volume(uint8_t *data, uint8_t len)
 	return btsrv_function_call(MSG_BTSRV_AVRCP, MSG_BTSRV_AVRCP_SET_ABSOLUTE_VOLUME, (void *)param);
 }
 
+int btif_avrcp_notify_volume_change(uint8_t volume)
+{
+	return btsrv_function_call(MSG_BTSRV_AVRCP, MSG_BTSRV_AVRCP_NOTIFY_VOLUME_CHANGE, (void *)((uint32_t)volume));
+}
+
 int btif_avrcp_get_play_status(struct bt_conn *conn)
 {
 	return btsrv_function_call(MSG_BTSRV_AVRCP, MSG_BTSRV_AVRCP_GET_PLAY_STATUS, (void *)conn);

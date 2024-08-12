@@ -788,11 +788,11 @@ int hostif_bt_avrcp_ct_get_id3_info(struct bt_conn *conn);
 
 int hostif_bt_avrcp_ct_set_absolute_volume(struct bt_conn *conn, uint32_t param);
 
-int hostif_bt_pts_avrcp_ct_get_capabilities(struct bt_conn *conn);
+int hostif_bt_avrcp_ct_get_capabilities(struct bt_conn *conn);
 
 int hostif_bt_avrcp_ct_get_play_status(struct bt_conn *conn);
 
-int hostif_bt_pts_avrcp_ct_register_notification(struct bt_conn *conn);
+int hostif_bt_avrcp_ct_register_notification(struct bt_conn *conn);
 
 /************************ hostif pbap *******************************/
 /* Get phonebook */
@@ -1294,10 +1294,10 @@ int hostif_bt_vs_set_apll_temp_comp(u8_t enable);
 int hostif_bt_vs_do_apll_temp_comp(void);
 
 /** @brief Vendor read build version of bt controller lib
- *  
+ *
  * *@param str_version input buffer for version string.
  *  @param len input buffer len.
- *  
+ *
  *  @return 0: successful, other failed.
  */
 int hostif_bt_vs_read_bt_build_version(uint8_t* str_version, int len);
@@ -1438,7 +1438,7 @@ int hostif_bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_
 				uint16_t service_data);
 int hostif_bt_le_per_adv_sync_transfer_subscribe(
 	const struct bt_conn *conn,
-	const struct bt_le_per_adv_sync_transfer_param *param);				
+	const struct bt_le_per_adv_sync_transfer_param *param);
 
 int hostif_bt_le_per_adv_sync_transfer_unsubscribe(
 	const struct bt_conn *conn);
@@ -1459,8 +1459,8 @@ int hostif_bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
 int hostif_bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 			   const struct bt_data *ad, size_t ad_len);
 
-void hostif_bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb);	
-void hostif_bt_le_per_adv_sync_cb_unregister(struct bt_le_per_adv_sync_cb *cb);		   
+void hostif_bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb);
+void hostif_bt_le_per_adv_sync_cb_unregister(struct bt_le_per_adv_sync_cb *cb);
 int hostif_bt_le_per_adv_stop(struct bt_le_ext_adv *adv);
 int hostif_bt_le_ext_adv_stop(struct bt_le_ext_adv *adv);
 int hostif_bt_le_ext_adv_delete(struct bt_le_ext_adv *adv);
@@ -1471,7 +1471,7 @@ int hostif_bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_creat
 		      struct bt_iso_big **out_big);
 int hostif_bt_iso_big_create_test(struct bt_le_ext_adv *padv,
 				struct bt_iso_big_create_test_param *param,
-				struct bt_iso_big **out_big);			  			
+				struct bt_iso_big **out_big);
 
 int hostif_bt_set_pts_enable(bool enable);
 
