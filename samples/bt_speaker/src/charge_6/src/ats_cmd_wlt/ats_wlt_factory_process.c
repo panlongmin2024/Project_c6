@@ -402,7 +402,7 @@ static int  ats_wlt_shell_get_ic_uuid(struct device *dev, u8_t *buf, int len)
 	ats_wlt_response_at_data(
 		dev, ATS_RESP_CMD_GET_IC_UUID, sizeof(ATS_RESP_CMD_GET_IC_UUID)-1, 
 		uuid_str, sizeof(uuid_str)-1);
-
+	ats_wlt_cmd_response_ok_or_fail(dev, 1);
 	return 0;
 }
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
