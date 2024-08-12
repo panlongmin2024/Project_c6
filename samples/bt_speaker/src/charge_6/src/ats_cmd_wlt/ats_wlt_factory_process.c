@@ -333,12 +333,12 @@ static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_set_btedr_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_NG);
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_set_btble_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_NG);
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btedr_name(struct device *dev, u8_t *buf, int len)
@@ -402,7 +402,7 @@ static int  ats_wlt_shell_get_ic_uuid(struct device *dev, u8_t *buf, int len)
 	ats_wlt_response_at_data(
 		dev, ATS_RESP_CMD_GET_IC_UUID, sizeof(ATS_RESP_CMD_GET_IC_UUID)-1, 
 		uuid_str, sizeof(uuid_str)-1);
-	ats_wlt_cmd_response_ok_or_fail(dev, 1);
+	ats_wlt_cmd_response_ok_or_fail(dev, RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
@@ -425,18 +425,18 @@ static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len
 
 	if(!user_uuid_verify()){
 	   /* uuid verify OK! */
-	   ats_wlt_cmd_response_ok_or_fail(dev, 1);
+	   ats_wlt_cmd_response_ok_or_fail(dev, RET_OK);
 	}
 	else{
 	   /* uuid verify NG! */
-	   ats_wlt_cmd_response_ok_or_fail(dev, 0);
+	   ats_wlt_cmd_response_ok_or_fail(dev, RET_ERR);
 	}
 
 	mem_free(sign_msg);
 	mem_free(hash_uuid);
 	return 0;
-	exit:
-	ats_wlt_cmd_response_ok_or_fail(dev, 0);
+exit:
+	ats_wlt_cmd_response_ok_or_fail(dev, RET_ERR);
 	mem_free(sign_msg);
 	mem_free(hash_uuid);    
 	return 0;
@@ -520,7 +520,7 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 		ats_wlt_shell_system_reset(0, 0, 0);
 	}	
 	else{
-	    ats_wlt_cmd_response_ok_or_fail(dev, 0);
+	    ats_wlt_cmd_response_ok_or_fail(dev, RET_ERR);
 		goto __exit_exit;
 	}
 	return 0;
