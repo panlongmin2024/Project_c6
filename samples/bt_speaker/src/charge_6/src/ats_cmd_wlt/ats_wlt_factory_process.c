@@ -2,6 +2,9 @@
 #include "ats_wlt_factory_process.h"
 
 #ifdef CONFIG_WLT_ATS_ENABLE
+
+#define	CONFIG_WLT_ATS_NEED_COMM	1
+
 ats_wlt_uart ats_wlt_uart_context;
 static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
@@ -10,7 +13,12 @@ static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
 static bool isWltAtsMode = false;
 
 struct thread_timer user_test_timer;
+ats_wlt_uart ats_wlt_uart_enter;
 
+#if CONFIG_WLT_ATS_NEED_COMM
+static struct _wlt_driver_ctx_t *p_ats_wlt_info;
+
+#endif
 
 extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
@@ -18,6 +26,7 @@ extern struct device *uart_console_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
 void ats_wlt_write_data(unsigned char *buf, int len);
 int ats_wlt_deinit(void);
+uint8_t ReadODM(void);
 
 int ats_wlt_check_adfu(void)
 {
@@ -42,36 +51,18 @@ int ats_wlt_check_adfu(void)
 	}	
 	return 0;
 }
-#if 0
-void ats_wlt_enter(void)
+
+static void ats_wlt_enter_write_data(unsigned char *buf, int len)
 {
-	SYS_LOG_INF("check wlt ats !\n");
-	uint8_t ReadODM(void);
-	if(ReadODM() == 1){
-		k_sleep(20);
-		if(ReadODM() == 1){
-			/* is wlt factory test ! */
-
-			isWltAtsMode = true;
-			SYS_LOG_INF("real enter wlt ats !\n");
-		}
-	}
+	ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
+	stream_write(ats_uart->uio, buf, len);	
 }
-#endif
-static struct _wlt_driver_ctx_t *p_ats_wlt_info;
-ats_wlt_uart ats_wlt_uart_enter;
-uint8_t ReadODM(void);
-
-static void ats_wlt_enter_write_data(unsigned char *buf, int len);
-
 static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
-	//void mcu_ui_power_hold_fn(void);
-	//mcu_ui_power_hold_fn();
 	ats_wlt_enter_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
 	isWltAtsMode = true;
 }
-
+#if CONFIG_WLT_ATS_NEED_COMM
 static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
@@ -84,7 +75,6 @@ static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
 	}
 	return 0;
 }
-
 static int ats_wlt_enter_comm_data_handler(struct device *dev)
 {
 	ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
@@ -108,12 +98,6 @@ static int ats_wlt_enter_comm_data_handler(struct device *dev)
 	stream_write(ats_uart->uio, p_ats_wlt_info->data_buf, rx_size);
 	ats_wlt_command_handler(dev, p_ats_wlt_info->data_buf, rx_size);
 	return 0;
-}
-
-static void ats_wlt_enter_write_data(unsigned char *buf, int len)
-{
-  ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
-  stream_write(ats_uart->uio, buf, len);	
 }
 
 static int ats_wlt_enter_uart_init(struct device *dev)
@@ -141,7 +125,7 @@ static int ats_wlt_enter_uart_init(struct device *dev)
 static int ats_wlt_wait_comm(struct device *dev)
 {
 	int ret = -1;
-	int times = 100;
+	int times = 15;
 	while(times--){
 		ats_wlt_enter_write_data(ATS_SEND_ENTER_WLT_ATS,sizeof(ATS_SEND_ENTER_WLT_ATS)-1);
 	
@@ -153,7 +137,7 @@ static int ats_wlt_wait_comm(struct device *dev)
 	}
 	return ret;
 }
-
+#endif
 int ats_wlt_enter(void)
 {
 	int ret = -1;
@@ -165,6 +149,7 @@ int ats_wlt_enter(void)
 			/* is wlt factory test ! */
 			SYS_LOG_INF("real entering wlt ats !\n");
 
+#if CONFIG_WLT_ATS_NEED_COMM
 			p_ats_wlt_info = malloc(sizeof(struct _wlt_driver_ctx_t));
 			if(p_ats_wlt_info == NULL){
 				SYS_LOG_ERR("uart device not found\n");
@@ -181,6 +166,9 @@ int ats_wlt_enter(void)
 			ret = ats_wlt_wait_comm(p_ats_wlt_info->ats_uart_dev);
 			free(p_ats_wlt_info);
 			//console_input_deinit(p_ats_wlt_info->ats_uart_dev);
+#else	
+			ats_wlt_enter_success(0,0,0);
+#endif
 		}
 	}
 	return ret;
@@ -311,31 +299,65 @@ static int ats_wlt_shell_set_btble_mac(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
+	int result;
+	char buffer[12+1] = {0};
+
+	result = ats_bt_dev_mac_addr_read(buffer, sizeof(buffer)-1);
+	if (result < 0)
+	{
+		ats_wlt_response_at_data(
+			dev, ATS_RESP_GET_BTEDR_MAC, sizeof(ATS_RESP_GET_BTEDR_MAC)-1, 
+			NULL, 0);
+	}
+	else 
+	{
+		ats_wlt_response_at_data(
+			dev, ATS_RESP_GET_BTEDR_MAC, sizeof(ATS_RESP_GET_BTEDR_MAC)-1, 
+			buffer, sizeof(buffer)-1);
+	}
+
 	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btble_mac(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_NG);
 	return 0;
 }
 static int ats_wlt_shell_set_btedr_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_NG);
 	return 0;
 }static int ats_wlt_shell_set_btble_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_NG);
 	return 0;
 }
 static int ats_wlt_shell_get_btedr_name(struct device *dev, u8_t *buf, int len)
 {
+	int result;
+	char buffer[32+1] = {0};
+
+	result = ats_bt_dev_name_read(buffer, sizeof(buffer)-1);
+	if (result < 0)
+	{	
+		ats_wlt_response_at_data(
+			dev, ATS_RESP_GET_BTEDR_NAME, sizeof(ATS_RESP_GET_BTEDR_NAME)-1, 
+			NULL, 0);
+	}
+	else 
+	{
+		ats_wlt_response_at_data(
+			dev, ATS_RESP_GET_BTEDR_NAME, sizeof(ATS_RESP_GET_BTEDR_NAME)-1, 
+			buffer, strlen(buffer));
+	}
+
 	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_get_btble_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
+	ats_wlt_cmd_response_ok_or_fail(dev,RET_NG);
 	return 0;
 }
 static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int len)
@@ -389,49 +411,49 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	   ats_wlt_resp_init();
 	}
 
-	if (!memcmp(&buf[index], ATS_AT_CMD_SET_BTEDR_MAC, sizeof(ATS_AT_CMD_SET_BTEDR_MAC)-1)){
+	if (!memcmp(&buf[index], ATS_CMD_SET_BTEDR_MAC, sizeof(ATS_CMD_SET_BTEDR_MAC)-1)){
 		ats_wlt_shell_set_btedr_mac(dev, buf, size);
 	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_SET_BTBLE_MAC, sizeof(ATS_AT_CMD_SET_BTBLE_MAC)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_SET_BTBLE_MAC, sizeof(ATS_CMD_SET_BTBLE_MAC)-1)){
 		ats_wlt_shell_set_btble_mac(dev, buf, size);
 	}	
-	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_BTEDR_MAC, sizeof(ATS_AT_CMD_GET_BTEDR_MAC)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_GET_BTEDR_MAC, sizeof(ATS_CMD_GET_BTEDR_MAC)-1)){
 		ats_wlt_shell_get_btedr_mac(0, 0, 0);
 	}	
-	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_BTBLE_MAC, sizeof(ATS_AT_CMD_GET_BTBLE_MAC)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_GET_BTBLE_MAC, sizeof(ATS_CMD_GET_BTBLE_MAC)-1)){
 		ats_wlt_shell_get_btble_mac(0, 0, 0);
 	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_SET_BTEDR_NAME, sizeof(ATS_AT_CMD_SET_BTEDR_NAME)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_SET_BTEDR_NAME, sizeof(ATS_CMD_SET_BTEDR_NAME)-1)){
 		ats_wlt_shell_set_btedr_name(dev, buf, size);
 	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_SET_BTBLE_NAME, sizeof(ATS_AT_CMD_SET_BTBLE_NAME)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_SET_BTBLE_NAME, sizeof(ATS_CMD_SET_BTBLE_NAME)-1)){
 		ats_wlt_shell_set_btble_name(dev, buf, size);
 	}	
-	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_BTEDR_NAME, sizeof(ATS_AT_CMD_GET_BTEDR_NAME)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_GET_BTEDR_NAME, sizeof(ATS_CMD_GET_BTEDR_NAME)-1)){
 		ats_wlt_shell_get_btedr_name(0, 0, 0);
 	}	
-	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_BTBLE_NAME, sizeof(ATS_AT_CMD_GET_BTBLE_NAME)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_GET_BTBLE_NAME, sizeof(ATS_CMD_GET_BTBLE_NAME)-1)){
 		ats_wlt_shell_get_btble_name(0, 0, 0);
 	}	
-	else if (!memcmp(&buf[index], ATS_AT_CMD_GET_FIRMWARE_VERSION, sizeof(ATS_AT_CMD_GET_FIRMWARE_VERSION)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_GET_FIRMWARE_VERSION, sizeof(ATS_CMD_GET_FIRMWARE_VERSION)-1)){
 		ats_wlt_shell_get_firmware_version(0, 0, 0);
 	}	
-	else if (!memcmp(&buf[index], ATS_AT_CMD_GPIO, sizeof(ATS_AT_CMD_GPIO)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_GPIO, sizeof(ATS_CMD_GPIO)-1)){
 		ats_wlt_shell_gpio_test(0, 0, 0);
 	}	
-	else if (!memcmp(&buf[index], ATS_AT_CMD_SET_HARMAN_KEY, sizeof(ATS_AT_CMD_SET_HARMAN_KEY)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_SET_HARMAN_KEY, sizeof(ATS_CMD_SET_HARMAN_KEY)-1)){
 		ats_wlt_shell_harman_key_write(0, 0, 0);
 	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_SIGNAL, sizeof(ATS_AT_CMD_ENTER_SIGNAL)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_ENTER_SIGNAL, sizeof(ATS_CMD_ENTER_SIGNAL)-1)){
 		ats_wlt_shell_enter_signal_test_mode(0, 0, 0);
 	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_NON_SIGNAL, sizeof(ATS_AT_CMD_ENTER_NON_SIGNAL)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_ENTER_NON_SIGNAL, sizeof(ATS_CMD_ENTER_NON_SIGNAL)-1)){
 		ats_wlt_shell_enter_nonsignal_test_mode(0, 0, 0);
 	}
-	else if (!memcmp(&buf[index], ATS_AT_CMD_ENTER_ADFU, sizeof(ATS_AT_CMD_ENTER_ADFU)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_ENTER_ADFU, sizeof(ATS_CMD_ENTER_ADFU)-1)){
 		ats_wlt_shell_enter_adfu(0, 0, 0);
 	}	
-	else if (!memcmp(&buf[index], ATS_AT_CMD_DEVICE_RESET, sizeof(ATS_AT_CMD_DEVICE_RESET)-1)){
+	else if (!memcmp(&buf[index], ATS_CMD_DEVICE_RESET, sizeof(ATS_CMD_DEVICE_RESET)-1)){
 		ats_wlt_shell_system_reset(0, 0, 0);
 	}	
 	else{
