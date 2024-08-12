@@ -420,16 +420,10 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 
 	if (!memcmp(&buf[index], ATS_CMD_SET_BTEDR_MAC, sizeof(ATS_CMD_SET_BTEDR_MAC)-1)){
 		ats_wlt_shell_set_btedr_mac(dev, buf, size);
-	}
-	else if (!memcmp(&buf[index], ATS_CMD_SET_BTBLE_MAC, sizeof(ATS_CMD_SET_BTBLE_MAC)-1)){
-		ats_wlt_shell_set_btble_mac(dev, buf, size);
 	}	
 	else if (!memcmp(&buf[index], ATS_CMD_GET_BTEDR_MAC, sizeof(ATS_CMD_GET_BTEDR_MAC)-1)){
 		ats_wlt_shell_get_btedr_mac(0, 0, 0);
 	}	
-	else if (!memcmp(&buf[index], ATS_CMD_GET_BTBLE_MAC, sizeof(ATS_CMD_GET_BTBLE_MAC)-1)){
-		ats_wlt_shell_get_btble_mac(0, 0, 0);
-	}
 	else if (!memcmp(&buf[index], ATS_CMD_SET_BTEDR_NAME, sizeof(ATS_CMD_SET_BTEDR_NAME)-1)){
 		ats_wlt_shell_set_btedr_name(dev, buf, size);
 	}
