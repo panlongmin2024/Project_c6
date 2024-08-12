@@ -301,11 +301,6 @@ static int ats_wlt_shell_set_btedr_mac(struct device *dev, u8_t *buf, int len)
 	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
-static int ats_wlt_shell_set_btble_mac(struct device *dev, u8_t *buf, int len)
-{
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
-	return 0;
-}
 static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
 	int result;
@@ -328,16 +323,12 @@ static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
 	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
-static int ats_wlt_shell_get_btble_mac(struct device *dev, u8_t *buf, int len)
-{
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_NG);
-	return 0;
-}
 static int ats_wlt_shell_set_btedr_name(struct device *dev, u8_t *buf, int len)
 {
 	ats_wlt_cmd_response_ok_or_fail(dev,RET_NG);
 	return 0;
-}static int ats_wlt_shell_set_btble_name(struct device *dev, u8_t *buf, int len)
+}
+static int ats_wlt_shell_set_btble_name(struct device *dev, u8_t *buf, int len)
 {
 	ats_wlt_cmd_response_ok_or_fail(dev,RET_NG);
 	return 0;
