@@ -3,7 +3,7 @@
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 
-#define	CONFIG_WLT_ATS_NEED_COMM	1
+#define	CONFIG_WLT_ATS_NEED_COMM	0
 
 ats_wlt_uart ats_wlt_uart_context;
 static struct _wlt_driver_ctx_t *p_ats_info;
