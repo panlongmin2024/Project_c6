@@ -771,25 +771,41 @@ void pd_upgrade_display(u8_t flag,u8_t upgradeflag)
   	}
 }
 
-u8_t cal_crc(int pre_index)
+u8_t cal_crc(int pre_index,u8_t flag)
 {
   int data_len = sizeof(fw_data);//fw_data.Length;
   u8_t crc_value = 0x00;
-  
- if((data_len % 512) >= 128 ) 
-  {
-   if(data_len -pre_index >=512)
-	{
-	   crc_value = crc8_calulate(&fw_data[pre_index], 512);
-	}
-	else
-	{
-	  crc_value = crc8_calulate(&fw_data[pre_index], (data_len - pre_index));
-	}
+ if(flag) 
+ {
+	  if((data_len % 512) >= 128 ) 
+	  {
+	   if(data_len -pre_index >=512)
+		{
+		   crc_value = crc8_calulate(&fw_data[pre_index], 512);
+		}
+		else
+		{
+		  crc_value = crc8_calulate(&fw_data[pre_index], (data_len - pre_index));
+		}
+	 }
+	 else
+	 {
+	      crc_value = crc8_calulate(&fw_data[pre_index], (data_len % 512));
+    }  
  }
  else
  {
-      crc_value = crc8_calulate(&fw_data[pre_index], (data_len % 512));
+
+       if(data_len -pre_index >=512)
+		{
+		   crc_value = crc8_calulate(&fw_data[pre_index], 512);
+		}
+		else
+		{
+		  crc_value = crc8_calulate(&fw_data[pre_index], (data_len - pre_index));
+		}
+
+
  }
   return crc_value;
 }
@@ -811,10 +827,11 @@ u8_t page_check(u8_t index)
 	return check_result;
 }
 
- void upgrade_fail_check(void)
+ u8_t upgrade_fail_check(void)
  { 
 	u8_t HI_VER,LOW_VER;
-	u8_t upgrade_check ;
+	u8_t upgrade_check;
+    u8_t check_result = 1;
 	 pd_tps52002_read_ota_value(0x02, &HI_VER, 1);	  
 	 pd_tps52002_read_ota_value(0x03, &LOW_VER, 1); 
 	 
@@ -823,14 +840,17 @@ u8_t page_check(u8_t index)
 	   pd_tps52002_read_ota_value(0x01, &upgrade_check, 1);  
 	   if(upgrade_check == 0x11 )
 		{
+		  check_result = 0;
 		  printf("[%s %d]  upgrade fail \n", __func__, __LINE__);
 	   	}
 	   else if(upgrade_check == 0x22 )
 		{
+		   check_result = 1;
 		   printf("[%s %d]  upgrade succes \n", __func__, __LINE__);
 	   	}
 	 }
-
+	 
+  return check_result;
  }
 
  int OTA_PD(u8_t flag)
@@ -886,7 +906,7 @@ u8_t page_check(u8_t index)
 		 u8_t frame[130];
 		 frame[0]= frame_index/4;
 		 memcpy(&frame[1], &fw_data[i], 128);	 		 
-		 frame[129]=  cal_crc(crc_pre_index);		 
+		 frame[129]=  cal_crc(crc_pre_index,0);		 
 		 if(pd_mps52002_write_ota_value(PD_MPS_AF_REG, frame, 130)<0)
 		 {
 			 printf("[%s:%d] live  write data error;\n", __func__, __LINE__);
@@ -900,7 +920,7 @@ u8_t page_check(u8_t index)
 		     pd_upgrade_display(flag,1);
 			 power_led_cnt++;
 			 k_sleep(60); //delay 50ms before read index and crc status
-			 printf("[%s:%d] crc_pre_index = %d crc_value = %02x\n", __func__, __LINE__,crc_pre_index,cal_crc(crc_pre_index));
+			 printf("[%s:%d] crc_pre_index = %d crc_value = %02x\n", __func__, __LINE__,crc_pre_index,cal_crc(crc_pre_index,0));
 			 if(!pd_tps52002_read_ota_value(PD_MPS_BA_REG, &readdata, 1))
 			  {
 			   if ((readdata & 0x0C) > 0)
@@ -929,7 +949,7 @@ u8_t page_check(u8_t index)
 		 u8_t frame1[res+2];
 		 frame1[0] = frame_index/4;
 		 memcpy(&frame1[1], &fw_data[flowDataLen], res);
-		 frame1[res+1]=   cal_crc(crc_pre_index);
+		 frame1[res+1]=   cal_crc(crc_pre_index,1);
 		 if((pd_mps52002_write_ota_value(PD_MPS_AF_REG, frame1, res+2))<0)
 		 {
 			 printf("[%s:%d] live  write data error;\n", __func__, __LINE__);
@@ -989,7 +1009,14 @@ u8_t page_check(u8_t index)
 	 }
 	 else
 	 {
-		goto SUCCES;
+	   if(upgrade_fail_check())
+		 {
+		  goto SUCCES;
+	   	}
+	    else
+	    {
+            goto fail;
+		}
 	 }
   fail:	 
   	   mps_ota_set_status(0x55);
@@ -1235,6 +1262,7 @@ static void pd_mps52002_status_value(void)
     u8_t buf[4] = {0};
 	u8_t buf1[2] = {0x01,0x00};
 	u8_t buf2[2] = {0x02,0x00};
+	u8_t upgrade_regflag;
 	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
 
 	mps_ota_get_status(&ota_flag);
@@ -1252,7 +1280,17 @@ static void pd_mps52002_status_value(void)
 		{
 		  	WLT_OTA_PD(0);
 	    }
-    }	
+    }
+	else
+	 {
+       if(!pd_tps52002_read_ota_value(0x01, &upgrade_regflag, 1))  
+       	{
+           if(upgrade_regflag == 0x11)
+           	{
+               WLT_OTA_PD(0);
+		    }
+	    }
+	 }
 	k_sleep(10);
 	//i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0x06, buf2, 2);
 	pd_mps52002_write_reg_value(PD_MOSFET_CTRL, buf2, 2);
