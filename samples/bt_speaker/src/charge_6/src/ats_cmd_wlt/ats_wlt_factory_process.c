@@ -5,6 +5,11 @@
 
 #define	CONFIG_WLT_ATS_NEED_COMM	1
 
+#define UUID_STR_DATA_LEN       (32)
+#define UUID_MSG_SIGNATURE_LEN  (256)
+#define UUID_HASH_DATA_LEN      (32)
+#define UUID_SIGN_MSG_NAME "uuid_msg"
+
 ats_wlt_uart ats_wlt_uart_context;
 static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
@@ -26,6 +31,9 @@ extern struct device *uart_console_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
 extern u32_t fw_version_get_sw_code(void);
 extern u8_t fw_version_get_hw_code(void);
+extern int user_uuid_verify(void);
+extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
+extern char *bin2hex(char *dst, const void *src, unsigned long count);
 void ats_wlt_write_data(unsigned char *buf, int len);
 int ats_wlt_deinit(void);
 uint8_t ReadODM(void);
@@ -383,9 +391,54 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
 	return 0;
 }
+static int  ats_wlt_shell_get_ic_uuid(struct device *dev, u8_t *buf, int len)
+{
+	uint32_t uuid[4];
+	uint8_t uuid_str[UUID_STR_DATA_LEN + 1];
+    soc_get_system_uuid(uuid);
+	bin2hex(uuid_str, uuid, 16);
+	uuid_str[32] =  0;
+	
+	ats_wlt_response_at_data(
+		dev, ATS_RESP_CMD_GET_IC_UUID, sizeof(ATS_RESP_CMD_GET_IC_UUID)-1, 
+		uuid_str, sizeof(uuid_str)-1);
+
+	return 0;
+}
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,RET_OK);
+	int rlen;
+	char *sign_msg = mem_malloc(UUID_MSG_SIGNATURE_LEN);
+	char *hash_uuid = mem_malloc(513);
+	if(len < 500)
+	  goto exit;
+
+	memcpy(hash_uuid, &buf[sizeof(ATS_RESP_SET_HARMAN_KEY)-1], 513);
+	rlen = hex2bin(sign_msg, hash_uuid, UUID_MSG_SIGNATURE_LEN);    
+
+	if(rlen == 0){
+	   nvram_config_set_factory(UUID_SIGN_MSG_NAME, sign_msg , UUID_MSG_SIGNATURE_LEN);
+	}
+	else{
+	   goto exit;
+	}
+
+	if(!user_uuid_verify()){
+	   /* uuid verify OK! */
+	   ats_wlt_cmd_response_ok_or_fail(dev, 1);
+	}
+	else{
+	   /* uuid verify NG! */
+	   ats_wlt_cmd_response_ok_or_fail(dev, 0);
+	}
+
+	mem_free(sign_msg);
+	mem_free(hash_uuid);
+	return 0;
+	exit:
+	ats_wlt_cmd_response_ok_or_fail(dev, 0);
+	mem_free(sign_msg);
+	mem_free(hash_uuid);    
 	return 0;
 }
 static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, int len)
@@ -447,9 +500,12 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	}	
 	else if (!memcmp(&buf[index], ATS_CMD_GPIO, sizeof(ATS_CMD_GPIO)-1)){
 		ats_wlt_shell_gpio_test(0, 0, 0);
+	}
+	else if (!memcmp(&buf[index], ATS_CMD_GET_IC_UUID, sizeof(ATS_CMD_GET_IC_UUID)-1)){
+		ats_wlt_shell_get_ic_uuid(0, 0, 0);
 	}	
 	else if (!memcmp(&buf[index], ATS_CMD_SET_HARMAN_KEY, sizeof(ATS_CMD_SET_HARMAN_KEY)-1)){
-		ats_wlt_shell_harman_key_write(0, 0, 0);
+		ats_wlt_shell_harman_key_write(dev, buf, size);
 	}
 	else if (!memcmp(&buf[index], ATS_CMD_ENTER_SIGNAL, sizeof(ATS_CMD_ENTER_SIGNAL)-1)){
 		ats_wlt_shell_enter_signal_test_mode(0, 0, 0);

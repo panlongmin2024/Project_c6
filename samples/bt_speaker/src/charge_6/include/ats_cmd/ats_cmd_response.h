@@ -19,7 +19,7 @@
 #define ATS_CMD_RESP_ENTER_KEY_CHECK                    "AT+HMDevKEY="
 #define ATS_CMD_RESP_NTC_TEMPERATURE_DUMP               "TL_GET_NTC=BAT1:"
 #define ATS_CMD_RESP_ODM_DUMP                           "AT+HMDevODM="
-#define ATS_CMD_RESP_MUSIC_BYPASS_ALLOW_FLAG_READ      "AT+HMDevbp="
+#define ATS_CMD_RESP_MUSIC_BYPASS_ALLOW_FLAG_READ       "AT+HMDevbp="
 #define ATS_CMD_RESP_MUSIC_BYPASS_STATUS_READ           "AT+HMDevbpmR="
 #define ATS_CMD_RESP_SERIAL_NUMBER_READ                 "AT+HMDevSNRE="
 #define ATS_CMD_RESP_MUSIC_PLAY_TIME_READ               "TL_READ_PLAYBACK_TIME="

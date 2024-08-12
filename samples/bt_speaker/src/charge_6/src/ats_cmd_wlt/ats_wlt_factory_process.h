@@ -22,6 +22,7 @@
 #include "board.h"
 #include "ats_cmd/ats.h"
 #include "hex_str.h"
+#include <soc.h>
 
 
 #ifdef CONFIG_WLT_ATS_ENABLE
@@ -49,12 +50,14 @@
 #define ATS_CMD_GET_BTBLE_NAME				"WLT_GET_BTBLE_NAME"
 #define ATS_CMD_GET_FIRMWARE_VERSION        "WLT_GET_FIRMWARE_VER"
 #define ATS_CMD_GPIO                		"WLT_TEST_GPIO"
-#define ATS_CMD_SET_HARMAN_KEY		        "WLT_SET_HARMAN_KEY"
 #define ATS_CMD_ENTER_SIGNAL		        "WLT_ENTER_BT_SIGNAL"
 #define ATS_CMD_ENTER_NON_SIGNAL	        "WLT_ENTER_BT_NON_SIGNAL"
 #define ATS_CMD_ENTER_ADFU		            "WLT_ENTER_ADFU"
 #define ATS_CMD_DEVICE_RESET		        "WLT_DEVICE_RESET"
 #define ATS_CMD_ENTER_WLT_ATS	            "TL_ENTER_FAC_MODE_OK"
+
+#define ATS_CMD_SET_HARMAN_KEY		        "WLT_HASH_UUID="
+#define ATS_CMD_GET_IC_UUID			        "WLT_READ_UUID"
 
 /* resp */
 #define ATS_RESP_SET_BTEDR_MAC				"WLT_SET_BTEDR_MAC="
@@ -67,20 +70,20 @@
 #define ATS_RESP_GET_BTBLE_NAME				"WLT_GET_BTBLE_NAME="
 #define ATS_RESP_GET_FIRMWARE_VERSION       "WLT_GET_FIRMWARE_VER="
 #define ATS_RESP_GPIO                		"WLT_TEST_GPIO="
-#define ATS_RESP_SET_HARMAN_KEY		        "WLT_SET_HARMAN_KEY="
 #define ATS_RESP_ENTER_SIGNAL		        "WLT_ENTER_BT_SIGNAL="
 #define ATS_RESP_ENTER_NON_SIGNAL	        "WLT_ENTER_BT_NON_SIGNAL="
 #define ATS_RESP_ENTER_ADFU		            "WLT_ENTER_ADFU="
 #define ATS_RESP_DEVICE_RESET		        "WLT_DEVICE_RESET="
 
+#define ATS_RESP_SET_HARMAN_KEY		        "WLT_HASH_UUID="
+#define ATS_RESP_CMD_GET_IC_UUID			"WLT_READ_UUID"
 
+/* enter comm */
 #define ATS_RESP_ENTER_WLT_ATS	            "TL_ENTER_FAC_MODE_OK"
-
 #define ATS_SEND_ENTER_WLT_ATS	            "TL_ENTER_FAC_MODE<CR><LF>"
 #define ATS_SEND_ENTER_WLT_ATS_ACK          "TL_ENTER_FAC_MODE_OKOK<CR><LF>"
 
 /* wlt factory test command end */
-
 
 struct _ats_wlt_var {
     os_mutex ats_mutex;
