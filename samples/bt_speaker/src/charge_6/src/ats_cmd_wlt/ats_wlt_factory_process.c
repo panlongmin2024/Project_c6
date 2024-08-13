@@ -394,7 +394,7 @@ static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int
 	buffer[3] = (hwver%10)+'0';//sw + hw
 
 	ats_wlt_response_at_data(
-		dev, ATS_CMD_RESP_SW_VERSION_INFO_DUMP, sizeof(ATS_CMD_RESP_SW_VERSION_INFO_DUMP)-1, 
+		dev, ATS_RESP_GET_FIRMWARE_VERSION, sizeof(ATS_RESP_GET_FIRMWARE_VERSION)-1, 
 		buffer, sizeof(buffer)-1);
 
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
