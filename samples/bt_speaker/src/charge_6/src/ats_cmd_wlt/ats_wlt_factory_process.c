@@ -580,6 +580,7 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 	return 0;	
 exit:
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_NG);
+	#endif
 	return 0;
 }
 static int  ats_wlt_shell_get_ic_uuid(struct device *dev, u8_t *buf, int len)
@@ -594,7 +595,7 @@ static int  ats_wlt_shell_get_ic_uuid(struct device *dev, u8_t *buf, int len)
 		dev, ATS_RESP_CMD_GET_IC_UUID, sizeof(ATS_RESP_CMD_GET_IC_UUID)-1, 
 		uuid_str, sizeof(uuid_str)-1);
 	ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_OK);
-	#endif
+	
 	return 0;
 }
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
