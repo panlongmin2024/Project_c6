@@ -120,7 +120,6 @@ static int ats_wlt_enter_uart_init(struct device *dev)
     uparam.uart_baud_rate = CONFIG_UART_ACTS_PORT_0_BAUD_RATE;
     ats_uart->uio = uart_stream_create( &uparam.uart_dev_name);
     if(!ats_uart->uio){
-       SYS_LOG_ERR("stream create fail");
        return ats_uart->uio_opened;
     }
     stream_open(ats_uart->uio, MODE_IN_OUT);
@@ -275,22 +274,19 @@ int ats_wlt_response_at_data(struct device *dev, u8_t *cmd, int cmd_len, u8_t *e
 {
 	int index = 0;
 
-	if (!ats_wlt_cmd_resp_buf)
-	{
+	if (!ats_wlt_cmd_resp_buf){
 		return -1;
 	}
 	ats_wlt_cmd_resp_buf_size = cmd_len + ext_data_len + sizeof(ATS_AT_CMD_WLT_TAIL)-1;
 
 	memset(ats_wlt_cmd_resp_buf, 0, ats_wlt_cmd_resp_buf_size);
 
-	if (cmd != NULL || cmd_len != 0)
-	{
+	if (cmd != NULL || cmd_len != 0){
 		memcpy(&ats_wlt_cmd_resp_buf[index], cmd, cmd_len);
 		index += cmd_len;
 	}
 	
-	if (ext_data != NULL || ext_data_len != 0)
-	{
+	if (ext_data != NULL || ext_data_len != 0){
 		memcpy(&ats_wlt_cmd_resp_buf[index], ext_data, ext_data_len);
 		index += ext_data_len;
 	}
@@ -828,9 +824,6 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
     {
 		if (!k_msgq_get(&p_ats_info->msgq, &msg, thread_timer_next_timeout()))
 		{
-			SYS_LOG_INF("type %d, cmd %d, value %d\n", msg.type,
-				    msg.cmd, msg.value);
-
 			switch (msg.type) 
 			{
 				case WLT_ATS_ENTER_OK:
@@ -840,7 +833,7 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 					ats_wlt_deinit();
 					break;					
 				default:
-					SYS_LOG_ERR("error: 0x%x\n", msg.type);
+
 					continue;
 			}
 		}
@@ -848,8 +841,6 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 	}
 
 __thread_exit:
-	
-	SYS_LOG_INF("exit\n");
 
     p_ats_info->thread_running = 0;
 }
@@ -867,7 +858,6 @@ int ats_wlt_uart_init(struct device *dev)
     uparam.uart_baud_rate = CONFIG_UART_ACTS_PORT_0_BAUD_RATE;
     ats_uart->uio = uart_stream_create( &uparam.uart_dev_name);
     if(!ats_uart->uio){
-       SYS_LOG_ERR("stream create fail");
        return ats_uart->uio_opened;
     }
     stream_open(ats_uart->uio, MODE_IN_OUT);
@@ -882,14 +872,12 @@ int ats_pre_init(void)
 
     p_ats_var = malloc(sizeof(struct _ats_wlt_var));
     if (p_ats_var == NULL){
-        SYS_LOG_ERR("ctx malloc fail\n");
         ret = -1;
         goto err_exit;
     }
     memset(p_ats_var, 0, sizeof(struct _ats_wlt_var));
     p_ats_var->ats_cmd_resp_buf = malloc(ATS_WLT_UART_TX_LEN_MAX);
     if (p_ats_var->ats_cmd_resp_buf == NULL){
-        SYS_LOG_ERR("buf malloc fail\n");
         ret = -1;
         goto err_exit;
     }
@@ -922,13 +910,10 @@ int ats_wlt_init(void)
 	SYS_LOG_INF("------>\n");
 	if(ats_pre_init()){
 		/* pre init fail */
-        SYS_LOG_INF("ats_pre_init failed\n");
 		goto err_exit;		
 	}
 
-	if (p_ats_info)
-	{
-        SYS_LOG_INF("already init\n");
+	if (p_ats_info){
 		return 0;
 	}
 
@@ -937,7 +922,6 @@ int ats_wlt_init(void)
 	p_ats_info = malloc(sizeof(struct _wlt_driver_ctx_t));
 	if (p_ats_info == NULL)
 	{
-		SYS_LOG_ERR("ctx malloc fail\n");
 		goto err_exit;
 	}
 
@@ -946,7 +930,6 @@ int ats_wlt_init(void)
 	p_ats_info->ats_uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 	if (p_ats_info->ats_uart_dev == NULL)
 	{
-		SYS_LOG_ERR("uart device not found\n");
 		goto err_exit;
 	}
 
@@ -1011,13 +994,10 @@ int ats_wlt_deinit(void)
 		}
         free(p_ats_info);
         p_ats_info = NULL;
-        SYS_LOG_INF("ok\n");
     }
     else{
-        SYS_LOG_INF("already deinit\n");
     }
 	trace_dma_print_set(true);//enable system printf
-	SYS_LOG_INF("already deinit\n");
     return 0;
 }
 
