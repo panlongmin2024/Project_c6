@@ -637,6 +637,7 @@ exit:
 }
 static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, int len)
 {
+#if 0
 	int result;
 
 	ats_wlt_response_at_data(
@@ -654,11 +655,12 @@ static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, i
 		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 		sys_pm_reboot(REBOOT_REASON_GOTO_BQB_ATT);
 	}
-
+#endif
 	return 0;
 }
 static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
+#if 0
 	int result;
 	u8_t buffer[1+1] = {6,0};
 
@@ -676,6 +678,7 @@ static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf
 		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 		sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
 	}
+#endif	
 	return 0;
 }
 static int ats_wlt_shell_enter_adfu(struct device *dev, u8_t *buf, int len)
