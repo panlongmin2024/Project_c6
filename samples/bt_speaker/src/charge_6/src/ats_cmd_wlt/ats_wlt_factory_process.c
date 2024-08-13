@@ -498,6 +498,7 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 
 	if (!memcmp(&buf[index], ATS_CMD_SET_BTEDR_MAC, sizeof(ATS_CMD_SET_BTEDR_MAC)-1)){
 		/* set bt mac */
+		ats_wlt_write_data(buf,size);
 		index += sizeof(ATS_CMD_SET_BTEDR_MAC)-1;
 		target_index = index;
 		ats_wlt_shell_set_btedr_mac(dev, &buf[target_index], size-target_index-2);		
