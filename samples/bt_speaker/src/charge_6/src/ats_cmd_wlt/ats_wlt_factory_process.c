@@ -307,7 +307,7 @@ int ats_wlt_response_at_data(struct device *dev, u8_t *cmd, int cmd_len, u8_t *e
 static int ats_wlt_shell_set_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
 	int result;
-
+	ats_wlt_write_data(buf,len);
 	if(len!=12){
 		/* limit length 12 */
 		ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_NG);
