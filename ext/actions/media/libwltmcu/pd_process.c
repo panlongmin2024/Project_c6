@@ -98,7 +98,7 @@ extern void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event
 #ifdef CONFIG_C_TEST_BATT_MACRO
 
 static uint8_t test_id = 0;
-static int battery_cap= 15;
+static int battery_cap= 26;
 static int battery_temperature=250;
 
 void set_battery_cap(bool flag)
