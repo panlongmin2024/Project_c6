@@ -51,8 +51,7 @@ int ats_wlt_check_adfu(void)
 	gpio_pin_read(gpio_dev, 21, &val);
 	key_vol_up = (bool)val;
 	dc_power_in_status = dc_power_in_status_read();
-	SYS_LOG_INF("key_bt down:%d, key_vol_up down:%d, dc_power_in insert:%d\n",
-			key_vol_up, dc_power_in_status);	
+	SYS_LOG_INF("key_bt down:%d, key_vol_up down:%d, dc_power_in insert:%d\n",key_vol_up, dc_power_in_status);	
 	if(key_vol_up == 1 && dc_power_in_status == 1){
 		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
 	}	
