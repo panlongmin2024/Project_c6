@@ -599,6 +599,7 @@ static int  ats_wlt_shell_get_ic_uuid(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
 {
+#if 0
 	int rlen;
 	char *sign_msg = mem_malloc(UUID_MSG_SIGNATURE_LEN);
 	char *hash_uuid = mem_malloc(513);
@@ -631,6 +632,7 @@ exit:
 	ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_NG);
 	mem_free(sign_msg);
 	mem_free(hash_uuid);    
+#endif	
 	return 0;
 }
 static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, int len)
