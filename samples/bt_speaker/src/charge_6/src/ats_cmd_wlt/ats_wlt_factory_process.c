@@ -306,7 +306,25 @@ int ats_wlt_response_at_data(struct device *dev, u8_t *cmd, int cmd_len, u8_t *e
 
 static int ats_wlt_shell_set_btedr_mac(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
+	int result;
+
+	if(len!=12){
+		/* limit length 12 */
+		ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_NG);
+		return 0;
+	}
+	ats_wlt_response_at_data(
+		dev,ATS_RESP_SET_BTEDR_MAC,sizeof(ATS_RESP_SET_BTEDR_MAC)-1,
+		buf,len);
+
+	result = ats_mac_write(buf, len);
+	if(result<0){
+		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_NG);
+	}
+	else{
+		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
+	}
+
 	return 0;
 }
 static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
@@ -471,6 +489,7 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	int index = 0;
 	//int target_index;
 	static u8_t init_flag;
+	int target_index;
 
 	if (init_flag == 0){
 	   init_flag = 1;
@@ -478,7 +497,10 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	}
 
 	if (!memcmp(&buf[index], ATS_CMD_SET_BTEDR_MAC, sizeof(ATS_CMD_SET_BTEDR_MAC)-1)){
-		ats_wlt_shell_set_btedr_mac(dev, buf, size);
+		/* set bt mac */
+		index += sizeof(ATS_CMD_SET_BTEDR_MAC)-1;
+		target_index = index;
+		ats_wlt_shell_set_btedr_mac(dev, &buf[target_index], size-target_index-2);		
 	}	
 	else if (!memcmp(&buf[index], ATS_CMD_GET_BTEDR_MAC, sizeof(ATS_CMD_GET_BTEDR_MAC)-1)){
 		ats_wlt_shell_get_btedr_mac(0, 0, 0);
