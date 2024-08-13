@@ -195,7 +195,7 @@ static int cdc_shell_ats_exit_ats_and_reset(struct device *dev, u8_t *buf, int l
 		dev, ATS_CMD_RESP_DUT_SET, sizeof(ATS_CMD_RESP_DUT_SET)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
-	sys_pm_reboot(0);
+	//sys_pm_reboot(0);
 	return 0;
 }
 
