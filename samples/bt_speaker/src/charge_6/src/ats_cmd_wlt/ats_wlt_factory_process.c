@@ -402,8 +402,8 @@ static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int
 }
 static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 {
+	#if 0
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
-	int ret = -1;
 	u32_t val;
 	
 	/* 1.所有IO口设置为浮空输入 */
@@ -594,6 +594,7 @@ static int  ats_wlt_shell_get_ic_uuid(struct device *dev, u8_t *buf, int len)
 		dev, ATS_RESP_CMD_GET_IC_UUID, sizeof(ATS_RESP_CMD_GET_IC_UUID)-1, 
 		uuid_str, sizeof(uuid_str)-1);
 	ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_OK);
+	#endif
 	return 0;
 }
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
