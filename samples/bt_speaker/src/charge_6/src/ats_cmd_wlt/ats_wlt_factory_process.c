@@ -51,7 +51,7 @@ int ats_wlt_check_adfu(void)
 	gpio_pin_read(gpio_dev, 21, &val);
 	key_vol_up = (bool)val;
 	dc_power_in_status = dc_power_in_status_read();
-	SYS_LOG_INF("key_bt down:%d, key_vol_up down:%d, dc_power_in insert:%d\n",key_vol_up, dc_power_in_status);	
+	SYS_LOG_INF("key_vol_up down:%d, dc_power_in insert:%d\n",key_vol_up, dc_power_in_status);	
 	if(key_vol_up == 1 && dc_power_in_status == 1){
 		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
 	}	
@@ -397,7 +397,6 @@ static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int
 }
 static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 {
-	#if 0
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	u32_t val;
 	
@@ -575,7 +574,6 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 	return 0;	
 exit:
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_NG);
-	#endif
 	return 0;
 }
 static int  ats_wlt_shell_get_ic_uuid(struct device *dev, u8_t *buf, int len)
@@ -595,7 +593,6 @@ static int  ats_wlt_shell_get_ic_uuid(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_harman_key_write(struct device *dev, u8_t *buf, int len)
 {
-#if 0
 	int rlen;
 	char *sign_msg = mem_malloc(UUID_MSG_SIGNATURE_LEN);
 	char *hash_uuid = mem_malloc(513);
@@ -628,12 +625,10 @@ exit:
 	ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_NG);
 	mem_free(sign_msg);
 	mem_free(hash_uuid);    
-#endif	
 	return 0;
 }
 static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, int len)
 {
-#if 0
 	int result;
 
 	ats_wlt_response_at_data(
@@ -651,12 +646,10 @@ static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, i
 		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 		sys_pm_reboot(REBOOT_REASON_GOTO_BQB_ATT);
 	}
-#endif
 	return 0;
 }
 static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
-#if 0
 	int result;
 	u8_t buffer[1+1] = {6,0};
 
@@ -674,7 +667,6 @@ static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf
 		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 		sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
 	}
-#endif	
 	return 0;
 }
 static int ats_wlt_shell_enter_adfu(struct device *dev, u8_t *buf, int len)
