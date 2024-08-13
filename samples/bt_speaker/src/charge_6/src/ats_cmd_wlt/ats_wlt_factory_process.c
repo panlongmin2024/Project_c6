@@ -441,7 +441,7 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 	
 	/* 2.所有IO口输入电平设置为低 ---- GPIO35输出高则所有GPIO为下拉*/
 	gpio_pin_configure(gpio_dev, 35, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(gpio_dev, GPIO_RESET_PIN, 1);	
+	gpio_pin_write(gpio_dev, 35, 1);	
 
 	/* 3.读取多有IO口状态 */
 	gpio_pin_read(gpio_dev, 0, &val);
@@ -506,7 +506,7 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 
 	/* 4.所有IO口输入电平设置为高 ---- GPIO35输出低则所有GPIO为上拉*/
 	gpio_pin_configure(gpio_dev, 35, GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
-	gpio_pin_write(gpio_dev, GPIO_RESET_PIN, 0);
+	gpio_pin_write(gpio_dev, 35, 0);
 
 	/* 5.读取多有IO口状态 */ 
 	gpio_pin_read(gpio_dev, 0, &val);

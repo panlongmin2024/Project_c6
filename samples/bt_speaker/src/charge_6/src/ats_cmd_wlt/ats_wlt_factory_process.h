@@ -23,6 +23,7 @@
 #include "ats_cmd/ats.h"
 #include "hex_str.h"
 #include <soc.h>
+#include <sys_manager.h>
 
 
 #ifdef CONFIG_WLT_ATS_ENABLE
