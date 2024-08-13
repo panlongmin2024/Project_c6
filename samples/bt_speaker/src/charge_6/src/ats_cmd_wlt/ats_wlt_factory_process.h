@@ -31,7 +31,7 @@
 
 #define ATS_WLT_THREAD_STACK_SZ		2048
 #define ATS_WLT_THREAD_PRIO			5
-#define	ATS_WLT_UART_RX_LEN_MAX		60
+#define	ATS_WLT_UART_RX_LEN_MAX		600
 #define	ATS_WLT_UART_TX_LEN_MAX		60
 
 /* wlt factory test command start */
