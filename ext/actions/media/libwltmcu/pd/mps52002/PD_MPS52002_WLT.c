@@ -1652,7 +1652,13 @@ void pd_detect_event_report_MPS52002(void){
 		if((readresult&0x01) != pd_mps52002->pd_52002_sink_flag)
 		{
 
-			if(source_sink_debunce < 6 )
+			int debounce_time=3;
+
+			if(pd_mps52002->pd_52002_sink_flag){
+				debounce_time = 2;
+			}
+				
+			if(source_sink_debunce < debounce_time )
 			{
 				source_sink_debunce++ ;
 				SYS_LOG_INF("[%d] source_sink_debunce:%d readresult =%02x\n", __LINE__, source_sink_debunce,readresult);
