@@ -62,6 +62,7 @@
 
 #define ATS_CMD_SET_HIGH			        "WLT_SET_GPIO_HIGH"
 #define ATS_CMD_SET_LOW				        "WLT_SET_GPIO_LOW"
+#define ATS_CMD_SET_SHORT			        "WLT_SET_GPIO_SHORT"
 
 
 /* resp */
