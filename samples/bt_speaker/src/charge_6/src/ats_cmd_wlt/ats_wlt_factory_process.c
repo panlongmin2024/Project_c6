@@ -576,17 +576,43 @@ static int ats_wlt_shell_system_reset(struct device *dev, u8_t *buf, int len)
 
 static int ats_wlt_shell_set_gpio_high(struct device *dev, u8_t *buf, int len)
 {
+	u32_t val,i;
+	u8_t io_cnt = sizeof(ats_wlt_gpio_index);
+	u8_t out_gpio[] = "GPIOXX=X";
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
 	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 0);
+
+	for(i=0;i<io_cnt;i++){
+		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
+		out_gpio[4] = ats_wlt_gpio_index[i]/10+'0';
+		out_gpio[5] = ats_wlt_gpio_index[i]%10+'0';
+		out_gpio[7] = (bool)val+'0';
+		ats_wlt_write_data(out_gpio,sizeof(out_gpio));
+	}	
+
+	
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 	return 0;
 }
 static int ats_wlt_shell_set_gpio_low(struct device *dev, u8_t *buf, int len)
 {
+	u32_t val,i;
+	u8_t io_cnt = sizeof(ats_wlt_gpio_index);
+	u8_t out_gpio[] = "GPIOXX=X";
+
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 1);
+
+	for(i=0;i<io_cnt;i++){
+		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
+		out_gpio[4] = ats_wlt_gpio_index[i]/10+'0';
+		out_gpio[5] = ats_wlt_gpio_index[i]%10+'0';
+		out_gpio[7] = (bool)val+'0';
+		ats_wlt_write_data(out_gpio,sizeof(out_gpio));
+	}
+
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 	return 0;
 }
