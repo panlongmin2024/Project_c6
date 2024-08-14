@@ -3,8 +3,10 @@
 
 #ifdef CONFIG_WLT_ATS_ENABLE
 
-#define	CONFIG_WLT_ATS_NEED_COMM	1
-#define	CONFIG_WLT_ATS_IO_ADFU		1// gpio21
+#define	CONFIG_WLT_ATS_NEED_COMM			1
+#define	CONFIG_WLT_ATS_IO_ADFU				1// gpio21
+
+#define	CONFIG_WLT_ATS_GPIO_UPDOWN_PIN		35
 
 #define UUID_STR_DATA_LEN       (32)
 #define UUID_MSG_SIGNATURE_LEN  (256)
@@ -20,11 +22,12 @@ static bool isWltAtsMode = false;
 
 const u8_t ats_wlt_gpio_index[] = {
 0,	1,	
-2,	3,//tx rx
+//2,	3,//tx rx
 4,	5,	6,	7,	8,	9,	10,	11,	12,	13,	14,	15,
 17,	19,	20,	
-//21,//dfu key
-22,	32,	33,	34,	38,	39,	40,	51,	53
+//21,39,//dfu key
+22,	32,	33,	34,	38,	40,	
+51,	53 //vro vro_s
 };
 
 struct thread_timer user_test_timer;
@@ -406,182 +409,55 @@ static int ats_wlt_shell_get_firmware_version(struct device *dev, u8_t *buf, int
 static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 {
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
-	u32_t val;
+	u32_t val,i,j;
 	u8_t io_cnt = sizeof(ats_wlt_gpio_index);
 	
 	/* 1.所有IO口设置为浮空输入 */
 	for(i=0;i<io_cnt;i++){
 		gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[i], GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	}
-	gpio_pin_configure(gpio_dev, 0, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 1, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	//gpio_pin_configure(gpio_dev, 2, GPIO_DIR_IN | GPIO_PUD_NORMAL);//UART_RX
-	//gpio_pin_configure(gpio_dev, 3, GPIO_DIR_IN | GPIO_PUD_NORMAL);//UART_TX
-	gpio_pin_configure(gpio_dev, 4, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 5, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 6, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 7, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 8, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 9, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 10, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 11, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 12, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 13, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 14, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 15, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-
-	gpio_pin_configure(gpio_dev, 17, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-
-	gpio_pin_configure(gpio_dev, 19, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 20, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-#if(CONFIG_WLT_ATS_IO_ADFU == 0)	
-	gpio_pin_configure(gpio_dev, 21, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-#endif
-	gpio_pin_configure(gpio_dev, 22, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	
-	gpio_pin_configure(gpio_dev, 32, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 33, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 34, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-
-	gpio_pin_configure(gpio_dev, 38, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 39, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-	gpio_pin_configure(gpio_dev, 40, GPIO_DIR_IN | GPIO_PUD_NORMAL);
-
-	gpio_pin_configure(gpio_dev, 51, GPIO_DIR_IN | GPIO_PUD_NORMAL);//VRO
-	gpio_pin_configure(gpio_dev, 53, GPIO_DIR_IN | GPIO_PUD_NORMAL);//VRO_S
-	
+	}	
 	
 	/* 2.所有IO口输入电平设置为低 ---- GPIO35输出高则所有GPIO为下拉*/
-	gpio_pin_configure(gpio_dev, 35, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(gpio_dev, 35, 1);	
+	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
+	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 1);	
 
-	/* 3.读取多有IO口状态 */
-	gpio_pin_read(gpio_dev, 0, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 1, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 4, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 5, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 6, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 7, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 8, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 9, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 10, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 11, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 12, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 13, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 14, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 15, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 17, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 19, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 20, &val);
-	if(val != 0) goto exit;
-#if(CONFIG_WLT_ATS_IO_ADFU == 0)	
-	gpio_pin_read(gpio_dev, 21, &val);
-	if(val != 0) goto exit;
-#endif	
-	gpio_pin_read(gpio_dev, 22, &val);
-	if(val != 0) goto exit;
-
-	gpio_pin_read(gpio_dev, 32, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 33, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 34, &val);
-	if(val != 0) goto exit;
-
-	gpio_pin_read(gpio_dev, 38, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 39, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 40, &val);
-	if(val != 0) goto exit;
-
-	gpio_pin_read(gpio_dev, 51, &val);
-	if(val != 0) goto exit;
-	gpio_pin_read(gpio_dev, 53, &val);
-	if(val != 0) goto exit;
-
+	/* 3.检验IO口状态是否正常 */
+	for(i=0;i<io_cnt;i++){
+		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
+		if(val != 0){
+			goto exit;
+		}
+	}			
+	
 	/* 4.所有IO口输入电平设置为高 ---- GPIO35输出低则所有GPIO为上拉*/
-	gpio_pin_configure(gpio_dev, 35, GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
-	gpio_pin_write(gpio_dev, 35, 0);
+	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
+	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 0);
 
-	/* 5.读取多有IO口状态 */ 
-	gpio_pin_read(gpio_dev, 0, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 1, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 4, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 5, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 6, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 7, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 8, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 9, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 10, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 11, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 12, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 13, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 14, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 15, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 17, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 19, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 20, &val);
-	if(val != 1) goto exit;
-#if(CONFIG_WLT_ATS_IO_ADFU == 0)	
-	gpio_pin_read(gpio_dev, 21, &val);
-	if(val != 1) goto exit;
-#endif	
-	gpio_pin_read(gpio_dev, 22, &val);
-	if(val != 1) goto exit;
+	/* 5.检验IO口状态是否正常 */
+	for(i=0;i<io_cnt;i++){
+		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
+		if(val != 1){
+			goto exit;
+		}
+	}	
 
-	gpio_pin_read(gpio_dev, 32, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 33, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 34, &val);
-	if(val != 1) goto exit;
+	/* 6.检验有无IO口短路 */
+	for(i=0;i<io_cnt;i++){
+		gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[i], GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
+		gpio_pin_write(gpio_dev, ats_wlt_gpio_index[i], 0);
 
-	gpio_pin_read(gpio_dev, 38, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 39, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 40, &val);
-	if(val != 1) goto exit;
-
-	gpio_pin_read(gpio_dev, 51, &val);
-	if(val != 1) goto exit;
-	gpio_pin_read(gpio_dev, 53, &val);
-	if(val != 1) goto exit;
-
-	/* 6.输出IO口测试结果 */
+		for(j=0;j<io_cnt;j++){
+			if(i==j){
+				continue;
+			}
+			gpio_pin_read(gpio_dev, ats_wlt_gpio_index[j], &val);
+			if(val != 1){
+				goto exit;
+			}			
+		}
+	}	
+	
+	/* 7.输出IO口测试结果 */
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 	return 0;	
 exit:
@@ -697,6 +573,25 @@ static int ats_wlt_shell_system_reset(struct device *dev, u8_t *buf, int len)
 	return 0;
 }
 
+
+static int ats_wlt_shell_set_gpio_high(struct device *dev, u8_t *buf, int len)
+{
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
+	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 0);
+	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
+	return 0;
+}
+static int ats_wlt_shell_set_gpio_low(struct device *dev, u8_t *buf, int len)
+{
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
+	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 1);
+	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
+	return 0;
+}
+
+
 int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
@@ -753,7 +648,13 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	}	
 	else if (!memcmp(&buf[index], ATS_CMD_DEVICE_RESET, sizeof(ATS_CMD_DEVICE_RESET)-1)){
 		ats_wlt_shell_system_reset(0, 0, 0);
-	}	
+	}
+	else if (!memcmp(&buf[index], ATS_CMD_SET_HIGH, sizeof(ATS_CMD_SET_HIGH)-1)){
+		ats_wlt_shell_set_gpio_high(0, 0, 0);
+	}
+	else if (!memcmp(&buf[index], (ATS_CMD_SET_LOW), sizeof(ATS_CMD_SET_LOW)-1)){
+		ats_wlt_shell_set_gpio_low(0, 0, 0);
+	}
 	else{
 	    ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_NG);
 		goto __exit_exit;

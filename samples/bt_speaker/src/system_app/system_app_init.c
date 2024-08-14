@@ -347,7 +347,7 @@ void system_app_init(void)
 	system_input_handle_init();
 
 	void user_uuid_init(void);
-	user_uuid_init();
+	//user_uuid_init();
 #ifdef CONFIG_BT_MANAGER
 	system_btmgr_configs_update();
 #endif

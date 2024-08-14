@@ -60,6 +60,10 @@
 #define ATS_CMD_SET_HARMAN_KEY		        "WLT_HASH_UUID="
 #define ATS_CMD_GET_IC_UUID			        "WLT_READ_UUID"
 
+#define ATS_CMD_SET_HIGH			        "WLT_SET_GPIO_HIGH"
+#define ATS_CMD_SET_LOW				        "WLT_SET_GPIO_LOW"
+
+
 /* resp */
 #define ATS_RESP_SET_BTEDR_MAC				"WLT_SET_BTEDR_MAC="
 #define ATS_RESP_SET_BTBLE_MAC				"WLT_SET_BTBLE_MAC="
