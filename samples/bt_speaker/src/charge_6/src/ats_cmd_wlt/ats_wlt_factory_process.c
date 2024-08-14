@@ -422,8 +422,9 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 	/* 2.所有IO口输入电平设置为低 ---- GPIO35输出高则所有GPIO为下拉*/
 	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 1);
-
+	
 	memset(buffer, 0, sizeof(buffer));
+	index = 0;
 	memcpy(buffer,ATS_RESP_GPIO_LOW_FAIL, sizeof(ATS_RESP_GPIO_LOW_FAIL)-1);
 	index+=(sizeof(ATS_RESP_GPIO_LOW_FAIL)-1);
 	memcpy(buffer+index,ATS_AT_CMD_WLT_TAIL, sizeof(ATS_AT_CMD_WLT_TAIL)-1);
@@ -445,6 +446,7 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 0);
 
 	memset(buffer, 0, sizeof(buffer));
+	index = 0;
 	memcpy(buffer,ATS_RESP_GPIO_HIGH_FAIL, sizeof(ATS_RESP_GPIO_HIGH_FAIL)-1);
 	index+=(sizeof(ATS_RESP_GPIO_HIGH_FAIL)-1);
 	memcpy(buffer+index,ATS_AT_CMD_WLT_TAIL, sizeof(ATS_AT_CMD_WLT_TAIL)-1);
@@ -467,6 +469,7 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 		gpio_pin_write(gpio_dev, ats_wlt_gpio_index[i], 0);
 
 		memset(buffer, 0, sizeof(buffer));
+		index = 0;
 		memcpy(buffer,ATS_RESP_GPIO_SHORT_FAIL, sizeof(ATS_RESP_GPIO_SHORT_FAIL)-1);
 		index+=(sizeof(ATS_RESP_GPIO_SHORT_FAIL)-1);
 		memcpy(buffer+index,ATS_AT_CMD_WLT_TAIL, sizeof(ATS_AT_CMD_WLT_TAIL)-1);
