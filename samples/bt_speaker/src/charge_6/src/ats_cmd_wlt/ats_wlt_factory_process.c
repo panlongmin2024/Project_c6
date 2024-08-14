@@ -450,6 +450,8 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 			if(i==j){
 				continue;
 			}
+			gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[j], GPIO_DIR_IN | GPIO_PUD_NORMAL);
+			k_sleep(10);
 			gpio_pin_read(gpio_dev, ats_wlt_gpio_index[j], &val);
 			if(val != 1){
 				goto exit;
@@ -584,6 +586,8 @@ static int ats_wlt_shell_set_gpio_high(struct device *dev, u8_t *buf, int len)
 	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 0);
 
 	for(i=0;i<io_cnt;i++){
+		gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[i], GPIO_DIR_IN | GPIO_PUD_NORMAL);
+		k_sleep(10);		
 		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
 		out_gpio[4] = ats_wlt_gpio_index[i]/10+'0';
 		out_gpio[5] = ats_wlt_gpio_index[i]%10+'0';
@@ -606,6 +610,8 @@ static int ats_wlt_shell_set_gpio_low(struct device *dev, u8_t *buf, int len)
 	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 1);
 
 	for(i=0;i<io_cnt;i++){
+		gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[i], GPIO_DIR_IN | GPIO_PUD_NORMAL);
+		k_sleep(10);		
 		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
 		out_gpio[4] = ats_wlt_gpio_index[i]/10+'0';
 		out_gpio[5] = ats_wlt_gpio_index[i]%10+'0';
