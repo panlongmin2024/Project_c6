@@ -411,6 +411,8 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	u32_t val,i,j;
 	u8_t io_cnt = sizeof(ats_wlt_gpio_index);
+	u8_t buf[40];
+	u8_t index=0;
 	
 	/* 1.所有IO口设置为浮空输入 */
 	for(i=0;i<io_cnt;i++){
@@ -419,12 +421,21 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 	
 	/* 2.所有IO口输入电平设置为低 ---- GPIO35输出高则所有GPIO为下拉*/
 	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 1);	
+	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 1);
 
+	memset(buf, 0, sizeof(buf));
+	memcpy(buf,ATS_RESP_GPIO_LOW_FAIL, sizeof(ATS_RESP_GPIO_LOW_FAIL)-1);
+	index+=(sizeof(ATS_RESP_GPIO_LOW_FAIL)-1);
+	memcpy(buf+index,ATS_AT_CMD_WLT_TAIL, sizeof(ATS_AT_CMD_WLT_TAIL)-1);
+	index+=(sizeof(ATS_AT_CMD_WLT_TAIL)-1);	
+	
 	/* 3.检验IO口状态是否正常 */
 	for(i=0;i<io_cnt;i++){
 		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
 		if(val != 0){
+			buf[18] = i/10 + '0';
+			buf[19] = i%10 + '0';
+			ats_wlt_write_data(buf,index);
 			goto exit;
 		}
 	}			
@@ -433,10 +444,19 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
 	gpio_pin_write(gpio_dev, CONFIG_WLT_ATS_GPIO_UPDOWN_PIN, 0);
 
+	memset(buf, 0, sizeof(buf));
+	memcpy(buf,ATS_RESP_GPIO_HIGH_FAIL, sizeof(ATS_RESP_GPIO_HIGH_FAIL)-1);
+	index+=(sizeof(ATS_RESP_GPIO_HIGH_FAIL)-1);
+	memcpy(buf+index,ATS_AT_CMD_WLT_TAIL, sizeof(ATS_AT_CMD_WLT_TAIL)-1);
+	index+=(sizeof(ATS_AT_CMD_WLT_TAIL)-1);	
+	
 	/* 5.检验IO口状态是否正常 */
 	for(i=0;i<io_cnt;i++){
 		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
 		if(val != 1){
+			buf[19] = i/10 + '0';
+			buf[20] = i%10 + '0';
+			ats_wlt_write_data(buf,index);			
 			goto exit;
 		}
 	}	
@@ -446,14 +466,25 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 		gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[i], GPIO_DIR_OUT | GPIO_PUD_PULL_DOWN);
 		gpio_pin_write(gpio_dev, ats_wlt_gpio_index[i], 0);
 
+		memset(buf, 0, sizeof(buf));
+		memcpy(buf,ATS_RESP_GPIO_SHORT_FAIL, sizeof(ATS_RESP_GPIO_SHORT_FAIL)-1);
+		index+=(sizeof(ATS_RESP_GPIO_SHORT_FAIL)-1);
+		memcpy(buf+index,ATS_AT_CMD_WLT_TAIL, sizeof(ATS_AT_CMD_WLT_TAIL)-1);
+		index+=(sizeof(ATS_AT_CMD_WLT_TAIL)-1); 
+
 		for(j=0;j<io_cnt;j++){
 			if(i==j){
 				continue;
 			}
 			gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[j], GPIO_DIR_IN | GPIO_PUD_NORMAL);
-			k_sleep(10);
+			k_sleep(1);
 			gpio_pin_read(gpio_dev, ats_wlt_gpio_index[j], &val);
 			if(val != 1){
+				buf[20] = i/10 + '0';
+				buf[21] = i%10 + '0';
+				buf[22] = j/10 + '0';
+				buf[23] = j%10 + '0';			
+				ats_wlt_write_data(buf,index);					
 				goto exit;
 			}			
 		}
@@ -587,15 +618,16 @@ static int ats_wlt_shell_set_gpio_high(struct device *dev, u8_t *buf, int len)
 
 	for(i=0;i<io_cnt;i++){
 		gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[i], GPIO_DIR_IN | GPIO_PUD_NORMAL);
-		k_sleep(10);		
+		k_sleep(1);		
 		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
-		out_gpio[4] = ats_wlt_gpio_index[i]/10+'0';
-		out_gpio[5] = ats_wlt_gpio_index[i]%10+'0';
-		out_gpio[7] = (bool)val+'0';
-		ats_wlt_write_data(out_gpio,sizeof(out_gpio));
+		if(val==0){
+			out_gpio[4] = ats_wlt_gpio_index[i]/10+'0';
+			out_gpio[5] = ats_wlt_gpio_index[i]%10+'0';
+			out_gpio[7] = (bool)val+'0';
+			ats_wlt_write_data(out_gpio,sizeof(out_gpio));			
+		}
 	}	
 
-	
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 	return 0;
 }
@@ -611,12 +643,14 @@ static int ats_wlt_shell_set_gpio_low(struct device *dev, u8_t *buf, int len)
 
 	for(i=0;i<io_cnt;i++){
 		gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[i], GPIO_DIR_IN | GPIO_PUD_NORMAL);
-		k_sleep(10);		
+		k_sleep(1);		
 		gpio_pin_read(gpio_dev, ats_wlt_gpio_index[i], &val);
-		out_gpio[4] = ats_wlt_gpio_index[i]/10+'0';
-		out_gpio[5] = ats_wlt_gpio_index[i]%10+'0';
-		out_gpio[7] = (bool)val+'0';
-		ats_wlt_write_data(out_gpio,sizeof(out_gpio));
+		if(val==1){
+			out_gpio[4] = ats_wlt_gpio_index[i]/10+'0';
+			out_gpio[5] = ats_wlt_gpio_index[i]%10+'0';
+			out_gpio[7] = (bool)val+'0';
+			ats_wlt_write_data(out_gpio,sizeof(out_gpio));			
+		}
 	}
 
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
@@ -642,7 +676,7 @@ static int ats_wlt_shell_set_gpio_short(struct device *dev, u8_t *buf, int len)
 				continue;
 			}
 			gpio_pin_configure(gpio_dev, ats_wlt_gpio_index[j], GPIO_DIR_IN | GPIO_PUD_NORMAL);
-			k_sleep(10);
+			k_sleep(1);
 			gpio_pin_read(gpio_dev, ats_wlt_gpio_index[j], &val);
 			if(val==0){
 				out_gpio[7] = ats_wlt_gpio_index[j]/10+'0';

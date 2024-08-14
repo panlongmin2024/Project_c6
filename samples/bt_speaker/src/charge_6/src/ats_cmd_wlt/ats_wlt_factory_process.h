@@ -36,7 +36,7 @@
 #define	ATS_WLT_UART_TX_LEN_MAX		60
 
 /* wlt factory test command start */
-#define ATS_AT_CMD_WLT_TAIL                    	"<CR><LF>"
+#define ATS_AT_CMD_WLT_TAIL                    	"/r/n"
 #define ATS_AT_CMD_RESP_OK    					"SUCCESS"
 #define ATS_AT_CMD_RESP_FAIL  					"FAILED"
 
@@ -64,7 +64,6 @@
 #define ATS_CMD_SET_LOW				        "WLT_SET_GPIO_LOW"
 #define ATS_CMD_SET_SHORT			        "WLT_SET_GPIO_SHORT"
 
-
 /* resp */
 #define ATS_RESP_SET_BTEDR_MAC				"WLT_SET_BTEDR_MAC="
 #define ATS_RESP_SET_BTBLE_MAC				"WLT_SET_BTBLE_MAC="
@@ -80,6 +79,10 @@
 #define ATS_RESP_ENTER_NON_SIGNAL	        "WLT_ENTER_BT_NON_SIGNAL="
 #define ATS_RESP_ENTER_ADFU		            "WLT_ENTER_ADFU="
 #define ATS_RESP_DEVICE_RESET		        "WLT_DEVICE_RESET="
+
+#define ATS_RESP_GPIO_HIGH_FAIL		        "WLT_GPIO_HIGH_FAIL=XX"
+#define ATS_RESP_GPIO_LOW_FAIL			    "WLT_GPIO_LOW_FAIL=XX"
+#define ATS_RESP_GPIO_SHORT_FAIL			"WLT_GPIO_SHORT_FAIL=XXXX"
 
 #define ATS_RESP_SET_HARMAN_KEY		        "WLT_HASH_UUID="
 #define ATS_RESP_CMD_GET_IC_UUID			"WLT_READ_UUID"
