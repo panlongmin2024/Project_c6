@@ -36,7 +36,7 @@
 #define	ATS_WLT_UART_TX_LEN_MAX		60
 
 /* wlt factory test command start */
-#define ATS_AT_CMD_WLT_TAIL                    	"/r/n"
+#define ATS_AT_CMD_WLT_TAIL                    	"<CR><LF>"
 #define ATS_AT_CMD_RESP_OK    					"SUCCESS"
 #define ATS_AT_CMD_RESP_FAIL  					"FAILED"
 

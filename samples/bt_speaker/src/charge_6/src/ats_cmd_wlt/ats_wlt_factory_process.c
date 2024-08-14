@@ -483,10 +483,10 @@ static int ats_wlt_shell_gpio_test(struct device *dev, u8_t *buf, int len)
 			k_sleep(1);
 			gpio_pin_read(gpio_dev, ats_wlt_gpio_index[j], &val);
 			if(val != 1){
-				buffer[20] = i/10 + '0';
-				buffer[21] = i%10 + '0';
-				buffer[22] = j/10 + '0';
-				buffer[23] = j%10 + '0';			
+				buffer[20] = ats_wlt_gpio_index[i]/10 + '0';
+				buffer[21] = ats_wlt_gpio_index[i]%10 + '0';
+				buffer[22] = ats_wlt_gpio_index[j]/10 + '0';
+				buffer[23] = ats_wlt_gpio_index[j]%10 + '0';			
 				ats_wlt_write_data(buffer,index);					
 				goto exit;
 			}			
