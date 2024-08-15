@@ -41,6 +41,7 @@ static int charge_app_force_power_off = 0;
 static struct charge_app_t *p_charge_app_app;
 extern bool run_mode_is_normal(void);
 static struct thread_timer reset_timer;
+static struct thread_timer pwroff_led_timer;
 static u8_t power_off_no_tts;
 extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
 
@@ -161,6 +162,14 @@ static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 	}
 	#endif
 }
+static void poweroff_led_together(struct thread_timer *ttimer, void *expiry_fn_arg)
+{
+	SYS_LOG_ERR("factory_reset_flag %d\n",get_property_factory_reset_flag());
+	thread_timer_stop(&pwroff_led_timer);
+	led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
+}
+
 static int _charge_app_init(void *p1, void *p2, void *p3)
 {
 	int ret = 0;
@@ -181,6 +190,11 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 		//led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_0_3S);
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0));
+
+		/* poweroff led together off timer */
+		thread_timer_init(&pwroff_led_timer, poweroff_led_together, NULL);
+		thread_timer_start(&pwroff_led_timer,200,0);	
+		/* ------------------------------- */		
 	}else{
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
 		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_CONNECTED);
