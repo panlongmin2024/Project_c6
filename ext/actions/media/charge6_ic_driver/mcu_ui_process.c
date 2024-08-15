@@ -379,8 +379,8 @@ disp_time_t disp_time;
 
 void set_batt_led_display_timer(int times)
 {
-   disp_time.batled_display_time = times.batled_display_time;
-   SYS_LOG_INF("batled_display_time = %d", times.batled_display_time);
+   disp_time.batled_display_time = times;
+   SYS_LOG_INF("batled_display_time = %d", times);
 }
 void set_pwr_led_display_timer(int times)
 {
