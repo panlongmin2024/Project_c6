@@ -418,6 +418,7 @@ void batt_led_display_timeout(void)
 	 if(Batt_display_time == 0)
 	 {	  
 	      SYS_LOG_INF("Batt_display_time = %d", Batt_display_time);
+		  led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
           pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
 	 }	 	
 	  Batt_display_time --;
@@ -429,7 +430,7 @@ extern int check_is_wait_adfu(void);
 
 void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_status)
 {
-    printf("zth debug remaincap_display_handle,status ,cap: %d ,0x%x \n", status,cap);
+    printf("zth debug remaincap_display_handle,status ,cap: %d ,0x%x led_status %d\n", status,cap,led_status);
    static u8_t first_10s_batt_display_time_flag = 0;
     if(check_is_wait_adfu())
         return;
