@@ -179,7 +179,7 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 		//led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
-		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_0_5S);
+		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0));
 	}else{
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
