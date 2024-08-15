@@ -655,7 +655,7 @@ int ats_mac_write(uint8_t *buf, int size)
     if (ret != 0){
         return -1;
     }	
-
+    k_sleep(50);
 	property_get(CFG_BT_MAC, read_mac_user, 12);
 	nvram_config_get_factory(CFG_BT_MAC, read_mac_fac , 12);
 	

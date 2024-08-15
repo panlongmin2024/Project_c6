@@ -1264,13 +1264,13 @@ static void pd_mps52002_status_value(void)
 	u8_t buf2[2] = {0x02,0x00};
 	u8_t upgrade_regflag;
 	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
-
+    u8_t pd_ota_complete_flag = 0;
 	mps_ota_get_status(&ota_flag);
     printf("[%s %d] ota_flag:%d \n", __func__, __LINE__, ota_flag);
 
 	if(ota_flag != 0x88)
 	{
-		WLT_OTA_PD(0);
+		pd_ota_complete_flag = WLT_OTA_PD(0);
 	}else if(!pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2))
 	{
 	   printf("live debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
@@ -1278,7 +1278,7 @@ static void pd_mps52002_status_value(void)
 
 	    if(pd_mps52002->pd_version < mps_pd_current_version)
 		{
-		  	WLT_OTA_PD(0);
+		  pd_ota_complete_flag = WLT_OTA_PD(0);
 	    }
     }
 	else
@@ -1287,7 +1287,7 @@ static void pd_mps52002_status_value(void)
        	{
            if(upgrade_regflag == 0x11)
            	{
-               WLT_OTA_PD(0);
+               pd_ota_complete_flag = WLT_OTA_PD(0);
 		    }
 	    }
 	 }
@@ -1309,6 +1309,12 @@ static void pd_mps52002_status_value(void)
 	pd_tps52002_read_reg_value(PD_PD_STATUS, buf, 2);
     printf("live debug PD status:0x%x 0x%x \n",buf[0], buf[1]);
 	k_sleep(10);
+	if(pd_ota_complete_flag)
+	{
+       pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2);
+	   	pd_mps52002->pd_version = buf[0];
+	    printf("live upgrade complete read PD version:0x%x 0x%x \n",buf[0], buf[1]);
+	}
    
 }
 
@@ -1827,8 +1833,42 @@ void pd_read_volt_current_process1(void)
 	SYS_LOG_INF("mps2761 sink volt:%d, curr:%d", pd_mps52002->volt_value, pd_mps52002->cur_value);
 	
 }
+#define receive_times 10
+int16 value_array[receive_times];
+int16 cal_Average_current(int16 value)
+{
+  static u8_t times = 0;
+  int16 avr_value = 0;
+   SYS_LOG_INF("value = %d",value);
+  if(times < receive_times)
+  {
+     value_array[times++] = value;
+  }
+  else
+  {
+   for(u8_t i = 0;i < receive_times -1;i++)
+   	{
+      //SYS_LOG_INF("avr_value = %d", value_array[i]);
+       value_array[i] = value_array[i+1];
+    }
+       value_array[receive_times -1] = value;	
+  }
 
-
+  if(times == receive_times)
+  {
+    for(u8_t j = 0;j<receive_times;j++)
+    {
+      avr_value += value_array[j];
+	}
+     avr_value /=10;
+	 SYS_LOG_INF("avr_value = %d", avr_value);
+  }
+  else
+  	{
+       avr_value = 222;
+    }
+    return avr_value;
+}
 void pd_read_volt_current_process2(void)
 {
 	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
@@ -1860,14 +1900,14 @@ void pd_read_volt_current_process2(void)
     {
         if(!pd_mps52002->chk_current_flag)
         {
-            int16_t value = pd_mps52002->src_cur_value;//pd_mps2760_read_current();
+            int16_t value = cal_Average_current(pd_mps52002->src_cur_value);//pd_mps2760_read_current();
             value = (value>= 0 ? value : -value);
             SYS_LOG_INF("[%d] cur:%d; count:%d\n", __LINE__, value, otg_debounce_cnt);
-
-            if(((value >= 0) && (value < 60)) || pd_mps52002->SRC_5OMA_FLAG)
+            
+            if(((value >= 0) && (value < 80)) || pd_mps52002->SRC_5OMA_FLAG)
             {
 
-				otg_debounce_time = WLT_OTG_DEBOUNCE_TIMEOUT;
+				otg_debounce_time = 3;
 				if(sys_check_standby_state())
 				{
 					otg_debounce_time = 2 ;
