@@ -248,28 +248,23 @@ static int ats_wlt_cmd_response_ok_or_fail(struct device *dev, u8_t is_ok)
 {
 	int index = 0;
 
-	if (!ats_wlt_cmd_resp_buf)
-	{
+	if (!ats_wlt_cmd_resp_buf){
 		return -1;
 	}
-	if (is_ok)
-	{
-      ats_wlt_cmd_resp_buf_size = sizeof(ATS_AT_CMD_RESP_OK)+sizeof(ATS_AT_CMD_WLT_TAIL)-2;
+	if (is_ok){
+		ats_wlt_cmd_resp_buf_size = sizeof(ATS_AT_CMD_RESP_OK)+sizeof(ATS_AT_CMD_WLT_TAIL)-2;
 	}
-	else
-	{
-     ats_wlt_cmd_resp_buf_size = sizeof(ATS_AT_CMD_RESP_FAIL)+sizeof(ATS_AT_CMD_WLT_TAIL)-2;
+	else{
+		ats_wlt_cmd_resp_buf_size = sizeof(ATS_AT_CMD_RESP_FAIL)+sizeof(ATS_AT_CMD_WLT_TAIL)-2;
 	}
 		
 	memset(ats_wlt_cmd_resp_buf, 0, ats_wlt_cmd_resp_buf_size);
 
-	if (is_ok)
-	{
+	if (is_ok){
 		memcpy(&ats_wlt_cmd_resp_buf[index], ATS_AT_CMD_RESP_OK, sizeof(ATS_AT_CMD_RESP_OK)-1);
 		index += sizeof(ATS_AT_CMD_RESP_OK)-1;
 	}
-	else
-	{
+	else{
 		memcpy(&ats_wlt_cmd_resp_buf[index], ATS_AT_CMD_RESP_FAIL, sizeof(ATS_AT_CMD_RESP_FAIL)-1);
 		index += sizeof(ATS_AT_CMD_RESP_FAIL)-1;
 	}
@@ -335,14 +330,12 @@ static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
 	char buffer[12+1] = {0};
 
 	result = ats_bt_dev_mac_addr_read(buffer, sizeof(buffer)-1);
-	if (result < 0)
-	{
+	if (result < 0){
 		ats_wlt_response_at_data(
 			dev, ATS_RESP_GET_BTEDR_MAC, sizeof(ATS_RESP_GET_BTEDR_MAC)-1, 
 			NULL, 0);
 	}
-	else 
-	{
+	else{
 		ats_wlt_response_at_data(
 			dev, ATS_RESP_GET_BTEDR_MAC, sizeof(ATS_RESP_GET_BTEDR_MAC)-1, 
 			buffer, sizeof(buffer)-1);
@@ -353,12 +346,12 @@ static int ats_wlt_shell_get_btedr_mac(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_set_btedr_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
+	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_NG);
 	return 0;
 }
 static int ats_wlt_shell_set_btble_name(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
+	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_NG);
 	return 0;
 }
 static int ats_wlt_shell_get_btedr_name(struct device *dev, u8_t *buf, int len)
@@ -367,14 +360,12 @@ static int ats_wlt_shell_get_btedr_name(struct device *dev, u8_t *buf, int len)
 	char buffer[32+1] = {0};
 
 	result = ats_bt_dev_name_read(buffer, sizeof(buffer)-1);
-	if (result < 0)
-	{	
+	if (result < 0){	
 		ats_wlt_response_at_data(
 			dev, ATS_RESP_GET_BTEDR_NAME, sizeof(ATS_RESP_GET_BTEDR_NAME)-1, 
 			NULL, 0);
 	}
-	else 
-	{
+	else{
 		ats_wlt_response_at_data(
 			dev, ATS_RESP_GET_BTEDR_NAME, sizeof(ATS_RESP_GET_BTEDR_NAME)-1, 
 			buffer, strlen(buffer));
@@ -821,7 +812,7 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
     }
 
 	if (!dev){
-        ats_wlt_write_data("device is NULLt",sizeof("device is NULL")-1);
+        ats_wlt_write_data("device is NULL",sizeof("device is NULL")-1);
 		goto __thread_exit;
 	}
 

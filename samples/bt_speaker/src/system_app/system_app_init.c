@@ -345,9 +345,13 @@ void system_app_init(void)
 	system_event_map_init();
 
 	system_input_handle_init();
-
-	void user_uuid_init(void);
-	//user_uuid_init();
+#ifdef CONFIG_WLT_ATS_ENABLE
+	/* no need uuid verify if has enterd wlt facory test mode. */
+	if(!get_enter_wlt_ats_state()){
+		void user_uuid_init(void);
+		user_uuid_init();
+	}
+#endif
 #ifdef CONFIG_BT_MANAGER
 	system_btmgr_configs_update();
 #endif
@@ -446,7 +450,9 @@ void system_app_init(void)
 #ifdef CONFIG_WLT_ATS_ENABLE
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 		/* wlt factory test start!!! */
+		bool enter_wlt_fac_test = false;
 		if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
+			enter_wlt_fac_test = true;
 			init_bt_manager = false;
 #ifdef CONFIG_PLAYTTS
 			tts_manager_lock();
@@ -458,8 +464,11 @@ void system_app_init(void)
 #endif
 		system_app_ota_init();
 
-
+#ifdef CONFIG_WLT_ATS_ENABLE
+		if (enter_stub_tool == false && enter_wlt_fac_test == false) {
+#else
 		if (enter_stub_tool == false) {
+#endif
 #ifdef CONFIG_CARD_READER_APP
 			if (usb_hotplug_device_mode()
 			    && !(reason == REBOOT_REASON_NORMAL)) {
