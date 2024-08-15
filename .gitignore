@@ -42,3 +42,4 @@ ext/actions/att/*
 pro.si4project
 pro.si4project/*
 charge6_data/srd_uis_protocol/*
+ext/actions/att/att_patterns/*
