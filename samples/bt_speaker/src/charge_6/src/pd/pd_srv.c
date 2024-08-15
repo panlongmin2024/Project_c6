@@ -181,7 +181,7 @@ power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
 	case BATT_LED_ON_2S:	
     case BATT_LED_ON_10S:
 	case BATT_LED_EXT_CAHARGE:	
-	case BATT_LED_ON_0_3S:
+	case BATT_LED_ON_0_5S:
 		power_manager_battery_display_handle(led_status,1);
 		break;
     case DOME_MODE_LED_STATUS:

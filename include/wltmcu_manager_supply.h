@@ -360,7 +360,7 @@ typedef enum{
     LOW_POWER_OFF_LED_STATUS,
     DOME_MODE_LED_STATUS,
     BATT_LED_RESET,
-    BATT_LED_ON_0_3S,
+    BATT_LED_ON_0_5S,
 }batt_led_status;
 
 #define BT_LED_STATE(STATE)    (STATE & 0XFF)

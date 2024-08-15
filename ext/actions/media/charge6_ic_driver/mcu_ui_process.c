@@ -102,7 +102,7 @@ static const  bt_mcu_pair_led_map_t bt_mcu_pair_ledmap[] = {
 #define BATTERY_CHARGING_REMAIN_CAP_LEVEL5        100
 #define DISCHARGE_LED_DISPLAY_TIME_10s            86
 #define DISCHARGE_LED_DISPLAY_TIME_2s            10
-#define DISCHARGE_LED_DISPLAY_TIME_0_3s          3
+#define DISCHARGE_LED_DISPLAY_TIME_0_5s          5
 
 //static battery_manage_info_t global_bat_namager;
 
@@ -482,11 +482,11 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
 			       set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_2s);//set 2s
 				  }
               }
-			  else if(led_status == BATT_LED_ON_0_3S)
+			  else if(led_status == BATT_LED_ON_0_5S)
 			  {
 			  	/* poweroff need lighton 300ms with batled,then lightoff together */
-				set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_3s);
-				set_pwr_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_3s);
+				set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_5s);
+				set_pwr_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_5s);
 			  }
 			  else //if(led_status == BATT_LED_ON_10S)
 			  {
