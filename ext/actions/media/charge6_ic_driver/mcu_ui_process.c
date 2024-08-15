@@ -102,6 +102,7 @@ static const  bt_mcu_pair_led_map_t bt_mcu_pair_ledmap[] = {
 #define BATTERY_CHARGING_REMAIN_CAP_LEVEL5        100
 #define DISCHARGE_LED_DISPLAY_TIME_10s            86
 #define DISCHARGE_LED_DISPLAY_TIME_2s            10
+#define DISCHARGE_LED_DISPLAY_TIME_0_3s          3
 
 //static battery_manage_info_t global_bat_namager;
 
@@ -385,22 +386,22 @@ int get_batt_led_display_timer(void)
 
 static void battery_status_discharge_handle(u16_t cap)
 {
-    if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1){
+    if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1){
     
             battery_discharge_remaincap_low_15();
             set_batt_led_display_timer(-1); 
     }
     else{
-        if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL2){
+        if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL2){
             battery_discharge_remaincap_low_30();
         }
-        else if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL3){
+        else if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL3){
             battery_discharge_remaincap_low_45();
         }
-        else if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL4){
+        else if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL4){
             battery_discharge_remaincap_low_60();
         }
-        else if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL5){
+        else if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL5){
             battery_discharge_remaincap_low_75();
         }
         else{
@@ -466,6 +467,11 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
 			       set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_2s);//set 2s
 				  }
               }
+			  else if(led_status == BATT_LED_ON_0_3S)
+			  {
+			  	/* poweroff need lighton 300ms with batled,then lightoff together */
+				set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_3s);
+			  }
 			  else //if(led_status == BATT_LED_ON_10S)
 			  {
 			    if(first_10s_batt_display_time_flag)
@@ -534,16 +540,16 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
                 battery_discharge_remaincap_low_15();
             }
             else{
-                if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL2){
+                if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL2){
                     battery_discharge_remaincap_low_30();
                 }
-                else if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL3){
+                else if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL3){
                     battery_discharge_remaincap_low_45();
                 }
-                else if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL4){
+                else if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL4){
                     battery_discharge_remaincap_low_60();
                 }
-                else if(cap < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL5){
+                else if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL5){
                     battery_discharge_remaincap_low_75();
                 }
                 else{
