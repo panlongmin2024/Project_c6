@@ -319,6 +319,8 @@ static int _sys_standby_exit_s1(void)
 		/* 1106 remove this led ,end*/
 		//if(system_app_get_auracast_mode())
 			//pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);
+		/* 1194 need bat led on */
+		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
 	}else{
 		led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 	}
