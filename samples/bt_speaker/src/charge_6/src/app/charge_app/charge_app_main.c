@@ -142,6 +142,7 @@ void set_power_first_factory_reset_flag(uint8_t value)
 
 static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
+	SYS_LOG_ERR("factory_reset_flag %d\n",get_property_factory_reset_flag());
 	thread_timer_stop(&reset_timer);
 	if(get_property_factory_reset_flag()){
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));

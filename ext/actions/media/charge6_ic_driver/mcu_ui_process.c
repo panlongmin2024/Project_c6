@@ -419,7 +419,6 @@ void batt_led_display_timeout(void)
 	 {	  
 	      SYS_LOG_INF("Batt_display_time = %d", Batt_display_time);
 		  led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
-          pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
 	 }	 	
 	  Batt_display_time --;
   }
