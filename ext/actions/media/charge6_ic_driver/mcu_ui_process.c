@@ -371,17 +371,26 @@ static void battery_led_timer_fn(struct thread_timer *ttimer, void *expiry_fn_ar
 }
 #endif     
 extern uint8_t pd_get_app_mode_state(void); 
-int Batt_display_time;
+typedef struct {
+	int batled_display_time;
+	int pwrled_display_time;
+}disp_time_t;
+disp_time_t disp_time;
 
-void set_batt_led_display_timer(int deley100ms)
+void set_batt_led_display_timer(int times)
 {
-   Batt_display_time = deley100ms;
-   SYS_LOG_INF("deley100ms = %d", deley100ms);
+   disp_time.batled_display_time = times.batled_display_time;
+   SYS_LOG_INF("batled_display_time = %d", times.batled_display_time);
+}
+void set_pwr_led_display_timer(int times)
+{
+   disp_time.pwrled_display_time = times;
+   SYS_LOG_INF("pwrled_display_time = %d", times);
 }
 
 int get_batt_led_display_timer(void)
 {
-   return Batt_display_time;
+   return disp_time.batled_display_time;
 }
 
 static void battery_status_discharge_handle(u16_t cap)
@@ -413,16 +422,20 @@ static void battery_status_discharge_handle(u16_t cap)
 
 void batt_led_display_timeout(void)
 {
-   if(Batt_display_time >= 0)
-   {       
-	 if(Batt_display_time == 0)
-	 {	  
-	      SYS_LOG_INF("Batt_display_time = %d", Batt_display_time);
-		  //led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
-          pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
-	 }	 	
-	  Batt_display_time --;
-  }
+	if(disp_time.batled_display_time >= 0){       
+		if(disp_time.batled_display_time == 0){	  
+			SYS_LOG_INF("Batt_display_time = %d", disp_time.batled_display_time);
+			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
+		}	 	
+		disp_time.batled_display_time --;
+	}
+	
+	if(disp_time.pwrled_display_time >= 0){       
+		if(disp_time.pwrled_display_time == 0){	  
+			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+		}	 	
+		disp_time.pwrled_display_time --;
+	}   
 }
 
 
@@ -472,6 +485,7 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
 			  {
 			  	/* poweroff need lighton 300ms with batled,then lightoff together */
 				set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_3s);
+				set_pwr_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_3s);
 			  }
 			  else //if(led_status == BATT_LED_ON_10S)
 			  {
