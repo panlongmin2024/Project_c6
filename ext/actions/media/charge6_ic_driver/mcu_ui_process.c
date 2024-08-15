@@ -430,11 +430,12 @@ void batt_led_display_timeout(void)
 		disp_time.batled_display_time --;
 	}
 	
-	if(disp_time.pwrled_display_time >= 0){       
+	if(disp_time.pwrled_display_time > 0){       
+		disp_time.pwrled_display_time --;
 		if(disp_time.pwrled_display_time == 0){	  
+			SYS_LOG_INF("Pwr_display_time = %d", disp_time.pwrled_display_time);
 			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 		}	 	
-		disp_time.pwrled_display_time --;
 	}   
 }
 
