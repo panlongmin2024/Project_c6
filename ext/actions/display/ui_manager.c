@@ -338,11 +338,14 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 		if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_SHORT_LONG_UP||key_type==KEY_TYPE_LONG_UP||key_type==KEY_TYPE_HOLD_UP){
 			/* 1.key up,need reset */
 			isNeedReset = true;
+			printk("------> key up!\n");
 		}
 		if(get_batt_led_display_timer()==0){
 			/* 2.batled off ,need reset */
 			isNeedReset = true;
+			printk("------> battery led off!\n");
 		}
+		printk("------> isNeedReset %d\n",isNeedReset);
 		if(isNeedReset){
 			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
 		}
