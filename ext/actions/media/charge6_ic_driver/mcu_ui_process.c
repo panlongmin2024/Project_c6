@@ -199,7 +199,16 @@ static void battery_discharge_remaincap_low_15(void)
     mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_4,BT_LED_STATUS_OFF);
     mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_5,BT_LED_STATUS_OFF);    
 }
-
+static void battery_discharge_remaincap_low_15_noflash(void)
+{
+    SYS_LOG_INF("[%d] \n", __LINE__);
+    mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_0,BT_LED_STATUS_ON);
+    mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_1,BT_LED_STATUS_OFF);
+    mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_2,BT_LED_STATUS_OFF);
+    mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_3,BT_LED_STATUS_OFF);
+    mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_4,BT_LED_STATUS_OFF);
+    mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_5,BT_LED_STATUS_OFF);    
+}
 static void battery_discharge_remaincap_low_30(void)
 {
     SYS_LOG_INF("[%d] \n", __LINE__);
@@ -392,13 +401,22 @@ int get_batt_led_display_timer(void)
 {
    return disp_time.batled_display_time;
 }
+int get_pwr_led_display_timer(void)
+{
+   return disp_time.pwrled_display_time;
+}
 
 static void battery_status_discharge_handle(u16_t cap)
 {
     if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1){
-    
-            battery_discharge_remaincap_low_15();
-            set_batt_led_display_timer(-1); 
+		/* during pwroff, red led don't need flash */
+		if(get_pwr_led_display_timer()){
+			battery_discharge_remaincap_low_15_noflash();
+		}
+		else{
+			battery_discharge_remaincap_low_15();
+        	set_batt_led_display_timer(-1); 
+		}
     }
     else{
         if(cap <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL2){
