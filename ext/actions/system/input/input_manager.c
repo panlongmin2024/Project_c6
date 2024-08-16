@@ -138,7 +138,7 @@ void key_event_handle(struct device *dev, struct input_value *val)
 	}
 
 
-	// SYS_LOG_INF("Totti debnug:%s:%d; val=0x%x\n", __func__, __LINE__, val->code);
+	SYS_LOG_INF("Totti debnug:%s:%d; type=0x%x code=0x%x value=0x%x\n", __func__, __LINE__, val->type,val->code,val->value);
 
 	switch (val->value) {
 	case KEY_VALUE_UP:

@@ -329,7 +329,7 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 	u16_t key_val = key_event & 0xffff;
 	struct app_msg new_msg = { 0 };
 
-	printk("Totti debug:%s:%d: %d\n", __func__, __LINE__, key_val);
+	printk("Totti debug:%s:%d: 0x%x\n", __func__, __LINE__, key_event);
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
 	if(key_val != KEY_F1){
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
