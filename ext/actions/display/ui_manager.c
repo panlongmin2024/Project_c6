@@ -332,7 +332,20 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 	printk("Totti debug:%s:%d: 0x%x\n", __func__, __LINE__, key_event);
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
 	if(key_val != KEY_F1){
-		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+		/* need reset led time at key_down! */
+		static bool isNeedReset = true;
+		int get_batt_led_display_timer(void);
+		if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_SHORT_LONG_UP||key_type==KEY_TYPE_LONG_UP||key_type==KEY_TYPE_HOLD_UP){
+			/* 1.key up,need reset */
+			isNeedReset = true;
+		}
+		if(get_batt_led_display_timer()==0){
+			/* 2.batled off ,need reset */
+			isNeedReset = true;
+		}
+		if(isNeedReset){
+			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+		}
 #ifdef CONFIG_C_TEST_BATT_MACRO 	
 	if(key_val == KEY_PAUSE_AND_RESUME){
 		wlt_simulation_test_switch();
