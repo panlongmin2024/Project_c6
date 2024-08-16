@@ -337,6 +337,7 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 		int get_batt_led_display_timer(void);
 		if(isNeedReset){
 			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+			isNeedReset = false;
 		}	
 		if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_LONG_UP){
 			/* 1.key up,need reset */
