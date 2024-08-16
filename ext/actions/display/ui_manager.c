@@ -335,6 +335,9 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 		/* need reset led time at key_down! */
 		static bool isNeedReset = true;
 		int get_batt_led_display_timer(void);
+		if(isNeedReset){
+			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+		}	
 		if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_SHORT_LONG_UP||key_type==KEY_TYPE_LONG_UP||key_type==KEY_TYPE_HOLD_UP){
 			/* 1.key up,need reset */
 			isNeedReset = true;
@@ -346,9 +349,6 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 			printk("------> battery led off!\n");
 		}
 		printk("------> isNeedReset %d\n",isNeedReset);
-		if(isNeedReset){
-			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
-		}
 #ifdef CONFIG_C_TEST_BATT_MACRO 	
 	if(key_val == KEY_PAUSE_AND_RESUME){
 		wlt_simulation_test_switch();
