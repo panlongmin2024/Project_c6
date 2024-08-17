@@ -119,12 +119,12 @@ static int ats_wlt_uart_deinit(struct device *dev)
 }
 
 /* 开机识别是否需要进wlt厂测 */
-static void ats_wlt_set_enter_state(bool atsmode)
+void ats_wlt_set_enter_state(bool atsmode)
 {
 	SYS_LOG_INF("isWltAtsMode = %d\n",atsmode);
 	isWltAtsMode = atsmode;
 }
-static bool ats_wlt_get_enter_state(void)
+bool ats_wlt_get_enter_state(void)
 {
 	SYS_LOG_INF("check wlt ats ! isWltAtsMode %d\n",isWltAtsMode);
 	return isWltAtsMode;
