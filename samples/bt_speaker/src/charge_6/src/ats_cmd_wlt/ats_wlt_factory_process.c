@@ -29,10 +29,6 @@ const u8_t ats_wlt_gpio_array[] = {
 22,	32,	33,	34,	38,	40,	
 51,	53 //vro vro_s
 };
-
-struct thread_timer user_test_timer;
-ats_wlt_uart ats_wlt_uart_enter;
-
 extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
 extern struct device *uart_console_dev;
@@ -67,7 +63,7 @@ int ats_wlt_check_adfu(void)
 
 static void ats_wlt_enter_write_data(unsigned char *buf, int len)
 {
-	ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
+	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
 	stream_write(ats_uart->uio, buf, len);	
 }
 static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
@@ -90,7 +86,7 @@ static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
 }
 static int ats_wlt_enter_comm_data_handler(struct device *dev)
 {
-	ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
+	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
 	int rx_size=0;
 	 
 	int s1;
@@ -115,7 +111,7 @@ static int ats_wlt_enter_comm_data_handler(struct device *dev)
 
 static int ats_wlt_enter_uart_init(struct device *dev)
 {
-    ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
+    ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
     struct uart_stream_param uparam;
 
     console_input_deinit(dev);
@@ -135,7 +131,7 @@ static int ats_wlt_enter_uart_init(struct device *dev)
 }
 static int ats_wlt_enter_uart_deinit(struct device *dev)
 {
-	ats_wlt_uart * ats_uart = &ats_wlt_uart_enter;
+	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
 	stream_close(ats_uart->uio);
 	return 0;
 }
