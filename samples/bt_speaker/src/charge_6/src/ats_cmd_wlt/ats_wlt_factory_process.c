@@ -801,27 +801,6 @@ __thread_exit:
     p_ats_wlt_info->thread_running = 0;
 }
 
-int ats_wlt_uart_init(struct device *dev)
-{
-    ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
-    struct uart_stream_param uparam;
-
-    console_input_deinit(dev);
-	
-    ats_uart->uio_opened = 0;
-
-    uparam.uart_dev_name = "UART_0";
-    uparam.uart_baud_rate = CONFIG_UART_ACTS_PORT_0_BAUD_RATE;
-    ats_uart->uio = uart_stream_create( &uparam.uart_dev_name);
-    if(!ats_uart->uio){
-       return ats_uart->uio_opened;
-    }
-    stream_open(ats_uart->uio, MODE_IN_OUT);
-    ats_uart->uio_opened = 1;
-
-    return ats_uart->uio_opened;
-}
-
 int ats_pre_init(void)
 {
     int ret = 0;
