@@ -119,15 +119,20 @@ static int ats_wlt_uart_deinit(struct device *dev)
 }
 
 /* 开机识别是否需要进wlt厂测 */
-static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
+static void ats_wlt_set_enter_state(bool atsmode)
 {
-	ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
-	isWltAtsMode = true;
+	SYS_LOG_INF("isWltAtsMode = %d\n",atsmode);
+	isWltAtsMode = atsmode;
 }
-bool ats_wlt_get_enter_state(void)
+static bool ats_wlt_get_enter_state(void)
 {
 	SYS_LOG_INF("check wlt ats ! isWltAtsMode %d\n",isWltAtsMode);
 	return isWltAtsMode;
+}
+static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
+{
+	ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
+	ats_wlt_set_enter_state(true);
 }
 #if CONFIG_WLT_ATS_NEED_COMM
 /* wait communicate from PC! */
@@ -139,7 +144,7 @@ static int ats_wlt_wait_comm(struct device *dev)
 		ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS,sizeof(ATS_SEND_ENTER_WLT_ATS)-1);
 	
 		ats_wlt_read_data_handler(dev);
-		if(isWltAtsMode){
+		if(ats_wlt_get_enter_state()){
 			break;
 		}
 		k_sleep(20);
