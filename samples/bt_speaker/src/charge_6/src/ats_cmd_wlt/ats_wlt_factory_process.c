@@ -38,10 +38,10 @@ extern u8_t fw_version_get_hw_code(void);
 extern int user_uuid_verify(void);
 extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
 extern char *bin2hex(char *dst, const void *src, unsigned long count);
-void ats_wlt_write_data(unsigned char *buf, int len);
 int ats_wlt_deinit(void);
 uint8_t ReadODM(void);
 
+/* 测试部分方便测试架进ADFU模式 */
 int ats_wlt_check_adfu(void)
 {
 	bool key_vol_up;
@@ -61,30 +61,13 @@ int ats_wlt_check_adfu(void)
 	return 0;
 }
 
-static void ats_wlt_enter_write_data(unsigned char *buf, int len)
+/* uart 模块部分 */
+static void ats_wlt_write_data(unsigned char *buf, int len)
 {
 	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
 	stream_write(ats_uart->uio, buf, len);	
 }
-static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
-{
-	ats_wlt_enter_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
-	isWltAtsMode = true;
-}
-#if CONFIG_WLT_ATS_NEED_COMM
-static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
-{
-	int index = 0;
-
-	if (!memcmp(&buf[index], ATS_CMD_ENTER_WLT_ATS, sizeof(ATS_CMD_ENTER_WLT_ATS)-1)){
-		ats_wlt_enter_success(dev, buf, size);
-	}
-	else{
-
-	}
-	return 0;
-}
-static int ats_wlt_enter_comm_data_handler(struct device *dev)
+static int ats_wlt_read_data_handler(struct device *dev)
 {
 	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
 	int rx_size=0;
@@ -101,14 +84,33 @@ static int ats_wlt_enter_comm_data_handler(struct device *dev)
 		return 0;
 	}
 	if(dev == NULL){
-		ats_wlt_enter_write_data("dev == NULL",sizeof("dev == NULL")-1);
+		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
 		return 0;
 	}
-	stream_write(ats_uart->uio, p_ats_wlt_info->data_buf, rx_size);
-	ats_wlt_command_handler(dev, p_ats_wlt_info->data_buf, rx_size);
+	ats_wlt_command_shell_handler(dev, p_ats_wlt_info->data_buf, rx_size);
 	return 0;
 }
 
+
+
+static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
+{
+	ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
+	isWltAtsMode = true;
+}
+#if CONFIG_WLT_ATS_NEED_COMM
+static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
+{
+	int index = 0;
+
+	if (!memcmp(&buf[index], ATS_CMD_ENTER_WLT_ATS, sizeof(ATS_CMD_ENTER_WLT_ATS)-1)){
+		ats_wlt_enter_success(dev, buf, size);
+	}
+	else{
+
+	}
+	return 0;
+}
 static int ats_wlt_enter_uart_init(struct device *dev)
 {
     ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
@@ -141,9 +143,9 @@ static int ats_wlt_wait_comm(struct device *dev)
 	int ret = -1;
 	int times = 15;
 	while(times--){
-		ats_wlt_enter_write_data(ATS_SEND_ENTER_WLT_ATS,sizeof(ATS_SEND_ENTER_WLT_ATS)-1);
+		ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS,sizeof(ATS_SEND_ENTER_WLT_ATS)-1);
 	
-		ats_wlt_enter_comm_data_handler(dev);
+		ats_wlt_read_data_handler(dev);
 		if(isWltAtsMode){
 			break;
 		}
@@ -754,41 +756,10 @@ __exit_exit:
     return -1;
 }
 
-static int wlt_read_data_handler(struct device *dev)
-{
-	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
-	int rx_size=0;
-	 
-	int s1;
-	do {
-		s1 = stream_read(ats_uart->uio, ats_uart->rx_buffer+rx_size, 1);
-		rx_size += s1;
-	} while (s1 > 0);
-
-	memcpy(p_ats_wlt_info->data_buf, ats_uart->rx_buffer, rx_size);
-
-	if (rx_size == 0){
-		return 0;
-	}
-	if(dev == NULL){
-		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
-		return 0;
-	}
-	//stream_write(ats_uart->uio, p_ats_wlt_info->data_buf, rx_size);
-	ats_wlt_command_shell_handler(dev, p_ats_wlt_info->data_buf, rx_size);
-	return 0;
-}
-
-void ats_wlt_write_data(unsigned char *buf, int len)
-{
-  ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
-  stream_write(ats_uart->uio, buf, len);	
-}
-
 static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
-	wlt_read_data_handler(dev);
+	ats_wlt_read_data_handler(dev);
 }
 
 static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
