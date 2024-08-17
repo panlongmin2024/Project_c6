@@ -665,14 +665,8 @@ static int ats_wlt_shell_set_gpio_short(struct device *dev, u8_t *buf, int len)
 static int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
-	//int target_index;
-	static u8_t init_flag;
 	int target_index;
 
-	if (init_flag == 0){
-	   init_flag = 1;
-	   ats_wlt_resp_buf_init();
-	}
 	if (!memcmp(&buf[index], ATS_CMD_ENTER_WLT_ATS, sizeof(ATS_CMD_ENTER_WLT_ATS)-1)){
 		ats_wlt_enter_success(0, 0, 0);
 	}
@@ -877,6 +871,9 @@ int ats_wlt_init(void)
 		ats_wlt_write_data("panlm test7",sizeof("panlm test7")-1);
 		goto err_exit;
 	}
+
+	ats_wlt_resp_buf_init();
+	
     k_thread_create(&p_ats_wlt_info->thread_data, 
 		(k_thread_stack_t)p_ats_wlt_info->thread_stack,
         ATS_WLT_THREAD_STACK_SZ,
@@ -937,7 +934,7 @@ int ats_wlt_deinit(void)
 		free(p_ats_var);
 		p_ats_var = NULL;
 	}
-
+	ats_wlt_resp_buf_init();
 	trace_dma_print_set(true);//enable system printf
     return 0;
 }
