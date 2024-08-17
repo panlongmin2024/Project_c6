@@ -191,10 +191,6 @@ struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
 	return &p_ats_wlt_info->msgq;
 }
-static inline os_mutex *ats_wlt_get_mutex(void)
-{
-    return &p_ats_var->ats_mutex;
-}
 
 static int ats_wlt_resp_buf_init(void)
 {
@@ -790,40 +786,6 @@ __thread_exit:
     p_ats_wlt_info->thread_running = 0;
 }
 
-int ats_wlt_pre_init(void)
-{
-    int ret = 0;
-
-    p_ats_var = malloc(sizeof(struct _ats_wlt_var));
-    if (p_ats_var == NULL){
-        ret = -1;
-        goto err_exit;
-    }
-    memset(p_ats_var, 0, sizeof(struct _ats_wlt_var));
-    p_ats_var->ats_cmd_resp_buf = malloc(ATS_WLT_UART_TX_LEN_MAX);
-    if (p_ats_var->ats_cmd_resp_buf == NULL){
-        ret = -1;
-        goto err_exit;
-    }
-    memset(p_ats_var->ats_cmd_resp_buf, 0, ATS_WLT_UART_TX_LEN_MAX);
-    os_mutex_init(ats_wlt_get_mutex());
-
-    goto exit;
-
-err_exit:
-    if (p_ats_var){
-        if (p_ats_var->ats_cmd_resp_buf){
-            free(p_ats_var->ats_cmd_resp_buf);
-            p_ats_var->ats_cmd_resp_buf = NULL;
-        }
-        free(p_ats_var);
-        p_ats_var = NULL;
-    }
-exit:
-    return ret;
-}
-
-
 int ats_wlt_init(void)
 {
     int ret = -1;
@@ -832,10 +794,6 @@ int ats_wlt_init(void)
 	int msg_num = 20;
 	int msg_size = sizeof(struct _ats_wlt_thread_msg_t);
 	SYS_LOG_INF("------>\n");
-	if(ats_wlt_pre_init()){
-		/* pre init fail */
-		goto err_exit;		
-	}
 
 	if (p_ats_wlt_info){
 		return 0;
@@ -886,11 +844,12 @@ int ats_wlt_init(void)
     return 0;
 
 err_exit:
-	if (p_ats_wlt_info != NULL){
-		if (p_ats_wlt_info->msg_buf != NULL){
+	if (p_ats_wlt_info){
+		if (p_ats_wlt_info->msg_buf){
 			free(p_ats_wlt_info->msg_buf);
+			p_ats_wlt_info->msg_buf = NULL;
 		}
-		if (p_ats_wlt_info->thread_stack != NULL){
+		if (p_ats_wlt_info->thread_stack){
 			app_mem_free(p_ats_wlt_info->thread_stack);
 			p_ats_wlt_info->thread_stack = NULL;
 		}
@@ -903,16 +862,17 @@ err_exit:
 
 int ats_wlt_deinit(void)
 {
-    if(p_ats_wlt_info != NULL){
+    if(p_ats_wlt_info){
         p_ats_wlt_info->enabled = false;
 		
         while(p_ats_wlt_info->thread_running){
             k_sleep(1);
         }
-		if (p_ats_wlt_info->msg_buf != NULL){
+		if (p_ats_wlt_info->msg_buf){
 			free(p_ats_wlt_info->msg_buf);
+			p_ats_wlt_info->msg_buf = NULL;
 		}
-		if (p_ats_wlt_info->thread_stack != NULL){
+		if (p_ats_wlt_info->thread_stack){
 			app_mem_free(p_ats_wlt_info->thread_stack);
 			p_ats_wlt_info->thread_stack = NULL;
 		}
