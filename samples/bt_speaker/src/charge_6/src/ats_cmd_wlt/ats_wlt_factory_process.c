@@ -13,9 +13,9 @@
 #define UUID_HASH_DATA_LEN      (32)
 #define UUID_SIGN_MSG_NAME "uuid_msg"
 
-static ats_wlt_uart ats_wlt_uart_context;
-static struct _wlt_driver_ctx_t *p_ats_wlt_info;
-static struct _ats_wlt_var *p_ats_var;
+ats_wlt_uart ats_wlt_uart_context;
+struct _wlt_driver_ctx_t *p_ats_wlt_info;
+struct _ats_wlt_var *p_ats_var;
 static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
 static bool isWltAtsMode = false;
@@ -40,7 +40,7 @@ extern u8_t fw_version_get_hw_code(void);
 extern int user_uuid_verify(void);
 extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
 extern char *bin2hex(char *dst, const void *src, unsigned long count);
-void ats_wlt_write_data(unsigned char *buf, int len);
+static void ats_wlt_write_data(unsigned char *buf, int len);
 int ats_wlt_deinit(void);
 uint8_t ReadODM(void);
 static int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size);
