@@ -934,7 +934,7 @@ int ats_wlt_deinit(void)
 		free(p_ats_var);
 		p_ats_var = NULL;
 	}
-	ats_wlt_resp_buf_init();
+	ats_wlt_resp_buf_deinit();
 	trace_dma_print_set(true);//enable system printf
     return 0;
 }
