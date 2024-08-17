@@ -197,21 +197,11 @@ int ats_wlt_enter(void)
 /* wlt厂测执行部分 */
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
-	if(p_ats_wlt_info->msgq){
-		return &p_ats_wlt_info->msgq;
-	}
-	else{
-		return NULL;
-	}
+	return &p_ats_wlt_info->msgq;
 }
 static inline os_mutex *ats_wlt_get_mutex(void)
 {
-	if(p_ats_var->ats_mutex){
-    	return &p_ats_var->ats_mutex;
-	}
-	else{
-		return NULL;
-	}
+    return &p_ats_var->ats_mutex;
 }
 static int ats_wlt_resp_buf_init(void)
 {
@@ -878,9 +868,9 @@ int ats_wlt_init(void)
        ats_wlt_write_data("panlm test5",sizeof("panlm test6")-1);
 		goto err_exit;
     }
-
 	memset(p_ats_wlt_info->msg_buf, 0, sizeof(msg_num * msg_size));
 	k_msgq_init(&p_ats_wlt_info->msgq, p_ats_wlt_info->msg_buf, msg_size, msg_num);
+	
 	p_ats_wlt_info->thread_stack = app_mem_malloc(ATS_WLT_THREAD_STACK_SZ);
 	if (p_ats_wlt_info->thread_stack == NULL)
 	{
