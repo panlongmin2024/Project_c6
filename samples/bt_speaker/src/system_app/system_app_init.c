@@ -229,7 +229,7 @@ extern void user_app_later_init(void);
 extern bool main_get_enter_att_state(void);
 #endif
 #ifdef CONFIG_WLT_ATS_ENABLE
-extern bool get_enter_wlt_ats_state(void);
+extern bool ats_wlt_get_enter_state(void);
 extern void ats_wlt_start(void);
 #endif
 
@@ -347,7 +347,7 @@ void system_app_init(void)
 	system_input_handle_init();
 #ifdef CONFIG_WLT_ATS_ENABLE
 	/* no need uuid verify if has enterd wlt facory test mode. */
-	if(!get_enter_wlt_ats_state()){
+	if(!ats_wlt_get_enter_state()){
 		void user_uuid_init(void);
 		user_uuid_init();
 	}
@@ -412,7 +412,7 @@ void system_app_init(void)
 		&&(!att_enter_bqb_flag)
 #endif	
 #ifdef CONFIG_WLT_ATS_ENABLE
-	&& (!get_enter_wlt_ats_state())
+	&& (!ats_wlt_get_enter_state())
 #endif
 #if (defined CONFIG_TOOL && defined CONFIG_ACTIONS_ATT)
 	&& (!main_get_enter_att_state())
@@ -451,7 +451,7 @@ void system_app_init(void)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 		/* wlt factory test start!!! */
 		bool enter_wlt_fac_test = false;
-		if(get_enter_wlt_ats_state() && (!main_get_enter_att_state())){
+		if(ats_wlt_get_enter_state() && (!main_get_enter_att_state())){
 			enter_wlt_fac_test = true;
 			init_bt_manager = false;
 #ifdef CONFIG_PLAYTTS

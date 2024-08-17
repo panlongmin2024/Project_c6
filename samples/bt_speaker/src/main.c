@@ -64,7 +64,7 @@ static void main_is_enter_att(void)
 #endif
 #ifdef CONFIG_WLT_ATS_ENABLE
 extern void ats_wlt_enter(void);
-extern bool get_enter_wlt_ats_state(void);
+extern bool ats_wlt_get_enter_state(void);
 extern int ats_wlt_check_adfu(void);
 #endif
 static void main_pre_init(void)

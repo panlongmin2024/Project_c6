@@ -128,7 +128,7 @@ static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 	ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
 	isWltAtsMode = true;
 }
-bool get_enter_wlt_ats_state(void)
+bool ats_wlt_get_enter_state(void)
 {
 	SYS_LOG_INF("check wlt ats ! isWltAtsMode %d\n",isWltAtsMode);
 	return isWltAtsMode;
@@ -753,7 +753,7 @@ __exit_exit:
 }
 
 
-static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
+static void ats_wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
 	ats_wlt_read_data_handler(dev);
@@ -777,7 +777,7 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 		goto __thread_exit;
 	}
 
-	thread_timer_init(&p_ats_wlt_info->rx_timer, wlt_rx_timer_cb, dev);
+	thread_timer_init(&p_ats_wlt_info->rx_timer, ats_wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_wlt_info->rx_timer, 0, 10);
 	
 	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
