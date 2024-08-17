@@ -186,8 +186,7 @@ int ats_wlt_enter(void)
 	return ret;
 }
 
-
-
+/* wlt厂测执行部分 */
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
 	return &p_ats_wlt_info->msgq;
@@ -197,35 +196,25 @@ static inline os_mutex *ats_wlt_get_mutex(void)
     return &p_ats_var->ats_mutex;
 }
 
-// 
-/*void hex_to_string_4(u32_t num, u8_t *buf) {
-	buf[0] = '0' + num%10000/1000;
-	buf[1] = '0' + num%1000/100;
-	buf[2] = '0' + num%100/10;
-	buf[3] = '0' + num%10;
-}
-void hex_to_string_2(u32_t num, u8_t *buf) {
-	buf[0] = '0' + num%100/10;
-	buf[1] = '0' + num%10;
-}
-void string_to_hex_u8(u8_t *buf,u8_t *num) {
-	*num = (buf[0]-'0')*10 + (buf[1]-'0');
-}*/
-
-static int ats_wlt_resp_init(void)
+static int ats_wlt_resp_buf_init(void)
 {
-
 	if (ats_wlt_cmd_resp_buf == NULL)
 	{
 		ats_wlt_cmd_resp_buf = malloc(ats_wlt_cmd_resp_buf_size);
-		if (ats_wlt_cmd_resp_buf == NULL)
-		{
-	
-			return 0;
+		if (ats_wlt_cmd_resp_buf == NULL){
+			return -1;
 		}
 		memset(ats_wlt_cmd_resp_buf, 0, ats_wlt_cmd_resp_buf_size);
 	}
 
+	return 0;
+}
+static int ats_wlt_resp_buf_deinit(void)
+{
+	if(ats_wlt_cmd_resp_buf){
+		free(ats_wlt_cmd_resp_buf);
+		ats_wlt_cmd_resp_buf = NULL;
+	}
 	return 0;
 }
 
@@ -679,7 +668,7 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 
 	if (init_flag == 0){
 	   init_flag = 1;
-	   ats_wlt_resp_init();
+	   ats_wlt_resp_buf_init();
 	}
 	if(!memcmp(&buf[index], ATS_CMD_ENTER_WLT_ATS, sizeof(ATS_CMD_ENTER_WLT_ATS)-1)){
 		ats_wlt_enter_success(dev, buf, size);		
@@ -748,7 +737,7 @@ __exit_exit:
     return -1;
 }
 
-static void wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
+static void ats_wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 {
 	struct device *dev = (struct device *)pdata;
 	ats_wlt_read_data_handler(dev);
@@ -772,7 +761,7 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 		goto __thread_exit;
 	}
 
-	thread_timer_init(&p_ats_wlt_info->rx_timer, wlt_rx_timer_cb, dev);
+	thread_timer_init(&p_ats_wlt_info->rx_timer, ats_wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_wlt_info->rx_timer, 0, 10);
 	
 	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
@@ -801,7 +790,7 @@ __thread_exit:
     p_ats_wlt_info->thread_running = 0;
 }
 
-int ats_pre_init(void)
+int ats_wlt_pre_init(void)
 {
     int ret = 0;
 
@@ -843,7 +832,7 @@ int ats_wlt_init(void)
 	int msg_num = 20;
 	int msg_size = sizeof(struct _ats_wlt_thread_msg_t);
 	SYS_LOG_INF("------>\n");
-	if(ats_pre_init()){
+	if(ats_wlt_pre_init()){
 		/* pre init fail */
 		goto err_exit;		
 	}
