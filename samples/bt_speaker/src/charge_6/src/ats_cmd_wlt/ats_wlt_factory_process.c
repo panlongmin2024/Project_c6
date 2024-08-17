@@ -4,8 +4,8 @@
 #ifdef CONFIG_WLT_ATS_ENABLE
 
 #define	CONFIG_WLT_ATS_NEED_COMM			1
-#define	CONFIG_WLT_ATS_IO_ADFU				1// gpio21
 
+#define	CONFIG_WLT_ATS_GPIO_ADFU_PIN		21// gpio21
 #define	CONFIG_WLT_ATS_GPIO_UPDOWN_PIN		35
 
 #define UUID_STR_DATA_LEN       (32)
@@ -21,13 +21,13 @@ static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
 static bool isWltAtsMode = false;
 
 const u8_t ats_wlt_gpio_array[] = {
-0,	1,	
-//2,	3,//tx rx
-4,	5,	6,	7,	8,	9,	10,	11,	12,	13,	14,	15,
-17,	19,	20,	
-//21,39,//dfu key
-22,	32,	33,	34,	38,	40,	
-51,	53 //vro vro_s
+	0,	1,	
+	//2,	3,//tx rx
+	4,	5,	6,	7,	8,	9,	10,	11,	12,	13,	14,	15,
+	17,	19,	20,	
+	//21,39,//dfu key
+	22,	32,	33,	34,	38,	40,	
+	51,	53 //vro vro_s
 };
 extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
@@ -50,9 +50,9 @@ int ats_wlt_check_adfu(void)
 
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 	u32_t val;
-	gpio_pin_configure(gpio_dev, 21, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
+	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_ADFU_PIN, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
 	k_sleep(10);
-	gpio_pin_read(gpio_dev, 21, &val);
+	gpio_pin_read(gpio_dev, CONFIG_WLT_ATS_GPIO_ADFU_PIN, &val);
 	key_vol_up = (bool)val;
 	dc_power_in_status = dc_power_in_status_read();
 	SYS_LOG_INF("key_vol_up down:%d, dc_power_in insert:%d\n",key_vol_up, dc_power_in_status);	
