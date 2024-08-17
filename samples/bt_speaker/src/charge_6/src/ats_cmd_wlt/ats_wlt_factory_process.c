@@ -126,6 +126,7 @@ static int ats_wlt_uart_deinit(struct device *dev)
 static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 {
 	ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
+	
 	isWltAtsMode = true;
 }
 bool ats_wlt_get_enter_state(void)
