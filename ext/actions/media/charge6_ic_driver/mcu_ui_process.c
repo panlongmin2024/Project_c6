@@ -440,12 +440,12 @@ static void battery_status_discharge_handle(u16_t cap)
 
 void batt_led_display_timeout(void)
 {
-	if(disp_time.batled_display_time >= 0){       
+	if(disp_time.batled_display_time > 0){     
+		disp_time.batled_display_time --;
 		if(disp_time.batled_display_time == 0){	  
 			SYS_LOG_INF("Batt_display_time = %d", disp_time.batled_display_time);
 			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
 		}	 	
-		disp_time.batled_display_time --;
 	}
 	
 	if(disp_time.pwrled_display_time > 0){       
