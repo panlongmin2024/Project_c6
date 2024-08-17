@@ -671,7 +671,7 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	   ats_wlt_resp_buf_init();
 	}
 	if(!memcmp(&buf[index], ATS_CMD_ENTER_WLT_ATS, sizeof(ATS_CMD_ENTER_WLT_ATS)-1)){
-		ats_wlt_enter_success(dev, buf, size);		
+		ats_wlt_enter_success(0, 0, 0);		
 	}
 	else if(!memcmp(&buf[index], ATS_CMD_SET_BTEDR_MAC, sizeof(ATS_CMD_SET_BTEDR_MAC)-1)){
 		/* set bt mac */
