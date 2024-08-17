@@ -40,6 +40,7 @@ extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
 extern char *bin2hex(char *dst, const void *src, unsigned long count);
 int ats_wlt_deinit(void);
 uint8_t ReadODM(void);
+int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size);
 
 /* 测试部分方便测试架进ADFU模式 */
 int ats_wlt_check_adfu(void)
@@ -99,18 +100,6 @@ static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 	isWltAtsMode = true;
 }
 #if CONFIG_WLT_ATS_NEED_COMM
-static int ats_wlt_command_handler(struct device *dev, u8_t *buf, int size)
-{
-	int index = 0;
-
-	if (!memcmp(&buf[index], ATS_CMD_ENTER_WLT_ATS, sizeof(ATS_CMD_ENTER_WLT_ATS)-1)){
-		ats_wlt_enter_success(dev, buf, size);
-	}
-	else{
-
-	}
-	return 0;
-}
 static int ats_wlt_enter_uart_init(struct device *dev)
 {
     ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
@@ -691,8 +680,10 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	   init_flag = 1;
 	   ats_wlt_resp_init();
 	}
-
-	if (!memcmp(&buf[index], ATS_CMD_SET_BTEDR_MAC, sizeof(ATS_CMD_SET_BTEDR_MAC)-1)){
+	if(!memcmp(&buf[index], ATS_CMD_ENTER_WLT_ATS, sizeof(ATS_CMD_ENTER_WLT_ATS)-1)){
+		ats_wlt_enter_success(dev, buf, size);		
+	}
+	else if(!memcmp(&buf[index], ATS_CMD_SET_BTEDR_MAC, sizeof(ATS_CMD_SET_BTEDR_MAC)-1)){
 		/* set bt mac */
 		index += sizeof(ATS_CMD_SET_BTEDR_MAC)-1;
 		target_index = index;
