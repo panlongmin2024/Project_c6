@@ -92,15 +92,7 @@ static int ats_wlt_read_data_handler(struct device *dev)
 	return 0;
 }
 
-
-
-static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
-{
-	ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
-	isWltAtsMode = true;
-}
-#if CONFIG_WLT_ATS_NEED_COMM
-static int ats_wlt_enter_uart_init(struct device *dev)
+static int ats_wlt_uart_init(struct device *dev)
 {
     ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
     struct uart_stream_param uparam;
@@ -120,12 +112,25 @@ static int ats_wlt_enter_uart_init(struct device *dev)
 
     return ats_uart->uio_opened;
 }
-static int ats_wlt_enter_uart_deinit(struct device *dev)
+static int ats_wlt_uart_deinit(struct device *dev)
 {
 	ats_wlt_uart * ats_uart = &ats_wlt_uart_context;
 	stream_close(ats_uart->uio);
 	return 0;
 }
+
+/* 开机识别是否需要进wlt厂测 */
+static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
+{
+	ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS_ACK,sizeof(ATS_SEND_ENTER_WLT_ATS_ACK)-1);
+	isWltAtsMode = true;
+}
+bool ats_wlt_get_enter_state(void)
+{
+	SYS_LOG_INF("check wlt ats ! isWltAtsMode %d\n",isWltAtsMode);
+	return isWltAtsMode;
+}
+#if CONFIG_WLT_ATS_NEED_COMM
 /* wait communicate from PC! */
 static int ats_wlt_wait_comm(struct device *dev)
 {
@@ -167,10 +172,10 @@ int ats_wlt_enter(void)
 				SYS_LOG_ERR("uart device not found\n");
 				return -1;	
 			}
-			ats_wlt_enter_uart_init(p_ats_wlt_info->ats_uart_dev);
+			ats_wlt_uart_init(p_ats_wlt_info->ats_uart_dev);
 			ret = ats_wlt_wait_comm(p_ats_wlt_info->ats_uart_dev);
 			console_input_deinit(p_ats_wlt_info->ats_uart_dev);
-			ats_wlt_enter_uart_deinit(p_ats_wlt_info->ats_uart_dev);
+			ats_wlt_uart_deinit(p_ats_wlt_info->ats_uart_dev);
 			free(p_ats_wlt_info);
 			p_ats_wlt_info = NULL;
 #else	
@@ -181,11 +186,7 @@ int ats_wlt_enter(void)
 	return ret;
 }
 
-bool ats_wlt_get_enter_state(void)
-{
-	SYS_LOG_INF("check wlt ats ! isWltAtsMode %d\n",isWltAtsMode);
-	return isWltAtsMode;
-}
+
 
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
