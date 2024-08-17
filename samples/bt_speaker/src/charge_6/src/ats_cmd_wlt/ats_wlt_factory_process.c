@@ -189,6 +189,8 @@ int ats_wlt_enter(void)
 			free(p_ats_wlt_info);
 			console_input_deinit(p_ats_wlt_info->ats_uart_dev);
 			ats_wlt_enter_uart_deinit(p_ats_wlt_info->ats_uart_dev);
+			free(p_ats_wlt_info);
+			p_ats_wlt_info = NULL;
 #else	
 			ats_wlt_enter_success(0,0,0);
 #endif
