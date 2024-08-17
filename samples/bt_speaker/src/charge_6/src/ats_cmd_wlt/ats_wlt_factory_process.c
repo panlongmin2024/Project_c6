@@ -186,7 +186,6 @@ int ats_wlt_enter(void)
 			}
 			ats_wlt_enter_uart_init(p_ats_wlt_info->ats_uart_dev);
 			ret = ats_wlt_wait_comm(p_ats_wlt_info->ats_uart_dev);
-			free(p_ats_wlt_info);
 			console_input_deinit(p_ats_wlt_info->ats_uart_dev);
 			ats_wlt_enter_uart_deinit(p_ats_wlt_info->ats_uart_dev);
 			free(p_ats_wlt_info);
