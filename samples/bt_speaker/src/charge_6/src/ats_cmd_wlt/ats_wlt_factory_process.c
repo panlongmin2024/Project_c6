@@ -14,7 +14,7 @@
 #define UUID_SIGN_MSG_NAME "uuid_msg"
 
 ats_wlt_uart ats_wlt_uart_context;
-static struct _wlt_driver_ctx_t *p_ats_wlt_info;
+static struct _wlt_driver_ctx_t *p_ats_info;
 static struct _ats_wlt_var *p_ats_var;
 static uint8_t *ats_wlt_cmd_resp_buf;
 static int ats_wlt_cmd_resp_buf_size = ATS_WLT_UART_TX_LEN_MAX;
@@ -32,6 +32,10 @@ const u8_t ats_wlt_gpio_array[] = {
 
 struct thread_timer user_test_timer;
 ats_wlt_uart ats_wlt_uart_enter;
+
+#if CONFIG_WLT_ATS_NEED_COMM
+static struct _wlt_driver_ctx_t *p_ats_wlt_info;
+#endif
 
 extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
@@ -185,7 +189,6 @@ int ats_wlt_enter(void)
 			free(p_ats_wlt_info);
 			console_input_deinit(p_ats_wlt_info->ats_uart_dev);
 			ats_wlt_enter_uart_deinit(p_ats_wlt_info->ats_uart_dev);
-			free(p_ats_wlt_info);
 #else	
 			ats_wlt_enter_success(0,0,0);
 #endif
@@ -202,7 +205,7 @@ bool ats_wlt_get_enter_state(void)
 
 struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
 {
-	return &p_ats_wlt_info->msgq;
+	return &p_ats_info->msgq;
 }
 static inline os_mutex *ats_wlt_get_mutex(void)
 {
@@ -769,7 +772,7 @@ static int wlt_read_data_handler(struct device *dev)
 		rx_size += s1;
 	} while (s1 > 0);
 
-	memcpy(p_ats_wlt_info->data_buf, ats_uart->rx_buffer, rx_size);
+	memcpy(p_ats_info->data_buf, ats_uart->rx_buffer, rx_size);
 
 	if (rx_size == 0){
 		return 0;
@@ -778,8 +781,8 @@ static int wlt_read_data_handler(struct device *dev)
 		ats_wlt_write_data("dev == NULL",sizeof("dev == NULL")-1);
 		return 0;
 	}
-	//stream_write(ats_uart->uio, p_ats_wlt_info->data_buf, rx_size);
-	ats_wlt_command_shell_handler(dev, p_ats_wlt_info->data_buf, rx_size);
+	//stream_write(ats_uart->uio, p_ats_info->data_buf, rx_size);
+	ats_wlt_command_shell_handler(dev, p_ats_info->data_buf, rx_size);
 	return 0;
 }
 
@@ -799,10 +802,10 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 {
     os_sem *callback_sem = (os_sem *)p1;
 
-	struct device *dev = p_ats_wlt_info->ats_uart_dev;
+	struct device *dev = p_ats_info->ats_uart_dev;
 	struct _ats_wlt_thread_msg_t msg = {0};
 
-    p_ats_wlt_info->thread_running = 1;
+    p_ats_info->thread_running = 1;
 
     if (callback_sem){
         os_sem_give(callback_sem);
@@ -813,13 +816,13 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 		goto __thread_exit;
 	}
 
-	thread_timer_init(&p_ats_wlt_info->rx_timer, wlt_rx_timer_cb, dev);
-    thread_timer_start(&p_ats_wlt_info->rx_timer, 0, 10);
+	thread_timer_init(&p_ats_info->rx_timer, wlt_rx_timer_cb, dev);
+    thread_timer_start(&p_ats_info->rx_timer, 0, 10);
 	
 	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
-	while (p_ats_wlt_info->enabled) 
+	while (p_ats_info->enabled) 
     {
-		if (!k_msgq_get(&p_ats_wlt_info->msgq, &msg, thread_timer_next_timeout()))
+		if (!k_msgq_get(&p_ats_info->msgq, &msg, thread_timer_next_timeout()))
 		{
 			switch (msg.type) 
 			{
@@ -839,7 +842,7 @@ static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
 
 __thread_exit:
 
-    p_ats_wlt_info->thread_running = 0;
+    p_ats_info->thread_running = 0;
 }
 
 int ats_wlt_uart_init(struct device *dev)
@@ -910,47 +913,47 @@ int ats_wlt_init(void)
 		goto err_exit;		
 	}
 
-	if (p_ats_wlt_info){
+	if (p_ats_info){
 		return 0;
 	}
 
 	os_sem_init(&callback_sem, 0, 1);
 
-	p_ats_wlt_info = malloc(sizeof(struct _wlt_driver_ctx_t));
-	if (p_ats_wlt_info == NULL)
+	p_ats_info = malloc(sizeof(struct _wlt_driver_ctx_t));
+	if (p_ats_info == NULL)
 	{
 		goto err_exit;
 	}
 
-	memset(p_ats_wlt_info, 0, sizeof(struct _wlt_driver_ctx_t));
+	memset(p_ats_info, 0, sizeof(struct _wlt_driver_ctx_t));
 
-	p_ats_wlt_info->ats_uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	if (p_ats_wlt_info->ats_uart_dev == NULL)
+	p_ats_info->ats_uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+	if (p_ats_info->ats_uart_dev == NULL)
 	{
 		goto err_exit;
 	}
 
-	ret = ats_wlt_uart_init(p_ats_wlt_info->ats_uart_dev);
+	ret = ats_wlt_uart_init(p_ats_info->ats_uart_dev);
 
-    p_ats_wlt_info->enabled = true;
+    p_ats_info->enabled = true;
 
-	p_ats_wlt_info->msg_buf = malloc(msg_num * msg_size);
-    if (p_ats_wlt_info->msg_buf == NULL)
+	p_ats_info->msg_buf = malloc(msg_num * msg_size);
+    if (p_ats_info->msg_buf == NULL)
     {
        ats_wlt_write_data("panlm test5",sizeof("panlm test6")-1);
 		goto err_exit;
     }
 
-	memset(p_ats_wlt_info->msg_buf, 0, sizeof(msg_num * msg_size));
-	k_msgq_init(&p_ats_wlt_info->msgq, p_ats_wlt_info->msg_buf, msg_size, msg_num);
-	p_ats_wlt_info->thread_stack = app_mem_malloc(ATS_WLT_THREAD_STACK_SZ);
-	if (p_ats_wlt_info->thread_stack == NULL)
+	memset(p_ats_info->msg_buf, 0, sizeof(msg_num * msg_size));
+	k_msgq_init(&p_ats_info->msgq, p_ats_info->msg_buf, msg_size, msg_num);
+	p_ats_info->thread_stack = app_mem_malloc(ATS_WLT_THREAD_STACK_SZ);
+	if (p_ats_info->thread_stack == NULL)
 	{
 		ats_wlt_write_data("panlm test7",sizeof("panlm test7")-1);
 		goto err_exit;
 	}
-    k_thread_create(&p_ats_wlt_info->thread_data, 
-		(k_thread_stack_t)p_ats_wlt_info->thread_stack,
+    k_thread_create(&p_ats_info->thread_data, 
+		(k_thread_stack_t)p_ats_info->thread_stack,
         ATS_WLT_THREAD_STACK_SZ,
         (k_thread_entry_t)ats_wlt_thread_main_loop, &callback_sem, NULL, NULL,
         ATS_WLT_THREAD_PRIO, 0, K_NO_WAIT);
@@ -959,16 +962,16 @@ int ats_wlt_init(void)
     return 0;
 
 err_exit:
-	if (p_ats_wlt_info != NULL){
-		if (p_ats_wlt_info->msg_buf != NULL){
-			free(p_ats_wlt_info->msg_buf);
+	if (p_ats_info != NULL){
+		if (p_ats_info->msg_buf != NULL){
+			free(p_ats_info->msg_buf);
 		}
-		if (p_ats_wlt_info->thread_stack != NULL){
-			app_mem_free(p_ats_wlt_info->thread_stack);
-			p_ats_wlt_info->thread_stack = NULL;
+		if (p_ats_info->thread_stack != NULL){
+			app_mem_free(p_ats_info->thread_stack);
+			p_ats_info->thread_stack = NULL;
 		}
-		free(p_ats_wlt_info);
-		p_ats_wlt_info = NULL;
+		free(p_ats_info);
+		p_ats_info = NULL;
 	}
 	ats_wlt_write_data("live fail",sizeof("live fail")-1);
     return ret;
@@ -976,21 +979,21 @@ err_exit:
 
 int ats_wlt_deinit(void)
 {
-    if(p_ats_wlt_info != NULL){
-        p_ats_wlt_info->enabled = false;
+    if(p_ats_info != NULL){
+        p_ats_info->enabled = false;
 		
-        while(p_ats_wlt_info->thread_running){
+        while(p_ats_info->thread_running){
             k_sleep(1);
         }
-		if (p_ats_wlt_info->msg_buf != NULL){
-			free(p_ats_wlt_info->msg_buf);
+		if (p_ats_info->msg_buf != NULL){
+			free(p_ats_info->msg_buf);
 		}
-		if (p_ats_wlt_info->thread_stack != NULL){
-			app_mem_free(p_ats_wlt_info->thread_stack);
-			p_ats_wlt_info->thread_stack = NULL;
+		if (p_ats_info->thread_stack != NULL){
+			app_mem_free(p_ats_info->thread_stack);
+			p_ats_info->thread_stack = NULL;
 		}
-        free(p_ats_wlt_info);
-        p_ats_wlt_info = NULL;
+        free(p_ats_info);
+        p_ats_info = NULL;
     }
     else{
     }
