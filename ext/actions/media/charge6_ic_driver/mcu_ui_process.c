@@ -484,7 +484,7 @@ void batt_led_display_timeout(void)
 	if(disp_time.acled_display_time > 0){       
 		disp_time.acled_display_time --;
 		if(disp_time.acled_display_time == 0){	  
-			SYS_LOG_INF("Bt_display_time = %d", disp_time.acled_display_time);
+			SYS_LOG_INF("Ac_display_time = %d", disp_time.acled_display_time);
 			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 		}	 	
 	} 		
