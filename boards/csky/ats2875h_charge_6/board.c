@@ -524,7 +524,7 @@ bool dc_power_in_status_read(void)
    }
  else
  {
- 		val = 1;
+ 		return true;
 	   #ifdef CONFIG_3NODS_PRO_EV_HW_2
 		return (val == 0);
 	  #else

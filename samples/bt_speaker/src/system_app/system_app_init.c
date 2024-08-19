@@ -190,6 +190,7 @@ static void main_system_check_adfu_timer(struct thread_timer *ttimer, void *expi
 		pd_srv_sync_exit();
 	}
 
+	printk("------> times %d\n",fairst);
 	if(fairst == 0){
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
 		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
