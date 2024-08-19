@@ -726,7 +726,7 @@ static void battery_acts_poll(struct k_timer *timer)
 {
 	struct device *dev = k_timer_user_data_get(timer);
 	struct acts_battery_info *bat = dev->driver_data;
-	SYS_LOG_INF("------> %d!\n", __LINE__);
+
 	battery_acts_charge_status_check(bat, dev);
 	dc5v_status_check(bat);
 
