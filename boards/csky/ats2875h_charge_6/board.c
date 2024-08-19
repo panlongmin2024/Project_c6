@@ -595,6 +595,7 @@ void check_adfu_gpio_key(void)
 		}	
 	}
 	while(1);
+	wait_adfu_flag = 1;
 }
 
 
