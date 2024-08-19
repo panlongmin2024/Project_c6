@@ -383,6 +383,7 @@ extern uint8_t pd_get_app_mode_state(void);
 typedef struct {
 	int batled_display_time;
 	int pwrled_display_time;
+	int btled_display_time;
 }disp_time_t;
 disp_time_t disp_time;
 
@@ -395,6 +396,11 @@ void set_pwr_led_display_timer(int times)
 {
    disp_time.pwrled_display_time = times;
    SYS_LOG_INF("pwrled_display_time = %d", times);
+}
+void set_bt_led_display_timer(int times)
+{
+   disp_time.btled_display_time = times;
+   SYS_LOG_INF("btled_display_time = %d", times);
 }
 
 int get_batt_led_display_timer(void)
