@@ -257,16 +257,16 @@ if [ -d ${PRJ_BASE}/app_conf/${CONFIG} ]; then
 			fi
 		fi
 
-	 	if [ -f ${IMG_FILE} ] ; then
-	 		echo "Add sdfs with image file ${IMG_FILE}"
-        #			rm -f ${OUTDIR}/sdfs/*.dsp
-	 		rm -f ${OUTDIR}/sdfs/pd*.bin
-	 		rm -f ${OUTDIR}/sdfs/pt*.bin
-	 		cp ${IMG_FILE}  ${OUTDIR}/sdfs/
-	 	else
-	 		echo -e "\e[35m not found ${IMG_FILE} \e[m"
-	 		exit -1
-	 	fi
+	# 	if [ -f ${IMG_FILE} ] ; then
+	# 		echo "Add sdfs with image file ${IMG_FILE}"
+    #    #			rm -f ${OUTDIR}/sdfs/*.dsp
+	# 		rm -f ${OUTDIR}/sdfs/pd*.bin
+	# 		rm -f ${OUTDIR}/sdfs/pt*.bin
+	# 		cp ${IMG_FILE}  ${OUTDIR}/sdfs/
+	# 	else
+	# 		echo -e "\e[35m not found ${IMG_FILE} \e[m"
+	# 		exit -1
+	# 	fi
 	fi
 
 	if [ "${PACK_FW_ONLY}" = "1" ]; then
