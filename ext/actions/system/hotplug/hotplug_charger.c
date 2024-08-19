@@ -38,7 +38,7 @@ int _charger_get_state(void)
 	if (sys_pm_get_power_5v_status()) {
 		state = HOTPLUG_IN;
 	} else {
-		state = HOTPLUG_OUT;
+		state = HOTPLUG_IN;
 	}
 
 	return state;
