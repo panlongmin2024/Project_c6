@@ -544,6 +544,10 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
             else{
                 battery_charging_remaincap_low_100();
             }
+
+			if(led_status == BATT_PWR_LED_ON_0_5S){
+				set_pwr_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_5s);
+			}
 			set_batt_led_display_timer(-1);
         }
         break;
