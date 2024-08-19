@@ -84,6 +84,8 @@ int hotplug_charger_init(void)
 	memset(&charger_detect_state, 0, sizeof(struct charger_detect_state_t));
 
 	int ret = sys_pm_get_power_5v_status();
+	uint8_t ReadODM(void);
+	bool dc_power_in_status_read(void);
 	if(ReadODM()==0)
 	{
 		ret = dc_power_in_status_read();
