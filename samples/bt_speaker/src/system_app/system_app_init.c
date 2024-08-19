@@ -496,7 +496,7 @@ void system_app_init(void)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	printf("%s:%d led_manager_set_display\n", __func__, __LINE__);
 	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);						// power led
-	//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);	
+	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);	
 #endif
 
 
