@@ -459,7 +459,8 @@ static  void battery_power_supply_enable(void)
 	struct device *bat_dev;
     bat_dev = (struct device *)device_get_binding("battery");
 	const struct power_supply_driver_api *api = bat_dev->driver_api;
-	api->enable(bat_dev);
+	printk("------> enable_bat\n");
+	//api->enable(bat_dev);
 }
 
 extern bool ODM_FLAG;
