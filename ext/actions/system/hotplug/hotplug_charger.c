@@ -83,7 +83,14 @@ int hotplug_charger_init(void)
 {
 	memset(&charger_detect_state, 0, sizeof(struct charger_detect_state_t));
 
-	if (sys_pm_get_power_5v_status()) {
+	int ret = sys_pm_get_power_5v_status();
+	if(ReadODM()==0)
+	{
+		ret = dc_power_in_status_read();
+	}
+
+
+	if (ret) {
 		charger_detect_state.stable_state = HOTPLUG_NONE;
 	} else {
 		charger_detect_state.stable_state = HOTPLUG_NONE;
