@@ -546,6 +546,7 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
             }
 
 			if(led_status == BATT_PWR_LED_ON_0_5S){
+				set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_5s);
 				set_pwr_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_5s);
 			}
 			set_batt_led_display_timer(-1);
@@ -563,6 +564,9 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
             set_batt_led_display_timer(-1);     
             battery_charging_remaincap_is_full();
             set_batt_led_display_timer(-1);
+			if(led_status == BATT_PWR_LED_ON_0_5S){
+				set_pwr_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_5s);
+			}
 
         break;  
 
@@ -594,6 +598,9 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
                     battery_discharge_remaincap_low_100();
                 }
             } 
+			if(led_status == BATT_PWR_LED_ON_0_5S){
+				set_pwr_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_5s);
+			}			
 			set_batt_led_display_timer(-1);
         }
         break;   
