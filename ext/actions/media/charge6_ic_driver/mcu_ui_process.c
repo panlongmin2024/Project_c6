@@ -384,6 +384,7 @@ typedef struct {
 	int batled_display_time;
 	int pwrled_display_time;
 	int btled_display_time;
+	int acled_display_time;
 }disp_time_t;
 disp_time_t disp_time;
 
@@ -402,6 +403,11 @@ void set_bt_led_display_timer(int times)
    disp_time.btled_display_time = times;
    SYS_LOG_INF("btled_display_time = %d", times);
 }
+void set_ac_led_display_timer(int times)
+{
+   disp_time.acled_display_time = times;
+   SYS_LOG_INF("acled_display_time = %d", times);
+}
 
 int get_batt_led_display_timer(void)
 {
@@ -410,6 +416,14 @@ int get_batt_led_display_timer(void)
 int get_pwr_led_display_timer(void)
 {
    return disp_time.pwrled_display_time;
+}
+int get_bt_led_display_timer(void)
+{
+   return disp_time.btled_display_time;
+}
+int get_ac_led_display_timer(void)
+{
+   return disp_time.acled_display_time;
 }
 
 static void battery_status_discharge_handle(u16_t cap)
@@ -452,8 +466,7 @@ void batt_led_display_timeout(void)
 			SYS_LOG_INF("Batt_display_time = %d", disp_time.batled_display_time);
 			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
 		}	 	
-	}
-	
+	}	
 	if(disp_time.pwrled_display_time > 0){       
 		disp_time.pwrled_display_time --;
 		if(disp_time.pwrled_display_time == 0){	  
@@ -461,6 +474,20 @@ void batt_led_display_timeout(void)
 			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 		}	 	
 	}   
+	if(disp_time.btled_display_time > 0){       
+		disp_time.btled_display_time --;
+		if(disp_time.btled_display_time == 0){	  
+			SYS_LOG_INF("Bt_display_time = %d", disp_time.btled_display_time);
+			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+		}	 	
+	} 	
+	if(disp_time.acled_display_time > 0){       
+		disp_time.acled_display_time --;
+		if(disp_time.acled_display_time == 0){	  
+			SYS_LOG_INF("Bt_display_time = %d", disp_time.acled_display_time);
+			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+		}	 	
+	} 		
 }
 
 
