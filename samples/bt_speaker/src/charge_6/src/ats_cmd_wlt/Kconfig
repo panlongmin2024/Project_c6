@@ -1,0 +1,4 @@
+config WLT_ATS_ENABLE
+    bool
+    prompt "enable wlt factory test"
+    default n

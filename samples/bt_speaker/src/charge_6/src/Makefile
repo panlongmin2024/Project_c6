@@ -12,6 +12,7 @@ obj-y += run_mode/
 obj-y += app/
 obj-y += common/
 obj-y += ats_cmd/
+obj-y += ats_cmd_wlt/
 obj-y += gfp_convert_search_api/
 obj-y += pd/
 obj-y += user_app_init.o

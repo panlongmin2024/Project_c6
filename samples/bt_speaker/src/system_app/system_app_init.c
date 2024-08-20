@@ -190,7 +190,6 @@ static void main_system_check_adfu_timer(struct thread_timer *ttimer, void *expi
 		pd_srv_sync_exit();
 	}
 
-	printk("------> times %d\n",fairst);
 	if(fairst == 0){
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
 		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
@@ -228,6 +227,10 @@ extern u16_t g_reboot_type;
 extern u8_t g_reboot_reason;
 extern void user_app_later_init(void);
 extern bool main_get_enter_att_state(void);
+#endif
+#ifdef CONFIG_WLT_ATS_ENABLE
+extern bool ats_wlt_get_enter_state(void);
+extern void ats_wlt_start(void);
 #endif
 
 #ifdef CONFIG_CHARGER_APP
@@ -403,18 +406,16 @@ void system_app_init(void)
 	if( 1
 #ifdef CONFIG_BT_CONTROLER_BQB		
 		&&(!att_enter_bqb_flag)
-#endif		 
+#endif	
+#ifdef CONFIG_WLT_ATS_ENABLE
+	&& (!ats_wlt_get_enter_state())
+#endif
 #if (defined CONFIG_TOOL && defined CONFIG_ACTIONS_ATT)
 	&& (!main_get_enter_att_state())
 #endif
 	)	
 	{
-		char buf[2] = {0};
-		int ret  = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
-		printf("------> ret %d read_dat %d  odm %d\n",ret,buf[0],ReadODM());
-		if(ReadODM()!=0){
-			pd_srv_sync_init();
-		}
+		pd_srv_sync_init();
 	}
 
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
@@ -442,10 +443,28 @@ void system_app_init(void)
 #endif
 #endif
 
+#ifdef CONFIG_WLT_ATS_ENABLE
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+		/* wlt factory test start!!! */
+		bool enter_wlt_fac_test = false;
+		if(ats_wlt_get_enter_state() && (!main_get_enter_att_state())){
+			enter_wlt_fac_test = true;
+			init_bt_manager = false;
+#ifdef CONFIG_PLAYTTS
+			tts_manager_lock();
+#endif			
+			trace_init();
+			ats_wlt_start();
+		}
+#endif
+#endif
 		system_app_ota_init();
 
-
+#ifdef CONFIG_WLT_ATS_ENABLE
+		if (enter_stub_tool == false && enter_wlt_fac_test == false) {
+#else
 		if (enter_stub_tool == false) {
+#endif
 #ifdef CONFIG_CARD_READER_APP
 			if (usb_hotplug_device_mode()
 			    && !(reason == REBOOT_REASON_NORMAL)) {

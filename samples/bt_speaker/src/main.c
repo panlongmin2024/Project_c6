@@ -64,7 +64,11 @@ static void main_is_enter_att(void)
 	printk("\n %s , exit ---",__func__);
 }
 #endif
-
+#ifdef CONFIG_WLT_ATS_ENABLE
+extern void ats_wlt_enter(void);
+extern bool ats_wlt_get_enter_state(void);
+extern int ats_wlt_check_adfu(void);
+#endif
 static void main_pre_init(void)
 {
 	struct app_msg msg;
@@ -89,6 +93,12 @@ static void main_pre_init(void)
 #endif
 	enter_att_flag = false;
 	main_is_enter_att();
+#endif
+
+#ifdef CONFIG_WLT_ATS_ENABLE
+	/* check if need enter wlt factory test !! */
+	ats_wlt_enter();
+	ats_wlt_check_adfu();
 #endif
 	user_app_early_init();
 	system_pre_init();
