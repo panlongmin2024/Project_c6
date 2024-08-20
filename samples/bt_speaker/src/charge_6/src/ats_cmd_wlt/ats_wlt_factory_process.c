@@ -48,10 +48,6 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size);
 /* 测试部分方便测试架进ADFU模式 */
 int ats_wlt_check_adfu(void)
 {
-	bool key_vol_up;
-	bool key_bt_status;
-	bool dc_power_in_status;
-
 	SYS_LOG_INF("------>read odm %d\n",ReadODM());
 	if(ReadODM()){
 		/* it is not in wlt fac test mode, return; */
