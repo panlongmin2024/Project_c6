@@ -539,6 +539,7 @@ void system_app_init(void)
 #endif
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	printk("------> start!\n");
 	user_app_later_init();
 	tts_manager_add_event_lisener(main_system_tts_event_nodify);
 	if(run_mode_is_demo()&&(!dc_power_in_status_read())){
@@ -555,6 +556,7 @@ void system_app_init(void)
 			pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);
 		}
 	}
+	printk("------> end!\n");
 #endif	
 
 #ifdef CONFIG_BT_MANAGER
