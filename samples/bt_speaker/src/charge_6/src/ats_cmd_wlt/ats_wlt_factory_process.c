@@ -48,26 +48,17 @@ int ats_wlt_check_adfu(void)
 	bool key_bt_status;
 	bool dc_power_in_status;
 
-	SYS_LOG_INF("read odm %d\n",ReadODM());
+	SYS_LOG_INF("------>read odm %d\n",ReadODM());
 	if(ReadODM()){
 		/* it is not in wlt fac test mode, return; */
 		return -1;
 	}
 	
-	key_bt_status = key_bt_status_read();
-	key_vol_up = key_vol_up_status_read();
-	dc_power_in_status = dc_power_in_status_read();
-	SYS_LOG_INF("key_bt_status:%d key_vol_up down:%d, dc_power_in insert:%d\n",key_bt_status,key_vol_up,dc_power_in_status);	
-	if(key_bt_status == 1 && key_vol_up == 1 && dc_power_in_status ==1){
-		/* 去抖动 */
-		k_sleep(20);
-		key_bt_status = key_bt_status_read();
-		key_vol_up = key_vol_up_status_read();
-		dc_power_in_status = dc_power_in_status_read();		
-		if(key_bt_status == 1 && key_vol_up == 1 && dc_power_in_status ==1){
-			sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
-		}
+	SYS_LOG_INF("------>checkadfu:%d checkbqb:%d \n",check_is_wait_adfu(),main_system_is_enter_bqb());
+	if(check_is_wait_adfu() && (main_system_is_enter_bqb() == 0)){
+		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
 	}
+
 	return 0;
 }
 
