@@ -493,12 +493,12 @@ void batt_led_display_timeout(void)
 		if(disp_time.acled_display_time == 0){	  
 			SYS_LOG_INF("Ac_display_time = %d ac_led_enable = %d", disp_time.acled_display_time,mcu_ui_get_enable_auracast_led_state());
 			if(mcu_ui_get_enable_auracast_led_state()){
-				pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
-			}
-			else{
 				pd_srv_event_notify(PD_EVENT_LED_LOCK,AC_LED_STATE(0));
 				pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 				pd_srv_event_notify(PD_EVENT_LED_LOCK,AC_LED_STATE(1));
+			}
+			else{
+				pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 			}			
 			
 		}	 	
