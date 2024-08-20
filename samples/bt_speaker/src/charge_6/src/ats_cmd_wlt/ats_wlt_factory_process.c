@@ -149,7 +149,7 @@ static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 static int ats_wlt_wait_comm(struct device *dev)
 {
 	int ret = -1;
-	int times = 25;
+	int times = 50;
 	while(times--){
 		ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS,sizeof(ATS_SEND_ENTER_WLT_ATS)-1);
 	
