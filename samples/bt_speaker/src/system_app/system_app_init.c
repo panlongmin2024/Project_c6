@@ -420,7 +420,7 @@ void system_app_init(void)
 
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
 		bool enter_stub_tool = false;
-
+		
 #if (defined CONFIG_TOOL && defined CONFIG_ACTIONS_ATT)
 #if 0
 		if (tool_att_connect_try() == 0) {
@@ -494,7 +494,9 @@ void system_app_init(void)
 				}
 #endif
 #endif
+				printk("------> init 1\n");
 				if((!run_mode_is_demo())||(check_is_wait_adfu())){
+					printk("------> init 2\n");
 					system_notify_enter_charger_mode();
 					system_ready();
 
@@ -512,7 +514,7 @@ void system_app_init(void)
 
 		system_ready();
 	}
-
+	printk("------> init 3\n");
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	printf("%s:%d led_manager_set_display\n", __func__, __LINE__);
 	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);						// power led
