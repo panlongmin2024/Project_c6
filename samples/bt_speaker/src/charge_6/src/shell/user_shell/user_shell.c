@@ -171,7 +171,7 @@ static int shell_user_set_mac_name(int argc, char *argv[])
 }
 static int shell_user_reboot(int argc, char *argv[])
 {
-	printk("------> %s\n",__func___);
+	printk("------> %s\n",__func__);
 	sys_pm_reboot(REBOOT_TYPE_NORMAL);
 	return 0;
 }
