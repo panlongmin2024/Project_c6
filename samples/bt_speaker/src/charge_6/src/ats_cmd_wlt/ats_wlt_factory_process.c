@@ -58,10 +58,16 @@ int ats_wlt_check_adfu(void)
 	key_vol_up = key_vol_up_status_read();
 	dc_power_in_status = dc_power_in_status_read();
 	SYS_LOG_INF("key_bt_status:%d key_vol_up down:%d, dc_power_in insert:%d\n",key_bt_status,key_vol_up,dc_power_in_status);	
-	
 	if(key_bt_status == 1 && key_vol_up == 1 && dc_power_in_status ==1){
-		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
-	}	
+		/* 去抖动 */
+		k_sleep(20);
+		key_bt_status = key_bt_status_read();
+		key_vol_up = key_vol_up_status_read();
+		dc_power_in_status = dc_power_in_status_read();		
+		if(key_bt_status == 1 && key_vol_up == 1 && dc_power_in_status ==1){
+			sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+		}
+	}
 	return 0;
 }
 
