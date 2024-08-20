@@ -479,12 +479,12 @@ void batt_led_display_timeout(void)
 		if(disp_time.btled_display_time == 0){	  
 			SYS_LOG_INF("Bt_display_time = %d bt_led_enable = %d", disp_time.btled_display_time,mcu_ui_get_enable_bt_led_state());
 			if(mcu_ui_get_enable_bt_led_state()){
-				pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
-			}
-			else{
 				pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0));
 				pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 				pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1));
+			}
+			else{
+				pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 			}
 		}	 	
 	} 	
