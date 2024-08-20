@@ -169,6 +169,12 @@ static int shell_user_set_mac_name(int argc, char *argv[])
 
 	return 0;
 }
+static int shell_user_reboot(int argc, char *argv[])
+{
+	printk("------> %s\n",__func___);
+	sys_pm_reboot(REBOOT_TYPE_NORMAL);
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -190,6 +196,7 @@ static const struct shell_cmd commands[] = {
 	{ "set_mac", shell_user_set_mac, "user set mac"},
 	{ "set_name", shell_user_set_name, "user set name"},
 	{ "set_mac_name", shell_user_set_mac_name, "user set mac name"},
+	{ "reboot", shell_user_reboot, "user reboot"},
 	{ NULL, NULL, NULL }
 };
 
