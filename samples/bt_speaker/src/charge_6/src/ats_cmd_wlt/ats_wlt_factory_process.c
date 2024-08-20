@@ -45,17 +45,19 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size);
 int ats_wlt_check_adfu(void)
 {
 	bool key_vol_up;
+	bool key_bt_status;
 	bool dc_power_in_status;
-
-	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
-	u32_t val;
-	gpio_pin_configure(gpio_dev, CONFIG_WLT_ATS_GPIO_ADFU_PIN, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
-	k_sleep(10);
-	gpio_pin_read(gpio_dev, CONFIG_WLT_ATS_GPIO_ADFU_PIN, &val);
-	key_vol_up = (bool)val;
+	if(!ReadODM()){
+		/* it is not in wlt fac test mode, return; */
+		return -1;
+	}
+	
+	key_bt_status = key_bt_status_read();
+	key_vol_up = key_vol_up_status_read();
 	dc_power_in_status = dc_power_in_status_read();
-	SYS_LOG_INF("key_vol_up down:%d, dc_power_in insert:%d\n",key_vol_up, dc_power_in_status);	
-	if(key_vol_up == 1){
+	SYS_LOG_INF("key_bt_status:%d key_vol_up down:%d, dc_power_in insert:%d\n",key_bt_status,key_vol_up,dc_power_in_status);	
+	
+	if(key_bt_status == 1 && key_vol_up == 1 && dc_power_in_status ==1){
 		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
 	}	
 	return 0;
@@ -139,7 +141,7 @@ static void ats_wlt_enter_success(struct device *dev, u8_t *buf, int len)
 static int ats_wlt_wait_comm(struct device *dev)
 {
 	int ret = -1;
-	int times = 15;
+	int times = 25;
 	while(times--){
 		ats_wlt_write_data(ATS_SEND_ENTER_WLT_ATS,sizeof(ATS_SEND_ENTER_WLT_ATS)-1);
 	
