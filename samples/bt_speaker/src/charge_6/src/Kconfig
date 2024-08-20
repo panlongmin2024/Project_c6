@@ -3,6 +3,7 @@ source "samples/bt_speaker/src/charge_6/src/external_dsp/Kconfig"
 #source "samples/bt_speaker/src/charge_6/src/logic_mcu/Kconfig"
 source "samples/bt_speaker/src/charge_6/src/shell/Kconfig"
 source "samples/bt_speaker/src/charge_6/src/pd/Kconfig"
+source "samples/bt_speaker/src/charge_6/src/ats_cmd_wlt/Kconfig"
 
 config C_EXTERNAL_DSP
     bool

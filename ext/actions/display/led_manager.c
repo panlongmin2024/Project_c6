@@ -185,13 +185,6 @@ int led_manager_set_display(u16_t led_index, u8_t onoff, u32_t timeout, led_disp
 	int manager_led_index = led_index%128;
 	struct led_state_t *led_state = &ctx->image.led_state[manager_led_index];
 
-	extern uint8_t ReadODM(void);
-	if(ReadODM() == 0x00)
-		{
-		return 0;
-		}
-
-
 	os_mutex_lock(&led_manager_mutex, OS_FOREVER);
 	if (!ctx->update_direct) {
 		led_state->mode = onoff;

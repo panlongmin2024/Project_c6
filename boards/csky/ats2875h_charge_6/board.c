@@ -524,7 +524,6 @@ bool dc_power_in_status_read(void)
    }
  else
  {
- 		return true;
 	   #ifdef CONFIG_3NODS_PRO_EV_HW_2
 		return (val == 0);
 	  #else
@@ -596,7 +595,6 @@ void check_adfu_gpio_key(void)
 		}	
 	}
 	while(1);
-	wait_adfu_flag = 1;
 }
 
 
