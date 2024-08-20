@@ -37,6 +37,10 @@ extern u8_t fw_version_get_hw_code(void);
 extern int user_uuid_verify(void);
 extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
 extern char *bin2hex(char *dst, const void *src, unsigned long count);
+extern int check_is_wait_adfu(void);
+#ifdef CONFIG_BT_CONTROLER_BQB
+extern bool main_system_is_enter_bqb(void);
+#endif
 int ats_wlt_deinit(void);
 uint8_t ReadODM(void);
 int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size);
@@ -53,11 +57,17 @@ int ats_wlt_check_adfu(void)
 		/* it is not in wlt fac test mode, return; */
 		return -1;
 	}
-	
+#ifdef CONFIG_BT_CONTROLER_BQB
 	SYS_LOG_INF("------>checkadfu:%d checkbqb:%d \n",check_is_wait_adfu(),main_system_is_enter_bqb());
 	if(check_is_wait_adfu() && (main_system_is_enter_bqb() == 0)){
 		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
+	}	
+#else
+	SYS_LOG_INF("------>checkadfu:%d\n",check_is_wait_adfu());
+	if(check_is_wait_adfu()){
+		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
 	}
+#endif
 
 	return 0;
 }
