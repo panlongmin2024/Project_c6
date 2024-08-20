@@ -500,7 +500,6 @@ void batt_led_display_timeout(void)
 			else{
 				pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 			}			
-			
 		}	 	
 	} 		
 }
