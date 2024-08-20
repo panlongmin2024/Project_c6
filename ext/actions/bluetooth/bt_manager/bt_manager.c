@@ -400,7 +400,7 @@ static void bt_manager_notify_connected(struct bt_mgr_dev_info *info)
 		return;
 	}
 
-	SYS_LOG_INF("%s,%d %d\n", (char *)info->name,info->timeout_disconnected,info->auto_reconnect);
+	SYS_LOG_INF("%s,%d %d 0x%x\n", (char *)info->name,info->timeout_disconnected,info->auto_reconnect,info);
 #ifdef ABNORMAL_OFFLINE_SHIELDING_SYSTEM_NOTIFICATION
 	if (info->timeout_disconnected == 1 && info->auto_reconnect) {
 	   tmp_flag = 0;
@@ -481,7 +481,7 @@ static void bt_manager_check_disconnect_notify(struct bt_mgr_dev_info *info, uin
 		}
 	}
 
-	SYS_LOG_INF("reason:0x%x phone:%d", reason, bt_manager_get_connected_dev_num());
+	SYS_LOG_INF("reason:0x%x phone:%d 0x%x", reason, bt_manager_get_connected_dev_num(),info);
 }
 
 /* return 0: accept connect request, other: rejuect connect request
