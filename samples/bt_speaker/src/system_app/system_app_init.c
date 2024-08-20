@@ -417,7 +417,7 @@ void system_app_init(void)
 	{
 		pd_srv_sync_init();
 	}
-
+	printk("------> init 3\n");
 	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
 		bool enter_stub_tool = false;
 		

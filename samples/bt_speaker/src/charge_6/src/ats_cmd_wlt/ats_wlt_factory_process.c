@@ -47,7 +47,7 @@ int ats_wlt_check_adfu(void)
 	bool key_vol_up;
 	bool key_bt_status;
 	bool dc_power_in_status;
-	if(!ReadODM()){
+	if(ReadODM()){
 		/* it is not in wlt fac test mode, return; */
 		return -1;
 	}
