@@ -343,7 +343,7 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 			/* 1.key up,need reset */
 			isNeedReset = true;
 		}
-		if(get_batt_led_display_timer()==0){
+		if(get_batt_led_display_timer()<=0){
 			/* 2.batled off ,need reset */
 			isNeedReset = true;
 		}
