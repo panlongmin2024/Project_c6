@@ -460,12 +460,13 @@ static void battery_status_discharge_handle(u16_t cap)
 /* 保证关机所有的LED同步灭 */
 void batt_led_display_timeout(void)
 {
-	if(disp_time.batled_display_time > 0){     
-		disp_time.batled_display_time --;
+	if(disp_time.batled_display_time >= 0){     
+		
 		if(disp_time.batled_display_time == 0){	  
 			SYS_LOG_INF("Batt_display_time = %d", disp_time.batled_display_time);
-			battery_discharge_remaincap_low_5();
-		}	 	
+			battery_charging_remaincap_is_full();
+		}	
+		disp_time.batled_display_time --;
 	}	
 	if(disp_time.pwrled_display_time > 0){       
 		disp_time.pwrled_display_time --;
