@@ -460,22 +460,21 @@ static void battery_status_discharge_handle(u16_t cap)
 /* 保证关机所有的LED同步灭 */
 void batt_led_display_timeout(void)
 {
-	if(disp_time.batled_display_time > 0){     
-		disp_time.batled_display_time --;
+	if(disp_time.batled_display_time >= 0){     
 		if(disp_time.batled_display_time == 0){	  
 			SYS_LOG_INF("Batt_display_time = %d", disp_time.batled_display_time);
 			battery_charging_remaincap_is_full();
-		}	 	
+		}
+		disp_time.batled_display_time --;
 	}	
-	if(disp_time.pwrled_display_time > 0){       
-		disp_time.pwrled_display_time --;
+	if(disp_time.pwrled_display_time >= 0){       	
 		if(disp_time.pwrled_display_time == 0){	  
 			SYS_LOG_INF("Pwr_display_time = %d", disp_time.pwrled_display_time);
 			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
-		}	 	
+		}	
+		disp_time.pwrled_display_time --;
 	}   
-	if(disp_time.btled_display_time > 0){       
-		disp_time.btled_display_time --;
+	if(disp_time.btled_display_time >= 0){       
 		if(disp_time.btled_display_time == 0){	  
 			SYS_LOG_INF("Bt_display_time = %d bt_led_enable = %d", disp_time.btled_display_time,mcu_ui_get_enable_bt_led_state());
 			if(mcu_ui_get_enable_bt_led_state()){
@@ -486,10 +485,10 @@ void batt_led_display_timeout(void)
 			else{
 				mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_BT,0);
 			}
-		}	 	
+		}
+		disp_time.btled_display_time --;
 	} 	
-	if(disp_time.acled_display_time > 0){       
-		disp_time.acled_display_time --;
+	if(disp_time.acled_display_time >= 0){       
 		if(disp_time.acled_display_time == 0){	  
 			SYS_LOG_INF("Ac_display_time = %d ac_led_enable = %d", disp_time.acled_display_time,mcu_ui_get_enable_auracast_led_state());
 			if(mcu_ui_get_enable_auracast_led_state()){
@@ -500,7 +499,8 @@ void batt_led_display_timeout(void)
 			else{
 				mcu_ui_send_led_code(MCU_SUPPLY_PROP_LED_PTY_BOOST,0);
 			}			
-		}	 	
+		}	
+		disp_time.acled_display_time --;
 	} 		
 }
 
