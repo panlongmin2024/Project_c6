@@ -1282,7 +1282,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
 
             break;
 
-        case MCU_INT_TYPE_WATER:
+        case MCU_INT_TYPE_WATER:             
             if(para->mcu_event_val == MCU_INT_CMD_WATER_IN)
             {
                 int charge_flag;

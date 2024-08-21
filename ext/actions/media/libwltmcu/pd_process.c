@@ -1772,11 +1772,11 @@ int pd_manager_deinit(int value)
 
     thread_timer_stop(&wlt_pd_manager->timer);
     pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);                // stop pd timer;
-    k_sleep(30);
+    k_sleep(80);
 
     pd_manager_v_sys_g1_g2(PD_V_BUS_G1_G2_DEINIT);
     pd_manager_send_cmd_code(PD_SUPPLY_PROP_POWERDOWN, value);
-    k_sleep(100);
+    k_sleep(150);
     bt_mcu_send_pw_cmd_powerdown();
 
     return 0;
