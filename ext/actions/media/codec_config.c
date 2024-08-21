@@ -138,7 +138,7 @@ const codec_config_info_t codec_config[] =
 	#ifdef CONFIG_DECODER_MP3_HW_ACCELERATION
 		.hw_acceleration = true,
 		.ops = NULL,
-		.dsp_dec_lib = "adMP3.dsp",
+		.dsp_dec_lib = "adMUSIC.dsp",
 		.dsp_effect_lib = "PREPRO.dsp",
 	#else
 		.hw_acceleration = false,

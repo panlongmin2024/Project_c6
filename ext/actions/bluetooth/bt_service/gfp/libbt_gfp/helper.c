@@ -464,10 +464,6 @@ int perform_key_based_pairing(uint8_t* request, int request_length)
 
 	SYS_LOG_INF("len:%d writed:%d", request_length,ble_account_info.account_key_writed);
 
-	if(request_length == AES_BLOCK_SIZE + ECDH_PUBLIC_KEY_SIZE){
-		//bluetooth_provider->begin_pairing_mode();
-	}
-
 	ret = init_key_based_pairing(request, request_length);
 
 	if(!ret){

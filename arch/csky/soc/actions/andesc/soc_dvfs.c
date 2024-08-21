@@ -35,51 +35,11 @@ struct dvfs_manager {
 static sys_dlist_t dvfs_notify_list = SYS_DLIST_STATIC_INIT(&dvfs_notify_list);
 
 
-/**
- * 1/ The following CPU&DSP clock frequencies are forbidden.
- *	[84, 90, 96, 102, 120, 144, 150, 162, 174, 186, 204, 222, 240, 246, 270, 300, 306, 354].
- *
- * 2/ The ratio of CPU and DSP is suggested to less than (8/16), otherwise to increase VDD voltage.
- *
- * 3/ The max CPU&DSP frequency during different VDD voltage as shown below:
- *	VDD:1.1V   -->	{CPU:156, DSP:216}
- *	VDD:1.15V -->	{CPU:180, DSP:258}
- *	VDD:1.2V   -->	{CPU:210, DSP:294}
- *	VDD:1.25V -->	{CPU:234, DSP:324}
- *	VDD:1.3V   -->	{CPU:264, DSP:342}
- */
-static struct dvfs_level default_soc_dvfs_table[] = {
-	/* level                       enable_cnt cpu_freq,  dsp_freq, ahb_freq, vdd_volt  */
-	{SOC_DVFS_LEVEL_IDLE,              0,         60,        60,      30,        1100}, /* CPU:60 DSP:60 HCLK:30 */
-	{SOC_DVFS_LEVEL_MCU_PERFORMANCE,   0,        180,       180,      90,        1300}, /* CPU:78 DSP:78 HCLK:39  */
-	{SOC_DVFS_LEVEL_NORMAL,            0,        180,       180,      90,        1300}, /* CPU:66 DSP:132 HCLK:33 */
-	{SOC_DVFS_LEVEL_SINGLE_MUSIC,      0,        180,       180,      90,        1300},  /* CPU:132 DSP:132 HCLK:66 */
-	{SOC_DVFS_LEVEL_DSP_ENCOM_PERFM,   0,        180,       180,      90,        1300}, /* CPU:123 DSP:180 HCLK:61 */
-	{SOC_DVFS_LEVEL_DSP_PERFORMANCE,   0,        180,       180,      90,        1300}, /* CPU:180 DSP:180 HCLK:45 */
-
-#ifdef CONFIG_SPDIF_IN_APP
-	{SOC_DVFS_LEVEL_ALL_PERFORMANCE,   0, SPDIF_RX_COREPLL_MHZ, SPDIF_RX_COREPLL_MHZ, 49, 1200}, /* CPU:198 DSP:198 HCLK:49 */
-#else
-	{SOC_DVFS_LEVEL_ALL_PERFORMANCE,   0,        180,       180,      90,        1300}, /* CPU:180 DSP:180 HCLK:45 */
-#endif
-
-	{SOC_DVFS_LEVEL_HIGH_PERFORMANCE, 0,         198,       198,      99,        1300},
-
-	/* LE audio slave */
-	{SOC_DVFS_LEVEL_LE_AUDIO_SLAVE_PERFORMANCE, 	0,        180,       180,      90,        1300}, /* CPU:129 DSP:258 HCLK:32 */
-	{SOC_DVFS_LEVEL_MASTER_PERFORMANCE,0,        180,       180,      90,        1300}, /* CPU:175 DSP:234 HCLK:43 */
-	{SOC_DVFS_LEVEL_CSB_PERFORMANCE,   0,        180,       180,      90,        1300}, /* CPU:234 DSP:234 HCLK:58 */
-	/* BR */
-	{SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, 0,		 234,		234,	  112,        1300}, /* CPU:234 DSP:234 HCLK:58 */
-	/* BR slave + LE audio master */
-	{SOC_DVFS_LEVEL_LE_AUDIO_BR_MASTER_PERFORMANCE,    0,        171,       342,      86,        1300}, /* CPU:141 DSP:324 HCLK:35 */
-	/* USB device */
-	{SOC_DVFS_LEVEL_FULL_PERFORMANCE,  0,        171,       342,      86,        1300}, /* CPU:171 DSP:342 HCLK:42 */
-	/* USB audio sink/source + LE audio master */
-	{SOC_DVFS_LEVEL_LE_AUDIO_USB_MASTER_PERFORMANCE,   0,		171,	   342, 	 86, 	 1300}, /* CPU:171 DSP:342 HCLK:42 */
-};
 
 struct dvfs_manager g_soc_dvfs;
+
+struct dvfs_level *soc_dvfs_get_default_dvfs_table(void);
+uint32_t soc_dvfs_get_default_dvfs_table_items(void);
 
 static int level_id_to_tbl_idx(int level_id)
 {
@@ -410,11 +370,11 @@ int soc_dvfs_get_process_mhz(int type)
 	}
 
     if (type == 1) {
-        return default_soc_dvfs_table[level].dsp_freq;
+        return g_soc_dvfs.dvfs_level_tbl[level].dsp_freq;
     } else if (type == 2) {
-		return default_soc_dvfs_table[level].ahb_freq;
+		return g_soc_dvfs.dvfs_level_tbl[level].ahb_freq;
 	} else {
-        return default_soc_dvfs_table[level].cpu_freq;
+        return g_soc_dvfs.dvfs_level_tbl[level].cpu_freq;
     }
 }
 
@@ -433,8 +393,8 @@ static int soc_dvfs_init(struct device *arg)
 		soc_pmu_get_vdd_voltage());
 
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
-	soc_dvfs_set_freq_table(default_soc_dvfs_table,
-		ARRAY_SIZE(default_soc_dvfs_table));
+	soc_dvfs_set_freq_table(soc_dvfs_get_default_dvfs_table(),
+		soc_dvfs_get_default_dvfs_table_items());
 
 	k_sem_init(&g_soc_dvfs.lock, 1, 1);
 

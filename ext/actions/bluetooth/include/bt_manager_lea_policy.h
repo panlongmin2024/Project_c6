@@ -60,7 +60,7 @@ void bt_manager_lea_policy_disable(uint8_t adv_enable);
 
 void bt_manager_lea_policy_enable(void);
 
-void bt_manager_lea_policy_ctx_init(void);
+void bt_manager_lea_policy_ctx_init(uint8_t enable);
 
 #endif /*__BT_MANAGER_LEA_POLICY_H__*/
 

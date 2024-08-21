@@ -224,6 +224,7 @@ enum {
 	BT_LINK_EV_ACL_DISCONNECTED,
 	BT_LINK_EV_GET_NAME,
 	BT_LINK_EV_ROLE_CHANGE,
+	BT_LINK_EV_KEY_MISS,
 	BT_LINK_EV_SECURITY_CHANGED,
 	BT_LINK_EV_HF_CONNECTED,
 	BT_LINK_EV_HF_DISCONNECTED,
@@ -1434,6 +1435,8 @@ struct bt_audio_config {
 
 	uint32_t target_announcement : 1;
 
+	uint32_t lea_connection_enable : 1;
+
 	/* whether support pacs_client */
 	uint32_t pacs_cli_num : 1;
 	/* whether support unicast_client */
@@ -2383,6 +2386,8 @@ int btif_audio_conn_param_init(struct bt_le_conn_param *param);
 int btif_audio_conn_idle_param_init(struct bt_le_conn_param *param);
 int btif_audio_start(void);
 int btif_audio_stop(void);
+int btif_audio_services_enable(void);
+int btif_audio_services_disable(void);
 int btif_audio_pause(void);
 int btif_audio_resume(void);
 int btif_audio_pause_scan(void);
@@ -2704,6 +2709,8 @@ typedef enum {
 	BTSRV_GFP_BLE_CONNECTED,
 	/** notifying that gfp ble disconnected */
 	BTSRV_GFP_BLE_DISCONNECTED,
+    /** notifying that gfp initial pairing*/
+    BTSRV_GFP_INITIAL_PAIRING,
 } btsrv_gfp_event_e;
 
 typedef void (*btsrv_gfp_callback)(uint16_t hdl, btsrv_gfp_event_e event, void *packet, int size);

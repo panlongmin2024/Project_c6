@@ -111,7 +111,8 @@ int charger_mode_check(void)
 	extern bool main_system_is_enter_bqb(void);
 #endif	
 	
-	if((run_mode_is_demo() == true) || (check_is_wait_adfu())
+	// if((run_mode_is_demo() == true) || (check_is_wait_adfu())
+	if((check_is_wait_adfu())
 #ifdef CONFIG_BT_CONTROLER_BQB	
 	|| (main_system_is_enter_bqb())
 #endif	
@@ -175,7 +176,7 @@ int charger_mode_check(void)
 
 
 			case MSG_EXIT_APP:
-				if(power_manager_get_battery_capacity() > 5)
+				if(power_manager_get_battery_capacity() > DEFAULT_NOPOWER_CAP_LEVEL)
 				{
 					terminaltion = true;
 					SYS_LOG_INF("%d MSG_EXIT_APP\n",__LINE__);

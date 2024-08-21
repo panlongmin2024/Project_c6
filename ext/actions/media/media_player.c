@@ -50,7 +50,7 @@ static int current_media_main_player_stream_type;
 
 static media_player_t *current_media_music_player;
 static int current_media_music_player_stream_type;
-int dsp_bypass_enable;
+
 extern int ext_dsp_set_bypass(int bypass);
 #endif
 
@@ -183,7 +183,8 @@ static int _media_player_check_audio_effect(media_player_t *handle, int stream_t
 		effect_enable = false;
 	#else
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-		effect_enable = self_music_effect_ctrl_get_enable();
+		//effect_enable = self_music_effect_ctrl_get_enable();
+		effect_enable = false;
 	#endif
 	#endif
 		break;
@@ -222,7 +223,7 @@ media_player_t *media_player_open(media_init_param_t *init_param)
 {
 	struct app_msg msg = {0};
 	os_sem return_notify;
-	media_srv_init_param_t srv_param;
+	media_srv_init_param_t srv_param = {0};
 #ifdef CONFIG_DVFS_DYNAMIC_LEVEL
 	int dvfs_level = DVFS_LEVEL_NORMAL;
 #endif
@@ -405,7 +406,7 @@ int media_player_play(media_player_t *handle)
 #ifdef CONFIG_SYS_WAKELOCK
 	os_mutex_lock(&media_srv_mutex, OS_FOREVER);
 	media_player_lock_cnt++;
-	SYS_LOG_INF("count:%d", media_player_lock_cnt);
+	SYS_LOG_INF("count:%d %p", media_player_lock_cnt, __builtin_return_address(0));
 	sys_wake_lock(WAKELOCK_PLAYER);
 	os_mutex_unlock(&media_srv_mutex);
 #endif
@@ -433,7 +434,7 @@ int media_player_stop(media_player_t *handle)
 #ifdef CONFIG_SYS_WAKELOCK
 	os_mutex_lock(&media_srv_mutex, OS_FOREVER);
 	media_player_lock_cnt--;
-	SYS_LOG_INF("count:%d", media_player_lock_cnt);
+	SYS_LOG_INF("count:%d %p", media_player_lock_cnt, __builtin_return_address(0));
 	if (media_player_lock_cnt == 0) {
 		sys_wake_unlock(WAKELOCK_PLAYER);
 	}
@@ -457,7 +458,7 @@ int media_player_stop(media_player_t *handle)
 	SYS_EVENT_INF(EVENT_PLAYER_STOP, handle->type, (((int)handle)), media_player_lock_cnt, ret);
 
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-	if((dsp_bypass_enable == 0)){
+	if((self_music_effect_ctrl_get_enable() == true)){
 		ext_dsp_set_bypass(0);
 	}
 	#endif
@@ -943,14 +944,14 @@ int media_player_get_output_energy_sample(media_player_t *handle, int type, void
 {
 	media_srv_param_t srv_param;
 
+	if (!handle || !handle->media_srv_handle) {
+		return -EINVAL;
+	}
+
 	srv_param.handle = handle->media_srv_handle;
 	srv_param.param.type = type;
 	srv_param.param.pbuf = param;
 	srv_param.param.plen = param_len;
-
-	if (!handle || !handle->media_srv_handle) {
-		return -EINVAL;
-	}
 
 	media_srv_handle_t *media_handle = (media_srv_handle_t *)handle->media_srv_handle;
 	if (media_handle->subsrv_handles[MEDIA_PLAYBACK]) {

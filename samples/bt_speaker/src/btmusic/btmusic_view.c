@@ -266,7 +266,9 @@ void btmusic_view_init(void)
 	/**don't notify tts when switch from btcall gma is the same*/
 	if (desktop_manager_get_last_plugin_id() != DESKTOP_PLUGIN_ID_BR_CALL) {
 		if(!btmusic_get_auracast_mode()){
-			sys_event_notify(SYS_EVENT_ENTER_BTMUSIC);
+			if (desktop_manager_get_last_plugin_id() == DESKTOP_PLUGIN_ID_UAC) {
+				sys_event_notify(SYS_EVENT_ENTER_BTMUSIC);
+			}
 			if (bt_manager_audio_get_cur_dev_num() == 0) {
 				sys_event_notify(SYS_EVENT_BT_WAIT_PAIR);
 			}

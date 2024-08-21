@@ -1532,6 +1532,73 @@ static void foreach_attr_type_dyndb(uint16_t start_handle, uint16_t end_handle,
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 }
 
+struct disabled_svc {
+	const struct bt_gatt_service_static *svc;
+	sys_snode_t node;
+};
+/* list of disabled gatt svc */
+static sys_slist_t disabled_svcs = {NULL, NULL};
+
+void bt_gatt_svc_disable(const struct bt_gatt_service_static *svc)
+{
+	struct disabled_svc *svc_node;
+
+	if (!svc) {
+		BT_ERR("no svc");
+		return;
+	}
+
+	svc_node = bt_malloc(sizeof(struct disabled_svc));
+	if (!svc_node) {
+		BT_ERR("no mem");
+		return;
+	}
+	svc_node->svc = svc;
+	sys_slist_append(&disabled_svcs, &svc_node->node);
+	BT_INFO("disable svc:%p",svc);
+}
+
+void bt_gatt_svc_enable(const struct bt_gatt_service_static *svc)
+{
+	struct disabled_svc *svc_node;
+
+	if (!svc) {
+		BT_ERR("no svc");
+		return;
+	}
+
+	if (sys_slist_is_empty(&disabled_svcs)) {
+		BT_ERR("svcs empty");
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&disabled_svcs, svc_node, node) {
+		if (svc_node->svc == svc) {
+			sys_slist_find_and_remove(&disabled_svcs,&svc_node->node);
+			bt_free(svc_node);
+			BT_INFO("enable svc:%p",svc);
+		}
+	}
+}
+
+static uint8_t bt_gatt_is_svc_disabled(const struct bt_gatt_service_static *svc)
+{
+	struct disabled_svc *svc_node;
+
+	if (!svc) {
+		BT_ERR("no svc");
+		return 0;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&disabled_svcs, svc_node, node) {
+		if (svc_node->svc == svc) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 			       const struct bt_uuid *uuid,
 			       const void *attr_data, uint16_t num_matches,
@@ -1547,8 +1614,14 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 		uint16_t handle = 1;
 
 		Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
+
 			/* Skip ahead if start is not within service handles */
 			if (handle + static_svc->attr_count < start_handle) {
+				handle += static_svc->attr_count;
+				continue;
+			}
+
+			if (bt_gatt_is_svc_disabled(static_svc)) {
 				handle += static_svc->attr_count;
 				continue;
 			}

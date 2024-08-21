@@ -471,7 +471,9 @@ bool btsrv_rdm_is_spp_connected(struct bt_conn *base_conn);
 bool btsrv_rdm_is_hid_connected(struct bt_conn *base_conn);
 bool btsrv_rdm_is_ios_pc(struct bt_conn *base_conn);
 bool btsrv_rdm_is_ios_dev(struct bt_conn *base_conn);
+bool btsrv_rdm_is_a2dp_signal_connected(struct bt_conn *base_conn);
 int btsrv_rdm_set_a2dp_connected(struct bt_conn *base_conn, bool connected);
+int btsrv_rdm_set_a2dp_signal_connected(struct bt_conn *base_conn, bool connected);
 void btsrv_rdm_a2dp_set_clear_priority(struct bt_conn *base_conn, uint8_t prio, uint8_t set);
 uint8_t btsrv_rdm_a2dp_get_priority(struct bt_conn *base_conn);
 void btsrv_rdm_a2dp_set_start_stop_time(struct bt_conn *base_conn, uint32_t time, uint8_t start);
@@ -1190,6 +1192,10 @@ int btsrv_audio_stop(void);
 int btsrv_audio_pause_scan(void);
 
 int btsrv_audio_resume_scan(void);
+
+int btsrv_audio_services_enable(void);
+
+int btsrv_audio_services_disable(void);
 
 int btsrv_audio_adv_control(int pause);
 

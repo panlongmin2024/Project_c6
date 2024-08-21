@@ -50,14 +50,14 @@ config SYS_WAKELOCK
 config AUTO_STANDBY_TIME_SEC
     int "delay how long (second) to enter standby"
     depends on SYS_STANDBY
-	default 1200
+	default 1170
     help
     This option set the time to enter standby when system idle
 
 config AUTO_POWEDOWN_TIME_SEC
     int "delay how long (second) to auto power down"
     depends on SYS_STANDBY
-	default 1198
+	default 1169
     help
     This option set the time to enter auto power down
 
@@ -137,3 +137,4 @@ source "ext/actions/system/tts/Kconfig"
 source "ext/actions/system/fs_manager/Kconfig"
 source "ext/actions/system/fm/Kconfig"
 source "ext/actions/system/act_event/Kconfig"
+source "ext/actions/system/serial_flasher/Kconfig"

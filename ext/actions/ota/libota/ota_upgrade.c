@@ -119,7 +119,7 @@ struct ota_upgrade_info {
 	const char *public_key;
 };
 
-static void ota_update_state(struct ota_upgrade_info *ota, enum ota_state state)
+static int ota_update_state(struct ota_upgrade_info *ota, enum ota_state state)
 {
     int old_state = OTA_STATE_MAX;
 
@@ -131,8 +131,10 @@ static void ota_update_state(struct ota_upgrade_info *ota, enum ota_state state)
 	}
 
 	if (ota->notify) {
-		ota->notify(state, old_state);
+		return ota->notify(state, old_state);
 	}
+
+	return 0;
 }
 
 static int ota_partition_erase_part(struct ota_upgrade_info *ota,
@@ -693,6 +695,9 @@ static int ota_calc_write_seg_size(struct ota_upgrade_info *ota)
 	return (ota->data_buf_size / unit_size) * unit_size;
 }
 
+
+
+
 static int ota_write_file_partition(struct ota_upgrade_info *ota, struct ota_file *file, uint32_t offs, uint8_t *data, uint32_t size)
 {
 	int ret;
@@ -1208,6 +1213,20 @@ static int ota_do_upgrade(struct ota_upgrade_info *ota)
 	return 0;
 }
 
+int ota_boot_image_is_verify_done(struct ota_upgrade_info *ota, struct ota_file *file)
+{
+	struct ota_breakpoint *bp = &ota->bp;
+	int bp_file_state;
+
+	bp_file_state = ota_breakpoint_get_file_state(bp, file->file_id);
+
+	if(bp_file_state == OTA_BP_FILE_STATE_VERIFY_PASS){
+		return true;
+	}else{
+		return false;
+	}
+}
+
 static int ota_write_boot_image(struct ota_upgrade_info *ota)
 {
 	const struct partition_entry *part, *boot_part = NULL, *param_part = NULL;
@@ -1248,6 +1267,13 @@ static int ota_write_boot_image(struct ota_upgrade_info *ota)
 
 	/* write param file at last */
 	if (param_file && param_part) {
+
+		if (ota_use_no_version_control(ota)) {
+			if (ota_boot_image_is_verify_done(ota, param_file) == 0){
+				return 0;
+			}
+		}
+
 		/* write param file at mirror part */
 		err = ota_write_and_verify_file(ota, param_part, param_file, true);
 		if (err) {
@@ -1267,7 +1293,6 @@ static int ota_write_boot_image(struct ota_upgrade_info *ota)
 
 static int ota_write_temp_img(struct ota_upgrade_info *ota)
 {
-	struct ota_image *img = ota->img;
 	const struct partition_entry *temp_part;
 	int err;
 	struct ota_file tmp_file;
@@ -1275,11 +1300,8 @@ static int ota_write_temp_img(struct ota_upgrade_info *ota)
 
 	file = &tmp_file;
 	memset(file, 0x0, sizeof(struct ota_file));
-	file->size = ota_image_get_file_length(img, NULL);
 
-	if(ota_use_secure_boot(ota)) {
-		file->size += OTA_SIGNATURE_DATA_LEN;
-	}
+	file->size = ota_upgrade_get_temp_img_size(ota);
 
 	file->file_id = PARTITION_FILE_ID_OTA_TEMP;
 
@@ -1464,6 +1486,21 @@ static int ota_upgrade_write_xml(struct ota_upgrade_info *ota)
 }
 #endif
 
+int ota_upgrade_get_temp_img_size(struct ota_upgrade_info *ota)
+{
+	int file_size;
+	struct ota_image *img = ota->img;
+
+	file_size = ota_image_get_file_length(img, NULL);
+
+	if(ota_use_secure_boot(ota)) {
+		file_size += OTA_SIGNATURE_DATA_LEN;
+	}
+
+	return file_size;
+}
+
+
 static int ota_upgrade_statistics(struct ota_upgrade_info *ota)
 {
 	const struct partition_entry *part;
@@ -1521,10 +1558,7 @@ static int ota_upgrade_statistics(struct ota_upgrade_info *ota)
 			if (bp_file_state == OTA_BP_FILE_STATE_WRITING_CLEAN
 				|| bp_file_state == OTA_BP_FILE_STATE_WRITING)
 				start_write_offset = bp->cur_file_write_offset;
-			temp_file_size = ota_image_get_file_length(ota->img, NULL);
-			if(ota_use_secure_boot(ota)) {
-				temp_file_size += OTA_SIGNATURE_DATA_LEN;
-			}
+			temp_file_size = ota_upgrade_get_temp_img_size(ota);
 			ota_size += (temp_file_size - start_write_offset);
 			total_size += temp_file_size;
 		}
@@ -1666,6 +1700,8 @@ int ota_upgrade_check(struct ota_upgrade_info *ota, struct ota_upgrade_check_par
 			goto exit;
 		}
 		ota_breakpoint_update_state(bp, OTA_BP_STATE_UPGRADE_DONE);
+
+		ota_update_state(ota, OTA_UPLOADING);
 	}
 	else {
 		ota_breakpoint_update_state(bp, OTA_BP_STATE_WRITING_IMG);
@@ -1687,12 +1723,16 @@ int ota_upgrade_check(struct ota_upgrade_info *ota, struct ota_upgrade_check_par
 			goto exit;
 		}
 
+		err = ota_update_state(ota, OTA_UPLOADING);
+
+		if(err){
+			goto exit;
+		}
+
 		ota_breakpoint_update_state(bp, OTA_BP_STATE_UPGRADE_PENDING);
 	}
 
 	SYS_LOG_INF("upgrade successfully!");
-
-	ota_update_state(ota, OTA_UPLOADING);
 
 	ota_image_report_progress(ota->img, 0, 1);
 	ota_image_ioctl(ota->img, OTA_BACKEND_IOCTL_REPORT_IMAGE_VALID, 1);
@@ -1791,6 +1831,7 @@ int ota_upgrade_is_ota_running(void)
 	switch (bp_state) {
 	case OTA_BP_STATE_UPGRADE_PENDING:
 	case OTA_BP_STATE_UPGRADE_WRITING:
+	case OTA_BP_STATE_WRITING_IMG:
 	case OTA_BP_STATE_UPGRADE_DONE:
 		return 1;
 	default:

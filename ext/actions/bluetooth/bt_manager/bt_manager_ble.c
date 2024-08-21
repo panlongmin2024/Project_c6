@@ -195,7 +195,7 @@ static void param_update_work_callback(struct k_work *work)
 	}
 #endif
 
-	if (bt_manager_config_pts_test()) {
+	if (IS_ENABLED(CONFIG_BT_LEA_PTS_TEST)) {
 		return;
 	}
 
@@ -423,11 +423,30 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 	SYS_EVENT_INF(EVENT_LE_PARAM_UPDATED, (uint32_t)conn, interval, latency, timeout);
 }
 
+#if defined(CONFIG_BT_SMP)
+static void le_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
+			   const bt_addr_le_t *identity)
+{
+	char addr_identity[BT_ADDR_LE_STR_LEN];
+	char addr_rpa[BT_ADDR_LE_STR_LEN];
+
+	hostif_bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
+	hostif_bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
+
+	/* TODO: notify for the app layer if needed */
+
+	SYS_LOG_INF("%s -> %s", addr_rpa, addr_identity);
+}
+#endif
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
 	.le_param_req = le_param_req,
 	.le_param_updated = le_param_updated,
+#if defined(CONFIG_BT_SMP)
+	.identity_resolved = le_identity_resolved,
+#endif
 };
 
 static int ble_notify_data(struct bt_conn *conn, struct bt_gatt_attr *attr, uint8_t *data, uint16_t len)
@@ -608,6 +627,10 @@ static void _bt_manager_gfp_callback(uint16_t hdl, btsrv_gfp_event_e event, void
         bt_manager_event_notify(BT_GFP_BLE_DISCONNECTED, NULL, 0);
 	    break;
 
+        case BTSRV_GFP_INITIAL_PAIRING:
+        bt_manager_event_notify(BT_GFP_BLE_INITIAL_PAIRING, NULL, 0);
+        break;
+
         default:
 	    break;
     }
@@ -713,7 +736,7 @@ void bt_manager_ble_deinit(void)
 		ble_conn = ble_info.dev[i].ble_conn;
 		if (ble_conn) {
 			bt_manager_ble_disconnect(ble_conn);
-			while (ble_conn && time_out++ < 500) {
+			while (ble_info.dev[i].ble_conn && time_out++ < 500) {
 				os_sleep(10);
 			}
 		}
@@ -798,9 +821,21 @@ static bool gfp_ble_advertise_data(void)
 	struct bt_data ad[BLE_ADV_MAX_ARRAY_SIZE], sd[BLE_ADV_MAX_ARRAY_SIZE];
 	size_t ad_len, sd_len;
 	int err = 0;
+	int idx = 0;
+	uint8_t *data_ptr = NULL;
 
 	ad_len = ble_format_adv_data((struct bt_data *)ad, ble_info.ad_data);
 	sd_len = ble_format_adv_data((struct bt_data *)sd, ble_info.sd_data);
+
+	/* update the ad data when lea disabled */
+	if (!bt_manager_audio_is_lea_open()) {
+		for (idx = 0; idx < ad_len; idx++) {
+			if (BT_DATA_FLAGS == ad[idx].type) {
+				data_ptr = (uint8_t *)ad[idx].data;
+				data_ptr[0] = BT_LE_AD_NO_BREDR;
+			}
+		}
+	}
 
 	struct bt_le_adv_param adv_param = {0};
 	param = bt_manager_lea_policy_get_adv_param(ADV_TYPE_LEGENCY, &adv_param);
@@ -827,9 +862,21 @@ static bool ble_advertise_data(void)
 	struct bt_data ad[BLE_ADV_MAX_ARRAY_SIZE], sd[BLE_ADV_MAX_ARRAY_SIZE];
 	size_t ad_len, sd_len;
 	int err = 0;
+	int idx = 0;
+	uint8_t *data_ptr = NULL;
 
 	ad_len = ble_format_adv_data((struct bt_data *)ad, ble_info.ad_data);
 	sd_len = ble_format_adv_data((struct bt_data *)sd, ble_info.sd_data);
+
+	/* update the ad data when lea disabled */
+	if (!bt_manager_audio_is_lea_open()) {
+		for (idx = 0; idx < ad_len; idx++) {
+			if (BT_DATA_FLAGS == ad[idx].type) {
+				data_ptr = (uint8_t *)ad[idx].data;
+				data_ptr[0] = BT_LE_AD_NO_BREDR;
+			}
+		}
+	}
 
 	memset(&param, 0, sizeof(param));
 	param.id = BT_ID_DEFAULT;
@@ -854,9 +901,21 @@ static bool ble_advertise_data(void)
 	struct bt_data ad[BLE_ADV_MAX_ARRAY_SIZE], sd[BLE_ADV_MAX_ARRAY_SIZE];
 	size_t ad_len, sd_len;
 	int err = 0;
+	int idx = 0;
+	uint8_t *data_ptr = NULL;
 
 	ad_len = ble_format_adv_data((struct bt_data *)ad, ble_info.ad_data);
 	sd_len = ble_format_adv_data((struct bt_data *)sd, ble_info.sd_data);
+
+	/* update the ad data when lea disabled */
+	if (!bt_manager_audio_is_lea_open()) {
+		for (idx = 0; idx < ad_len; idx++) {
+			if (BT_DATA_FLAGS == ad[idx].type) {
+				data_ptr = (uint8_t *)ad[idx].data;
+				data_ptr[0] = BT_LE_AD_NO_BREDR;
+			}
+		}
+	}
 
 	struct bt_le_adv_param adv_param = {0};
 	param = bt_manager_lea_policy_get_adv_param(ADV_TYPE_LEGENCY, &adv_param);

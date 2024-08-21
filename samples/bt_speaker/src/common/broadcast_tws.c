@@ -49,6 +49,25 @@ uint8_t broadcast_tws_is_ready_for_past(){
 	return ready_for_past;
 }
 
+#ifdef CONFIG_OTA_BACKEND_LETWS_STREAM
+static void (*letws_ota_data_cbk)(uint8_t *data, uint32_t len);
+
+void broadcast_tws_ota_data_cbk_register(void (*callback)(uint8_t *data, uint32_t len))
+{
+	uint32_t irq_flag = irq_lock();
+	letws_ota_data_cbk = callback;
+	irq_unlock(irq_flag);
+}
+
+
+void broadcast_tws_ota_data_save(uint8_t *data, uint32_t len)
+{
+	if(letws_ota_data_cbk){
+		letws_ota_data_cbk(data, len);
+	}
+}
+#endif
+
 int broad_tws_send_message_to_front(uint8_t msg_type, uint8_t cmd, uint8_t reserved)
 {
 	struct app_msg  msg = {0};
@@ -72,14 +91,14 @@ uint8_t broadcast_tws_is_key_need_transfer(uint32_t key_event){
 }
 
 static void key_event_handler(uint8_t key_val)
-{    
+{
    switch (key_val)
    {
        case KEY_EVENT_PLAY:
 	   SYS_LOG_INF("PLAY:");
 	   sys_event_report_input(KEY_POWER|KEY_TYPE_SHORT_UP);
 	   break;
-	   
+
 	   case KEY_EVENT_PAUSE:
 	   SYS_LOG_INF("PAUSE:");
 	   break;
@@ -121,9 +140,9 @@ static void key_event_handler(uint8_t key_val)
 
 	   default:
 	   SYS_LOG_INF("Unkown key:%d \n",key_val);
-	   break;      
+	   break;
    }
-} 
+}
 
 static void broadcast_tws_vnd_handle_set_dev_info(const uint8_t * data,int len)
 {
@@ -199,7 +218,7 @@ static void broadcast_tws_vnd_handle_dev_info_rsp(const uint8_t * data,int len)
 	selfapp_device_info_t info;
 	uint8_t first = 0;
 	uint8_t update_bat = 0;
-	
+
     if (!temp_acl_handle) {
 		SYS_LOG_ERR("tws link loss:");
         return;
@@ -345,10 +364,12 @@ int broadcast_tws_vnd_rx_cb(uint16_t handle,const uint8_t *buf, uint16_t len)
 	SYS_LOG_INF("buf: %p, len: %d\n", buf, len);
 
 	if(buf){
-		for (i = 0; i < len; i++) {
-			printk("%02x ", buf[i]);
+		if(buf[1] != COMMAND_SENDOTADATA){
+			for (i = 0; i < len; i++) {
+				printk("%02x ", buf[i]);
+			}
+			printk("\n");
 		}
-		printk("\n");
 
 		if (buf[0] != COMMAND_IDENTIFIER) {
 			SYS_LOG_INF("Unknow data service.");
@@ -407,6 +428,17 @@ int broadcast_tws_vnd_rx_cb(uint16_t handle,const uint8_t *buf, uint16_t len)
 			case COMMAND_DEVACK:
 				SYS_LOG_INF("recv ack for cmd 0x%x \n",buf[3]);
 				break;
+
+#ifdef CONFIG_OTA_BACKEND_LETWS_STREAM
+			case COMMAND_SENDOTADATA:
+				broadcast_tws_ota_data_save((uint8_t *)&buf[2], cmd_length + 1);
+				break;
+
+			case COMMAND_REQ_OTA:
+				sys_event_notify_single(SYS_EVENT_OTA_REQ_START);
+				break;
+#endif
+
 			default:
 				SYS_LOG_INF("Unkown type");
 				break;
@@ -432,7 +464,7 @@ int broadcast_tws_vnd_rx_cb(uint16_t handle,const uint8_t *buf, uint16_t len)
 void broadcast_tws_vnd_send_key(uint32_t key)
 {
     uint8_t cmd[4] = { 0 };
-	
+
 	uint16_t temp_acl_handle = 0;
 
 	temp_acl_handle = bt_manager_audio_get_letws_handle();
@@ -505,7 +537,7 @@ void broadcast_tws_vnd_send_ack(uint8_t ack_cmdid,uint8_t StatusCode)
 	cmd[3] = ack_cmdid;
 	cmd[4] = StatusCode;
 
-   	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, sizeof(cmd));	
+   	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, sizeof(cmd));
 }
 
 void broadcast_tws_vnd_request_past_info(){
@@ -700,9 +732,9 @@ void broadcast_tws_vnd_notify_dev_info(){
 	cmd[index++] = 0;
 
 #ifdef CONFIG_PROPERTY
-	len = property_get(CFG_ATS_SN, serial_num, SELF_DEFAULT_SN_LEN);
+	len = property_get(CFG_ATS_DSN_ID, serial_num, SELF_DEFAULT_SN_LEN);
 #endif
-	if (len <= 0 || len > SELF_SN_LEN) {
+		if (len <= 0 || len > SELF_SN_LEN) {
 		memcpy(serial_num, SELF_DEFAULT_SN, SELF_DEFAULT_SN_LEN);
 	}
 	len = strlen(serial_num);
@@ -718,9 +750,9 @@ void broadcast_tws_vnd_notify_dev_info(){
 
 	u32_t hwver = 0, swver = fw_version_get_code();
 
-	vercode[0] = (u8_t)(swver >> 16);
-	vercode[1] = (u8_t)(swver >> 8);
-	vercode[2] = (u8_t)swver;
+	vercode[0] = hex2dec_digitpos((swver >> 16) & 0xFF);
+	vercode[1] = hex2dec_digitpos((swver >>  8) & 0xFF);
+	vercode[2] = hex2dec_digitpos( swver & 0xFF);
 	vercode[3] = (u8_t)hwver;
 
 	cmd[index++] = TokenID_DeviceFirmware;
@@ -766,3 +798,49 @@ void broadcast_tws_vnd_notify_bat_status(){
 	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, index);
 }
 
+#ifdef CONFIG_OTA_BACKEND_LETWS_STREAM
+void broadcast_tws_vnd_send_ota_data(uint8_t *data, uint32_t len)
+{
+	uint16_t temp_acl_handle;
+
+	uint8_t cmd[240] = { 0 };
+
+	cmd[0] = COMMAND_IDENTIFIER;
+	cmd[1] = COMMAND_SENDOTADATA;
+	cmd[2] = len;
+	memcpy(&cmd[3], data, len);
+
+	if(len > (sizeof(cmd) - 3)){
+		printk("letws ota data too long %d\n", len);
+		return;
+	}
+
+	temp_acl_handle = bt_manager_audio_get_letws_handle();
+
+	SYS_LOG_INF("send letws data len %d\n", len);
+
+   	bt_manager_audio_le_vnd_send(temp_acl_handle, cmd, len + 3);
+}
+
+int broadcast_tws_vnd_send_ota_req(void)
+{
+	uint16_t temp_acl_handle;
+
+	uint8_t cmd[3] = { 0 };
+
+	temp_acl_handle = bt_manager_audio_get_letws_handle();
+
+	if (!temp_acl_handle) {
+		SYS_LOG_ERR("tws link loss:");
+		return -EIO;
+	}
+
+	cmd[0] = COMMAND_IDENTIFIER;
+	cmd[1] = COMMAND_REQ_OTA;
+	cmd[2] = 0;
+
+   	bt_manager_audio_le_vnd_send(temp_acl_handle, cmd, 3);
+
+	return 0;
+}
+#endif

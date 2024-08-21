@@ -177,6 +177,9 @@ int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len)
 		case BT_GFP_BLE_DISCONNECTED:
 			send_message_to_system(MSG_BT_MGR_EVENT,MSG_BT_GFP_DISCONNECTED,0);
 		break;
+		case BT_GFP_BLE_INITIAL_PAIRING:
+			send_message_to_system(MSG_BT_MGR_EVENT,MSG_BT_GFP_INITIAL_PAIRING,0);
+		break;
 
 		case BT_AUDIO_SWITCH:
 		{

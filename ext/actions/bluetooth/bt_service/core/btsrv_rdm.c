@@ -52,6 +52,7 @@ struct rdm_device {
 	uint8_t controler_role:1;
 
 	uint8_t a2dp_connected:1;
+	uint8_t a2dp_signal_connected:1;
 	uint8_t a2dp_pending_ahead_start:1;
 	uint8_t switch_sbc_state:4;
 	uint8_t a2dp_active:1;
@@ -72,6 +73,7 @@ struct rdm_device {
     uint8_t avrcp_playing_pending:1;
     uint8_t avrcp_playing_pended:1;
 
+	uint8_t absolute_volume_filtr_cnt;
 	uint32_t avrcp_set_absolute_volume;
 	os_delayed_work avrcp_set_absolute_volume_delay_work;
 	os_delayed_work avrcp_status_pending_delay_work;
@@ -133,6 +135,8 @@ struct btsrv_rdm_avrcp_cb {
 };
 
 #define __RMT_DEV(_node) CONTAINER_OF(_node, struct rdm_device, node)
+#define ABSOLUTE_VOLUME_FILTR_MAX_CNT	3
+
 
 struct btsrv_rdm_priv {
 	/* TODO, protect me, no need, ensure all opration in btsrv thread */
@@ -842,6 +846,42 @@ bool btsrv_rdm_is_profile_connected(struct bt_conn *base_conn)
     }
 }
 
+bool btsrv_rdm_is_a2dp_signal_connected(struct bt_conn *base_conn)
+{
+	struct rdm_device *dev;
+
+	dev = btsrv_rdm_find_dev_by_conn(base_conn);
+	if (dev == NULL) {
+		SYS_LOG_WRN("dev not add\n");
+		return -ENODEV;
+	}
+
+    if(dev->a2dp_signal_connected == 1){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+int btsrv_rdm_set_a2dp_signal_connected(struct bt_conn *base_conn, bool connected)
+{
+	struct rdm_device *dev;
+
+	dev = btsrv_rdm_find_dev_by_conn(base_conn);
+	if (dev == NULL) {
+		SYS_LOG_WRN("dev not add\n");
+		return -ENODEV;
+	}
+
+	if (connected) {
+		dev->a2dp_signal_connected = 1;
+	} else {
+		dev->a2dp_signal_connected = 0;
+	}
+	return 0;
+}
+
 int btsrv_rdm_set_a2dp_connected(struct bt_conn *base_conn, bool connected)
 {
 	struct rdm_device *dev;
@@ -865,7 +905,6 @@ int btsrv_rdm_set_a2dp_connected(struct bt_conn *base_conn, bool connected)
 	}
 	return 0;
 }
-
 
 void btsrv_rdm_a2dp_set_clear_priority(struct bt_conn *base_conn, uint8_t prio, uint8_t set)
 {
@@ -1136,10 +1175,24 @@ void btsrv_rdm_avrcp_delay_set_absolute_volume(struct bt_conn *base_conn, uint8_
 		return;
 	}
 
+	if (dev->avrcp_set_absolute_volume == volume) {
+		return;
+	}
+
 	dev->avrcp_set_absolute_volume = volume;
 
+	if (os_delayed_work_remaining_get(&dev->avrcp_set_absolute_volume_delay_work) > 0) {
+		dev->absolute_volume_filtr_cnt++;
+	}
+
 	os_delayed_work_cancel(&dev->avrcp_set_absolute_volume_delay_work);
-	os_delayed_work_submit(&dev->avrcp_set_absolute_volume_delay_work, 50);
+
+	if (dev->absolute_volume_filtr_cnt >= ABSOLUTE_VOLUME_FILTR_MAX_CNT) {
+		dev->absolute_volume_filtr_cnt = 0;
+		os_delayed_work_submit(&dev->avrcp_set_absolute_volume_delay_work, 0);
+	}else {
+		os_delayed_work_submit(&dev->avrcp_set_absolute_volume_delay_work, 50);
+	}
 }
 
 
@@ -1178,6 +1231,8 @@ int btsrv_rdm_set_avrcp_connected(struct bt_conn *base_conn, bool connected)
 		SYS_LOG_WRN("avrcp already %s\n", connected ? "connected" : "disconnected");
 		return -EALREADY;
 	}
+
+	dev->absolute_volume_filtr_cnt = 0;
 
 	if (connected) {
 		dev->avrcp_connected = 1;

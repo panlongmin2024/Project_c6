@@ -546,6 +546,24 @@ int check_is_wait_adfu(void)
 {
 	return wait_adfu_flag;
 }
+void pd_rst_func(void)
+{
+	SYS_LOG_INF("\n");
+	
+	  struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+		if (gpio_dev == NULL)
+		{
+			SYS_LOG_ERR("gpio dev is null\n");
+			return ;
+		}
+
+	    gpio_pin_configure(gpio_dev, GPIO_PIN_PD_RST, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
+	    gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
+  	    k_sleep(15);
+	    gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
+	
+     
+}
 void check_adfu_gpio_key(void)
 {
 	int cnt = 0;
@@ -554,7 +572,6 @@ void check_adfu_gpio_key(void)
 	bool dc_power_in_status;
 
 	SYS_LOG_INF("check adfu gpio key ok ?\n");
-
 	do 
 	{
 		key_bt_status = key_bt_status_read();
@@ -760,7 +777,6 @@ static int dc_power_in_gpio_init(struct device *arg)
 
 	// gpio_pin_configure(gpio_dev, DC_POWER_IN_PIN, GPIO_DIR_IN | GPIO_PUD_PULL_DOWN);
 	gpio_pin_configure(gpio_dev, DC_POWER_IN_PIN, GPIO_DIR_IN );
-
 	return 0;
 }
 

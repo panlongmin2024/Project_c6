@@ -87,6 +87,7 @@ static const struct media_memory_block media_memory_config[] = {
 	{
 		.stream_type = AUDIO_STREAM_LOCAL_MUSIC,
 		.mem_cell = {
+#ifdef CONFIG_DSP_OUTPUT_1_CH_IN_BMS
 			{.mem_type = INPUT_PLAYBACK,  .mem_base = (uint32_t)&playback_input_buffer[0], .mem_size = 0x1400,},
 			{.mem_type = OUTPUT_DECODER,  .mem_base = (uint32_t)&playback_output_decoder_buffer[0], .mem_size = 0x800,},
 			{.mem_type = OUTPUT_RESAMPLE,  .mem_base = (uint32_t)&playback_input_buffer[0x1400], .mem_size = 0x800,},
@@ -97,7 +98,26 @@ static const struct media_memory_block media_memory_config[] = {
 		#ifdef CONFIG_ACTIONS_DECODER
 			{.mem_type = PARSER_STACK, 	  .mem_base = (u32_t)__share2_media_ram_start + 0x3800, .mem_size = 0x800,},
 		#endif
+#else
+			/* parse bss at 0x3000 length about 0xd00*/
+			{.mem_type = INPUT_CAPTURE,   .mem_base = (u32_t)__share_media_ram_start, .mem_size = 0x1200,},
+#ifdef CONFIG_MUSIC_EXTERNAL_EFFECT
+			{.mem_type = INPUT_RESAMPLE,  .mem_base = (u32_t)__share_media_ram_start + 0x1200, .mem_size = 0x800,},
+#endif
+			{.mem_type = OUTPUT_CAPTURE,  .mem_base = (u32_t)__share2_media_ram_start + 0x1000, .mem_size = 0x800,},
+			{.mem_type = OUTPUT_CAPTURE2,  .mem_base = (u32_t)__share2_media_ram_start + 0x1000 + 0x400, .mem_size = 0x400,},
 
+			{.mem_type = INPUT_PLAYBACK,  .mem_base = (u32_t)__share2_media_ram_start + 0x1800, .mem_size = 0x1400,},
+			{.mem_type = OUTPUT_DECODER,  .mem_base = (u32_t)__share2_media_ram_start + 0x2c00, .mem_size = 0x800,},
+			{.mem_type = OUTPUT_RESAMPLE,  .mem_base = (u32_t)__share3_media_ram_start, .mem_size = 0x1000,},
+			// {.mem_type = OUTPUT_PCM,      .mem_base = (uint32_t)__share2_media_ram_start + 0x2800, .mem_size = 0x1000,},
+			{.mem_type = PARSER_CHUCK,    .mem_base = (uint32_t)__share2_media_ram_start + 0x3400, .mem_size = 0xc00,},
+			{.mem_type = OUTPUT_PLAYBACK, .mem_base = (u32_t)__share_media_ram_start + 0x1a00, .mem_size = 0x6400,},
+			{.mem_type = OUTPUT_PARSER,   .mem_base = (u32_t)__share_media_ram_start + 0x7e00, .mem_size = 0x1000,},
+		#ifdef CONFIG_ACTIONS_DECODER
+			{.mem_type = PARSER_STACK, 	  .mem_base = (u32_t)__share_media_ram_start + 0x8e00, .mem_size = 0x800,},
+		#endif
+#endif
 		#ifdef CONFIG_ACTIONS_DECODER
 			{.mem_type = CODEC_STACK, .mem_base = (uint32_t)&codec_stack[0], .mem_size = sizeof(codec_stack),},
 		#endif
@@ -112,7 +132,7 @@ static const struct media_memory_block media_memory_config[] = {
 		.stream_type = AUDIO_STREAM_LINEIN,
 		.mem_cell = {
 #ifdef CONFIG_MUSIC_EXTERNAL_EFFECT
-			{.mem_type = INPUT_CAPTURE,   .mem_base = (u32_t)__share_media_ram_start + 0x7600, .mem_size = 0x600,},
+			{.mem_type = INPUT_CAPTURE,   .mem_base = (u32_t)__share_media_ram_start + 0x8e00, .mem_size = 0x800,},
 #else
 			{.mem_type = INPUT_CAPTURE,   .mem_base = (u32_t)__share4_media_ram_start, .mem_size = 0x1000,},
 #endif
@@ -120,9 +140,10 @@ static const struct media_memory_block media_memory_config[] = {
 			{.mem_type = OUTPUT_CAPTURE,  .mem_base = (u32_t)__share2_media_ram_start, .mem_size = 0x800,},
 			{.mem_type = OUTPUT_CAPTURE2,  .mem_base = (u32_t)__share2_media_ram_start + 0x400, .mem_size = 0x400,}, //part of OUTPUT_CAPTURE
 
+			{.mem_type = INPUT_RESAMPLE2,  .mem_base = (u32_t)__share_media_ram_start + 0x1200, .mem_size = 0x800,},
 			{.mem_type = INPUT_PLAYBACK,  .mem_base = (u32_t)__share2_media_ram_start + 0x1000, .mem_size = 0x3000,},
 			{.mem_type = OUTPUT_DECODER,  .mem_base = (u32_t)__share2_media_ram_start + 0x800, .mem_size = 0x800,},
-			{.mem_type = OUTPUT_PLAYBACK, .mem_base = (u32_t)__share_media_ram_start + 0x1200, .mem_size = 0x5400,},
+			{.mem_type = OUTPUT_PLAYBACK, .mem_base = (u32_t)__share_media_ram_start + 0x1a00, .mem_size = 0x6400,},
 			{.mem_type = OUTPUT_RESAMPLE, .mem_base = (u32_t)__share3_media_ram_start, .mem_size = 0x1000,},
 
 #ifdef CONFIG_ACTIONS_DECODER
@@ -168,6 +189,9 @@ static const struct media_memory_block media_memory_config[] = {
 		.stream_type = AUDIO_STREAM_USOUND,
 		.mem_cell = {
 			{.mem_type = INPUT_CAPTURE,   .mem_base = (u32_t)__share_media_ram_start, .mem_size = 0x1200,}, //96 * 4 * 2 * 11 = 8448
+#ifdef CONFIG_MUSIC_EXTERNAL_EFFECT
+			{.mem_type = INPUT_RESAMPLE,  .mem_base = (u32_t)__share_media_ram_start + 0x1200, .mem_size = 0x800,},
+#endif
 			{.mem_type = OUTPUT_CAPTURE,  .mem_base = (u32_t)__share2_media_ram_start + 0x800, .mem_size = 0x800,}, //104 * 10
 			{.mem_type = OUTPUT_CAPTURE2,  .mem_base = (u32_t)__share2_media_ram_start + 0x800 + 0x400, .mem_size = 0x400,}, //104 * 10
 
@@ -176,7 +200,7 @@ static const struct media_memory_block media_memory_config[] = {
 #ifdef CONFIG_DSP_OUTPUT_1_CH_IN_BMS
 			{.mem_type = OUTPUT_PLAYBACK, .mem_base = (u32_t)__share_media_ram_start + 0x1200, .mem_size = 0x4000,},
 #else
-			{.mem_type = OUTPUT_PLAYBACK, .mem_base = (u32_t)__share_media_ram_start + 0x1200, .mem_size = 0x5400,}, //96 * 4 * 2 * 20
+			{.mem_type = OUTPUT_PLAYBACK, .mem_base = (u32_t)__share_media_ram_start + 0x1a00, .mem_size = 0x6400,}, //96 * 4 * 2 * 20
 #endif
 			{.mem_type = OUTPUT_RESAMPLE, .mem_base = (u32_t)__share3_media_ram_start, .mem_size = 0x1000,},
 

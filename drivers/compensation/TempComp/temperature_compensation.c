@@ -331,7 +331,7 @@ static void bt_temp_comp_timer_handler(struct thread_timer *timer, void* pdata)
 			p->comp_started = 1;
 			p->count = 0;
 
-			SYS_LOG_DBG("start bt temp comp temp:%d", temp);
+			SYS_LOG_INF("start bt temp comp temp:%d", temp);
 
 			soc_dvfs_set_level(SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, "bt_temp");
 

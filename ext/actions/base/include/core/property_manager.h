@@ -46,6 +46,7 @@
 #define CFG_LEA_KEYS                "LEA_KEYS"
 /* LE Audio Test Address */
 #define CFG_LEA_TEST_ADDR           "LEA_TADDR"
+#define CFG_LEA_ONOFF_STATUS        "LEA_ONOFF_STATUS"
 
 #define CFG_BT_CFO_VAL              "BT_CFO_VAL"
 #define CFG_BT_FREQ_CAL             "BT_FREQ_CAL"

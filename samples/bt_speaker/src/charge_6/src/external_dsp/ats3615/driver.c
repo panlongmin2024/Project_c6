@@ -16,6 +16,7 @@
 #include "include/dolphin_com.h"
 #include "include/hmdsp_tuning_hdr.h"
 #include "include/dolphin_device_ids.h"
+#include "self_media_effect/self_media_effect.h"
 #define SLC_DEBUG 1 //1 for SLC debug, 0 for actions demo
 
 #if SLC_DEBUG
@@ -195,7 +196,7 @@ int external_dsp_ats3615_load(int effect)
 		SYS_LOG_ERR("DSP and tuning info not match ! \n");
 		return -1;
 	}
-	
+	self_music_effect_ctrl_set_enable(true);
 	if(dsp_3615_mutex_ptr == NULL){
 		dsp_3615_mutex_ptr = &dsp_3615_mutex;
 		os_mutex_init(dsp_3615_mutex_ptr);

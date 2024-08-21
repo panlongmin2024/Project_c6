@@ -15,15 +15,18 @@
 #include "wltmcu_manager_supply.h"
 static struct thread_timer bypass_led_timer;
 #endif
-static bool self_music_effect_ctrl_bypass = true; 
+static bool self_music_effect_ctrl = true; 
 static os_mutex self_music_effect_ctrl_mutex;
-
+static os_mutex *p_self_music_effect_ctrl_mutex;
 bool self_music_effect_ctrl_get_enable(void)
 {
     bool res;
-
+    if(!p_self_music_effect_ctrl_mutex){
+        printk("null self_music_effect_ctrl_mutex\n");
+        return true;
+    }
     os_mutex_lock(&self_music_effect_ctrl_mutex, OS_FOREVER);
-    res = !self_music_effect_ctrl_bypass;
+    res = self_music_effect_ctrl;
     os_mutex_unlock(&self_music_effect_ctrl_mutex);
 
     SYS_LOG_INF("en:%d\n", res);
@@ -33,13 +36,16 @@ bool self_music_effect_ctrl_get_enable(void)
 
 void self_music_effect_ctrl_set_enable(bool en)
 {
-    int change_flag = 0;
-    media_player_t *player;
-    int stream_type;
-
+    //int change_flag = 0;
+   // media_player_t *player;
+   // int stream_type;
+    if(!p_self_music_effect_ctrl_mutex){
+        printk("null self_music_effect_ctrl_mutex\n");
+        return;
+    }
     os_mutex_lock(&self_music_effect_ctrl_mutex, OS_FOREVER);
     
-    if (en == !self_music_effect_ctrl_bypass)
+    if (en == self_music_effect_ctrl)
     {
         SYS_LOG_INF("already en:%d\n", en);
     }
@@ -47,19 +53,19 @@ void self_music_effect_ctrl_set_enable(bool en)
     {
         SYS_LOG_INF("en:%d\n", en);
 
-        self_music_effect_ctrl_bypass = !en;
+        self_music_effect_ctrl = en;
         //change_flag = 1;
     }
 
     os_mutex_unlock(&self_music_effect_ctrl_mutex);
 
-    if (change_flag == 1)
+/*     if (change_flag == 1)
     {
         player = media_player_get_current_main_player();
         stream_type = media_player_get_current_main_player_stream_type();
         
         media_player_check_audio_effect(player, stream_type);
-    }
+    } */
 }
 
 void self_music_effect_ctrl_init(void)
@@ -67,6 +73,7 @@ void self_music_effect_ctrl_init(void)
     SYS_LOG_INF("music effect enable:%d\n", self_music_effect_ctrl_get_enable());
 
     os_mutex_init(&self_music_effect_ctrl_mutex);
+    p_self_music_effect_ctrl_mutex = &self_music_effect_ctrl_mutex;
 }
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 static void bypass_led_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)

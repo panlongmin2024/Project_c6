@@ -96,6 +96,9 @@ static void gfp_recv_proc(u8_t *buf, u16_t len)
                 btsrv_gfp->gfp_gatt_state = num;
                 if(num == BLE_KEY_PAIRING){
                     btif_br_set_gfp_mode(true);
+                    if(payload_len == AES_BLOCK_SIZE + ECDH_PUBLIC_KEY_SIZE){
+                        btsrv_gfp->gfp_ev_callback(0, BTSRV_GFP_INITIAL_PAIRING, NULL, 0);
+                    }
                 }
             }
             gfp_recv_cmd_list[i].cmd_cbk(buf+sizeof(u32_t)+sizeof(u16_t), payload_len);

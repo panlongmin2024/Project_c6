@@ -126,6 +126,7 @@ void sys_event_notify(uint32_t event)
 	msg.cmd = event;
 
 	send_async_msg(CONFIG_SYS_APP_NAME, &msg);
+
 }
 
 void sys_event_notify_single(uint32_t event)

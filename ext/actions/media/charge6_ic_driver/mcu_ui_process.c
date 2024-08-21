@@ -509,7 +509,7 @@ extern int check_is_wait_adfu(void);
 
 void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_status)
 {
-    printf("zth debug remaincap_display_handle,status ,cap: %d ,0x%x led_status %d\n", status,cap,led_status);
+    printf("zth debug remaincap_display_handle,status:%d , cap: 0x%x \n", status,cap);
    static u8_t first_10s_batt_display_time_flag = 0;
     if(check_is_wait_adfu())
         return;
@@ -610,8 +610,10 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
             {
                 battery_charging_LED_on_all();
             }else{
+				set_batt_led_display_timer(-1);  
                 battery_charging_remaincap_is_full();
             }     
+
             set_batt_led_display_timer(-1);     
             battery_charging_remaincap_is_full();
             set_batt_led_display_timer(-1);
@@ -784,6 +786,19 @@ void mcu_ui_set_real_shutdown_dut(bool enable)
 
 }
 #endif
+
+void mcu_ui_set_led_just_level(bool up)
+{
+	if(up)
+    {
+        mcu_ui_send_led_code(MCU_SUPPLY_PROP_JUST_UP_LED_LEVEL,1);
+    }
+    else
+    {
+        mcu_ui_send_led_code(MCU_SUPPLY_PROP_JUST_DOWN_LED_LEVEL,1);
+    }
+
+}
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 //extern void user_mspm0l_ota_sucess_startapp(void);
@@ -1007,10 +1022,11 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
     {
 
         case MCU_INT_TYPE_POWER_KEY:
-
+            
 			/* for factory test */
 			if(ats_get_enter_key_check_record()){
-				mcu_ui_send_led_code(MCU_SUPPLY_PROP_FACTORY_TEST_KEY,1);
+				// mcu_ui_send_led_code(MCU_SUPPLY_PROP_FACTORY_TEST_KEY,1);
+                bt_mcu_send_pw_cmd_poweron();
 				sys_event_report_input_ats(51);
 				break;
 			}
@@ -1024,7 +1040,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
             if((bt_mcu_get_first_power_on_flag() == 0)||(bt_mcu_get_bt_wake_up_flag() == 1)){
                 if(pd_get_app_mode_state() && (bt_mcu_get_first_power_on_flag() == 0)){
                     //if(charge_app_exit_cmd() == 1){
-                        if(power_manager_get_battery_capacity() > BATTERY_DISCHARGE_REMAIN_CAP_LEVEL0)
+                        if(power_manager_get_battery_capacity() > (BATTERY_DISCHARGE_REMAIN_CAP_LEVEL0))
                         {
                             struct app_msg msg = {0};
                             msg.type = MSG_POWER_KEY;
@@ -1215,7 +1231,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                     bt_mcu_send_pw_cmd_poweron();               
 
                 }
-                if(sys_pm_get_power_5v_status())
+                if(sys_pm_get_power_5v_status() || dc_power_in_status_read())//触发报警停止充电，充电状态无效判断DC是否插入2024.8.21  zth
                 {
                     if(pd_manager_get_sink_status_flag())
                     {
@@ -1234,6 +1250,10 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 else
                 {
                     SYS_LOG_INF("[%d] \n", __LINE__);
+                    if(!main_system_tts_get_play_warning_tone_flag())
+                    {
+                        sys_event_notify(SYS_EVENT_CHARGING_WARNING);    //触发高温报警，没有充电也需要报警音并5秒后关机----2024.8.15 zth
+                    }
                     bt_mcu_set_bt_warning_poweroff_flag(2);
                     bt_is_charge_warnning_flag = false;
                 }
@@ -1255,7 +1275,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 pd_manager_set_poweron_filte_battery_led(WLT_FILTER_NOTHING);
               //  if(sys_pm_get_power_5v_status())
                 {
-                   bt_mcu_set_bt_warning_poweroff_flag(0);     
+                   bt_mcu_set_bt_warning_poweroff_flag(2);   //触发高温报警，停止后不管充不充电都要关机----2024.8.15 zth  
                 }
                 bt_is_charge_warnning_flag = false;
             }  
@@ -1265,6 +1285,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
         case MCU_INT_TYPE_WATER:
             if(para->mcu_event_val == MCU_INT_CMD_WATER_IN)
             {
+                int charge_flag;
                  if(charge_app_exit_cmd() == 1){
                     struct app_msg msg = {0};
                     msg.type = MSG_POWER_KEY;
@@ -1280,7 +1301,9 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
 
                 }
 
-                if(sys_pm_get_power_5v_status())
+                charge_flag = sys_pm_get_power_5v_status();
+                printk("\n%s/%d,charge_flag:%d,dc:%d\n",__func__,__LINE__,charge_flag,dc_power_in_status_read());
+                if(charge_flag || dc_power_in_status_read())
                 {
                     if(pd_manager_get_sink_status_flag())
                     {
@@ -1299,13 +1322,16 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 }
                 else
                 {
+                    if(bt_is_charge_warnning_flag)//只触发一次 2024.8.16 zth
+                    {
+                        //pd_manager_disable_charging(false);
+                        pd_set_source_refrest();
 
-                    //pd_manager_disable_charging(false);
-                    pd_set_source_refrest();
+                        sys_event_notify(SYS_EVENT_REMOVE_CHARGING_WARNING);
+                        pd_manager_set_poweron_filte_battery_led(WLT_FILTER_NOTHING);
+                        bt_is_charge_warnning_flag = false;
+                    }    
 
-                    sys_event_notify(SYS_EVENT_REMOVE_CHARGING_WARNING);
-                    pd_manager_set_poweron_filte_battery_led(WLT_FILTER_NOTHING);
-                    bt_is_charge_warnning_flag = false;
                 }
             }
             else

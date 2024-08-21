@@ -189,6 +189,7 @@ void bt_mgr_free_dev_info(struct bt_mgr_dev_info *info)
 	u8_t  need_resume_play			  = info->need_resume_play;
 	u8_t  timeout_disconnected		  = info->timeout_disconnected;
 	u8_t  halt_phone		          = info->halt_phone;
+	u8_t  auto_reconnect		      = info->auto_reconnect;
 	memcpy(&bd_addr, &info->addr, sizeof(bd_address_t));
 	memset(info, 0, sizeof(struct bt_mgr_dev_info));
 
@@ -196,9 +197,10 @@ void bt_mgr_free_dev_info(struct bt_mgr_dev_info *info)
 	info->need_resume_play			  = need_resume_play;
 	info->timeout_disconnected		  = timeout_disconnected;
 	info->halt_phone		          = halt_phone;
+	info->auto_reconnect		      = auto_reconnect;
 	info->used = 1;
-	SYS_LOG_INF("need_resume_play:%d,timeout_disconnected:%d,halt_phone %d\n"
-		,need_resume_play,timeout_disconnected,halt_phone);
+	SYS_LOG_INF("rp:%d,td:%d,hp %d ar %d\n"
+		,need_resume_play,timeout_disconnected,halt_phone,auto_reconnect);
 }
 
 struct bt_mgr_dev_info *bt_mgr_find_dev_info(bd_address_t *addr)

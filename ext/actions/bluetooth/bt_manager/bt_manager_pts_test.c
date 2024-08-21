@@ -584,17 +584,23 @@ static int pts_config(int argc, char *argv[])
 	char *cmd;
 
 	if (argc < 2) {
-		SYS_LOG_INF("Used: pts scan on/off\n");
+		SYS_LOG_INF("Used: pts config on/off \n");
 		return -EINVAL;
 	}
 
 	cmd = argv[1];
-	SYS_LOG_INF("config:%s\n", cmd);
-
+	SYS_LOG_INF(" :%s\n", cmd);
 	if (!strcmp(cmd, "on")) {
-		btif_bt_set_pts_config(true);
+		btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_ALL);
+		btif_br_disconnect_device(BTSRV_DISCONNECT_ALL_MODE);
 
-	} else if (!strcmp(cmd, "off")) {
+		while (btif_br_get_connected_device_num()) {
+			os_sleep(10);
+		}
+		btif_bt_set_pts_config(true);
+		printk("\n\n##### PTS Test Prepared Successful #####\n\n");
+		//sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
+	} else if (!strcmp(cmd, "off")){
 		btif_bt_set_pts_config(false);
 	}
 
@@ -628,7 +634,7 @@ static int pts_reboot(int argc, char *argv[])
 
 static const struct shell_cmd pts_test_commands[] = {
 	{ "reboot", pts_reboot, "pts reboot"},
-	{ "config", pts_config, "pts config"},
+	{ "config", pts_config, "pts config on/off"},
 	{ "connect_acl", pts_connect_acl, "pts active connect acl"},
     { "connect_a2dp", pts_connect_a2dp, "pts active connect acl/a2dp"},
     { "connect_avrcp", pts_connect_avrcp, "pts active connect acl/avrcp"},

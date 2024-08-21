@@ -16,36 +16,31 @@
 
 static const ui_key_map_t usound_keymap[] = {
 
-	{ KEY_VOLUMEUP,		KEY_TYPE_SHORT_UP | KEY_TYPE_LONG | KEY_TYPE_HOLD, USOUND_STATUS_ALL, MSG_USOUND_PLAY_VOLUP},
-	{ KEY_VOLUMEDOWN, 	KEY_TYPE_SHORT_UP | KEY_TYPE_LONG | KEY_TYPE_HOLD, USOUND_STATUS_ALL, MSG_USOUND_PLAY_VOLDOWN},
-	{ KEY_POWER,		KEY_TYPE_SHORT_UP,				USOUND_STATUS_ALL, MSG_USOUND_PLAY_PAUSE_RESUME},
-	{ KEY_NEXTSONG,		KEY_TYPE_SHORT_UP,				USOUND_STATUS_ALL, MSG_USOUND_PLAY_NEXT},
-	{ KEY_PREVIOUSSONG, 	KEY_TYPE_SHORT_UP,				USOUND_STATUS_ALL, MSG_USOUND_PLAY_PREV},
-#ifdef CONFIG_BMS_UAC_APP
-    	{ KEY_TBD, KEY_TYPE_SHORT_UP, USOUND_STATUS_PLAYING, MSG_ENTER_BROADCAST},
+	{ KEY_VOLUMEUP,		KEY_TYPE_SHORT_UP | KEY_TYPE_LONG | KEY_TYPE_HOLD,	USOUND_STATUS_ALL,	MSG_USOUND_PLAY_VOLUP},
+	{ KEY_VOLUMEDOWN,	KEY_TYPE_SHORT_UP | KEY_TYPE_LONG | KEY_TYPE_HOLD,	USOUND_STATUS_ALL,	MSG_USOUND_PLAY_VOLDOWN},
+	{ KEY_POWER,		KEY_TYPE_SHORT_UP,									USOUND_STATUS_ALL,	MSG_USOUND_PLAY_PAUSE_RESUME},
+	{ KEY_NEXTSONG,		KEY_TYPE_SHORT_UP,									USOUND_STATUS_ALL,	MSG_USOUND_PLAY_NEXT},
+	{ KEY_PREVIOUSSONG,	KEY_TYPE_SHORT_UP,									USOUND_STATUS_ALL,	MSG_USOUND_PLAY_PREV},
+#ifdef CONFIG_USOUND_BROADCAST_SUPPROT
+	{ KEY_TBD,			KEY_TYPE_SHORT_UP,									USOUND_STATUS_ALL,	MSG_SWITCH_BROADCAST},
 #endif
+	{ KEY_BT,			KEY_TYPE_SHORT_UP,									USOUND_STATUS_ALL,	MSG_USOUND_EXIT_TO_BT},
+
 	{ KEY_RESERVED,	0,	0,	0}
 };
 
-static int _usound_view_proc(u8_t view_id, u8_t msg_id, u32_t msg_data)
+static int usound_view_proc(u8_t view_id, u8_t msg_id, u32_t msg_data)
 {
 	switch (msg_id) {
-	case MSG_VIEW_CREATE:
-	{
-		SYS_LOG_INF("CREATE\n");
+	case MSG_VIEW_CREATE: {
+		SYS_LOG_INF("CREATE");
 		break;
 	}
-	case MSG_VIEW_DELETE:
-	{
-		SYS_LOG_INF("DELETE\n");
-#ifdef CONFIG_LED_MANAGER_APP_USAGE
-		led_manager_set_display(0, LED_OFF, OS_FOREVER, NULL);
-		led_manager_set_display(1, LED_OFF, OS_FOREVER, NULL);
-#endif
+	case MSG_VIEW_DELETE: {
+		SYS_LOG_INF("DELETE");
 		break;
 	}
-	case MSG_VIEW_PAINT:
-	{
+	case MSG_VIEW_PAINT: {
 		break;
 	}
 	}
@@ -55,10 +50,9 @@ static int _usound_view_proc(u8_t view_id, u8_t msg_id, u32_t msg_data)
 void usound_view_init(void)
 {
 	ui_view_info_t  view_info;
-
 	memset(&view_info, 0, sizeof(ui_view_info_t));
 
-	view_info.view_proc = _usound_view_proc;
+	view_info.view_proc = usound_view_proc;
 	view_info.view_key_map = usound_keymap;
 	view_info.view_get_state = usound_get_status;
 	view_info.order = 1;
@@ -73,15 +67,18 @@ void usound_view_init(void)
 #endif
 
 	sys_event_notify(SYS_EVENT_ENTER_USOUND);
-
-	SYS_LOG_INF(" ok\n");
+	SYS_LOG_INF("ok");
 }
 
 void usound_view_deinit(void)
 {
 	ui_view_delete(USOUND_VIEW);
+#ifdef CONFIG_LED_MANAGER_APP_USAGE
+	led_manager_set_display(0, LED_OFF, OS_FOREVER, NULL);
+	led_manager_set_display(1, LED_OFF, OS_FOREVER, NULL);
+#endif
 
-	SYS_LOG_INF("ok\n");
+	SYS_LOG_INF("ok");
 }
 
 void usound_view_volume_show(int volume_value)
@@ -102,10 +99,12 @@ void usound_view_volume_show(int volume_value)
 		return;
 	}
 
+	SYS_LOG_INF("%d", volume_value);
 	if (volume_value == audio_policy_get_volume_level()) {
 		sys_event_notify(SYS_EVENT_MAX_VOLUME);
 		volume_timestampe = k_cycle_get_32();
-	} else if (volume_value == 0) {
+	}
+	else if (volume_value == 0) {
 		sys_event_notify(SYS_EVENT_MIN_VOLUME);
 		volume_timestampe = k_cycle_get_32();
 	}

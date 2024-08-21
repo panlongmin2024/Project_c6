@@ -157,9 +157,10 @@ const void *media_effect_get_param(uint8_t stream_type, uint8_t effect_type, int
 
 	if (user_addr && effect_size) {
 		*effect_size = expected_size;
+		SYS_LOG_INF("%d", *effect_size);
 	}
 
-	SYS_LOG_INF("%d %p %d", stream_type, user_addr, *effect_size);
+	SYS_LOG_INF("%d %p", stream_type, user_addr);
 	//print_buffer_lazy("effect", user_addr, *effect_size);
 	return user_addr;
 }

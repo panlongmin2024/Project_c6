@@ -263,6 +263,9 @@ void pd_srv_event_process(struct app_msg *msg)
 			mcu_ui_set_led_enable_state(msg->value);
 		break;
 
+		case PD_EVENT_JUST_LED_LEVEL:
+			mcu_ui_set_led_just_level(msg->value);
+		break;
 
 		default:
 			break;

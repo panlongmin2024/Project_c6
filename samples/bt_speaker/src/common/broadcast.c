@@ -428,6 +428,7 @@ int padv_tx_data(u8_t vol100)
 		return -1;
 	}
 
+	SYS_LOG_INF("vol %d", vol100);
 	memset(padv_buf, 0, sizeof(padv_buf));
 
 	//uuid

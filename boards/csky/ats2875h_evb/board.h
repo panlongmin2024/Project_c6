@@ -30,6 +30,7 @@
 	{KEY_PREVIOUSSONG,      0x40},	\
 	{KEY_NEXTSONG,          0x80},	\
 	{KEY_COMBO_VOL,         0xDC},	\
+	{KEY_COMBO_M_VU,        0xEC},  \
 	{KEY_MENU,              0x110},	\
 	{KEY_TBD,               0x1AE},	\
 	{KEY_VOLUMEDOWN,        0x200},	\

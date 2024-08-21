@@ -161,7 +161,7 @@ extern int pts_btsrv_cis_recv(uint16_t handle, uint8_t *buf, uint16_t len,
 extern int btsrv_cis_send(uint16_t handle, uint8_t *buf, uint16_t *len);
 extern int btsrv_cis_recv(uint16_t handle, uint8_t *buf, uint16_t len,
 			struct bt_cis_recv_report *rx_rpt);
-#endif /*CONFIG_BT_PTS_TEST*/
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
 
 #define HCI_EVENT_FILTER
 
@@ -1634,7 +1634,7 @@ int btdrv_init(btdrv_rx_cb_t rx_cb)
 #else
     cfg.cis_send = btsrv_cis_send;
     cfg.cis_recv = btsrv_cis_recv;
-#endif /*CONFIG_BT_PTS_TEST*/
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
 
 #if 0
     cfg.log_level = BT_LOG_LEVEL_DEBUG;

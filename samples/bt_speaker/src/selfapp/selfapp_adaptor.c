@@ -551,3 +551,12 @@ void selfapp_set_device_info(selfapp_device_info_t *info){
 	}
 }
 
+u8_t selfapp_get_leaudio_status(void)
+{
+	u8_t status;
+
+	status = !!bt_manager_audio_is_lea_open();
+
+	return status;
+}
+

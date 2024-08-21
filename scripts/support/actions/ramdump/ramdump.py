@@ -23,7 +23,8 @@ import struct
 #import lz4.block
 import subprocess
 from hexdump import hexdump
-import hardware_setup
+import json
+
 '''
 /* 1. ramdump structure */
 +===========+===============+===============+
@@ -244,7 +245,7 @@ def decompress_data(compressed_data, decompree_len):
         print(f"Decompression failed: {e}")
         return None
 
-def ramd_dec_seg(ramd_file, output, gdb_path, gdb_host, gdb_port):
+def ramd_dec_seg(ramd_file, output, json_file):
     if not os.path.exists(ramd_file):
         return (0,0)
     if not os.path.exists(output):
@@ -309,7 +310,11 @@ def ramd_dec_seg(ramd_file, output, gdb_path, gdb_host, gdb_port):
                 #print("%s connect %s to load memory %x from %s\n" %(gdb_path, target_path, region_addr, raw_file))
                 #restore_binary_to_memory(gdb_path, target_path, os.path.join("./", raw_file), region_addr)
 
-        hardware_setup.hardware_setup(gdb_path, gdb_host, gdb_port, esf_addr, 18 * 4, binaries_dict)
+        with open(json_file, 'w') as f:
+            json.dump(binaries_dict, f)
+            f.write('\n')
+            f.write(str(esf_addr))
+
         return (f1.tell(), out_sz)
 
 def test_compress():
@@ -328,9 +333,7 @@ def main(argv):
     parser.add_argument('-d', dest = 'ramd_file')
     parser.add_argument('-o', dest = 'output')
     parser.add_argument('-s', dest = 'seg_size')
-    parser.add_argument('-gdb_path', dest = 'gdb_path')
-    parser.add_argument('-host_server', dest = 'gdb_host')
-    parser.add_argument('-host_port', dest = 'gdb_port')
+    parser.add_argument('-j', dest = 'json_file')
     args = parser.parse_args()
 
     if not args.output:
@@ -348,7 +351,7 @@ def main(argv):
         print('size: %d -> %d (%.1f%%)' %(ret[0],ret[1],ret[1]*100/ret[0]))
     elif args.ramd_file:
         print('ramdump decompress: %s -> %s' %(args.ramd_file,args.output))
-        ret = ramd_dec_seg(args.ramd_file, args.output, args.gdb_path, args.gdb_host, args.gdb_port)
+        ret = ramd_dec_seg(args.ramd_file, args.output, args.json_file)
         if ret[1] > 0:
             print('size: %d -> %d (%.1f%%)' %(ret[0],ret[1],ret[1]*100/ret[0]))
         else:

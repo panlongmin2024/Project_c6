@@ -297,9 +297,13 @@ typedef enum {
 
     BT_GFP_BLE_CONNECTED,
     BT_GFP_BLE_DISCONNECTED,
+    BT_GFP_BLE_INITIAL_PAIRING,
 
 	/* param: see @ struct bt_manager_tws_report */
 	BT_TWS_EVENT,
+
+	BT_KEY_MISS,
+	BT_SECURITY_CHANGED,
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	BT_MSG_AURACAST_EXIT,
 #endif

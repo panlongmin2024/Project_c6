@@ -1049,6 +1049,7 @@ static void mcu_ls8a10049t_wlt_set_property(struct device *dev,enum mcu_manager_
 {
 	struct logic_mcu_ls8a10049t_device_data_t *ls8a10049t = p_mcu_ls8a10049t_dev->driver_data;
     int value = val->intval;
+	static uint8_t level = 0;
     switch(psp)
     {
         case MCU_SUPPLY_PROP_LED_0:
@@ -1126,6 +1127,22 @@ static void mcu_ls8a10049t_wlt_set_property(struct device *dev,enum mcu_manager_
         case MCU_SUPPLY_PROP_FACTORY_TEST_KEY:
             _ls8a10049t_watchdog_clear(ls8a10049t);
             break;
+
+		case MCU_SUPPLY_PROP_JUST_UP_LED_LEVEL:			
+			if(level <= 0xff)
+			{
+				level++;		
+			}
+			io_expend_aw9523b_set_port_0_led_driver_level(level);
+			break;
+
+		case MCU_SUPPLY_PROP_JUST_DOWN_LED_LEVEL:
+			if(level > 0)
+			{
+				level--;
+			}
+			io_expend_aw9523b_set_port_0_led_driver_level(level);
+			break;	
 
         default:
             break;               

@@ -70,7 +70,7 @@ int _audio_record_request_more_data(void *priv_data, uint32_t reason)
 	int ret = 0;
     struct audio_record_t *handle = (struct audio_record_t *)priv_data;
 	int num = handle->pcm_buff_size / 2;
-	uint8_t *buf = NULL;
+	uint8_t *buf = handle->pcm_buff;
 
 
 #ifdef CONFIG_LOGIC_ANALYZER
@@ -105,7 +105,7 @@ int _audio_record_request_more_data(void *priv_data, uint32_t reason)
 #endif
 
 	ret = stream_write(handle->audio_stream, buf, num);
-	if (ret < 0) {
+	if (ret != num) {
 		SYS_LOG_WRN("data full ret %d ", ret);
 	}
 
@@ -275,7 +275,7 @@ err_exit:
 
 	if (audio_record->timeline) {
 		timeline_release(audio_record->timeline);
-	} 
+	}
 
 	mem_free(audio_record);
 

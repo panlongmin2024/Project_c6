@@ -78,7 +78,8 @@ long lasting stereo protocol
 #define COMMAND_SETUSEREQ          0x93
 #define COMMAND_REQ_PASTINFO       0xf1
 #define COMMAND_SENDSYSEVENT       0xf2
-
+#define COMMAND_SENDOTADATA        0xd1
+#define COMMAND_REQ_OTA            0xd2
 
 #define BROADCAST_ISO_INTERVAL_7_5MS   6
 #define BROADCAST_ISO_INTERVAL_10MS    8
@@ -516,4 +517,11 @@ void broadcast_tws_vnd_send_resp_eqinfo(u8_t send);
 void broadcast_tws_vnd_request_dev_info();
 void broadcast_tws_vnd_notify_dev_info();
 void broadcast_tws_vnd_notify_bat_status();
+
+#ifdef CONFIG_OTA_BACKEND_LETWS_STREAM
+void broadcast_tws_vnd_send_ota_data(uint8_t *data, uint32_t len);
+int broadcast_tws_vnd_send_ota_req(void);
+void broadcast_tws_ota_data_cbk_register(void (*callback)(uint8_t *data, uint32_t len));
+#endif
+
 #endif

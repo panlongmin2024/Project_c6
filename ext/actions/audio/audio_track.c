@@ -269,7 +269,7 @@ __ramfunc int _audio_track_request_more_data(void *handle, uint32_t reason)
 	int stream_length = _stream_get_length(audio_track, audio_track->audio_stream);
 	int ret = 0;
 	bool reload_mode = ((audio_track->channel_mode & AUDIO_DMA_RELOAD_MODE) == AUDIO_DMA_RELOAD_MODE);
-	uint8_t *buf = NULL;
+	uint8_t *buf = audio_track->pcm_frame_buff;
 
 #ifdef CONFIG_LOGIC_ANALYZER
 	logic_switch(1);
@@ -779,10 +779,11 @@ int audio_track_start(struct audio_track_t *handle)
 			|| handle->stream_type == AUDIO_STREAM_USOUND
 			|| handle->stream_type == AUDIO_STREAM_SPDIF_IN
 			|| handle->stream_type == AUDIO_STREAM_I2SRX_IN
-			|| handle->stream_type == AUDIO_STREAM_SOUNDBAR){
+			|| handle->stream_type == AUDIO_STREAM_SOUNDBAR
+			|| handle->stream_type == AUDIO_STREAM_LOCAL_MUSIC){
 				prepare_start = 1;
-				audio_track_set_waitto_start(handle, false);
 			}
+			audio_track_set_waitto_start(handle, false);
 		}
 
 		if(handle->stream_type == AUDIO_STREAM_LE_AUDIO){

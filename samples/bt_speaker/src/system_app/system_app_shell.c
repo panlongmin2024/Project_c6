@@ -448,6 +448,23 @@ static int shell_stereo_mode_disable(int argc, char *argv[])
 	return 0;
 }
 
+static void lea_on_off_callback(int err)
+{
+	bt_manager_enter_pair_mode();
+}
+
+static int shell_lea_enable(int argc, char *argv[])
+{
+	bt_manager_audio_lea_enable(lea_on_off_callback);
+	return 0;
+}
+
+static int shell_lea_disable(int argc, char *argv[])
+{
+	bt_manager_audio_lea_disable(lea_on_off_callback);
+	return 0;
+}
+
 #ifdef CONFIG_OTA_APP
 #include "../ota/ota_app.h"
 #endif
@@ -553,6 +570,9 @@ static const struct shell_cmd app_commands[] = {
 #endif
 	{"stereo", shell_stereo_mode_enable, "1-primary,0-secondary"},
 	{"stereo_exit", shell_stereo_mode_disable, "exit stereo mode"},
+
+	{"lea_enable", shell_lea_enable, "lea_enable"},
+	{"lea_disable", shell_lea_disable, "lea_disable"},
 
 	{"uart0_switch", shell_uart0_switch, "uart0 disable print"},
 

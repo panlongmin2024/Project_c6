@@ -79,7 +79,7 @@ typedef struct {
 #endif
 
 #define NORMALEQ_BAND_COUNT  (3)
-#define BAND_COUNT_MAX  (5)
+#define BAND_COUNT_MAX  (7)
 #define EQ_DATA_SIZE (100)
 
 enum EQ_Category_Id_e {

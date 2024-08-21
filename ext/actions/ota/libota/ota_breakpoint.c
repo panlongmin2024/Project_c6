@@ -23,15 +23,15 @@ void ota_breakpoint_dump(struct ota_breakpoint *bp)
 	struct ota_file *cur_file = &bp->cur_file;
 	int i;
 
-	printk("  breakpoint: %p", bp);
-	printk("  old_version 0x%x, new_version 0x%x, data_checksum 0x%x",
+	printk("  breakpoint: %p\n", bp);
+	printk("  old_version 0x%x, new_version 0x%x, data_checksum 0x%x\n",
 		bp->old_version, bp->new_version, bp->data_checksum);
-	printk("  bp_id %d, state %d, backend_type %d",
+	printk("  bp_id %d, state %d, backend_type %d\n",
 		bp->bp_id, bp->state, bp->backend_type);
 
 	for (i = 0; i < ARRAY_SIZE(bp->file_state); i++) {
 		if (bp->file_state[i].file_id > 0)
-		SYS_LOG_INF("  [%d] file_id %d state 0x%x", i,
+		SYS_LOG_INF("  [%d] file_id %d state 0x%x\n", i,
 			bp->file_state[i].file_id, bp->file_state[i].state);
 	}
 

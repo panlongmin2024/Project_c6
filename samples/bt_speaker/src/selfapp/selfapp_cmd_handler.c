@@ -1,7 +1,7 @@
 #include "selfapp_internal.h"
 #include "selfapp_cmd_def.h"
 #include "selfapp_config.h"
-
+#include <app_ui.h>
 #include <mem_manager.h>
 #include <property_manager.h>
 #ifdef CONFIG_PLAYTTS
@@ -355,9 +355,9 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 		memset(serial_num, 0, SELF_SN_LEN + 1);
 		if(!device_id){
 #ifdef CONFIG_PROPERTY
-			len = property_get(CFG_ATS_SN, serial_num, SELF_SN_LEN);
+			len = property_get(CFG_ATS_DSN_ID, serial_num, SELF_SN_LEN);
 #endif
-			if (len <= 0 || len > SELF_SN_LEN) {
+						if (len <= 0 || len > SELF_SN_LEN) {
 				memcpy(serial_num, SELF_DEFAULT_SN, SELF_DEFAULT_SN_LEN);
 				// len = SELF_DEFAULT_SN_LEN;
 			}
@@ -508,16 +508,16 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 
 
 		if(!device_id){
-			vercode[0] = (u8_t)(swver >> 16);
-			vercode[1] = (u8_t)(swver >> 8);
-			vercode[2] = (u8_t)swver;
+			vercode[0] = hex2dec_digitpos((swver >> 16) & 0xFF);
+			vercode[1] = hex2dec_digitpos((swver >>  8) & 0xFF);
+			vercode[2] = hex2dec_digitpos( swver & 0xFF);
 			vercode[3] = (u8_t)hwver;
 		}else{
 			if(selfctx->secondary_device.validate){
 				memcpy(vercode, selfctx->secondary_device.firmware_version, 4);
 			}
 		}
-		SYS_LOG_INF("version %d %d %d %d %d\n",vercode[0],vercode[1],vercode[2],vercode[3],device_id);
+		SYS_LOG_INF("version %x %x %x %d %d\n",vercode[0],vercode[1],vercode[2],vercode[3],device_id);
 		size += selfapp_pack_header(buf, DEVCMD_RetDevInfo, 1+1+4);
 		buf[size++] = device_id;
 		buf[size++] = tokenid;
@@ -1211,9 +1211,9 @@ static int spk_req_sn(u8_t * Payload, u16_t PayloadLen)
 	sendlen = 3;
 
 #ifdef CONFIG_PROPERTY
-	len = property_get(CFG_ATS_SN, buf + sendlen, SELF_SN_LEN);
+	len = property_get(CFG_ATS_DSN_ID, buf + sendlen, SELF_SN_LEN);
 #endif
-	if (len <= 0 || len > SELF_SN_LEN) {
+		if (len <= 0 || len > SELF_SN_LEN) {
 		memcpy(buf + 3, SELF_DEFAULT_SN, SELF_DEFAULT_SN_LEN);
 		len = SELF_DEFAULT_SN_LEN;
 	}
@@ -1223,6 +1223,10 @@ static int spk_req_sn(u8_t * Payload, u16_t PayloadLen)
 	ret = self_send_data(buf, sendlen);
 
 	return ret;
+}
+
+void lea_status_update_cb(int err){
+	selfapp_send_msg(MSG_SELFAPP_APP_EVENT, SELFAPP_CMD_LEAUDIO_STATUS_UPDATE, 0, 0);
 }
 
 int cmdgroup_speaker_settings(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
@@ -1307,11 +1311,18 @@ int cmdgroup_speaker_settings(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 		ret = spk_ret_auracast_group(Payload, PayloadLen);
 		break;
 	case CMD_SetLeAudioStatus:
-		selfapp_log_wrn("Not implement cmd 0x%x\n", CmdID);
+		if(Payload[0]){
+			ret = bt_manager_audio_lea_enable(lea_status_update_cb);
+		}else{
+			ret = bt_manager_audio_lea_disable(lea_status_update_cb);
+		}
+		if(-EALREADY == ret){
+			sendlen = selfapp_pack_cmd_with_int(buf, CMD_RetLeAudioStatus, selfapp_get_leaudio_status(), 1);
+			ret = self_send_data(buf, sendlen);
+		}
 		break;
 	case CMD_ReqLeAudioStatus:
-		//Always return LE audio off.
-		sendlen = selfapp_pack_cmd_with_int(buf, CMD_RetLeAudioStatus, 0, 1);
+		sendlen = selfapp_pack_cmd_with_int(buf, CMD_RetLeAudioStatus,selfapp_get_leaudio_status() , 1);
 		ret = self_send_data(buf, sendlen);
 		break;
 	case CMD_ReqPlayerInfo:
@@ -1529,4 +1540,23 @@ void selfapp_report_secondary_device_info(void)
 			self_send_data(buf, sendlen);
 		}
 	}
+}
+
+int selfapp_report_leaudio_status(void)
+{
+	u8_t *buf = self_get_sendbuf();
+	u16_t sendlen = 0;
+	int ret = -1;
+
+	if (buf == NULL) {
+		return ret;
+	}
+
+	int status = selfapp_get_leaudio_status();
+	selfapp_log_inf("leaudio status=%d", status);
+
+	sendlen = selfapp_pack_cmd_with_int(buf, CMD_RetLeAudioStatus, status, 1);
+	ret = self_send_data(buf, sendlen);
+
+	return ret;
 }

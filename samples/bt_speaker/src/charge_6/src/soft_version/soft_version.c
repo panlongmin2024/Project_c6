@@ -122,6 +122,9 @@ int fw_version_play_by_tts(void)
 		SYS_LOG_INF("tts filter,so don't play\n");
 		return -1;
 	} */
+	
+	if(tts_manager_is_filter())
+		return 0;
 
 	tts_manager_os_mutex_lock();
 

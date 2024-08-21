@@ -641,7 +641,9 @@ change_out:
 	}else{
 		analy_play_p->param_stay_sec ++;
 
+		if (analy_play_p->param_stay_sec % 10 == 0) {
 		SYS_LOG_INF("param stay %d s", analy_play_p->param_stay_sec);
+		}
 		if(analy_play_p->param_stay_sec > DATA_ANALY_PLAY_MAX_PLAY_SEC)
 		{
 			analy_upload_play_p->play_min = DATA_ANALY_PLAY_MAX_PLAY_MIN;

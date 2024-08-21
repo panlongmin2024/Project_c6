@@ -2823,6 +2823,8 @@ static bool update_sec_level(struct bt_conn *conn)
 		conn->sec_level = BT_SECURITY_L2;
 	}
 
+	BT_INFO("sc level:%d,required:%d",conn->sec_level,conn->required_sec_level);
+
 	return !(conn->required_sec_level > conn->sec_level);
 }
 #endif /* CONFIG_BT_SMP */
@@ -5660,6 +5662,27 @@ int bt_br_set_page_timeout(uint32_t timeout_ms)
 	net_buf_add_le16(buf, value);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_PAGE_TIMEOUT, buf, NULL);
+}
+
+int bt_br_write_class_of_device(uint32_t class_of_device)
+{
+	struct net_buf *buf;
+	struct bt_hci_write_clase_of_device *class_cp;
+	if (class_of_device) {
+		bt_class_of_device = class_of_device;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, sizeof(*class_cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	class_cp = net_buf_add(buf, sizeof(*class_cp));
+	class_cp->class_of_device[0] = (uint8_t)bt_class_of_device;
+	class_cp->class_of_device[1] = (uint8_t)(bt_class_of_device >> 8);
+	class_cp->class_of_device[2] = (uint8_t)(bt_class_of_device >> 16);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, buf, NULL);
 }
 
 static int br_ext_cmd_init(void)

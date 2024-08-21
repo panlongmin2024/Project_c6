@@ -44,6 +44,10 @@ int power_manager_get_battery_temperature(void);
 
 #define POWER_MANAGER_BATTER_10_SECOUND	100						// 10 s
 #define POWER_MANAGER_BATTER_2_SECOUND	20						// 2s
+
+#define DEFAULT_NOPOWER_CAP_LEVEL	    				5
+
+
 /**
  * @brief get system battery vol
  *

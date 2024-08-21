@@ -75,6 +75,7 @@ system_app_context_t system_app_context;
 extern int bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len);
 int sys_ble_advertise_init(void);
 void sys_ble_advertise_deinit(void);
+void gfp_ble_mgr_update_sleep_time(void);
 int system_tws_event_handle(struct app_msg *msg);
 extern int sys_standby_start(void);
 
@@ -97,6 +98,9 @@ static void logic_mcu_ls8a10023t_thread_timer_handler(struct thread_timer *timer
 }
 #endif
 
+#ifdef CONFIG_OTA_BACKEND_LETWS_STREAM
+int ota_app_init_letws(void);
+#endif
 static void _system_app_init(void)
 {
 #ifdef CONFIG_LOGIC_MCU_LS8A10023T
@@ -211,6 +215,9 @@ static void system_btmgr_event_proc(struct app_msg* msg)
 	case MSG_BT_GFP_DISCONNECTED:
 	    gfp_routine_stop();
 		break;
+	case MSG_BT_GFP_INITIAL_PAIRING:
+		gfp_ble_mgr_update_sleep_time();
+		break;
 #endif
 
 #ifdef CONFIG_BT_ADV_MANAGER
@@ -262,6 +269,11 @@ static void system_sys_event_proc(struct app_msg *msg)
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
 		system_exit_front_app();
 	}
+#ifdef CONFIG_OTA_BACKEND_LETWS_STREAM
+	if (SYS_EVENT_OTA_REQ_START == msg->cmd){
+		ota_app_init_letws();
+	}
+#endif
 }
 
 static void _system_app_loop(void *parama1, void *parama2, void *parama3)
@@ -352,6 +364,8 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 						selfapp_notify_role();
 					}else if(SELFAPP_CMD_LASTING_STEREO_MODE_UPDATE == msg.cmd) {
 						selfapp_notify_lasting_stereo_status();
+					}else if(SELFAPP_CMD_LEAUDIO_STATUS_UPDATE == msg.cmd) {
+						selfapp_report_leaudio_status();
 					}
 				break;
 #endif

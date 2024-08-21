@@ -136,7 +136,6 @@ void bt_manager_updata_pre_bt_mac(uint8_t *mac);
 bool bt_manager_config_enable_tws_sync_event(void);
 bool bt_manager_config_support_a2dp_aac(void);
 bool bt_manager_config_support_a2dp_ldac(void);
-bool bt_manager_config_pts_test(void);
 uint16_t bt_manager_config_volume_sync_delay_ms(void);
 uint32_t bt_manager_config_bt_class(void);
 uint16_t *bt_manager_config_get_device_id(void);
@@ -185,6 +184,7 @@ typedef struct bt_mgr_dev_info {
 	uint16_t halt_phone:1;
 	uint16_t dev_role:1;
 	uint16_t a2dp_singnaling_connected:1;
+	uint16_t new_connected:1;
 
     uint8_t  a2dp_codec_type;
     uint8_t  a2dp_sample_khz;
@@ -199,6 +199,7 @@ typedef struct bt_mgr_dev_info {
 
 	uint8_t	 avrcp_remote_support_vol_sync:1;
 	uint8_t	 phone_connect_request:1;
+	uint8_t	 key_miss:1;
     uint8_t  avrcp_remote_vol;
     uint8_t  avrcp_ext_status;  /* BT_MANAGER_AVRCP_EXT_STATUS */
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
@@ -343,6 +344,8 @@ int bt_manager_le_audio_exit(void);
 int bt_manager_le_audio_keys_clear(void);
 int bt_manager_le_audio_start(void);
 int bt_manager_le_audio_stop(void);
+int bt_manager_lea_services_enable(void);
+int bt_manager_lea_services_disable(void);
 int bt_manager_le_audio_pause(void);
 int bt_manager_le_audio_resume(void);
 int bt_manager_le_audio_server_cap_init(struct bt_audio_capabilities *caps);
