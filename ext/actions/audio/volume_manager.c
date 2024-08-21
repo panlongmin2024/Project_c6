@@ -96,7 +96,12 @@ int system_volume_set(int stream_type, int volume, bool display)
 	if (display) {
 		if (ret == MAX_VOLUME_VALUE) {
 			//if ((uint32_t)(k_cycle_get_32() - volume_timestampe) / (sys_clock_hw_cycles_per_sec / 1000000)> 500000) {
-				sys_event_notify(SYS_EVENT_MAX_VOLUME);
+				bool ats_is_enable(void);
+				printk("------> maxvol ats is %d\n",ats_is_enable());
+				if(!ats_is_enable()){
+					/* in factory mode,no need maxvol tts! */
+					sys_event_notify(SYS_EVENT_MAX_VOLUME);
+				}				
 				volume_timestampe = k_cycle_get_32();
 			//}
 			is_limited = true;
