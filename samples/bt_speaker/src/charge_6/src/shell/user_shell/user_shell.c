@@ -175,6 +175,24 @@ static int shell_user_reboot(int argc, char *argv[])
 	sys_pm_reboot(REBOOT_TYPE_NORMAL);
 	return 0;
 }
+#ifdef CONFIG_ACTIONS_IMG_LOAD
+static int shell_bin_test(int argc, char *argv[])
+{
+	if (argv[1] != NULL) {
+		u8_t id = strtoul(argv[1], (char**)NULL, 10);
+		int ret = property_set_int(CFG_BIN_TEST_ID, id);
+		if (ret == 0) {
+			property_flush(CFG_BIN_TEST_ID);
+			printk("bin test new id %d\n", id);
+			sys_pm_reboot(REBOOT_TYPE_GOTO_WIFISYS);
+		}
+
+	}
+
+	return 0;
+}
+
+#endif
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -197,6 +215,7 @@ static const struct shell_cmd commands[] = {
 	{ "set_name", shell_user_set_name, "user set name"},
 	{ "set_mac_name", shell_user_set_mac_name, "user set mac name"},
 	{ "reboot", shell_user_reboot, "user reboot"},
+	{ "enter_rf", shell_bin_test, "user rf test"},
 	{ NULL, NULL, NULL }
 };
 
