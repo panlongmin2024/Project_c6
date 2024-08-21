@@ -316,6 +316,7 @@ static int _sys_standby_exit_s1(void)
 			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
 
 		bt_manager_update_led_display();
+		pd_manager_pd_wakeup();
 		/* 1106 remove this led ,end*/
 		//if(system_app_get_auracast_mode())
 			//pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);

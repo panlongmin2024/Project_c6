@@ -48,6 +48,7 @@ const ui_key_map_t common_keymap[] = {
 	{KEY_BT, KEY_TYPE_SHORT_UP, 1, MSG_ENTER_PAIRING_MODE}, //phone pair
 	{KEY_BT, KEY_TYPE_LONG_DOWN, 1, MSG_BT_PLAY_TWS_PAIR}, //tws pair/unpair
 	{KEY_COMBO_VOL, KEY_TYPE_SHORT_UP, 1, MSG_ENTER_DEMO},
+	{KEY_COMBO_M_VU, KEY_TYPE_SHORT_UP, 1, MSG_TRACE_MODE_SWITCH},
 
 	//{KEY_TBD, KEY_TYPE_LONG_DOWN, 1, MSG_BT_PLAY_DISCONNECT_TWS_PAIR},
 	//{KEY_TBD, KEY_TYPE_DOUBLE_CLICK, 1, MSG_BT_SIRI_START},
@@ -108,6 +109,8 @@ static bool is_need_play_tts(u32_t ui_event)
 		case UI_EVENT_CHARGING_WARNING:
 		case UI_EVENT_REMOVE_CHARGING_WARNING:	
 		case UI_EVENT_STEREO_GROUP_INDICATION:
+		case UI_EVENT_ENTER_USOUND:
+		case UI_EVENT_ENTER_BTMUSIC:
 			ret = true;
 			break;
 		default:
@@ -120,12 +123,18 @@ static bool is_need_play_tts(u32_t ui_event)
 #include <volume_manager.h>
 #include <audio_system.h>
 extern int power_manager_get_just_volume_step(void);
+extern bool user_shell_get_smartcontrol_switch_status(void);
 #define SMART_JUST_MIN_VOLUME		13
 static int smart_handle_volume(void)
 {
 	int ret;
 	u8_t vol;
 	int step;
+	if(!user_shell_get_smartcontrol_switch_status())
+	{
+		SYS_LOG_ERR("----smartcontrol is close -----\n");
+		return -EINVAL;
+	}
 
 	ret = system_volume_get(AUDIO_STREAM_MUSIC);
 	if (ret < 0 || ret <= SMART_JUST_MIN_VOLUME) {
@@ -141,7 +150,7 @@ static int smart_handle_volume(void)
 	} 
 
 	SYS_LOG_INF("vol=%d\n", vol);
-	bt_manager_set_smartcontrol_vol_sync(0);
+	//bt_manager_set_smartcontrol_vol_sync(0);//chole说音量需要保存与同步 2024.8.16   zth
 	system_volume_set(AUDIO_STREAM_MUSIC, vol, true);
 	bt_manager_set_smartcontrol_vol_sync(1);
 
@@ -150,10 +159,12 @@ static int smart_handle_volume(void)
 
 #endif
 extern void bt_manager_update_led_display(void);
+extern uint8_t system_app_get_auracast_mode(void);
 
 static void main_app_view_deal(u32_t ui_event)
 {
 	struct device *dev = NULL;
+	static bool is_charge_warning_flag = false;
 
 	switch (ui_event) {
 	case UI_EVENT_PLAY_START:
@@ -230,6 +241,11 @@ static void main_app_view_deal(u32_t ui_event)
 			input_dev_disable(dev);	
 #endif			
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,CHARGING_WARNING);
+		if(!is_charge_warning_flag)
+		{
+			bt_manager_disconnect_all_device();//charge warning 需要断开蓝牙---2024.8.16 zth
+			is_charge_warning_flag = true;
+		}
 		break;			
 
 	case UI_EVENT_REMOVE_CHARGING_WARNING:
@@ -242,6 +258,11 @@ static void main_app_view_deal(u32_t ui_event)
 		#ifdef CONFIG_LED_MANAGER
 		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
 		#endif
+		if(system_app_get_auracast_mode())
+		{
+			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);//恢复auracast灯 2024.8.16----zth
+		}
+		is_charge_warning_flag = false;
 		break;	
 
 	case UI_EVENT_MCU_FW_SUCESS:

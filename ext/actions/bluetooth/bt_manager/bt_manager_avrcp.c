@@ -449,7 +449,7 @@ void bt_manager_avrcp_sync_playing_vol(uint16_t hdl)
 
 static void _bt_manager_avrcp_pass_ctrl_callback(uint16_t hdl, uint8_t cmd, uint8_t state)
 {
-    bt_mgr_dev_info_t* dev_info;
+    bt_mgr_dev_info_t* dev_info = NULL;
 
     SYS_LOG_INF("cmd:%d state:%d\n", cmd,state);
 
@@ -473,13 +473,15 @@ static void _bt_manager_avrcp_pass_ctrl_callback(uint16_t hdl, uint8_t cmd, uint
 
         else if((cmd == BTSRV_AVRCP_CMD_PLAY) || (cmd == BTSRV_AVRCP_CMD_PAUSE)){
             dev_info = bt_mgr_find_dev_info_by_hdl(hdl);
-            SYS_LOG_INF("ext:0x%x cmd %d\n", dev_info->avrcp_ext_status,cmd);
-            if(cmd == BTSRV_AVRCP_CMD_PLAY){
-		        dev_info->avrcp_ext_status |= BT_MANAGER_AVRCP_EXT_STATUS_PASSTHROUGH_PLAY;
+            if(dev_info){
+                SYS_LOG_INF("ext:0x%x cmd %d\n", dev_info->avrcp_ext_status,cmd);
+                if(cmd == BTSRV_AVRCP_CMD_PLAY){
+                    dev_info->avrcp_ext_status |= BT_MANAGER_AVRCP_EXT_STATUS_PASSTHROUGH_PLAY;
+                }
+                else{
+                    dev_info->avrcp_ext_status &= ~BT_MANAGER_AVRCP_EXT_STATUS_PASSTHROUGH_PLAY;
+                }
             }
-		    else {
-		        dev_info->avrcp_ext_status &= ~BT_MANAGER_AVRCP_EXT_STATUS_PASSTHROUGH_PLAY;
-		    }
         }
 	}
 }
@@ -544,11 +546,13 @@ int bt_manager_avrcp_pause(void)
 
 int bt_manager_avrcp_pause_by_hdl(uint16_t hdl)
 {
-#if 1
 	bt_mgr_dev_info_t* a2dp_dev = bt_mgr_find_dev_info_by_hdl(hdl);
 
-	if (a2dp_dev != NULL &&
-	    a2dp_dev->a2dp_status_playing &&
+    if(!a2dp_dev){
+        return -EINVAL;
+    }
+
+	if (a2dp_dev->a2dp_status_playing &&
 	    a2dp_dev->a2dp_stream_started &&
 	    a2dp_dev->avrcp_connected &&
 	    a2dp_dev->avrcp_ext_status != BT_MANAGER_AVRCP_EXT_STATUS_NONE)
@@ -559,7 +563,7 @@ int bt_manager_avrcp_pause_by_hdl(uint16_t hdl)
 	    bt_manager_tws_sync_a2dp_status(a2dp_dev->hdl, NULL);
 	    _bt_manager_avrcp_on_paused(a2dp_dev);
 	}
-#endif
+
 	return btif_avrcp_send_command_by_hdl(a2dp_dev->hdl, BTSRV_AVRCP_CMD_PAUSE);
 }
 

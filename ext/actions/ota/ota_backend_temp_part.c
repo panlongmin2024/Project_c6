@@ -30,7 +30,9 @@ enum ota_backend_temp_type {
 };
 
 #define OTA_BACKEND_SD_SECTOR_SIZE (512)
+#ifndef CONFIG_MMC_SDCARD_DEV_NAME
 #define CONFIG_MMC_SDCARD_DEV_NAME "sd"
+#endif
 
 struct ota_backend_temp_part {
 	struct ota_backend backend;

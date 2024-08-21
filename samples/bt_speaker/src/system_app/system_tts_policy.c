@@ -61,13 +61,13 @@ const tts_ui_event_map_t tts_ui_event_map[] = {
 	// {UI_EVENT_PLAY_NEXT, 0, "next.mp3",},
 #endif
 
-	//{UI_EVENT_ENTER_BTMUSIC, 0, "bt_music.mp3",},
+	{UI_EVENT_ENTER_BTMUSIC, 0, "bt_music.mp3",},
 	//{UI_EVENT_ENTER_LEMUSIC, 0, "bt_le.mp3",},
 	// {UI_EVENT_ENTER_OTA, 0, "ota.mp3",},
 	// {UI_EVENT_ENTER_DEMO, 0, "demo.mp3",},
 
 	//{UI_EVENT_ENTER_LINEIN, 0, "linein.mp3",},
-	//{UI_EVENT_ENTER_USOUND, 0, "usound.mp3",},
+	{UI_EVENT_ENTER_USOUND, 0, "usound.mp3",},
 	//{UI_EVENT_ENTER_SPDIF_IN, 0, "spdif.mp3"},
 	//{UI_EVENT_ENTER_I2SRX_IN, 0, "i2srx.mp3"},
 	//{UI_EVENT_ENTER_SDMPLAYER, 0, "sdplay.mp3",},

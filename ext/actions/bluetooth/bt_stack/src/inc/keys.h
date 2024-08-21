@@ -141,6 +141,7 @@ void acts_bt_keys_link_key_clear_store(const bt_addr_t *addr);
 int acts_le_keys_find_link_key(const bt_addr_le_t *addr);
 uint8_t acts_le_keys_get_link_key_num(void);
 void acts_le_keys_clear_link_key(const bt_addr_le_t *addr);
+void acts_le_keys_unpair_device(const bt_addr_le_t *addr);
 void acts_le_keys_clear_list(void);
 bool acts_le_keys_is_bond(const bt_addr_le_t *addr);
 /* Actions add end */

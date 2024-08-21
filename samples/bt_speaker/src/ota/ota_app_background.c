@@ -19,7 +19,7 @@
 #include <sys_event.h>
 #include <ota_upgrade.h>
 #include <ota_backend.h>
-#include <ota_backend_sdcard.h>
+#include <ota_backend_disk.h>
 #include <ota_backend_bt.h>
 #include <ota_backend_selfapp.h>
 #include "flash.h"

@@ -159,13 +159,18 @@ static int lea_policy_state_waiting_handler(btmgr_lea_policy_event_e event, void
 				SYS_LOG_ERR("param:%p,len:%d\n", param, len);
 				return -1;
 			}
-			uint8_t reason = ((uint8_t *)param)[0];
+
+            uint8_t reason = 0;
+            if(param){
+			    reason = ((uint8_t *)param)[0];
+			}
 			bt_addr_le_t *peer_addr = &btmgr_lea_policy_ctx.last_lea_dev_info;
 			memcpy(peer_addr, &((uint8_t *)param)[1], sizeof(bt_addr_le_t));
 			if (0x13 == reason
 				|| 0x16 == reason) {
 				break;
-			} else {
+			}
+			else {
 				/* reconnect last device */
 				bt_manager_halt_ble();
 				lea_policy_timer_start(RECONNECTING_DURATION_MS);
@@ -333,7 +338,7 @@ static int lea_policy_state_reconnecting_handler(btmgr_lea_policy_event_e event,
 				return -1;
 			}
 
-			if (!bt_addr_le_cmp((const bt_addr_le_t*)param, &btmgr_lea_policy_ctx.last_lea_dev_info)) {
+			if (param && !bt_addr_le_cmp((const bt_addr_le_t*)param, &btmgr_lea_policy_ctx.last_lea_dev_info)) {
 				timeout_handler(NULL, NULL);
 			}
 			break;
@@ -466,13 +471,18 @@ static int lea_policy_state_connected_handler(btmgr_lea_policy_event_e event, vo
 	return 0;
 }
 
-void bt_manager_lea_policy_ctx_init(void)
+void bt_manager_lea_policy_ctx_init(uint8_t enable)
 {
 	memset(&btmgr_lea_policy_ctx, 0, sizeof(btmgr_lea_policy_ctx));
-	btmgr_lea_policy_ctx.policy_enable = 1;
 
 	btmgr_lea_policy_ctx.funcs = lea_policy_state_event_handler;
 	btmgr_lea_policy_ctx.max_dev_num = bt_manager_config_connect_phone_num();
+
+	if (!enable) {
+		return;
+	}
+
+	btmgr_lea_policy_ctx.policy_enable = 1;
 
 	bool ret = bt_le_get_last_paired_device(&btmgr_lea_policy_ctx.last_lea_dev_info);
 	if (true == ret) {
@@ -730,11 +740,13 @@ void bt_manager_lea_policy_enable(void)
 	btmgr_lea_policy_ctx.policy_enable = 1;
 	uint8_t cur_lea_num = bt_manager_audio_get_leaudio_dev_num();
 	bt_manager_halt_ble();
-#if defined(CONFIG_BT_PRIVACY)
+
 	if (btmgr_lea_policy_ctx.lea_policy_state == LEA_POLICY_STATE_PAIRING) {
+		bt_manager_le_audio_adv_disable();
+#if defined(CONFIG_BT_PRIVACY)
 		hostif_bt_le_address_resolution_enable(1);
-	}
 #endif
+	}
 
 	if (cur_lea_num < btmgr_lea_policy_ctx.max_dev_num) {
 		btmgr_lea_policy_ctx.lea_policy_state = LEA_POLICY_STATE_WAITING;
@@ -744,8 +756,16 @@ void bt_manager_lea_policy_enable(void)
 		btmgr_lea_policy_ctx.lea_policy_state = LEA_POLICY_STATE_CONNECTED;
 	}
 
-	SYS_LOG_INF("state:%d\n", btmgr_lea_policy_ctx.lea_policy_state);
+	bool ret = bt_le_get_last_paired_device(&btmgr_lea_policy_ctx.last_lea_dev_info);
+	if (true == ret) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+		bt_addr_le_to_str(&btmgr_lea_policy_ctx.last_lea_dev_info, addr_str, sizeof(addr_str));
+		SYS_LOG_INF("addr:%s\n", addr_str);
+	} else {
+		bt_manager_lea_policy_event_notify(LEA_POLICY_EVENT_PAIRING, NULL, 0);
+	}
 
+	SYS_LOG_INF("state:%d\n", btmgr_lea_policy_ctx.lea_policy_state);
 }
 
 

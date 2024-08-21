@@ -80,6 +80,16 @@ int btif_audio_stop(void)
 	return btsrv_audio_stop();
 }
 
+int btif_audio_services_enable(void)
+{
+	return btsrv_audio_services_enable();
+}
+
+int btif_audio_services_disable(void)
+{
+	return btsrv_audio_services_disable();
+}
+
 int btif_audio_pause(void)
 {
 	return btsrv_function_call(MSG_BTSRV_AUDIO, MSG_BTSRV_AUDIO_PAUSE, NULL);

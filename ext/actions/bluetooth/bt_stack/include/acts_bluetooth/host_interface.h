@@ -134,6 +134,16 @@ void hostif_bt_update_br_name(void);
  */
 int hostif_bt_init_class(uint32_t classOfDevice);
 
+/** @brief write bt device class to controller directly
+ *
+ *  write bt device class.
+ *
+ *  @param classOfDevice bt device class
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int hostif_bt_write_class(uint32_t classOfDevice);
+
 /** @brief Initialize device id
  *
  * @param device id
@@ -1479,6 +1489,7 @@ uint8_t hostif_bt_le_get_paired_devices(bt_addr_le_t dev_buf[], uint8_t buf_coun
 uint8_t hostif_bt_le_get_paired_devices_by_type(uint8_t addr_type, bt_addr_le_t dev_buf[], uint8_t buf_count);
 bool hostif_bt_le_get_last_paired_device(bt_addr_le_t* dev);
 bool hostif_bt_le_clear_device(bt_addr_le_t* dev);
+void hostif_bt_le_unpair_device(const bt_addr_le_t *addr);
 void hostif_bt_le_clear_list(void);
 bool hostif_bt_le_is_bond(const bt_addr_le_t *addr);
 

@@ -62,17 +62,20 @@ LOG_MODULE_DECLARE(main, CONFIG_ACT_EVENT_APP_COMPILE_LEVEL);
 
 #ifdef CONFIG_USB_UART_CONSOLE
 void trace_set_usb_console_active(u8_t active);
+u8_t trace_get_usb_console_status(void);
 #endif
 
 #ifdef CONFIG_GFP_PROFILE
 void account_key_clear(void);
 void personalized_name_clear(void);
+void gfp_ble_mgr_clear_sleep_time(void);
 #endif
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #include <wltmcu_manager_supply.h>
 extern int ext_dsp_set_bypass(int bypass);
 extern int dsp_bypass_enable;
+extern bool pd_manager_check_mobile(void);
 #endif			
 static void main_input_enter_pairing_mode(void)
 {
@@ -95,6 +98,11 @@ static void main_input_enter_pairing_mode(void)
 		} */
 		bt_manager_event_notify(BT_MSG_AURACAST_EXIT, NULL, 0);
 #endif
+
+#ifdef CONFIG_GFP_PROFILE
+        gfp_ble_mgr_clear_sleep_time();
+#endif
+
 		bt_manager_enter_pair_mode();
 	} else {
 		SYS_LOG_ERR("max connected dev num,bt:%d\n", bt_link_num);
@@ -266,7 +274,7 @@ void main_input_event_handle(struct app_msg *msg)
 		}	*/	
 /*  		if (dc_power_in_status_read() 
 		|| (sys_pm_get_power_5v_status() == 2)){  */
-		//从充电模式关�?		
+		//从充电模式关�?		
 		if(1){
 			u8_t name[33];
 			int ret;
@@ -374,6 +382,22 @@ void main_input_event_handle(struct app_msg *msg)
 		break;
 	}	
 #endif
+#ifdef CONFIG_USB_UART_CONSOLE
+	case MSG_TRACE_MODE_SWITCH: {
+		int cur_plugin = desktop_manager_get_plugin_id();
+		if (cur_plugin == DESKTOP_PLUGIN_ID_UAC || cur_plugin == DESKTOP_PLUGIN_ID_DEMO) {
+			printk("trance abort: plugin %d unsupport\n", cur_plugin);
+			break;
+		}
+
+		if (trace_get_usb_console_status()) {
+			trace_set_usb_console_active(false);
+		} else {
+			trace_set_usb_console_active(true);
+		}
+		break;
+	}
+#endif
 	default:
 		desktop_manager_proc_app_msg(msg);
 		break;
@@ -397,49 +421,40 @@ void main_hotplug_event_handle(struct app_msg *msg)
 		break;
 	case HOTPLUG_USB_DEVICE:
 		if (msg->value == HOTPLUG_IN) {
-#ifdef CONFIG_USB_UART_CONSOLE
-			if(desktop_manager_get_plugin_id() != DESKTOP_PLUGIN_ID_DEMO){
-				trace_set_usb_console_active(true);
-			}else{
-				desktop_manager_proc_app_msg(msg);
-			}
-#else
-#if (defined (CONFIG_USOUND_APP))
-			if (system_boot_time() > 5000) {
-				system_app_launch_add(DESKTOP_PLUGIN_ID_UAC, true);
-			}else{
-				system_app_launch_add(DESKTOP_PLUGIN_ID_UAC, false);
-			}
-#endif
-#if (defined (CONFIG_DEMO_APP))
-		if(desktop_manager_get_plugin_id() == DESKTOP_PLUGIN_ID_DEMO){
-			desktop_manager_proc_app_msg(msg);
-		}
-#endif
-#endif
-		} else if (msg->value == HOTPLUG_OUT) {
-#ifdef CONFIG_USB_UART_CONSOLE
-			if(desktop_manager_get_plugin_id() != DESKTOP_PLUGIN_ID_DEMO){
-				trace_set_usb_console_active(false);
-			}else{
-				desktop_manager_proc_app_msg(msg);
-			}
-#else
-#if (defined (CONFIG_USOUND_APP))
-			system_app_launch_del(DESKTOP_PLUGIN_ID_UAC);
-#endif
-#if (defined (CONFIG_DEMO_APP))
+#ifdef CONFIG_DEMO_APP
 			if(desktop_manager_get_plugin_id() == DESKTOP_PLUGIN_ID_DEMO){
 				desktop_manager_proc_app_msg(msg);
+				break;
 			}
 #endif
+#ifdef CONFIG_USOUND_APP
+#ifdef CONFIG_USB_UART_CONSOLE
+			trace_set_usb_console_active(false);  // exit: confict with UAC
+#endif
+			system_app_launch_add(DESKTOP_PLUGIN_ID_UAC, (system_boot_time() > 5000) ? 1 : 0);
+#endif
+		}
+		else if (msg->value == HOTPLUG_OUT) {
+#ifdef CONFIG_DEMO_APP
+			if(desktop_manager_get_plugin_id() == DESKTOP_PLUGIN_ID_DEMO){
+				desktop_manager_proc_app_msg(msg);
+				break;
+			}
+#endif
+#ifdef CONFIG_USOUND_APP
+			system_app_launch_del(DESKTOP_PLUGIN_ID_UAC);
 #endif
 		}
 		break;
+
 	case HOTPLUG_CHARGER:
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 		if (msg->value == HOTPLUG_IN)
 		{
+			if(run_mode_is_demo() && pd_manager_check_mobile())
+			{
+				sys_event_notify(SYS_EVENT_POWER_OFF);
+			}
 		}
 		else if (msg->value == HOTPLUG_OUT)
 		{
@@ -448,6 +463,9 @@ void main_hotplug_event_handle(struct app_msg *msg)
 			{
 				if(!pd_manager_get_source_change_state())
 				{
+#ifdef CONFIG_LED_MANAGER
+					led_manager_set_display(128, LED_OFF, OS_FOREVER, NULL);
+#endif	
 					sys_event_notify(SYS_EVENT_POWER_OFF);
 				}
 			}

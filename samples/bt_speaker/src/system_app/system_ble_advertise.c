@@ -22,7 +22,9 @@
 #endif
 #include "system_app.h"
 
-#define GFP_BLE_ADV_POWER (-13)
+#define GFP_BLE_ADV_POWER (-13)//-13
+#define GFP_ADV_SLEEP_TIME (500) // 20 S
+
 
 #ifdef CONFIG_GFP_PROFILE
 #define ADV_INTERVAL_MS (50)
@@ -80,6 +82,7 @@ struct ble_adv_mngr {
 	u8_t tws_role;
 	u8_t total_time_cnt;
 	u8_t curr_time_cnt;
+    u16_t gfp_sleep_time_cnt;
 	u32_t begin_wait_time;
 
 	struct thread_timer check_adv_timer;
@@ -119,8 +122,11 @@ static bool ble_adv_check_enable(void)
 	bool enable = true;
 	uint32_t cur_time = os_uptime_get_32();
 	uint32_t cur_wait_time_ms = 0;
-	uint8_t mode;
 	int tmp_cur_tws_role = bt_manager_tws_get_dev_role();
+
+#ifdef CONFIG_GFP_PROFILE
+    uint8_t mode;
+#endif
 
 	if (!bt_manager_is_ready()) {
 		return false;
@@ -215,6 +221,13 @@ static bool ble_adv_check_enable(void)
         if (p->adv[ADV_TYPE_GFP]
             && (p->adv[ADV_TYPE_GFP]->adv_enabled == 0)){
             p->adv[ADV_TYPE_GFP]->adv_enabled = 1;
+        }
+    }
+
+    if(p->gfp_sleep_time_cnt > 0 ){
+        p->gfp_sleep_time_cnt--;
+        if(bt_manager_is_pair_mode()){
+            p->adv[ADV_TYPE_GFP]->adv_enabled = 0;
         }
     }
 	/*
@@ -456,6 +469,20 @@ static int ble_mgr_adv_state(void)
 }
 
 #ifdef CONFIG_GFP_PROFILE
+void gfp_ble_mgr_update_sleep_time(void)
+{
+    struct ble_adv_mngr *p = &ble_adv_info;
+    p->gfp_sleep_time_cnt = GFP_ADV_SLEEP_TIME;
+    SYS_LOG_INF();
+}
+
+void gfp_ble_mgr_clear_sleep_time(void)
+{
+    struct ble_adv_mngr *p = &ble_adv_info;
+    p->gfp_sleep_time_cnt = 0;
+    SYS_LOG_INF();
+}
+
 static int gfp_ble_mgr_adv_state(void)
 {
 	struct ble_adv_mngr *p = &ble_adv_info;

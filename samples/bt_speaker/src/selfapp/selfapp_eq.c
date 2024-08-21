@@ -191,17 +191,19 @@ static void bytes_reverse(u8_t * dst, u8_t * src, int size)
 		*--dst = *src++;
 }
 
-#define MAX_APP_EQ_BANDS		5
+#define MAX_APP_EQ_BANDS		7
 int ext_dsp_set_eq_by_app(u8_t id, u8_t pre_id, const u8_t *data, u8_t len)
 {
 	int i;
 	int bands_count;
 	dolphin_eq_band_t bands[MAX_APP_EQ_BANDS] = {
-		{64.0,    0.0, 1.0, DOLPHIN_EQ_TYPE_LS2},
+		{125.0,    0.0, 1.0, DOLPHIN_EQ_TYPE_LS2},
 		{250.0,   0.0, 1.0, DOLPHIN_EQ_TYPE_EQ2},
+		{500.0,  0.0, 1.0, DOLPHIN_EQ_TYPE_EQ2},
 		{1000.0,  0.0, 1.0, DOLPHIN_EQ_TYPE_EQ2},
-		{4000.0,  0.0, 1.0, DOLPHIN_EQ_TYPE_EQ2},
-		{16000.0, 0.0, 1.0, DOLPHIN_EQ_TYPE_EQ2},
+		{2000.0,  0.0, 1.0, DOLPHIN_EQ_TYPE_EQ2},
+		{4000.0, 0.0, 1.0, DOLPHIN_EQ_TYPE_EQ2},
+		{8000.0, 0.0, 1.0, DOLPHIN_EQ_TYPE_EQ2},		
 	};
 
 	u8_t EQ_Filter_Table[] = {

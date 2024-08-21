@@ -17,14 +17,6 @@ config USOUND_APP
 	help
 	This option enables or disable the usb audio app.
 
-config USOUND_SPEAKER
-	bool
-	prompt "USOUND IN"
-	depends on USOUND_APP
-	default n
-	help
-	This option enables or disable the usb audio in.
-
 config USOUND_MIC
 	bool
 	prompt "USOUND OUT"
@@ -43,3 +35,11 @@ config USOUND_MEETING_MODE
 	default n
 	help
 	This option enables or disable the usb meeting audio out.
+
+config USOUND_BROADCAST_SUPPROT
+	bool
+	prompt "USOUND Broadcast Support"
+	depends on USOUND_APP
+	default n
+	help
+	This option enables or disable usound broadcast.

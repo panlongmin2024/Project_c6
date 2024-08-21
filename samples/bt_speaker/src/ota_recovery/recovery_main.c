@@ -18,7 +18,7 @@
 #include <ota_upgrade.h>
 #include <ota_backend.h>
 #include <ota_backend_temp_part.h>
-#include <ota_backend_sdcard.h>
+#include <ota_backend_disk.h>
 #include <soc_pm.h>
 #include <soc.h>
 
@@ -141,7 +141,7 @@ static void ota_app_stop(void)
 		flash_write_protection_set(flash_device, true);
 }
 
-static void ota_app_notify(int state, int old_state)
+static int ota_app_notify(int state, int old_state)
 {
 	SYS_LOG_INF("ota state: %d->%d", old_state, state);
 
@@ -154,6 +154,7 @@ static void ota_app_notify(int state, int old_state)
 		soc_dvfs_unset_level(SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, "ota");
 #endif
 	}
+	return 0;
 }
 
 static void ota_app_backend_callback(struct ota_backend *backend, int cmd,
@@ -324,6 +325,8 @@ void main(void)
  exit:
 	SYS_LOG_INF("REBOOT_TYPE_GOTO_SYSTEM");
 	k_sleep(50);
+	extern void pd_rst_func(void);
+	pd_rst_func();
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	_ota_mcu_int_timer_hander();
 	#endif

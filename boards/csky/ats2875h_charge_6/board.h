@@ -28,6 +28,8 @@
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 //dc_power_in io
 #define DC_POWER_IN_PIN		7
+#define GPIO_PIN_PD_RST		4
+
 
 #define THREE_L_HW_2
 #endif

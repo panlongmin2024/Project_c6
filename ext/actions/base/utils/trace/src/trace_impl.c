@@ -511,6 +511,15 @@ void trace_set_usb_console_active(u8_t active)
 
     return;
 }
+
+u8_t trace_get_usb_console_status(void)
+{
+    trace_ctx_t *trace_ctx = get_trace_ctx();
+    if (trace_ctx && trace_ctx->cdc_mode) {
+        return 1;
+    }
+    return 0;
+}
 #endif
 
 int trace_irq_print_set(unsigned int irq_enable)

@@ -93,6 +93,8 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 			input_manager_lock();
 			tts_manager_lock();
 			tts_manager_wait_finished(1);
+			os_sleep(100);
+			printk("wati 100ms output\n");
 			hm_ext_pa_deinit();		
 			external_dsp_ats3615_deinit();
 
@@ -142,7 +144,6 @@ void set_power_first_factory_reset_flag(uint8_t value)
 
 static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
-	SYS_LOG_ERR("factory_reset_flag %d\n",get_property_factory_reset_flag());
 	thread_timer_stop(&reset_timer);
 	if(get_property_factory_reset_flag()){
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
@@ -221,6 +222,7 @@ static int _charge_app_exit(void)
 		goto exit;
 	soc_dvfs_set_level(SOC_DVFS_LEVEL_HIGH_PERFORMANCE, "power_on");
 	pd_set_app_mode_state(BTMODE_APP_MODE);
+	pd_manager_pd_wakeup();
 	pd_manager_send_disc();
 	charge_app_view_deinit();
 	system_set_power_run_mode(0);

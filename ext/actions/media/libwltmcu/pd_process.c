@@ -97,7 +97,7 @@ extern void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event
 
 #ifdef CONFIG_C_TEST_BATT_MACRO
 
-static uint8_t test_id = 0;
+static uint8_t test_id = 1;
 static int battery_cap= 15;
 static int battery_temperature=250;
 
@@ -393,7 +393,7 @@ struct wlt_pd_manager_info {
 	u32_t   battery_security_flag:1;
 	u32_t   pd_manager_finish_flag:1;
     u32_t   pd_manager_low_cur_flag:1;
-    
+    u32_t   pd_sink_dischg_flag:1;
 
      /** _app music current status */
     u8_t    bt_app_mode;
@@ -674,9 +674,11 @@ int pd_manager_send_cmd_code(uint8_t type, int code)
 
 void pd_manager_disable_charging(bool flag)
 {
-    if(wlt_pd_manager->pd_sink_status_flag)
+    // if(wlt_pd_manager->pd_sink_status_flag)
     {
         SYS_LOG_INF("[%d]; flag=%d", __LINE__, flag);
+
+        wlt_pd_manager->pd_sink_dischg_flag = flag;
 
         if(flag)
         {
@@ -708,7 +710,9 @@ void pd_manager_mcu_int_deal(void)
     if(bt_mcu_get_bt_wake_up_flag())
     {
         bt_mcu_set_bt_wake_up_flag(0);
-    }    
+    }  
+	
+	
 }
 
 #ifdef OTG_PHONE_POWER_NEED_SHUTDOWN
@@ -860,7 +864,7 @@ bool pd_set_source_refrest(void)
 		pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_SSRC, 1);
 
     }else{
-        pd_manager_disable_charging(false);
+        // pd_manager_disable_charging(false);
         pd_manager_battery_low_check_otg(true);
         // k_sleep(500);
         pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_SSRC, 0);
@@ -1012,29 +1016,26 @@ bool pd_manager_get_source_change_state(void)
 
 void pd_manager_over_temp_protect(void)
 {
-    static bool pd_otp_flag = 0;
+    // static bool pd_otp_flag = 0;
     static bool temp_ten_flag = 0;
     static int debounce_count=0;
 
-    if(!wlt_pd_manager->pd_sink_status_flag)
-    {   
-        return;
-    }
+    // if(!wlt_pd_manager->pd_sink_status_flag)
+    // {   
+    //     return;
+    // }
 
-    if(pd_otp_flag)
+    if(wlt_pd_manager->pd_sink_dischg_flag)
     {
         if((power_manager_get_battery_temperature() <= 430) && (power_manager_get_battery_temperature() >= 20))
         {    
             if(debounce_count++ == 3){
 
-                pd_otp_flag = false;
+               // wlt_pd_manager->pd_sink_dischg_flag = false;
                 debounce_count = 0;
                 
                 pd_manager_disable_charging(false);
             }
-
-
-
 
         }else{
             debounce_count = 0;
@@ -1046,7 +1047,7 @@ void pd_manager_over_temp_protect(void)
         {
             if(debounce_count++ == 3)
             {
-                pd_otp_flag = true;
+               // wlt_pd_manager->pd_sink_dischg_flag = true;
                 debounce_count = 0;
                 pd_manager_disable_charging(true);
             }
@@ -1106,6 +1107,11 @@ void pd_manager_send_disc(void)
         pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_DISC, 0);
     }
 
+}
+
+void pd_manager_pd_wakeup()
+{
+     pd_manager_send_cmd_code(PD_SUPPLY_PROP_WAKEUP, 0);
 }
 
 
@@ -1342,7 +1348,7 @@ void pd_supply_report(pd_manager_charge_event_t event, pd_manager_charge_event_p
 
                     }else if((wlt_pd_manager->bt_app_mode == CHARGING_APP_MODE) || sys_check_standby_state())
                     {
-                        printk("%s:%d source current < 50ma, power down! \n", __func__, __LINE__);
+                        printk("%s:%d source current < 80ma, power down! \n", __func__, __LINE__);
                         pd_manager_deinit(0);
     #ifdef OTG_PHONE_POWER_NEED_SHUTDOWN                    
                         mcu_ui_set_real_shutdown_dut(true);
@@ -1375,17 +1381,22 @@ void pd_supply_report(pd_manager_charge_event_t event, pd_manager_charge_event_p
             if(para->pd_event_val)
             {
                 pd_manager_v_sys_g1_g2(PD_V_BUS_G1_HIGH_G2_LOW);
+
+                if((wlt_pd_manager->bt_app_mode == CHARGING_APP_MODE) || sys_check_standby_state())
+                {
+                     pd_manager_send_cmd_code(PD_SUPPLY_PROP_IDLE, 0);       
+                }
             }
 
             wlt_pd_manager->pd_sink_full_state = para->pd_event_val; 
             
-            if(wlt_pd_manager->pd_sink_full_state)
-            {
-                msg.type = MSG_PD_BAT_SINK_FULL;
-                msg.cmd = 6;
-                msg.value = para->pd_event_val;
-                send_async_msg(APP_ID_MAIN, &msg);
-            }
+            // if(wlt_pd_manager->pd_sink_full_state)
+            // {
+            //     msg.type = MSG_PD_BAT_SINK_FULL;
+            //     msg.cmd = 6;
+            //     msg.value = para->pd_event_val;
+            //     send_async_msg(APP_ID_MAIN, &msg);
+            // }
 
             break;
 
@@ -1453,7 +1464,7 @@ static void pd_manager_time_hander(struct thread_timer *ttimer, void *expiry_fn_
             }  
         }else{
             pd_manager_G1_G2_debounce_process(false);
-            pd_manager_disable_charging(false);
+            // pd_manager_disable_charging(false);
         }
         wlt_pd_manager->pd_sink_source_chg_flag = 0;
     }
@@ -1675,7 +1686,7 @@ if(!ReadODM())
         wlt_pd_manager->dev = wlt_device_get_pd_mps52002();
         api = wlt_pd_manager->dev->driver_api;
         api->register_pd_notify(wlt_pd_manager->dev, pd_supply_report);
-        wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME-5;
+        wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME;
         k_sleep(50);
 		// pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_CURRENT_1000MA, 0);
     }

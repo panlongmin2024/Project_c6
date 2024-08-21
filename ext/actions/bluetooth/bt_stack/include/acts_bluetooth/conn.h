@@ -868,7 +868,7 @@ struct bt_conn_cb {
 
 	/** @brief notify upper remote linkkey mis
 	 */
-	bool (*remote_linkkey_miss)(bt_addr_t *peer);
+	bool (*remote_linkkey_miss)(struct bt_conn *conn,bt_addr_t *peer);
 
 	/** @brief LE connection parameter update request.
 	 *

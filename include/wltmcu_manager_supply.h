@@ -90,6 +90,10 @@ enum pd_manager_supply_property {
     PD_SUPPLY_PROP_PD_VERSION,
 	PD_SUPPLY_PROP_TEST_SINK_CHARAGE_CURRENT,//for factory test
 	PD_SUPPLY_PROP_TEST_GET_SINK_CHARGE_STEP,//for factory test
+
+    PD_SUPPLY_PROP_IDLE,
+
+
 };
 
 typedef enum
@@ -145,6 +149,7 @@ int pd_mps52002_init(void);
 int pd_manager_send_cmd_code(uint8_t type, int code);
 void pd_set_app_mode_state(u8_t status);
 void pd_manager_send_disc(void);
+void pd_manager_pd_wakeup(void);
 bool pd_set_source_refrest(void);
 void pd_manager_init(bool flag);
 int pd_manager_deinit(int value);	
@@ -311,6 +316,8 @@ bool mcu_ui_get_enable_bat_led_state(void);
 void mcu_ui_set_real_shutdown_dut(bool enable);
 #endif
 
+void mcu_ui_set_led_just_level(bool up);
+
 #ifdef CONFIG_C_TEST_BATT_MACRO
 enum{
     WLT_BATTERY_CAP_TEST = 0,
@@ -336,6 +343,7 @@ typedef enum{
     PD_EVENT_AC_LED_DISPLAY,
     PD_EVENT_LED_LOCK,
     PD_EVENT_MUC_UPDATA,
+    PD_EVENT_JUST_LED_LEVEL,
 
 }pd_event;
 

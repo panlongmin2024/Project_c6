@@ -251,9 +251,12 @@ static void btmusic_handle_playback_status(struct bt_media_play_status *status)
 	SYS_LOG_INF("%d\n", status->status);
 
 	if (status->status == BT_STATUS_PAUSED) {
-		btmusic->media_state = 0;
 		if(bt_manager_media_get_status() == BT_STATUS_PAUSED){
 			SYS_LOG_INF("pause\n");
+#ifdef CONFIG_EXTERNAL_DSP_DELAY
+			if (btmusic->media_state)
+				media_player_fade_out(btmusic->playback_player, 60);
+#endif
 			if (thread_timer_is_running(&btmusic->user_pause_timer)){
 				thread_timer_stop(&btmusic->user_pause_timer);
 				btmusic->user_pause = 0;
@@ -266,6 +269,7 @@ static void btmusic_handle_playback_status(struct bt_media_play_status *status)
 #endif
 			}
 		}
+		btmusic->media_state = 0;
 	} else if (status->status == BT_STATUS_PLAYING) {
 		SYS_LOG_INF("play\n");
 #ifdef CONFIG_EXTERNAL_DSP_DELAY

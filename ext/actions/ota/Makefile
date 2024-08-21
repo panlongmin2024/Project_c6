@@ -7,10 +7,11 @@ OTA_LIB_OBJ_DIR=$(O)/ext/actions/ota
 OTA_LIB=
 
 obj-$(CONFIG_OTA_BACKEND_BLUETOOTH) +=  ota_backend_bt.o
-obj-$(CONFIG_OTA_BACKEND_SDCARD) +=  ota_backend_sdcard.o
+obj-$(CONFIG_OTA_BACKEND_DISK) +=  ota_backend_disk.o
 obj-$(CONFIG_OTA_BACKEND_TEMP_PART) +=  ota_backend_temp_part.o
 obj-$(CONFIG_OTA_BACKEND_UART) += ota_backend_uart.o
 obj-$(CONFIG_OTA_SELF_APP) += ota_backend_selfapp.o
+obj-$(CONFIG_OTA_BACKEND_LETWS_STREAM) += ota_backend_letws_stream.o
 obj-$(CONFIG_OTA_UNLOAD) +=  ota_unloading.o
 
 ifdef CONFIG_OTA

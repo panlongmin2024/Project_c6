@@ -294,7 +294,7 @@ bool notify_remote_linkkey_miss(struct bt_conn *conn)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, cb, node) {
 		if (cb->remote_linkkey_miss) {
-			return cb->remote_linkkey_miss(&conn->br.dst);
+			return cb->remote_linkkey_miss(conn,&conn->br.dst);
 		}
 	}
 	return true;

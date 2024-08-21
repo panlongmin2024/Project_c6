@@ -100,6 +100,13 @@ config OTA_BACKEND_TEMP_PART
     help
       This option enables OTA upgrade by spinor.
 
+config OTA_BACKEND_LETWS_STREAM
+	bool "Support OTA upgrade by letws stream"
+	depends on BT_LETWS
+	default n
+	help
+	  This option enables OTA upgrade by letws stream.
+
 config OTA_FILE_PATCH
     bool "OTA file patch Support"
     depends on !OTA_RECOVERY

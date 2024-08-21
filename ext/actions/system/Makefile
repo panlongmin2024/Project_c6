@@ -19,4 +19,5 @@ obj-$(CONFIG_INPUT) += input/
 obj-$(CONFIG_FM) += fm/
 obj-$(CONFIG_PLAYTTS) += tts/
 obj-$(CONFIG_POWER) += power/
-obj-$(CONFIG_ACT_EVENT) += act_event/
+obj-$(CONFIG_ACT_EVENT) += act_event/ 
+obj-$(CONFIG_SERIAL_FLASHER) += serial_flasher/

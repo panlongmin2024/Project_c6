@@ -2791,6 +2791,14 @@ int bt_init_class_of_device(uint32_t classOfDevice);
  */
 int bt_init_device_id(uint16_t *did);
 
+/** @brief write class of devie
+ *
+ * @param classOfDevice clase of device to set
+ *
+ * @return Zero if done successfully, other indicator failed.
+ */
+int bt_br_write_class_of_device(uint32_t class_of_device);
+
 /** @brief Get bluetooth br name */
 uint8_t bt_read_br_name(uint8_t *name, uint8_t len);
 

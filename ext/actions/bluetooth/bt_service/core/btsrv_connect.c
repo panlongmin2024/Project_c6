@@ -23,11 +23,12 @@
 #define AUTOCONN_DELAY_TIME_MASK				(5000)	/* 5000ms */
 #define AUTOCONN_TWS_DELAY_MASK			        (1000)	/* 2000ms */
 #define AUTOCONN_TWS_WAIT_ROLE                  (3000)  /* 3000ms */
-#define AUTOCONN_TWS_SEARCH_MODE_TIMEOUT        (3000)  /* 3000ms */
-#define MONITOR_A2DP_TIMES						(8)
-#define MONITOR_AVRCP_TIMES						(6)
-#define MONITOR_AVRCP_CONNECT_INTERVAL			(3)
-#define MONITOR_PRIFILE_INTERVEL				(1000)	/* 1000ms */
+#define AUTOCONN_TWS_SEARCH_MODE_TIMEOUT       (3000)  /* 3000ms */
+#define MONITOR_A2DP_TIMES                        (16)    /* 8000ms */
+#define MONITOR_A2DP_NOSECURITY_TIMES            (12)   /* 6000ms */
+#define MONITOR_AVRCP_TIMES                       (12)   /* 6000ms */
+#define MONITOR_AVRCP_CONNECT_INTERVAL          (6)    /* 3000ms */
+#define MONITOR_PRIFILE_INTERVEL	                (500)  /* 500ms */
 
 #define BT_SUPERVISION_TIMEOUT					(8000)		/* 8000*0.625ms = 5000ms */
 
@@ -96,8 +97,8 @@ struct auto_conn_t {
 struct profile_conn_t {
 	bd_address_t addr;
 	uint8_t valid:1;
-	uint8_t avrcp_times:4;
-	uint8_t a2dp_times:4;
+	uint8_t avrcp_times;
+	uint8_t a2dp_times;
 };
 
 struct btsrv_connect_priv {
@@ -700,7 +701,7 @@ static void btsrv_connect_monitor_profile_stop(void)
 
 static void btsrv_connect_monitor_profile_start(int32_t duration, int32_t period)
 {
-	if (thread_timer_is_running(&p_connect->monitor_conn_timer)) {
+	if (thread_timer_is_running(&p_connect->monitor_conn_timer)){
 		return;
 	}
 
@@ -1657,11 +1658,17 @@ static void btsrv_add_monitor(struct bt_conn *conn)
 	p_connect->monitor_conn[index].valid = 1;
 
 	if (!btsrv_rdm_is_security_changed(conn)){
-		p_connect->monitor_conn[index].a2dp_times = 6;
+		p_connect->monitor_conn[index].a2dp_times = MONITOR_A2DP_NOSECURITY_TIMES;
 	}else{
 		p_connect->monitor_conn[index].a2dp_times = MONITOR_A2DP_TIMES;
 	}
-	p_connect->monitor_conn[index].avrcp_times = MONITOR_AVRCP_TIMES;
+    if(btsrv_rdm_is_ios_dev(conn)){
+        p_connect->monitor_conn[index].avrcp_times = MONITOR_AVRCP_TIMES;
+    }
+    else{
+        p_connect->monitor_conn[index].avrcp_times = MONITOR_AVRCP_CONNECT_INTERVAL + 3;
+    }
+
 	btsrv_connect_monitor_profile_start(MONITOR_PRIFILE_INTERVEL, MONITOR_PRIFILE_INTERVEL);
 }
 
@@ -2059,24 +2066,16 @@ static int btsrv_connect_a2dp_connected(struct bt_conn *base_conn)
 static int btsrv_connect_a2dp_singnaling_connected(struct bt_conn *base_conn)
 {
     btsrv_notify_link_event(base_conn, BT_LINK_EV_A2DP_SINGALING_CONNECTED, 0);
+    btsrv_rdm_set_a2dp_signal_connected(base_conn,true);
 
-    if (btsrv_rdm_is_avrcp_connected(base_conn)) {
-        return 0;
-    }
-
-    if(p_connect && p_connect->gfp_running){
-        return 0;
-    }
-
-    SYS_LOG_INF("AVRCP TG\n");
-//    btsrv_avrcp_connect(base_conn);
     return 0;
 }
 
 static int btsrv_connect_a2dp_disconnected(struct bt_conn *base_conn)
 {
 	bd_address_t *addr = (bd_address_t *)GET_CONN_BT_ADDR(base_conn);
- 
+
+    btsrv_rdm_set_a2dp_signal_connected(base_conn, false);
 	btsrv_rdm_set_a2dp_connected(base_conn, false);
 
 	/* Sync info before rdm_remove_dev */

@@ -18,7 +18,7 @@
 #include <ota_upgrade.h>
 #include <ota_backend.h>
 #include <ota_backend_temp_part.h>
-#include <ota_backend_sdcard.h>
+#include <ota_backend_disk.h>
 #include <soc_pm.h>
 #include <soc.h>
 

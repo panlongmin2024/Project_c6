@@ -37,7 +37,7 @@ enum ota_state
 
 };
 
-typedef void (*ota_notify_t)(int state, int old_state);
+typedef int (*ota_notify_t)(int state, int old_state);
 
 struct ota_upgrade_param {
 	const char *storage_name;
@@ -65,4 +65,7 @@ void ota_upgrade_detach_backend(struct ota_upgrade_info *ota, struct ota_backend
 int ota_upgrade_get_backend_type(struct ota_upgrade_info *ota);
 int ota_upgrade_is_ota_running(void);
 int ota_upgrade_cancel_read(struct ota_upgrade_info *ota);
+
+int ota_upgrade_get_temp_img_size(struct ota_upgrade_info *ota);
+
 #endif /* __OTA_UPGRADE_H__ */

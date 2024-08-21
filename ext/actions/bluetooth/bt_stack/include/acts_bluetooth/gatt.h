@@ -1555,6 +1555,9 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
  */
 void bt_gatt_cancel(struct bt_conn *conn, void *params);
 
+void bt_gatt_svc_disable(const struct bt_gatt_service_static *svc);
+void bt_gatt_svc_enable(const struct bt_gatt_service_static *svc);
+
 /** @} */
 
 #ifdef __cplusplus

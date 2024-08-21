@@ -25,6 +25,28 @@
 int dolphin_set_vol(int argc, char *argv[]);
 int dolphin_read_frames_start(int argc, char *argv[]);
 int dolphin_read_frames_stop(int argc,char *argv[]);
+static bool smartcontrol_switch_flag = true;
+
+bool user_shell_get_smartcontrol_switch_status(void)
+{
+	return smartcontrol_switch_flag;
+}
+
+static int shell_set_smartcontrol_switch_status(int argc, char *argv[])
+{
+	for(int i=0;i<argc;i++){
+	printk("\n------> %s argc %d len %d %s\n",__func__,argc,sizeof(argv[i]),argv[i]);
+	}
+	if((argc == 2) && (*argv[1] > '1'))
+	{
+		printk("\n%s/%d,smartcontrol set err, 1:open, 0:close !!!!\n",__func__,__LINE__);
+		return 0;
+	}
+	smartcontrol_switch_flag = (*argv[1] - '0');
+	printk("\n%s/%d,smartcontrol set ,smartcontrol_switch_flag:%d ,%d\n",__func__,__LINE__,smartcontrol_switch_flag,*argv[1]);
+
+	return 0;
+}
 
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
 static int shell_dvfs_info(int argc, char *argv[])
@@ -169,30 +191,6 @@ static int shell_user_set_mac_name(int argc, char *argv[])
 
 	return 0;
 }
-static int shell_user_reboot(int argc, char *argv[])
-{
-	printk("------> %s\n",__func__);
-	sys_pm_reboot(REBOOT_TYPE_NORMAL);
-	return 0;
-}
-#ifdef CONFIG_ACTIONS_IMG_LOAD
-static int shell_bin_test(int argc, char *argv[])
-{
-	if (argv[1] != NULL) {
-		u8_t id = strtoul(argv[1], (char**)NULL, 10);
-		int ret = property_set_int(CFG_BIN_TEST_ID, id);
-		if (ret == 0) {
-			property_flush(CFG_BIN_TEST_ID);
-			printk("bin test new id %d\n", id);
-			sys_pm_reboot(REBOOT_TYPE_GOTO_WIFISYS);
-		}
-
-	}
-
-	return 0;
-}
-
-#endif
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -214,8 +212,7 @@ static const struct shell_cmd commands[] = {
 	{ "set_mac", shell_user_set_mac, "user set mac"},
 	{ "set_name", shell_user_set_name, "user set name"},
 	{ "set_mac_name", shell_user_set_mac_name, "user set mac name"},
-	{ "reboot", shell_user_reboot, "user reboot"},
-	{ "enter_rf", shell_bin_test, "user rf test"},
+	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
 

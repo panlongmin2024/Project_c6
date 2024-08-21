@@ -19,6 +19,7 @@
 
 #define CHECK_WAIT_DISCONNECT_INTERVAL		(100)	/* 100ms */
 #define CHECK_WAIT_AVRCP_PAUSE_INTERVAL		(1000)	/* 1000ms */
+#define CHECK_WAIT_A2DP_CONNECTED_INTERVAL  (3000)	/* 3000ms */
 
 #define WAKE_LOCK_TIMER_INTERVAL			(1000)	/* 1s */
 #define WAKE_LOCK_IDLE_TIMEOUT				(1000*10)	/* 10s */
@@ -202,12 +203,12 @@ static void _btsrv_adapter_disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	btsrv_event_notify_ext(MSG_BTSRV_CONNECT, MSG_BTSRV_DISCONNECTED, conn, reason);
 }
 
-static bool _btsrv_adapter_remote_linkkey_miss_cb(bt_addr_t *peer)
+static bool _btsrv_adapter_remote_linkkey_miss_cb(struct bt_conn *conn,bt_addr_t *peer)
 {
-	if (!peer) {
+	if (!peer || !conn) {
 		return false;
 	}
-
+	struct bt_link_cb_param param;
 	char addr[BT_ADDR_STR_LEN];
 
 	hostif_bt_addr_to_str((const bt_addr_t *)peer, addr, BT_ADDR_STR_LEN);
@@ -216,13 +217,26 @@ static bool _btsrv_adapter_remote_linkkey_miss_cb(bt_addr_t *peer)
 	btsrv_event_notify_malloc(MSG_BTSRV_CONNECT, MSG_BTSRV_REMOTE_LINKKEY_MISS, 
 							(uint8_t*)peer, sizeof(bd_address_t), 0);
 
-    if(((btsrv_info->pair_status & BT_PAIR_STATUS_PAIR_MODE) == 0) && !btsrv_connect_get_gfp_status()){
-        SYS_LOG_ERR("Not In Pair mode!");
-        return false;
-    }
-    else{
-        return true;
-    }
+	memset(&param, 0, sizeof(param));
+	param.link_event = BT_LINK_EV_KEY_MISS;
+	param.hdl = hostif_bt_conn_get_handle(conn);
+	param.addr = (bd_address_t *)peer;
+	param.new_dev = 1;
+
+	if (btsrv_adapter_callback(BTSRV_LINK_EVENT, &param)) {
+		return false;
+	} else {
+		//TODO:move to uplayer
+		if(((btsrv_info->pair_status & BT_PAIR_STATUS_PAIR_MODE) == 0) && !btsrv_connect_get_gfp_status()){
+	        SYS_LOG_ERR("Not In Pair mode!");
+	        return false;
+	    }
+	    else{
+	        return true;
+	    }
+	}
+
+    
 }
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
@@ -321,6 +335,16 @@ static void btsrv_adapter_start_wait_avrcp_pause_timer(void)
 
 	SYS_LOG_INF("");
 	thread_timer_start(&btsrv_info->wait_disconnect_timer, CHECK_WAIT_AVRCP_PAUSE_INTERVAL, 0);
+}
+
+static void btsrv_adapter_start_wait_a2dp_connected_timer(void)
+{
+	if (thread_timer_is_running(&btsrv_info->wait_disconnect_timer)) {
+		return;
+	}
+
+	SYS_LOG_INF("");
+	thread_timer_start(&btsrv_info->wait_disconnect_timer, CHECK_WAIT_A2DP_CONNECTED_INTERVAL, 0);
 }
 
 static void btsrv_adapter_start_wait_disconnect_timer(void)
@@ -873,6 +897,13 @@ int btsrv_adapter_disconnect(struct bt_conn *conn)
             btif_avrcp_send_command_by_hdl(hdl,BTSRV_AVRCP_CMD_PAUSE);
             btsrv_rdm_set_wait_to_diconnect(conn, true);
             btsrv_adapter_start_wait_avrcp_pause_timer();
+            return err;
+        }
+
+        if(btsrv_rdm_is_a2dp_signal_connected(conn) &&
+            !btsrv_rdm_is_a2dp_connected(conn)){
+            btsrv_rdm_set_wait_to_diconnect(conn, true);
+            btsrv_adapter_start_wait_a2dp_connected_timer();
             return err;
         }
     }

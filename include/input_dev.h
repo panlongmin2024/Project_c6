@@ -54,6 +54,7 @@ extern "C" {
 #define KEY_BT	            28
 
 #define KEY_COMBO_VOL       29
+#define KEY_COMBO_M_VU      30
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #define KEY_BROADCAST 30

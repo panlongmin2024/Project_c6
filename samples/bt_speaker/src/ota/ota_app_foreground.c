@@ -22,10 +22,11 @@
 #include <sys_wakelock.h>
 #include <ota_upgrade.h>
 #include <ota_backend.h>
-#include <ota_backend_sdcard.h>
+#include <ota_backend_disk.h>
 #include <ota_backend_bt.h>
 #include <ota_backend_uart.h>
 #include <ota_backend_selfapp.h>
+#include <ota_backend_letws_stream.h>
 #include <ota_app.h>
 #include <ui_manager.h>
 #include "flash.h"
@@ -53,6 +54,11 @@
 #include <media_mem.h>
 #include <audio_system.h>
 
+#ifdef CONFIG_SERIAL_FLASHER
+#include <serial_flasher.h>
+#include <broadcast.h>
+#endif
+
 #define CONFIG_OTA_APP_AUTO_START
 
 #ifdef CONFIG_OTA_RECOVERY
@@ -79,6 +85,11 @@ static bool is_ota_need_poweroff;
 
 #ifdef CONFIG_OTA_BACKEND_UART
 static struct ota_backend *backend_uart;
+#endif
+
+#ifdef CONFIG_OTA_BACKEND_LETWS_STREAM
+static struct ota_backend *backend_letws;
+struct serial_flasher *serial_flasher_ctx;
 #endif
 
 #include <wltmcu_manager_supply.h>
@@ -315,6 +326,49 @@ int ota_app_init_uart(void)
 }
 #endif
 
+#ifdef CONFIG_OTA_BACKEND_LETWS_STREAM
+
+void ota_app_backend_save_letws_data(uint8_t *data, uint32_t len)
+{
+	if(!backend_letws){
+		return;
+	}
+
+	ota_backend_letws_rx_data_write(backend_letws, data, len);
+}
+
+int ota_app_init_letws(void)
+{
+	struct ota_backend_letws_param param;
+
+	SYS_LOG_INF();
+
+	if(!backend_letws){
+		param.send_cb = broadcast_tws_vnd_send_ota_data;
+
+		backend_letws = ota_backend_letws_ota_stream_init(ota_app_backend_callback, &param);
+		if (backend_letws == NULL) {
+			SYS_LOG_INF("failed");
+			return -ENODEV;
+		}
+	}
+
+	broadcast_tws_ota_data_cbk_register(ota_app_backend_save_letws_data);
+
+	return 0;
+}
+
+void serial_flasher_save_letws_data(uint8_t *data, uint32_t len)
+{
+	if(!serial_flasher_ctx){
+		return;
+	}
+
+	serial_flasher_save_rx_data(serial_flasher_ctx, data, len);
+}
+
+#endif
+
 static void sys_reboot_by_ota(void)
 {
 	struct app_msg msg = { 0 };
@@ -328,8 +382,10 @@ static void sys_poweroff_by_ota(void)
 	sys_event_send_message(MSG_POWER_OFF);
 }
 
-void ota_app_notify(int state, int old_state)
+int ota_app_notify(int state, int old_state)
 {
+	int ret_val = 0;
+
 	SYS_LOG_INF("ota state: %d->%d", old_state, state);
 
 	if (old_state != OTA_RUNNING && state == OTA_RUNNING) {
@@ -374,7 +430,26 @@ void ota_app_notify(int state, int old_state)
 		if(is_ota_need_poweroff){
 			sys_event_notify(SYS_EVENT_OTA_FINISHED_REBOOT);
 		}
+	} else if(state == OTA_UPLOADING){
+#ifdef CONFIG_SERIAL_FLASHER
+		printk("ota dev role %d\n", bt_manager_letws_get_dev_role());
+		if(bt_manager_letws_get_dev_role() == BTSRV_TWS_MASTER){
+			if(broadcast_tws_vnd_send_ota_req() == 0){
+				serial_flasher_mcu_upgrade_breakpoint_save(true, SERIAL_FLASHER_TYPE_APP, ota_upgrade_get_temp_img_size(g_ota));
+				//wait peer device init letws stream
+				os_sleep(100);
+				serial_flasher_ctx = serial_flasher_init(OTA_STORAGE_DEVICE_NAME, NULL, broadcast_tws_vnd_send_ota_data, ota_upgrade_get_temp_img_size(g_ota));
+				if(serial_flasher_ctx){
+					broadcast_tws_ota_data_cbk_register(serial_flasher_save_letws_data);
+					ret_val = serial_flasher_routinue(serial_flasher_ctx);
+					serial_flasher_deinit(serial_flasher_ctx);
+				}
+			}
+		}
+#endif
 	}
+
+	return ret_val;
 }
 
 int ota_app_init(void)
@@ -469,6 +544,8 @@ static int _ota_app_init(void *p1, void *p2, void *p3)
 	//sys_event_notify(SYS_EVENT_ENTER_OTA);
 	ota_view_init();
 
+	input_manager_lock();
+
 	is_ota_need_poweroff = false;
 
 
@@ -481,6 +558,8 @@ static int _ota_app_init(void *p1, void *p2, void *p3)
 	act_event_runtime_enable(false);
 #endif
 
+	bt_manager_halt_ble();
+
 	thread_timer_init(&ota_led_timer, ota_led_timer_pro, NULL);
 	return 0;
 }
@@ -492,8 +571,12 @@ static int _ota_exit(void)
 
 	ota_view_deinit();
 	thread_timer_stop(&ota_led_timer);
-	if(success == 0)
+	if(success == 0){
 		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+		bt_manager_resume_ble();
+	}
+
+	input_manager_unlock();
 	return 0;
 }
 

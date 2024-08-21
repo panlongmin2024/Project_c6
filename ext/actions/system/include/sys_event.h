@@ -112,6 +112,7 @@ enum sys_event_e
 #endif
 
     SYS_EVENT_STEREO_GROUP_INDICATION,
+    SYS_EVENT_OTA_REQ_START,
 };
 
 /** sys event ui map structure */

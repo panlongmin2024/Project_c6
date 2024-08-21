@@ -161,9 +161,16 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 			main_key_event_handle(msg.value);
 			break;
 
-		case MSG_INPUT_EVENT:
-			main_input_event_handle(&msg);
-			break;
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+		case MSG_PD_OTG_MOBILE_EVENT:
+
+			SYS_LOG_INF("Demo: msg.value:0x%X, %d\n", msg.value, run_mode_is_demo());
+			if(run_mode_is_demo())
+			{
+				sys_event_notify(SYS_EVENT_POWER_OFF);
+			}
+			break;	
+
 		case MSG_KEY_INPUT_ATS:
 		     SYS_LOG_INF("ATS: msg.value:0x%X\n", msg.value);
 				
@@ -172,6 +179,11 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 				ats_msg.value = msg.value;
 			k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
 				break;
+#endif
+		case MSG_INPUT_EVENT:
+			main_input_event_handle(&msg);
+			break;
+
 
 #ifdef CONFIG_HOTPLUG_MANAGER
 		case MSG_HOTPLUG_EVENT:

@@ -2562,7 +2562,7 @@ int pts_le_audio_init(void)
 	/* master */
 	role.num_master_conn = 1;
 	role.master_encryption = 1;
-
+	role.lea_connection_enable = 1;
 #if 1
 	role.unicast_client = 1;
 	role.volume_controller = 1;

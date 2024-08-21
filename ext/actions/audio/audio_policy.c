@@ -116,7 +116,8 @@ timeline_t *audio_policy_get_encode_timeline(uint8_t stream_type, u8_t format,vo
 		|| stream_type == AUDIO_STREAM_SOUNDBAR
 		|| stream_type == AUDIO_STREAM_LINEIN
 		|| stream_type == AUDIO_STREAM_I2SRX_IN
-		|| stream_type == AUDIO_STREAM_SPDIF_IN)
+		|| stream_type == AUDIO_STREAM_SPDIF_IN
+		|| stream_type == AUDIO_STREAM_LOCAL_MUSIC)
 		&& format == NAV_TYPE) {
 		return timeline_get_by_type_and_onwer(TIMELINE_TYPE_MEDIA_ENCODE,tx_timeline_owner);
 	}
@@ -143,7 +144,7 @@ int audio_policy_get_aps_type(uint8_t stream_type, uint8_t format, uint8_t is_pl
 		else
 			return APS_TYPE_CAPTURE|APS_TYPE_HARDWARE_BT|APS_TYPE_INTERRUPT;
 #endif
-	} else if (stream_type == AUDIO_STREAM_USOUND && format == NAV_TYPE) {
+	} else if ((stream_type == AUDIO_STREAM_USOUND  || stream_type == AUDIO_STREAM_LOCAL_MUSIC )&& format == NAV_TYPE) {
 		if(is_playback)
 			return APS_TYPE_PLAYBACK|APS_TYPE_SOFT|APS_TYPE_BUFFER;
 		else
@@ -285,7 +286,7 @@ int audio_policy_get_out_input_start_threshold(uint8_t stream_type, int format, 
 	case AUDIO_STREAM_SOUNDBAR:
 		if (exf_stream_type == AUDIO_STREAM_MUSIC) {
 			/* limit avoid input buffer overfow */
-			th = 220 + GET_LIMIT_VALUE(audio_policy_get_bis_link_delay_ms(), 50);
+			th = 200 + GET_LIMIT_VALUE(audio_policy_get_bis_link_delay_ms(), 50);
 			if (format == AAC_TYPE)
 				th += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_AAC_DYNAMIC_TIME);
 			else
@@ -304,7 +305,7 @@ int audio_policy_get_out_input_start_threshold(uint8_t stream_type, int format, 
 				if (system_check_low_latencey_mode()) {
 					th = 100;
 				} else {
-					th = 210;
+					th = 200;
 					if (format == AAC_TYPE)
 						th += GET_LIMIT_VALUE(audio_policy_get_dynamic_waterlevel_ms(), MAX_AAC_DYNAMIC_TIME);
 					else
@@ -585,7 +586,7 @@ u16_t audio_policy_get_record_pcm_buff_size(u8_t stream_type, int sample_rate_in
 		|| stream_type == AUDIO_STREAM_LINEIN
 		|| stream_type == AUDIO_STREAM_I2SRX_IN) {
 		//TODO: support for 44.1k
-		pcm_buff_size =  sample_rate_input * 2 * 2 * 2 * 3;
+		pcm_buff_size =  sample_rate_input * 2 * 2 * 2 * 2;
 
 		if (audio_mode == AUDIO_MODE_MONO) {
 			pcm_buff_size /= 2;
@@ -626,7 +627,8 @@ u16_t audio_policy_get_track_pcm_buff_size(u8_t stream_type, int sample_rate, ui
 	} else if (stream_type == AUDIO_STREAM_SPDIF_IN
 		|| stream_type == AUDIO_STREAM_LINEIN
 		|| stream_type == AUDIO_STREAM_I2SRX_IN
-		|| stream_type == AUDIO_STREAM_USOUND) {
+		|| stream_type == AUDIO_STREAM_USOUND
+		|| stream_type == AUDIO_STREAM_LOCAL_MUSIC) {
 		//TODO: support for 44.1k
 		pcm_buff_size =  sample_rate * 2 * 2 * 2 * 2;
 
@@ -797,6 +799,7 @@ int audio_policy_get_channel_resample(uint8_t stream_type, bool decoder)
 	{
 	case AUDIO_STREAM_MUSIC:
 	case AUDIO_STREAM_TTS:
+	case AUDIO_STREAM_LOCAL_MUSIC:
 		resample = true;
 		break;
 	case AUDIO_STREAM_SOUNDBAR:
@@ -829,6 +832,7 @@ int audio_policy_get_channel_resample_aps(uint8_t stream_type, int format, bool 
 	case AUDIO_STREAM_SPDIF_IN:
 	case AUDIO_STREAM_LINEIN:
 	case AUDIO_STREAM_I2SRX_IN:
+	case AUDIO_STREAM_LOCAL_MUSIC:
 		if (decoder) {
 			resample_aps = true;
 		}
@@ -852,6 +856,7 @@ int audio_policy_get_output_support_multi_track(uint8_t stream_type)
 		case AUDIO_STREAM_LINEIN:
 		case AUDIO_STREAM_MIC_IN:
 		case AUDIO_STREAM_USOUND:
+		case AUDIO_STREAM_LOCAL_MUSIC:
 			support_multi_track = true;
 			break;
 	}
@@ -919,10 +924,6 @@ int audio_policy_get_pa_volume(uint8_t stream_type, uint8_t volume_level)
 		volume_level = user_policy->audio_out_volume_level;
 	}
 
-	if (volume_level < 0) {
-		volume_level = 0;
-	}
-
 	switch (stream_type) {
 	case AUDIO_STREAM_VOICE:
 		if(NULL != user_policy->voice_pa_table){
@@ -964,10 +965,6 @@ int audio_policy_get_da_volume(uint8_t stream_type, uint8_t volume_level)
 
 	if (volume_level > user_policy->audio_out_volume_level) {
 		volume_level = user_policy->audio_out_volume_level;
-	}
-
-	if (volume_level < 0) {
-		volume_level = 0;
 	}
 
 	switch (stream_type) {
@@ -1292,9 +1289,15 @@ int audio_policy_get_reduce_threshold(int format, u8_t stream_type)
 				return 16 + audio_policy_get_bis_link_delay_ms();
 			#endif
 		} else {
-			int lth = 160;
+			int lth = 160; //AAC_TYPE
+			if (format == SBC_TYPE) {
+				lth = 128;
+			}
 			if (stream_type == AUDIO_STREAM_SOUNDBAR) {
-				lth = 170;
+				lth = 160; //AAC_TYPE
+				if (format == SBC_TYPE) {
+					lth = 160;
+				}
 #if CONFIG_EXTERNAL_DSP_DELAY == 0
 				lth = 150;
 #endif
@@ -1345,16 +1348,22 @@ int audio_policy_get_increase_threshold(int format, u8_t stream_type)
 #else
 			if (stream_type == AUDIO_STREAM_SPDIF_IN || stream_type == AUDIO_STREAM_LINEIN || stream_type == AUDIO_STREAM_I2SRX_IN) {
 				return 32 + audio_policy_get_bis_link_delay_ms();
-			} else if (stream_type == AUDIO_STREAM_USOUND) {
+			} else if (stream_type == AUDIO_STREAM_USOUND ||stream_type == AUDIO_STREAM_LOCAL_MUSIC) {
 				return 32 + audio_policy_get_bis_link_delay_ms();
 			} else {
 				return 20;
 			}
 #endif
 		} else {
-			int hth = 260;
+			int hth = 260; //AAC_TYPE
+			if (format == SBC_TYPE) {
+				hth = 228;
+			}
 			if (stream_type == AUDIO_STREAM_SOUNDBAR){
-				hth = 270;
+				hth = 260; //AAC_TYPE
+				if (format == SBC_TYPE) {
+					hth = 260;
+				}
 #if CONFIG_EXTERNAL_DSP_DELAY == 0
 				hth = 250;
 #endif

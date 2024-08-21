@@ -88,12 +88,12 @@ void user_app_later_init(void)
 #endif	
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-	soc_dvfs_set_level(SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, "pa init");	
+	soc_dvfs_set_level(SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, "pa init");
+	self_music_effect_ctrl_init();	
 	external_dsp_ats3615_load(0);
 	external_dsp_ats3615_timer_start();	
 	hm_ext_pa_init();
 	amp_tas5828m_clear_fault_timer_init();
-	self_music_effect_ctrl_init();
 	soc_dvfs_unset_level(SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, "pa init");
 #endif
 }

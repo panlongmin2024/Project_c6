@@ -914,6 +914,11 @@ void btmgr_tws_process_ui_event(uint8_t *data, uint8_t len)
 
 	tmp_in_data = mem_malloc(len);
 
+    if(!tmp_in_data){
+        SYS_LOG_ERR("mem malloc fail!");
+        return;
+    }
+
 	memcpy(tmp_in_data, data, len);
 	memcpy(&event_param, &data[1], 4);
 

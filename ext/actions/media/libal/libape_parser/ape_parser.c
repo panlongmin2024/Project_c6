@@ -1,6 +1,6 @@
 #include <arithmetic.h>
 
-int audio_parser_ops_ape(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args)
+int as_parser_ops_ape(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args)
 {
 	return 0;
 }

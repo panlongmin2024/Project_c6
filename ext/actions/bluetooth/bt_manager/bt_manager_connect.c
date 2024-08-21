@@ -24,7 +24,7 @@
 #include "bt_manager_inner.h"
 #include <property_manager.h>
 #include "btservice_api.h"
-
+static u8_t bt_manager_ota_reboot = 0;
 
 
 struct autoconn_info *bt_manager_get_last_phone(struct autoconn_info *info)
@@ -196,7 +196,11 @@ bool bt_manager_startup_reconnect(void)
 	if((phone_num > 0) && ((cfg_reconnect->enable_auto_reconnect & (1 << 0)) != 0)){
 
 		//try to connect last phone(active phone)
+	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE	
+		if (cfg_reconnect->always_reconnect_last_device || bt_manager_ota_reboot) {
+	#else
 		if (cfg_reconnect->always_reconnect_last_device) {
+	#endif		
 			last_phone = bt_manager_get_last_phone(info);
 			if (last_phone) {
 				bt_manager_connect_phone(last_phone->addr.val);
@@ -210,17 +214,15 @@ bool bt_manager_startup_reconnect(void)
 			if (phone_cnt == phone_num){
 				break;
 			}
+			#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE	
+			if ((phone_num > 1) && ((cfg_reconnect->always_reconnect_last_device || bt_manager_ota_reboot)) && (phone_cnt == 1)) {
+			#else
 			if ((phone_num > 1) && (cfg_reconnect->always_reconnect_last_device) && (phone_cnt == 1)) {
+			#endif	
 				break;
 			}
 			if (info[i].addr_valid){
-                if(!bt_manager_config_pts_test()){
-                    profile_valid = (info[i].a2dp || info[i].avrcp || info[i].hfp);
-                }
-                else{
-                    profile_valid = 1;
-                }
-
+                profile_valid = (info[i].a2dp || info[i].avrcp || info[i].hfp);
                 if(profile_valid) {
                     bt_manager_connect_phone(info[i].addr.val);
                     bt_manager->auto_reconnect_startup = true;
@@ -251,6 +253,7 @@ bool bt_manager_startup_reconnect(void)
 startup_reconnect_exit:
 	bt_manager_check_link_status();
 	mem_free(info);
+	bt_manager_ota_reboot = 0;
 	return true;
 }
 #else
@@ -787,4 +790,10 @@ void bt_manager_profile_disconnected_delay_proc(os_work* work)
 void bt_manager_set_autoconn_info_need_update(uint8_t need_update)
 {
 	btif_br_set_autoconn_info_need_update(need_update);
+}
+
+u8_t bt_manager_set_ota_reboot(u8_t reboot_type)
+{
+	bt_manager_ota_reboot = reboot_type;
+	return 0;
 }

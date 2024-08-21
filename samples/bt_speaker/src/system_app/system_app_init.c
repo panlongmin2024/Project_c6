@@ -195,8 +195,10 @@ static void main_system_check_adfu_timer(struct thread_timer *ttimer, void *expi
 		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF); // all led turn on
+		led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));
 		fairst = 1;
+		power_led_cnt = 3;
 	}else{
 		if(dc_power_in_status_read())
 			sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
@@ -321,6 +323,19 @@ void system_app_init(void)
 //#ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #if 1
 	system_power_get_reboot_reason(&reboot_type, &reason);
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	g_reboot_type = reboot_type;
+	g_reboot_reason = reason;
+	if(REBOOT_REASON_OTA_FINISHED & g_reboot_reason){
+		extern void bt_mcu_set_first_power_on_flag(bool flag);
+		bt_mcu_set_first_power_on_flag(1);
+	     extern void set_batt_led_display_timer(int deley100ms);
+		 extern void pd_manager_set_poweron_filte_battery_led(uint8_t flag);
+		  set_batt_led_display_timer(-1);
+		  SYS_LOG_INF("[%d];  REBOOT_REASON_OTA_FINISHED", __LINE__);
+		  pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
+		}
+#endif	
 #else
 	reboot_type = g_reboot_type;
 	reason = g_reboot_reason;
@@ -494,12 +509,21 @@ void system_app_init(void)
 				}
 #endif
 #endif
+
+				SYS_LOG_INF("[%d], demo_mode:%d, battery_capacity:%d \n\n", __LINE__, run_mode_is_demo(), power_manager_get_battery_capacity());
+
 				if((!run_mode_is_demo())||(check_is_wait_adfu())){
 					system_notify_enter_charger_mode();
 					system_ready();
-
 					system_wait_exit_charger_mode();
-				}else{
+				}
+				else if(run_mode_is_demo() && (power_manager_get_battery_capacity() < DEFAULT_NOPOWER_CAP_LEVEL))
+				{
+					system_notify_enter_charger_mode();
+					system_ready();
+					system_wait_exit_charger_mode();
+				}
+				else{
 					system_ready();
 				}
 #else
@@ -539,11 +563,11 @@ void system_app_init(void)
 #endif
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-	printk("------> start!\n");
 	user_app_later_init();
 	tts_manager_add_event_lisener(main_system_tts_event_nodify);
 	if(run_mode_is_demo()&&(!dc_power_in_status_read())){
-		system_power_off();
+		SYS_LOG_INF("[%d] run_mode_is_demo, but No dc_power_in \n", __LINE__);
+		//system_power_off();
 	}else{
 #ifdef CONFIG_BT_CONTROLER_BQB
 		if(!main_system_is_enter_bqb())
@@ -556,7 +580,6 @@ void system_app_init(void)
 			pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);
 		}
 	}
-	printk("------> end!\n");
 #endif	
 
 #ifdef CONFIG_BT_MANAGER
@@ -637,6 +660,14 @@ extern int sys_ble_leatws_adv_unregister(void);
 void system_app_init_bte_ready(void)
 {
 	main_freq_init();
+
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE	
+	if(REBOOT_REASON_OTA_FINISHED & g_reboot_reason){
+		extern u8_t bt_manager_set_ota_reboot(u8_t reboot_type);
+		bt_manager_set_ota_reboot(1);
+	}
+#endif
+
 	if(run_mode_is_demo() == false){
 		bt_manager_start_wait_connect();
 		if(bt_manager_power_on_setup){

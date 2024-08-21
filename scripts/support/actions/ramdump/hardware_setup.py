@@ -16,12 +16,15 @@
 # language governing permissions and limitations under the License.
 #
 
+
 import os
 import sys
 import time
+import argparse
 import subprocess
 import time
 import re
+import json
 
 mcu_registers_name = ["r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "epsr", "pc"]
 
@@ -204,3 +207,32 @@ def hardware_setup(gdb_path, gdb_host, gdb_port, esf_addr, esf_size, binaries_di
 
     except Exception as e:
         print(f"Error set registers: {e}")
+
+def main(argv):
+    parser = argparse.ArgumentParser(
+        description='hardware setup',
+    )
+
+    parser.add_argument('-i', dest = 'gdb_path')
+    parser.add_argument('-s', dest = 'gdb_host')
+    parser.add_argument('-p', dest = 'gdb_port')
+    parser.add_argument('-j', dest = 'json_file')
+
+    args = parser.parse_args()
+
+    with open(args.json_file, 'r') as f:
+        content = f.read()
+
+    binaries_dict = json.loads(content.split('\n')[0])
+
+    esf_addr = int(content.split('\n')[1])
+
+    print("load binary file:", binaries_dict)
+    print("\nload esf addr %x\n", esf_addr)
+
+    hardware_setup(args.gdb_path, args.gdb_host, args.gdb_port, esf_addr, 18 * 4, binaries_dict)
+
+    return 0
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

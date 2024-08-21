@@ -109,11 +109,11 @@ uint16_t bt_manager_config_volume_sync_delay_ms(void)
 
 uint32_t bt_manager_config_bt_class(void)
 {
-#ifdef CONFIG_BT_CROSS_TRANSPORT_KEY
-	return 0x244414;		/* Rendering,Audio, Audio/Video, Wearable Headset Device, Loudspeaker, LE Audio*/
-#else
-	return 0x240414;		/* Rendering,Audio, Audio/Video, Wearable Headset Device, Loudspeaker*/
-#endif /*CONFIG_BT_CROSS_TRANSPORT_KEY*/
+	if (bt_manager_audio_is_lea_open()) {
+		return 0x244414;		/* Rendering,Audio, Audio/Video, Wearable Headset Device, Loudspeaker, LE Audio*/
+	} else {
+		return 0x240414;		/* Rendering,Audio, Audio/Video, Wearable Headset Device, Loudspeaker*/
+	}
 }
 
 uint16_t *bt_manager_config_get_device_id(void)

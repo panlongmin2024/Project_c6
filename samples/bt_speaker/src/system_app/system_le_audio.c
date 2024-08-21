@@ -128,8 +128,14 @@ int bt_le_audio_init(void)
 	struct bt_audio_role role = {0};
 
 #ifdef CONFIG_BT_LE_AUDIO
+	/* lea need to be off by default.*/
+	role.lea_connection_enable = 0;
+#ifdef CONFIG_PROPERTY
+	role.lea_connection_enable = property_get_int(CFG_LEA_ONOFF_STATUS, 0);
+	SYS_LOG_INF("lea onff status %d\n",role.lea_connection_enable);
+#endif
 
-	bt_manager_lea_policy_ctx_init();
+	bt_manager_lea_policy_ctx_init(role.lea_connection_enable);
 
 #ifdef CONFIG_BT_LEATWS
 	extern uint32_t leatws_get_audio_channel(void);

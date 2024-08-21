@@ -41,6 +41,9 @@
 #define BAT_VOL_LSB_MV                        3
 #define BAT_VOLTAGE_RESERVE                   (0x1fff)
 #define BAT_CAP_RESERVE                       (101)
+
+#define BAT_VOL_SAMPLE_ONE_TIMEOUT_MS         (100)
+
 struct battery_cap
 {
 	u16_t cap;
@@ -219,34 +222,32 @@ static int battery_get_voltage(struct acts_battery_info *bat)
 
 	num = 0;
 	sum = 0;
-	if (!bat->vol_tbl.data_collecting)
-	{
-		for (i = 0; i < BAT_VOLTAGE_TBL_ACNT; i++ )
-		{
+	if (!bat->vol_tbl.data_collecting){
+		for (i = 0; i < BAT_VOLTAGE_TBL_ACNT; i++ ){
 			temp_vol_average[i] =  bat->vol_tbl._vol_average[i];
 		}
+
 		battery_volt_selectsort(temp_vol_average, BAT_VOLTAGE_TBL_ACNT);
 
 		for (i = BAT_VOLTAGE_FILTER_DROP_ACNT;
-			i < BAT_VOLTAGE_TBL_ACNT - BAT_VOLTAGE_FILTER_DROP_ACNT; i++ )
-		{
+			i < BAT_VOLTAGE_TBL_ACNT - BAT_VOLTAGE_FILTER_DROP_ACNT; i++ ){
 			sum += temp_vol_average[i];
 		}
 		num = BAT_VOLTAGE_TBL_ACNT - BAT_VOLTAGE_FILTER_DROP_ACNT*2;
-	}
-	else
-	{
-		for (i = 0; i < bat->vol_tbl.d_index ; i++ )
-		{
+	}else{
+		for (i = 0; i < bat->vol_tbl.d_index ; i++ ){
 			sum +=  bat->vol_tbl.vol_data[i];
 			num++;
 		}
 
-		for (i = 0; i < bat->vol_tbl.a_index; i++ )
-		{
+		for (i = 0; i < bat->vol_tbl.a_index; i++ ){
 			sum +=  bat->vol_tbl._vol_average[i];
 			num++;
 		}
+	}
+
+	if(num == 0){
+		return -EAGAIN;
 	}
 
 	//SYS_LOG_INF("sum %d, num %d", sum, num);
@@ -301,11 +302,29 @@ static void bat_voltage_record_reset(struct acts_battery_info *bat)
 	ACT_LOG_ID_INF(ALF_STR_bat_voltage_record_reset__, 0);
 }
 
-static int battery_get_capacity(struct acts_battery_info *bat)
+static int battery_get_volt(struct acts_battery_info *bat)
 {
 	int volt;
 
+	uint32_t cur_time = k_uptime_get_32();
+
 	volt = battery_get_voltage(bat);
+
+	while (volt < 0) {
+		volt = battery_get_voltage(bat);
+		if ((k_uptime_get_32() - cur_time) > BAT_VOL_SAMPLE_ONE_TIMEOUT_MS) {
+			SYS_LOG_ERR("sample one voltage timeout");
+			return -ETIMEDOUT;
+		}
+	}
+
+	return volt;
+}
+
+
+static int battery_get_capacity(struct acts_battery_info *bat)
+{
+	int volt = battery_get_volt(bat);
 
 	return voltage2capacit(volt, bat);
 }
@@ -402,11 +421,15 @@ static int bat_report_debounce(u32_t last_val, u32_t cur_val, struct report_deb_
 
 void battery_acts_voltage_poll(struct acts_battery_info *bat)
 {
-	unsigned int volt_mv;
+	int volt_mv;
 	bat_charge_event_para_t para;
 	uint32_t cap = 0;
 
 	volt_mv = battery_get_voltage(bat);
+
+	if(volt_mv < 0){
+		return;
+	}
 
 	/* 等待数据收集完毕
 	*/
@@ -617,7 +640,7 @@ static int battery_acts_get_property(struct device *dev,
 		val->intval = 1;
 		return 0;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-		val->intval = battery_get_voltage(bat) * 1000;
+		val->intval = battery_get_volt(bat) * 1000;
 		return 0;
 	case POWER_SUPPLY_PROP_CAPACITY:
 		val->intval = battery_get_capacity(bat);

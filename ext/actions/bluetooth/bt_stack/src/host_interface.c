@@ -77,6 +77,21 @@ int hostif_bt_init_class(uint32_t classOfDevice)
 #endif
 }
 
+int hostif_bt_write_class(uint32_t classOfDevice)
+{
+#ifdef CONFIG_BT_HCI
+	int prio, ret;
+
+	prio = hostif_set_negative_prio();
+	ret = bt_br_write_class_of_device(classOfDevice);
+	hostif_revert_prio(prio);
+
+	return ret;
+#else
+	return -EIO;
+#endif
+}
+
 
 void hostif_bt_set_share_bd_addr(bool set, uint8_t *mac)
 {
@@ -3128,6 +3143,14 @@ bool hostif_bt_le_clear_device(bt_addr_le_t* dev)
 	return ret;
 }
 
+void hostif_bt_le_unpair_device(const bt_addr_le_t *addr)
+{
+	int prio;
+
+	prio = hostif_set_negative_prio();
+	acts_le_keys_unpair_device(addr);
+	hostif_revert_prio(prio);
+}
 
 void hostif_bt_le_clear_list(void)
 {

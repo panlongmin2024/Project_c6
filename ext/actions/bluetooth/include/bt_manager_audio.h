@@ -115,6 +115,9 @@ struct bt_audio_role {
 	/* master will not connect specific slaves by name */
 	uint32_t disable_name_match : 1;
 
+	/* LE audio connection */
+	uint32_t lea_connection_enable : 1;
+
 	/* only works for set_member */
 	uint8_t set_size;
 	uint8_t set_rank;
@@ -327,6 +330,11 @@ int bt_manager_audio_start(uint8_t type);
  * and be ready to exit.
  */
 int bt_manager_audio_stop(uint8_t type);
+
+typedef void (*lea_on_off_complete_cb)(int err);
+int bt_manager_audio_lea_enable(lea_on_off_complete_cb cb);
+int bt_manager_audio_lea_disable(lea_on_off_complete_cb cb);
+int bt_manager_audio_is_lea_open(void);
 
 /* bt_audio is stopped */
 void bt_manager_audio_stopped_event(uint8_t type);

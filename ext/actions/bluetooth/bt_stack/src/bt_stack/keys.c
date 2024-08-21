@@ -286,6 +286,17 @@ static void match_le_conn(struct bt_conn *conn, void *data)
 
 		bt_addr_copy(&keys->irk.rpa, &addr->a);
 
+		/*
+		 * Update connection address and notify about identity
+		 * resolved only if connection wasn't already reported
+		 * with identity address. This may happen if IRK was
+		 * present before ie. due to re-pairing.
+		 */
+		if (!bt_addr_le_is_identity(addr)) {
+			bt_addr_le_copy((bt_addr_le_t *)addr, (const bt_addr_le_t *)&keys->addr);
+			bt_conn_identity_resolved(conn);
+		}
+
 		if (conn->le.keys && (conn->le.keys != keys)) {
 			bt_keys_clear(conn->le.keys);
 			conn->le.keys = NULL;
@@ -650,6 +661,18 @@ uint8_t acts_le_keys_get_link_key_num(void)
 		}
 	}
 	return num;
+}
+
+void acts_le_keys_unpair_device(const bt_addr_le_t *addr)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		if (!bt_addr_le_cmp(&key_pool[i].addr, addr)) {
+			bt_unpair(key_pool[i].id, &key_pool[i].addr);
+			bt_keys_clear(&key_pool[i]);
+		}
+	}
 }
 
 void acts_le_keys_clear_list(void)

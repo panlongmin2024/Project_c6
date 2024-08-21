@@ -23,7 +23,10 @@
 #include <audio_policy.h>
 #include <sys_event.h>
 #include <app_manager.h>
+#include <property_manager.h>
 #include <sys_wakelock.h>
+#include <acts_bluetooth/host_interface.h>
+
 #ifdef CONFIG_ACT_EVENT
 #include <bt_act_event_id.h>
 #include <logging/log_core.h>
@@ -47,6 +50,16 @@ LOG_MODULE_REGISTER(bt_mgr_audio, CONFIG_ACT_EVENT_APP_COMPILE_LEVEL);
 
 /* maximum channels belongs to the same connection */
 #define BT_AUDIO_CHAN_MAX	4
+
+#define BT_AUDIO_DELAY_LEA_ON_OFF_TIME    (1000)    /* 1000ms */
+
+/* state of le audio on off*/
+typedef enum {
+	LEA_OFF = 0,
+	LEA_ON = 1,
+	LEA_OFF_ONGOING = 2,
+	LEA_ON_ONGOING = 3,
+} bt_audio_lea_on_off_state_e;
 
 struct bt_audio_chan_restore_max {
 	uint8_t count;
@@ -235,6 +248,10 @@ struct bt_audio_conn {
 
 	uint8_t is_op_pause:1;
 
+	uint8_t security_changed:1;
+
+	uint8_t key_miss:1;
+
 	uint16_t media_state;
 
 	/* for BR Audio only */
@@ -339,6 +356,11 @@ struct bt_audio_runtime {
 
 	uint8_t le_audio_codec_policy : 1;
 	uint8_t le_audio_qos_policy : 1;
+	uint8_t lea_connection_enable : 2;
+
+	uint8_t lea_on_off_complete_work_valid : 1;
+	os_delayed_work lea_on_off_complete_work;
+	lea_on_off_complete_cb complete_cb;
 
 	uint8_t le_audio_adv_enable;
 
@@ -430,6 +452,8 @@ static struct bt_audio_runtime bt_audio;
 static const struct bt_broadcast_stream_cb bis_stream_cb;
 
 static struct bt_audio_conn *find_active_slave(void);
+
+static void lea_on_off_work_callback(struct k_work *work);
 
 static int bt_manager_audio_event_notify(struct bt_audio_conn* audio_conn, int event_id, void *event_data, int event_data_size)
 {
@@ -711,12 +735,19 @@ update:
 	switch_slave_app(bt_audio.active_slave);
 
 exit:
-	if (bt_audio.active_slave == bt_audio.inactive_slave) {
-		bt_audio.inactive_slave = NULL;
-	}
 	os_sched_unlock();
 
 	SYS_LOG_INF("active_slave: %p, %p\r\n", bt_audio.active_slave, bt_audio.inactive_slave);
+	return 0;
+}
+
+static int inactive_slave_check(void)
+{
+	if (bt_audio.active_slave == bt_audio.inactive_slave) {
+		bt_audio.inactive_slave = NULL;
+	}
+	SYS_LOG_INF("active_slave: %p, %p\r\n", bt_audio.active_slave, bt_audio.inactive_slave);
+
 	return 0;
 }
 
@@ -733,6 +764,7 @@ static int update_slave_prio(struct bt_audio_conn *audio_conn)
 	struct bt_audio_channel *chan;
 	uint8_t old_prio;
 	uint8_t new_prio;
+	int ret = -1;
 
 	/* do nothing for master */
 	if (audio_conn->role == BT_ROLE_MASTER) {
@@ -781,13 +813,19 @@ static int update_slave_prio(struct bt_audio_conn *audio_conn)
 done:
 	os_sched_unlock();
 	SYS_LOG_INF("hdl: 0x%x prio %d -> %d", audio_conn->handle, old_prio, new_prio);
-	SYS_LOG_INF("active_slave: %p, %p\r\n", bt_audio.active_slave, bt_audio.inactive_slave);
 
 	if (old_prio != new_prio) {
 		audio_conn->prio = new_prio;
-		return update_active_slave(audio_conn, false);
+		ret = update_active_slave(audio_conn, false);
+		if ((new_prio > BT_AUDIO_PRIO_NOTIFY) && (ret >= 0)) {
+			inactive_slave_check();
+		}
+		return ret;
 	}
 
+	if (new_prio > BT_AUDIO_PRIO_NOTIFY) {
+		inactive_slave_check();
+	}
 	return 0;
 }
 
@@ -1044,7 +1082,7 @@ int bt_manager_disconnect_inactive_audio_conn(void)
 			active_conn = bt_audio.active_slave;
 		} else {
 			SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.conn_list, audio_conn, node) {
-				if (audio_conn->role == BT_ROLE_SLAVE) {
+				if ((audio_conn->role == BT_ROLE_SLAVE) && (audio_conn->security_changed)) {
 					active_conn = audio_conn;
 				}
 			}
@@ -1377,6 +1415,11 @@ static int bt_manager_device_is_stoped(uint16_t handle)
 {
 #if (CONFIG_MUTI_POINT_USER_PAUSE_POLICY == 1)
 	bt_mgr_dev_info_t* a2dp_dev = bt_mgr_find_dev_info_by_hdl(handle);
+
+    if(!a2dp_dev){
+        return 1;
+    }
+
 	if(!btif_a2dp_stream_is_open(handle)) {
 		return 1;
 	}
@@ -1392,6 +1435,52 @@ static int bt_manager_device_is_stoped(uint16_t handle)
 
 	return 0;
 }
+
+int security_audio_conn(uint16_t handle)
+{
+	struct bt_audio_conn *audio_conn;
+
+	audio_conn = find_conn(handle);
+	if (!audio_conn) {
+		SYS_LOG_ERR("0x%x isn't exist.", handle);
+		return -EINVAL;
+	}
+
+	audio_conn->security_changed = 1;
+
+	if ((audio_conn->is_phone_dev) &&
+		(bt_audio.active_slave) &&
+		(bt_audio.device_num > 1) &&
+		(bt_manager_device_is_stoped(bt_audio.active_slave->handle))&&
+		(!bt_audio.active_slave->cis_connected)) {
+
+		bt_audio.inactive_slave = bt_audio.active_slave;
+	}
+	SYS_LOG_INF("active_slave: %p, %p, %p, %d, %d, %d, %d\r\n", bt_audio.active_slave, bt_audio.inactive_slave,
+				audio_conn, audio_conn->is_phone_dev, bt_audio.device_num, bt_audio.active_slave->cis_connected,
+				bt_manager_device_is_stoped(bt_audio.active_slave->handle));
+
+	return 0;
+}
+
+int audio_conn_key_miss(uint16_t handle)
+{
+	struct bt_audio_conn *audio_conn;
+
+	os_sched_lock();
+	audio_conn = find_conn(handle);
+	if (!audio_conn) {
+		os_sched_unlock();
+		SYS_LOG_ERR("0x%x isn't exist.", handle);
+		return -EINVAL;
+	}
+
+	audio_conn->key_miss = 1;
+	os_sched_unlock();
+
+	return 0;
+}
+
 
 int new_audio_conn(uint16_t handle)
 {
@@ -1489,20 +1578,11 @@ int new_audio_conn(uint16_t handle)
 	sys_slist_append(&bt_audio.conn_list, &audio_conn->node);
 	os_sched_unlock();
 
-	if ((is_phone_dev) &&
-		(bt_audio.active_slave) &&
-		(bt_audio.device_num > 1) &&
-		(bt_manager_device_is_stoped(bt_audio.active_slave->handle))&&
-		(!bt_audio.active_slave->cis_connected)) {
-		bt_audio.inactive_slave = bt_audio.active_slave;
-	}
-
 	if (type == BT_TYPE_BR) {
 		/* notify for update BT scan */
 		bt_manager_lea_policy_event_notify(LEA_POLICY_EVENT_CONNECT, NULL, 0);
 	}
 
-	SYS_LOG_INF("active_slave: %p, %p\r\n", bt_audio.active_slave, bt_audio.inactive_slave);
 	SYS_LOG_INF("%p, h:%d, t:%d, r:%d a:%s n:%d p:%d\n", audio_conn,
 		handle, type, role, addr, bt_audio.device_num,audio_conn->is_phone_dev);
 
@@ -1717,7 +1797,7 @@ int tws_audio_conn(uint16_t handle)
 int64_t bt_manager_audio_get_current_time(void *tl){
 	if(tl){
 		struct bt_audio_channel *chan = (struct bt_audio_channel *)timeline_get_owner(tl);
-		if(chan->audio_handle)
+		if(chan && chan->audio_handle)
 			return (int64_t)bt_manager_audio_get_le_time(chan->audio_handle);
 		else
 			return 0;
@@ -1743,9 +1823,11 @@ static void bt_get_remote_lea_name_cb(uint16_t handle, uint8_t err, const void *
 int ascs_connceted(uint16_t handle)
 {
 	struct bt_audio_conn *audio_conn;
+	struct bt_audio_conn *p_audio_conn;
 	btmgr_feature_cfg_t * cfg =  bt_manager_get_feature_config();
 	bt_addr_le_t *le_addr = NULL;
 	uint8_t param_len = 0;
+	uint8_t first_connect = 0;
 
 	audio_conn = find_conn(handle);
 	if (!audio_conn) {
@@ -1787,20 +1869,32 @@ int ascs_connceted(uint16_t handle)
 	audio_conn->addr_type = le_addr->type;
 	audio_conn->media_state = BT_STATUS_INACTIVE;
 	audio_conn->ascs_connect_time = os_uptime_get_32();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.conn_list, p_audio_conn, node) {
+		if(!p_audio_conn->is_phone_dev){
+			continue;
+		}
+		if(!memcmp(dev_addr->val,&p_audio_conn->addr,sizeof(bd_address_t))){
+			if(type != p_audio_conn->type && p_audio_conn->key_miss){
+				first_connect = 1;
+				p_audio_conn->key_miss = 0;
+				SYS_LOG_INF("same dev, no tts\n");
+			}
+		}
+	}
 	os_sched_unlock();
 
 	if (
 #if defined(CONFIG_BT_CROSS_TRANSPORT_KEY)
-	!bt_manager_check_audio_conn_is_same_dev(dev_addr, type)
-	&& !bt_manager_lea_is_reconnected_dev(dev_addr->val)
+	!first_connect &&
+	!bt_manager_lea_is_reconnected_dev(dev_addr->val)
 #else
 	!bt_manager_lea_is_reconnected_dev(dev_addr->val)
 #endif
 		) {
 		bt_manager_sys_event_notify(SYS_EVENT_BT_CONNECTED);
-	} else {
-		SYS_LOG_INF("same dev, no tts\n");
 	}
+
 	btif_audio_get_remote_name(handle,bt_get_remote_lea_name_cb);
 
 	bt_manager_check_phone_connected();
@@ -1968,6 +2062,14 @@ void bt_manager_audio_conn_event(int event, void *data, int size)
 		ascs_connceted(handle);
 		break;
 	case BT_AUDIO_ASCS_DISCONNECTION:
+		break;
+	case BT_SECURITY_CHANGED:
+		handle = *(uint16_t *)data;
+		security_audio_conn(handle);
+		break;
+	case BT_KEY_MISS:
+		handle = *(uint16_t *)data;
+		audio_conn_key_miss(handle);
 		break;
 	default:
 		break;
@@ -3229,10 +3331,13 @@ static int audio_init(uint8_t type, struct bt_audio_role *role)
 
 		struct bt_le_adv_param adv_param = {0};
 		btif_audio_adv_param_init(bt_manager_lea_policy_get_adv_param(ADV_TYPE_EXT, &adv_param));
-
 		bt_audio.le_audio_init = 1;
 		bt_audio.le_audio_state = BT_AUDIO_STATE_INITED;
 		bt_audio.le_audio_adv_enable = 0;
+		bt_audio.lea_connection_enable = role->lea_connection_enable;
+		os_delayed_work_init(&bt_audio.lea_on_off_complete_work, lea_on_off_work_callback);
+		bt_audio.lea_on_off_complete_work_valid = 0;
+
 #ifdef CONFIG_BT_ADV_MANAGER
 		bt_manager_audio_le_adv_cb_register(lea_adv_req_start_cb, lea_adv_req_stop_cb);
 #endif
@@ -3295,6 +3400,7 @@ static int audio_exit(uint8_t type)
 
 		bt_audio.le_audio_init = 0;
 		bt_audio.le_audio_state = BT_AUDIO_STATE_UNKNOWN;
+		k_delayed_work_cancel_sync(&bt_audio.lea_on_off_complete_work, K_FOREVER);
 
 		return 0;
 	}
@@ -3440,6 +3546,148 @@ int bt_manager_audio_start(uint8_t type)
 	os_sched_unlock();
 
 	return ret;
+}
+
+static bool bt_manager_unpair_lea_conn(void)
+{
+	struct bt_audio_conn *audio_conn = NULL;
+	const bt_addr_le_t *addr = NULL;
+	bool ret = false;
+
+	os_sched_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.conn_list, audio_conn, node) {
+		if (audio_conn->is_lea) {
+			addr = btif_get_le_addr_by_handle(audio_conn->handle);
+			hostif_bt_le_unpair_device(addr);
+			ret = true;
+		}
+	}
+
+	os_sched_unlock();
+	return ret;
+}
+
+static int lea_on_process(void)
+{
+	int ret = 0;
+	SYS_LOG_INF("state:%d\n",bt_audio.lea_connection_enable);
+
+	bt_audio.lea_connection_enable = LEA_ON;
+
+	/* unpair phones */
+	btif_br_clear_list(BTSRV_DEVICE_PHONE);
+	bt_manager_unpair_lea_conn();
+	/* set CoD */
+	hostif_bt_write_class(bt_manager_config_bt_class());
+	/* enable lea services*/
+	ret = bt_manager_lea_services_enable();
+	/* enable lea policy */
+	bt_manager_lea_policy_enable();
+
+	property_set_int(CFG_LEA_ONOFF_STATUS, 1);
+
+	if (bt_audio.complete_cb) {
+		bt_audio.complete_cb(ret);
+	}
+	return ret;
+}
+
+static int lea_off_process(void)
+{
+	int ret = 0;
+	SYS_LOG_INF("state:%d\n",bt_audio.lea_connection_enable);
+
+	bt_audio.lea_connection_enable = LEA_OFF;
+
+	/* disable lea policy */
+	bt_manager_lea_policy_disable(0);
+	/* unpair phones */
+	btif_br_clear_list(BTSRV_DEVICE_PHONE);
+	if (bt_manager_unpair_lea_conn()) {
+		/* wait for att disconnect */
+		os_sleep(OS_MSEC(100));
+	}
+
+	/* disable lea services*/
+	ret = bt_manager_lea_services_disable();
+	/* set CoD */
+	hostif_bt_write_class(bt_manager_config_bt_class());
+
+	property_set_int(CFG_LEA_ONOFF_STATUS, 0);
+
+	if (bt_audio.complete_cb) {
+		bt_audio.complete_cb(ret);
+	}
+	return ret;
+}
+
+static void lea_on_off_work_callback(struct k_work *work)
+{
+	bt_audio.lea_on_off_complete_work_valid = 0;
+	if (LEA_ON_ONGOING == bt_audio.lea_connection_enable) {
+		lea_on_process();
+	} else if (LEA_OFF_ONGOING == bt_audio.lea_connection_enable) {
+		lea_off_process();
+	}
+}
+
+int bt_manager_audio_lea_enable(lea_on_off_complete_cb cb)
+{
+	int ret = 0;
+
+	if (bt_audio.lea_connection_enable == LEA_ON) {
+		return -EALREADY;
+	}
+
+	os_sched_lock();
+	bt_audio.complete_cb = cb;
+	os_sched_unlock();
+
+	/* check audio active */
+	ret = bt_manager_media_pause();
+	if (!ret) {
+		bt_audio.lea_connection_enable = LEA_ON_ONGOING;
+		if (bt_audio.lea_on_off_complete_work_valid) {
+			os_delayed_work_cancel(&bt_audio.lea_on_off_complete_work);
+		}
+		os_delayed_work_submit(&bt_audio.lea_on_off_complete_work, BT_AUDIO_DELAY_LEA_ON_OFF_TIME);
+		bt_audio.lea_on_off_complete_work_valid = 1;
+		return 0;
+	}
+
+	return lea_on_process();
+}
+
+int bt_manager_audio_lea_disable(lea_on_off_complete_cb cb)
+{
+	int ret = 0;
+	if (bt_audio.lea_connection_enable == LEA_OFF) {
+		return -EALREADY;
+	}
+
+	os_sched_lock();
+	bt_audio.complete_cb = cb;
+	os_sched_unlock();
+
+	/* check audio active */
+	ret = bt_manager_media_pause();
+	if (!ret) {
+		bt_audio.lea_connection_enable = LEA_OFF_ONGOING;
+		if (bt_audio.lea_on_off_complete_work_valid) {
+			os_delayed_work_cancel(&bt_audio.lea_on_off_complete_work);
+		}
+		os_delayed_work_submit(&bt_audio.lea_on_off_complete_work, BT_AUDIO_DELAY_LEA_ON_OFF_TIME);
+		bt_audio.lea_on_off_complete_work_valid = 1;
+		return 0;
+	}
+
+	return lea_off_process();
+}
+
+int bt_manager_audio_is_lea_open(void)
+{
+	return bt_audio.lea_connection_enable;
 }
 
 static int audio_stop(uint8_t type)
@@ -6084,7 +6332,7 @@ static const struct bt_broadcast_stream_cb bis_stream_cb = {
 int64_t bt_manager_broadcast_get_current_time(void *tl){
 	if(tl){
 		struct bt_broadcast_channel *chan = (struct bt_broadcast_channel *)timeline_get_owner(tl);
-		if(chan->audio_handle)
+		if(chan && chan->audio_handle)
 			return (int64_t)bt_manager_audio_get_le_time(chan->audio_handle);
 		else
 			return 0;

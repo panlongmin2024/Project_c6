@@ -211,7 +211,7 @@ static void bt_manager_set_config_info(void)
 	cfg.max_conn_num = CONFIG_BT_MAX_BR_CONN;
 	cfg.max_phone_num = bt_manager_config_connect_phone_num();
     cfg.cfg_device_num = cfg_feature->sp_device_num;
-	cfg.pts_test_mode = bt_manager_config_pts_test() ? 1 : 0;
+	//cfg.pts_test_mode = bt_manager_config_pts_test() ? 1 : 0;
 	cfg.volume_sync_delay_ms = bt_manager_config_volume_sync_delay_ms();
 	cfg.tws_version = get_tws_current_versoin();
 	cfg.tws_feature = get_tws_current_feature();
@@ -400,7 +400,7 @@ static void bt_manager_notify_connected(struct bt_mgr_dev_info *info)
 		return;
 	}
 
-	SYS_LOG_INF("%s,%d %d info=%d\n", (char *)info->name,info->timeout_disconnected,info->auto_reconnect,(u32_t)info);
+	SYS_LOG_INF("%s,%d %d\n", (char *)info->name,info->timeout_disconnected,info->auto_reconnect);
 #ifdef ABNORMAL_OFFLINE_SHIELDING_SYSTEM_NOTIFICATION
 	if (info->timeout_disconnected == 1 && info->auto_reconnect) {
 	   tmp_flag = 0;
@@ -413,6 +413,11 @@ static void bt_manager_notify_connected(struct bt_mgr_dev_info *info)
 		if (!info->notified_tts) {
 			info->notified_tts = 1;
 			dev_connect_notify(&info->addr, tmp_flag);
+		}
+
+		if(info->new_connected){
+		    bt_manager_check_phone_connected();
+		    info->new_connected = 0;
 		}
 		return;
 	}
@@ -481,7 +486,7 @@ static void bt_manager_check_disconnect_notify(struct bt_mgr_dev_info *info, uin
 		}
 	}
 
-	SYS_LOG_INF("reason:0x%x phone:%d info=%d", reason, bt_manager_get_connected_dev_num(),(u32_t)info);
+	SYS_LOG_INF("reason:0x%x phone:%d", reason, bt_manager_get_connected_dev_num());
 }
 
 /* return 0: accept connect request, other: rejuect connect request
@@ -489,11 +494,8 @@ static void bt_manager_check_disconnect_notify(struct bt_mgr_dev_info *info, uin
  */
 static int bt_manager_check_connect_req(struct bt_link_cb_param *param)
 {
-	if (param->new_dev) {
-		SYS_LOG_INF("New connect request\n");
-	} else {
-		SYS_LOG_INF("%s connect request\n", param->is_tws ? "Tws" : "Phone");
-	}
+
+	SYS_LOG_INF("%s connect request\n", param->is_tws ? "Tws" : "Phone");
 
 	SYS_EVENT_INF(EVENT_BT_LINK_ACL_CONNECT_REQ, param->new_dev, param->is_tws,
 					UINT8_ARRAY_TO_INT32(param->addr->val), os_uptime_get_32());
@@ -576,14 +578,16 @@ static bool bt_manager_on_acl_disconnected(struct bt_mgr_dev_info *dev_info, uin
     }
     else
     {
-        dev_info->timeout_disconnected = 0;
-        dev_info->need_resume_play     = 0;
+		if(!dev_info->auto_reconnect){
+			dev_info->timeout_disconnected = 0;
+			dev_info->need_resume_play     = 0;
+		}
     }
 
-    if (dev_info->need_resume_play)
-    {
-        SYS_LOG_INF("need_resume_play");
-    }
+    dev_info->new_connected = 0;
+
+	SYS_LOG_INF("reason:0x%x td:%d rp:%d ar:%d\n", reason, dev_info->timeout_disconnected,
+		dev_info->need_resume_play,dev_info->auto_reconnect);
 
     return true;
 }
@@ -608,11 +612,27 @@ void gfp_auto_test_handler(struct thread_timer *ttimer,void *expiry_fn_arg)
 }
 #endif
 
+void bt_manager_check_new_connected(struct bt_mgr_dev_info *info)
+{
+    if(!info){
+        return;
+    }
+
+    if(info->a2dp_singnaling_connected || info->a2dp_connected || info->avrcp_connected
+        || info->spp_connected || info->hid_connected || info->hf_connected){
+        return;
+    }
+    else{
+        info->new_connected = 1;
+    }
+}
+
 int bt_manager_link_event(void *param)
 {
 	int ret = 0;
 	struct bt_mgr_dev_info *info;
 	struct bt_link_cb_param *in_param = param;
+	struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
 
 	info = bt_mgr_find_dev_info_by_hdl(in_param->hdl);
 	if ((info == NULL) && (in_param->link_event != BT_LINK_EV_ACL_CONNECTED) &&
@@ -631,8 +651,11 @@ int bt_manager_link_event(void *param)
 	case BT_LINK_EV_ACL_CONNECTED:
 		bt_mgr_add_dev_info(in_param->addr, in_param->hdl);
 		info = bt_mgr_find_dev_info_by_hdl(in_param->hdl);
-		if(info && in_param->param){
-			info->phone_connect_request = 1;
+		if(info){
+		    if(in_param->param){
+			    info->phone_connect_request = 1;
+			}
+			info->new_connected = 1;
 		}
 		break;
 	case BT_LINK_EV_ACL_DISCONNECTED:
@@ -676,11 +699,30 @@ int bt_manager_link_event(void *param)
 		SYS_EVENT_INF(EVENT_BT_LINK_ROLE_CHANGE, info->hdl, info->dev_role,
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
 		break;
+	case BT_LINK_EV_KEY_MISS:
+		bt_manager_audio_conn_event(BT_KEY_MISS, &in_param->hdl,sizeof(in_param->hdl));
+		if(bt_manager_is_pair_mode()){
+			for (int i = 0; ((i < MAX_MGR_DEV) && bt_manager->dev[i].used); i++) {
+				if (bt_manager->dev[i].key_miss && bt_manager->dev[i].hdl) {
+					SYS_LOG_INF("reject conn\n");
+					ret = -1;
+					break;
+				}
+			}
+			if(info->phone_connect_request){
+				info->key_miss = 1;
+			}
+		}
+		break;
 	case BT_LINK_EV_SECURITY_CHANGED:
+		bt_manager_audio_conn_event(BT_SECURITY_CHANGED, &in_param->hdl,sizeof(in_param->hdl));
+		bt_manager_check_phone_connected();
+		info->key_miss = 0;
 		SYS_EVENT_INF(EVENT_BT_LINK_SECURITY_CHANGED, info->hdl,
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
 		break;
 	case BT_LINK_EV_HF_CONNECTED:
+	    bt_manager_check_new_connected(info);
 		info->hf_connected = 1;
 		SYS_EVENT_INF(EVENT_BT_LINK_HF_CONNECTED, info->hdl,
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
@@ -692,6 +734,7 @@ int bt_manager_link_event(void *param)
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
 		break;
 	case BT_LINK_EV_A2DP_CONNECTED:
+        bt_manager_check_new_connected(info);
 		info->a2dp_connected = 1;
         if(!bt_manager_audio_is_ios_dev(info->hdl)){
             bt_manager_notify_connected(info);
@@ -702,6 +745,7 @@ int bt_manager_link_event(void *param)
             UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
 		break;
 	case BT_LINK_EV_A2DP_SINGALING_CONNECTED:
+        bt_manager_check_new_connected(info);
         info->a2dp_singnaling_connected = 1;
         os_delayed_work_cancel(&info->profile_disconnected_delay_work);
         if(bt_manager_audio_is_ios_dev(info->hdl)){
@@ -720,6 +764,7 @@ int bt_manager_link_event(void *param)
 		}
 		break;
 	case BT_LINK_EV_AVRCP_CONNECTED:
+        bt_manager_check_new_connected(info);
 		info->avrcp_connected = 1;
 		SYS_EVENT_INF(EVENT_BT_LINK_AVRCP_CONNECTED, info->hdl,
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
@@ -730,6 +775,7 @@ int bt_manager_link_event(void *param)
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
 		break;
 	case BT_LINK_EV_SPP_CONNECTED:
+	    bt_manager_check_new_connected(info);
 		info->spp_connected++;
 		SYS_EVENT_INF(EVENT_BT_LINK_SPP_CONNECTED, info->hdl, info->spp_connected,
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
@@ -742,6 +788,7 @@ int bt_manager_link_event(void *param)
 		}
 		break;
 	case BT_LINK_EV_HID_CONNECTED:
+	    bt_manager_check_new_connected(info);
 		info->hid_connected = 1;
 		SYS_EVENT_INF(EVENT_BT_LINK_HID_CONNECTED, info->hdl,
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
@@ -968,12 +1015,7 @@ static void dev_connect_notify(bd_address_t* addr, uint8_t flag)
 	if (!addr) {
 		goto done;
 	}
-#if defined(CONFIG_BT_CROSS_TRANSPORT_KEY)
-	if (bt_manager_check_audio_conn_is_same_dev(addr, BT_TYPE_BR)) {
-		SYS_LOG_INF("same dev, no tts\n");
-		return;
-	}
-#endif
+
 done:
 	if (flag) {
 		struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
@@ -1001,7 +1043,7 @@ int bt_manager_set_status_ext(int state,uint8_t flag, bd_address_t* addr)
 	case BT_STATUS_CONNECTED:
 	{
 		bt_manager->connected_phone_num++;
-		bt_manager_check_phone_connected();
+		//bt_manager_check_phone_connected();
 		dev_connect_notify(addr, flag);
 		break;
 	}
@@ -1332,7 +1374,7 @@ int bt_manager_init(bt_manager_event_callback_t event_callback)
 #endif
 
 #ifdef CONFIG_BT_PTS_TEST
-    btif_bt_set_pts_config(true);
+	//btif_bt_set_pts_config(true);
 #endif
 
 	SYS_LOG_INF("success\n");

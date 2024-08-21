@@ -53,7 +53,7 @@
 #define DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL3				580
 #define DEFUALT_LOWTEMP_POWER_LEVEL						-180
 
-#define DEFAULT_NOPOWER_CAP_LEVEL	    				5
+// #define DEFAULT_NOPOWER_CAP_LEVEL	    				5
 #define DEFAULT_JUST_VOLUME_PERIODS						(300*1000)
 #define DEFAULT_POWER_OFF_PERIODS						(8*1000)
 #endif	
@@ -79,6 +79,7 @@ struct power_manager_info {
 	int battary_led_need_change;
 	int current_temperature;
 	uint32_t report_justvol_timestamp;
+	int last_temperature;
 #endif	
 	int last_cap;
 	uint32_t report_last_cap_timestamp;
@@ -133,12 +134,22 @@ void power_manager_battery_display_handle(int led_status ,bool key_flag)
 		){
 			key_flag = 1;
 
-				if((temp_status == POWER_SUPPLY_STATUS_FULL)
-					&& (pd_get_app_mode_state() != CHARGING_APP_MODE))
+				if(temp_status == POWER_SUPPLY_STATUS_FULL)
 				{
-					temp_status = POWER_SUPPLY_STATUS_DISCHARGE;
-				}
-			
+					if(run_mode_is_demo())
+					{
+						if(pd_get_app_mode_state() != CHARGING_APP_MODE)
+						{
+							temp_status = POWER_SUPPLY_STATUS_FULL;
+						}else{
+							temp_status = POWER_SUPPLY_STATUS_DISCHARGE;
+						}
+        					
+					}else if(pd_get_app_mode_state() != CHARGING_APP_MODE)
+					{
+						temp_status = POWER_SUPPLY_STATUS_DISCHARGE;
+					}
+				}			
 		}
 		else{	
 			key_flag = 0;
@@ -551,9 +562,14 @@ static int _power_manager_work_handle(void)
 	}//DEFUALT_HIAHTEMP_POWER_LEVEL
 	else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0){
 		if (((os_uptime_get_32() - power_manager->report_justvol_timestamp) >=  DEFAULT_JUST_VOLUME_PERIODS
-				|| !power_manager->report_justvol_timestamp)) {		
-			SYS_LOG_INF("%d just volume", power_manager->current_temperature);
-			sys_event_notify(SYS_EVENT_SMART_CONTROL_VOLUME);
+				|| !power_manager->report_justvol_timestamp)) {	
+			/*******************当前温度要高上一次的温度----2024.8.15 zth**************************** */			
+			if(power_manager->current_temperature > power_manager->last_temperature)
+			{
+				SYS_LOG_INF("%d just volume", power_manager->current_temperature);
+				sys_event_notify(SYS_EVENT_SMART_CONTROL_VOLUME);
+				power_manager->last_temperature = power_manager->current_temperature;
+			}		
 			power_manager->report_justvol_timestamp = os_uptime_get_32();
 		}		
 		// return 0;																		// Totti debug on 2024/0712
@@ -562,6 +578,10 @@ static int _power_manager_work_handle(void)
 		SYS_LOG_INF("%d temp too low", power_manager->current_temperature);
 		sys_event_notify(SYS_EVENT_POWER_OFF);
 		return 0;
+	}
+	else
+	{
+		power_manager->last_temperature = 0;//没有触发smartcontrol,last_temperature置为0----2024.8.15 zth
 	}		
 #endif			
 
@@ -618,25 +638,25 @@ static int _power_manager_work_handle(void)
 		}
 		power_manager->current_cap = power_manager_get_battery_capacity();
 
-		if(run_mode_is_demo())
-		{
+		// if(run_mode_is_demo() && (pd_get_app_mode_state() != CHARGING_APP_MODE))
+		// {
 
-			static u8_t demo_low_cap_debounce = 0x00;
+		// 	static u8_t demo_low_cap_debounce = 0x00;
 			
 
-			SYS_LOG_INF("[%d] cur_cap:%d, charging state:%d; demo mode\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
-			if((power_manager->current_cap<=DEFAULT_NOPOWER_CAP_LEVEL) && (!pd_get_sink_charging_state()))
-			{
-				if(demo_low_cap_debounce++ >= 5)
-				{
-					demo_low_cap_debounce = 0x00;
-					SYS_LOG_INF("[%d] current_cap:%d, charging state:%d; too low power off\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
-					goto _POWER_OFF_;
-				}
-			}else{
-				demo_low_cap_debounce = 0x00;
-			}
-		}
+		// 	SYS_LOG_INF("[%d] cur_cap:%d, charging state:%d; demo mode\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
+		// 	if((power_manager->current_cap<=DEFAULT_NOPOWER_CAP_LEVEL) && (!pd_get_sink_charging_state()))
+		// 	{
+		// 		if(demo_low_cap_debounce++ >= 5)
+		// 		{
+		// 			demo_low_cap_debounce = 0x00;
+		// 			SYS_LOG_INF("[%d] current_cap:%d, charging state:%d; too low power off\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
+		// 			goto _POWER_OFF_;
+		// 		}
+		// 	}else{
+		// 		demo_low_cap_debounce = 0x00;
+		// 	}
+		// }
 
 		if(power_manager->last_cap != power_manager->current_cap)
 		{
@@ -782,8 +802,8 @@ int power_manager_early_init(void)
 		return -ESRCH;
 
 	SYS_LOG_INF("battery capacity: %d\n", power_manager_get_battery_capacity());
-
-	if ((power_manager_get_battery_capacity() <= DEFAULT_NOPOWER_CAP_LEVEL))
+	/***************LOW 2% POWER OFF 2024.8.16 ZTH ************************************************ */
+	if ((power_manager_get_battery_capacity() <= (DEFAULT_NOPOWER_CAP_LEVEL - 3)))
 	{
 		if(dc_power_in_status_read())
 		{
@@ -817,6 +837,27 @@ int power_manager_early_init(void)
 			sys_pm_poweroff();
 		}
 	}
+
+	if ((power_manager_get_battery_capacity() <= DEFAULT_NOPOWER_CAP_LEVEL))
+	{
+		if(dc_power_in_status_read())
+		{
+			k_sleep(300);
+			if(!pd_manager_check_mobile())
+				return 0;
+		}
+
+		SYS_LOG_INF("no power ,shundown: %d\n", power_manager_get_battery_capacity());
+		//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
+        battery_remaincap_low_poweroff();
+		k_sleep(50);
+        logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
+		pd_manager_deinit(0);		
+		sys_pm_poweroff();
+
+	}
+
+
 	return 0;
 	
 }

@@ -30,7 +30,8 @@
 #define AW8523B_I2C_TRANSMIT_DISABLE		0
 #define AW8523B_I2C_TRANSMIT_ENABLE			1
 
-
+#define AW8523B_MODE_LED					0
+#define AW8523B_MODE_GPIO					1
 
 #define LED_GET_PORT(_led)					((_led) >> 3)
 #define LED_GET_PIN(_led)					((_led) & 0x07)
@@ -62,4 +63,5 @@ extern void aw9523b_set_led_status(uint8_t num,uint8_t status);
 extern uint8_t aw9523b_get_led_status(uint8_t num);
 extern void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);
 extern void aw9523b_set_battery_low_red_led_status(void);
+extern void io_expend_aw9523b_set_port_0_led_driver_level(uint8 level);
 #endif

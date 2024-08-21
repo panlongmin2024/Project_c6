@@ -19,7 +19,7 @@
 
 #define OTADFU_FRAME_LEN     (34)
 #define OTADFU_FRAME_DATA_LEN (OTADFU_FRAME_LEN - 2)
-#define OTADFU_DATABUF_SIZE  (83 * 1024)
+#define OTADFU_DATABUF_SIZE  (74 * 1024)
 #define OTADFU_REMAIN_DATABUF_SIZE (1024)
 #define OTADFU_READ_BLOCK    (512)
 
@@ -1249,6 +1249,7 @@ int otadfu_SetDfuData(u8_t sequence, u8_t * data, int len)
 int otadfu_NotifyDfuCancel(u8_t cancel_reason)
 {
 	otadfu_handle_t *otadfu;
+	static uint8_t reentrancy_flag = 0;
 
 	selfapp_log_inf("dfu cancel: 0x%x\n", cancel_reason);
 
@@ -1260,7 +1261,7 @@ int otadfu_NotifyDfuCancel(u8_t cancel_reason)
 		return 0;
 	}
 
-	// otadfu->flag_cancel = 1;	//let ota_app release reading
+	otadfu->flag_cancel = 1;	//let ota_app release reading
 
 	selfapp_log_inf("dfu cancel: 0x%x_%d_%d\n", cancel_reason, otadfu->flag_reading, otadfu->flag_cancel);
 
@@ -1276,12 +1277,18 @@ int otadfu_NotifyDfuCancel(u8_t cancel_reason)
 	}
 #endif
 
-	if (otadfu->flag_cancel) {
+	if(k_current_get() == otadfu->app_cmd_thread){
+		otadfu->thread_need_terminated = true;
 		os_mutex_unlock(&otadfu_mutex);
 		return 0;
-	} else {
-		otadfu->flag_cancel = 1;	//let ota_app release reading
 	}
+
+	if (reentrancy_flag) {
+		os_mutex_unlock(&otadfu_mutex);
+		return 0;
+	}
+
+	reentrancy_flag = 1;
 
 	ota_app_cmd_thread_stop(otadfu);
 
@@ -1289,6 +1296,8 @@ int otadfu_NotifyDfuCancel(u8_t cancel_reason)
 #ifdef CONFIG_OTA_SELF_APP
 	dfu_release(otadfu);
 #endif
+
+	reentrancy_flag = 0;
 
 	os_mutex_unlock(&otadfu_mutex);
 
@@ -1374,7 +1383,7 @@ int otadfu_AppTriggerUpgrade(void)
 }
 extern u32_t fw_version_get_sw_code(void);
 extern u8_t fw_version_get_hw_code(void);
-#define HM_OTA_AUTO_TEST	1
+//#define HM_OTA_AUTO_TEST	1
 int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 {
 	u8_t *buf = self_get_sendbuf();
@@ -1389,9 +1398,9 @@ int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 			u8_t vercode[4];	// 3Bytes is sw version, big endian, 1Byte is hw version
 			u32_t hwver = fw_version_get_hw_code();
 			u32_t swver = fw_version_get_sw_code();
-			vercode[0] = (u8_t) (swver >> 16);
-			vercode[1] = (u8_t) (swver >> 8);
-			vercode[2] = (u8_t) swver;
+			vercode[0] = hex2dec_digitpos((swver >> 16) & 0xFF);
+			vercode[1] = hex2dec_digitpos((swver >>  8) & 0xFF);
+			vercode[2] = hex2dec_digitpos( swver & 0xFF);
 			vercode[3] = (u8_t) hwver;
 
 			#ifdef HM_OTA_AUTO_TEST
@@ -1414,10 +1423,10 @@ int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 	case DFUCMD_ReqDfuVer:{
 			u8_t sw_vercode[3];
 			u32_t swver = fw_version_get_sw_code();
-			sw_vercode[0] = (u8_t) (swver >> 16);
-			sw_vercode[1] = (u8_t) (swver >> 8);
-			sw_vercode[2] = (u8_t) swver;
-			selfapp_log_inf("dfu reqDfuVer=0x%x\n", swver);
+			sw_vercode[0] = hex2dec_digitpos((swver >> 16) & 0xFF);
+			sw_vercode[1] = hex2dec_digitpos((swver >>  8) & 0xFF);
+			sw_vercode[2] = hex2dec_digitpos( swver & 0xFF);
+			selfapp_log_inf("dfu reqDfuVer=0x%06x\n", swver);
 			sendlen +=
 			    selfapp_pack_cmd_with_bytes(buf, DFUCMD_RetDfuVer,
 					       (u8_t *) sw_vercode, 3);

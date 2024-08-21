@@ -31,6 +31,16 @@ typedef int (*p_logsrv_callback_t)(int log_type, int (*traverse_cb)(uint8_t *dat
 extern int selfapp_init(p_logsrv_callback_t cb);
 extern int selfapp_deinit(void);
 
+inline u8_t hex2dec_digitpos(u8_t number)
+{
+	u8_t ten, unit;
+	if (number >= 100) {
+		return 0xEE;
+	}
+	ten  = number / 10;
+	unit = number - ten * 10;
+	return (u8_t)((ten << 4) | unit);
+}
 
 /*
  Send message to selfapp thread (thread timer of system app thread)
@@ -140,5 +150,7 @@ void selfapp_set_device_info(selfapp_device_info_t *info);
 int selfapp_update_bat_for_secondary_device(u8_t value);
 
 u8_t selfapp_get_bat_power(void);
+
+int selfapp_report_leaudio_status(void);
 
 #endif

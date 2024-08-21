@@ -806,7 +806,7 @@ typedef int (*audio_parser_ops_t)(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsi
  *
  * @return type of audio_parser_ret_t
  */
-int audio_parser_ops_ape(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
+int as_parser_ops_ape(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
 
 /**
  * @brief flac parser operation
@@ -819,7 +819,7 @@ int audio_parser_ops_ape(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int 
  *
  * @return type of audio_parser_ret_t
  */
-int audio_parser_ops_flac(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
+int as_parser_ops_flac(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
 
 /**
  * @brief mp3 parser operation
@@ -845,7 +845,7 @@ int as_parser_ops_mp3(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int arg
  *
  * @return type of audio_parser_ret_t
  */
-int audio_parser_ops_wav(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
+int as_parser_ops_wav(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
 
 /**
  * @brief wma parser operation
@@ -858,7 +858,7 @@ int audio_parser_ops_wav(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int 
  *
  * @return type of audio_parser_ret_t
  */
-int audio_parser_ops_wma(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
+int as_parser_ops_wma(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
 
 /**
  * @brief aac parser operation
@@ -871,6 +871,6 @@ int audio_parser_ops_wma(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int 
  *
  * @return 0: parser ok ,others failed audio_parser_ret_t
  */
-int audio_parser_ops_a23(void *handle, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
+int as_parser_ops_a13(void *hnd, audio_parser_ex_ops_cmd_t cmd, unsigned int args);
 
 #endif /* __AS_AUDIO_CODEC_H__ */

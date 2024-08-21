@@ -281,6 +281,7 @@ int bt_manager_le_audio_init(struct bt_audio_role *role)
 
 	c.num_master_conn = role->num_master_conn;
 	c.num_slave_conn = role->num_slave_conn;
+	c.lea_connection_enable = role->lea_connection_enable;
 	c.br = role->br;
 	c.remote_keys = role->remote_keys;
 	c.test_addr = role->test_addr;
@@ -781,6 +782,16 @@ int bt_manager_le_audio_stop(void)
 #else
 	return btif_audio_stop();
 #endif
+}
+
+int bt_manager_lea_services_enable(void)
+{
+	return btif_audio_services_enable();
+}
+
+int bt_manager_lea_services_disable(void)
+{
+	return btif_audio_services_disable();
 }
 
 int bt_manager_le_audio_pause(void)
