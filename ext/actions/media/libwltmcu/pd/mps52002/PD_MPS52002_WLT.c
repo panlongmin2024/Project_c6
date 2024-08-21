@@ -61,7 +61,7 @@
  * @}
  */
 
-#define mps_pd_current_version 0x47
+#define mps_pd_current_version 0x48
 #define I2C_DEV_ADDR        0x48                    //TODO
 
 #define I2C_OTA_PD_DEV_ADDR		0x27
@@ -170,7 +170,7 @@ static void mps_ota_get_status(u8_t *status);
 
 #define WLT_OTG_DEBOUNCE_TIMEOUT        6
 #define WLT_FULL_DEBOUNCE_TIMEOUT        6
-#define MAX_SOURCE_DISC_COUNT           10
+#define MAX_SOURCE_DISC_COUNT           8
 #define MAX_SINK_CHECK_MOBILE_TIME		15
 #define MIN_SINK_CHECK_MOBILE_TIME		1
 
@@ -1676,47 +1676,47 @@ void pd_detect_event_report_MPS52002(void){
 	
 	if(!pd_mps52002->pd_52002_source_flag)
 	{
-		
-		if((readresult&0x01) != pd_mps52002->pd_52002_sink_flag)
+		if(pd_mps52002->pd_source_disc_debunce_cnt == 0)
 		{
-
-			int debounce_time=3;
-
-			if(pd_mps52002->pd_52002_sink_flag){
-				debounce_time = 2;
-			}
-				
-			if(source_sink_debunce < debounce_time )
+			if((readresult&0x01) != pd_mps52002->pd_52002_sink_flag)
 			{
-				source_sink_debunce++ ;
-				SYS_LOG_INF("[%d] source_sink_debunce:%d readresult =%02x\n", __LINE__, source_sink_debunce,readresult);
-				return;
-			}
 
-			source_sink_debunce = 0x00;
-			pd_mps52002->sink_charging_flag = 1;
-			pd_mps52002->pd_52002_source_flag = 0;	
-			pd_mps52002->pd_52002_HIZ_flag = 0;
-			pd_mps52002->pd_52002_sink_flag ^= 1;
-			pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
-			pd_mps52002->pd_sink_debounce_time = 0;
-			pd_mps52002->charge_full_flag = 0;
-			if(pd_mps52002->pd_52002_sink_flag)
-			{
-				pd_mps52002->pd_sink_debounce_time = pd_mps52002->pd_check_mobile_time;	//MAX_SINK_CHECK_MOBILE_TIME;
-			}else{
-				if(pd_mps52002->pd_source_otg_disable_flag)
-				{
-					pd_mps52002_pd_otg_on(true); 
+				int debounce_time = 3;
+				if(pd_mps52002->pd_52002_sink_flag){
+					debounce_time = 2;
 				}
-			}
-			SYS_LOG_INF("[%d] sink_flag:%d \n", __LINE__, pd_mps52002->pd_52002_sink_flag);
-			para.pd_event_val = pd_mps52002->pd_52002_sink_flag;
-			pd_mps52002->notify(PD_EVENT_SINK_STATUS_CHG, &para);
+					
+				if(source_sink_debunce < debounce_time )
+				{
+					source_sink_debunce++ ;
+					SYS_LOG_INF("[%d] source_sink_debunce:%d readresult =%02x\n", __LINE__, source_sink_debunce,readresult);
+					return;
+				}
 
+				source_sink_debunce = 0x00;
+				pd_mps52002->sink_charging_flag = 1;
+				pd_mps52002->pd_52002_source_flag = 0;	
+				pd_mps52002->pd_52002_HIZ_flag = 0;
+				pd_mps52002->pd_52002_sink_flag ^= 1;
+				pd_mps52002->pd_source_disc_debunce_cnt = 0x00;
+				pd_mps52002->pd_sink_debounce_time = 0;
+				pd_mps52002->charge_full_flag = 0;
+				if(pd_mps52002->pd_52002_sink_flag)
+				{
+					pd_mps52002->pd_sink_debounce_time = pd_mps52002->pd_check_mobile_time;	//MAX_SINK_CHECK_MOBILE_TIME;
+				}else{
+					if(pd_mps52002->pd_source_otg_disable_flag)
+					{
+						pd_mps52002_pd_otg_on(true); 
+					}
+				}
+				SYS_LOG_INF("[%d] sink_flag:%d \n", __LINE__, pd_mps52002->pd_52002_sink_flag);
+				para.pd_event_val = pd_mps52002->pd_52002_sink_flag;
+				pd_mps52002->notify(PD_EVENT_SINK_STATUS_CHG, &para);
+
+			}
 		}
 	
-
 		if(pd_mps52002->pd_sink_debounce_time)
 		{
 			pd_mps52002->pd_sink_debounce_time--;
@@ -1746,7 +1746,12 @@ void pd_detect_event_report_MPS52002(void){
 			if(((readresult>>1) & 0x1) != pd_mps52002->pd_52002_source_flag)
 			{
 			
-				if(source_sink_debunce < 6 )
+			 	int debounce_time = 3;
+				if(pd_mps52002->pd_52002_sink_flag){
+					debounce_time = 2;
+				}
+
+				if(source_sink_debunce < debounce_time)
 				{
 					source_sink_debunce++ ;
 					SYS_LOG_INF("[%d] source_sink_debunce:%d \n", __LINE__, source_sink_debunce);

@@ -40,6 +40,7 @@ typedef enum
     MCU_INT_TYPE_WATER,    
     MCU_INT_TYPE_NTC,
     MCU_INT_TYPE_HW_RESET,
+    MCU_INT_TYPE_NULL,
 
 } mcu_charge_event_t;
 	
