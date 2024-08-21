@@ -1222,23 +1222,24 @@ static int cdc_shell_ats_exit_auracast(struct device *dev, u8_t *buf, int len)
 }
 static int cdc_shell_ats_nosignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
-	int result;
+	int ret1,ret2;
 	u8_t buffer[1+1] = {6,0};
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_NOSIGTESTMODE_IN, sizeof(ATS_CMD_RESP_NOSIGTESTMODE_IN)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
-    result = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
-	property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
-	
-	if (result != 0)
-	{
-		SYS_LOG_ERR("nvram set err\n");
+    ret1 = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
+	if(ret1==0){
+		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
 	}
-	else
-	{
-		//sys_reboot_by_user(REBOOT_REASON_GOTO_BQB);
+
+	ret2 = property_set_int(CFG_BIN_TEST_ID, 1);
+	if(ret2 == 0) {
+		property_flush(CFG_BIN_TEST_ID);
+	}
+
+	if (ret1==0 && ret2==0){
 		sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
 	}
 
