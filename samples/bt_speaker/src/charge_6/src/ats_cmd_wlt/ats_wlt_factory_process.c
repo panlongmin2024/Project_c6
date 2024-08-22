@@ -747,7 +747,7 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	else if (!memcmp(&buf[index], (ATS_CMD_SET_NUM), sizeof(ATS_CMD_SET_NUM)-1)){
 		index += sizeof(ATS_CMD_SET_NUM)-1;
 		target_index = index;		
-		ats_wlt_shell_set_gpio_num(dev, buf, size);
+		ats_wlt_shell_set_gpio_num(dev, &buf[target_index], size-target_index-2);
 	}	
 	else{
 	    ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_NG);
