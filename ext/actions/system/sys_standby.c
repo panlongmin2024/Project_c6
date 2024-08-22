@@ -965,6 +965,7 @@ int system_get_power_run_mode(void)
 }
 void sys_standby_time_set(u32_t standby,u32_t power)
 {
+	SYS_LOG_INF("------> standby %d power %d\n", standby,power);
 	standby_context = &global_standby_context;
 	standby_context->auto_standby_time = standby*1000;
 	standby_context->auto_powerdown_time = power*1000;
