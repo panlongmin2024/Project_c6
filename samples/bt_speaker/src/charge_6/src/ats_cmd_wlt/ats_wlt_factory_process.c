@@ -28,6 +28,9 @@ const u8_t ats_wlt_gpio_array[] = {
 	22,	32,	33,	34,	38,	40,	
 	51,	53 //vro vro_s
 };
+static u8_t ats_wlt_user_gpio_array[50]={0};
+static u8_t ats_wlt_user_gpio_number = 0;
+
 extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
 extern struct device *uart_console_dev;
@@ -664,6 +667,13 @@ static int ats_wlt_shell_set_gpio_short(struct device *dev, u8_t *buf, int len)
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 	return 0;
 }
+static int ats_wlt_shell_set_gpio_num(struct device *dev, u8_t *buf, int len)
+{
+	ats_wlt_write_data(buf,len);
+
+	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
+	return 0;
+}
 
 int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -732,6 +742,11 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	}
 	else if (!memcmp(&buf[index], (ATS_CMD_SET_SHORT), sizeof(ATS_CMD_SET_SHORT)-1)){
 		ats_wlt_shell_set_gpio_short(0, 0, 0);
+	}
+	else if (!memcmp(&buf[index], (ATS_CMD_SET_NUM), sizeof(ATS_CMD_SET_NUM)-1)){
+		index += sizeof(ATS_CMD_SET_NUM)-1;
+		target_index = index;		
+		ats_wlt_shell_set_gpio_num(dev, buf, size);
 	}	
 	else{
 	    ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_NG);
@@ -752,16 +767,14 @@ static void ats_wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 int ats_wlt_init(void)
 {
     int ret = -1;
-    os_sem callback_sem = {0};
-
 	SYS_LOG_INF("------>\n");
 
 	if (p_ats_wlt_info){
 		return 0;
 	}
 
-	os_sem_init(&callback_sem, 0, 1);
-
+	memset(ats_wlt_user_gpio_array,0,sizeof(ats_wlt_user_gpio_array));
+	
 	p_ats_wlt_info = malloc(sizeof(struct _wlt_driver_ctx_t));
 	if (p_ats_wlt_info == NULL)
 	{
