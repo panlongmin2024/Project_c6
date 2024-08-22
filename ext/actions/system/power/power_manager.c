@@ -645,9 +645,9 @@ static int _power_manager_work_handle(void)
 			
 
 		// 	SYS_LOG_INF("[%d] cur_cap:%d, charging state:%d; demo mode\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
-		// 	if((power_manager->current_cap<=DEFAULT_NOPOWER_CAP_LEVEL) && (!pd_get_sink_charging_state()))
+		// 	if((power_manager->current_cap<=100) && (pd_get_sink_charging_state()))
 		// 	{
-		// 		if(demo_low_cap_debounce++ >= 5)
+		// 		if(demo_low_cap_debounce++ >= 50)
 		// 		{
 		// 			demo_low_cap_debounce = 0x00;
 		// 			SYS_LOG_INF("[%d] current_cap:%d, charging state:%d; too low power off\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
@@ -803,24 +803,22 @@ int power_manager_early_init(void)
 
 	SYS_LOG_INF("battery capacity: %d\n", power_manager_get_battery_capacity());
 	/***************LOW 2% POWER OFF 2024.8.16 ZTH ************************************************ */
-	if ((power_manager_get_battery_capacity() <= (DEFAULT_NOPOWER_CAP_LEVEL - 3)))
-	{
-		if(dc_power_in_status_read())
-		{
-			k_sleep(300);
-			if(!pd_manager_check_mobile())
-				return 0;
-		}
-
-		SYS_LOG_INF("no power ,shundown: %d\n", power_manager_get_battery_capacity());
-		//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
-        battery_remaincap_low_poweroff();
-		k_sleep(50);
-        
-		pd_manager_deinit(0);		
-		sys_pm_poweroff();
-
-	}
+	// if ((power_manager_get_battery_capacity() <= (DEFAULT_NOPOWER_CAP_LEVEL - 3)))
+	// {
+	// 	if(dc_power_in_status_read())
+	// 	{
+	// 		k_sleep(300);
+	// 		if(pd_manager_check_mobile())
+	// 		{
+	// 		}		
+	// 	}
+	// 	SYS_LOG_INF("[%d] no power ,shundown: %d\n", __LINE__, power_manager_get_battery_capacity());
+	// 	//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
+    //     battery_remaincap_low_poweroff();
+	// 	k_sleep(50);
+	// 	pd_manager_deinit(0);		
+	// 	sys_pm_poweroff();
+	// }
 
 	if(run_mode_is_demo())
 	{
@@ -833,29 +831,28 @@ int power_manager_early_init(void)
 			logic_mcu_ls8a10023t_otg_mobile_det();
 			//extern int pd_manager_deinit(void);
 			pd_manager_deinit(1);
-					
 			sys_pm_poweroff();
 		}
 	}
-
-	if ((power_manager_get_battery_capacity() <= DEFAULT_NOPOWER_CAP_LEVEL))
-	{
-		if(dc_power_in_status_read())
-		{
-			k_sleep(300);
-			if(!pd_manager_check_mobile())
-				return 0;
-		}
-
-		SYS_LOG_INF("no power ,shundown: %d\n", power_manager_get_battery_capacity());
-		//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
-        battery_remaincap_low_poweroff();
-		k_sleep(50);
-        logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
-		pd_manager_deinit(0);		
-		sys_pm_poweroff();
-
-	}
+	
+	// else{
+	// 	if ((power_manager_get_battery_capacity() <= DEFAULT_NOPOWER_CAP_LEVEL))
+	// 	{
+	// 		if(dc_power_in_status_read())
+	// 		{
+	// 			k_sleep(300);
+	// 			if(!pd_manager_check_mobile())
+	// 				return 0;
+	// 		}
+	// 		SYS_LOG_INF("[%d] no power ,shundown: %d\n", __LINE__, power_manager_get_battery_capacity());
+	// 		//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
+	// 		battery_remaincap_low_poweroff();
+	// 		k_sleep(50);
+	// 		logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
+	// 		pd_manager_deinit(0);		
+	// 		sys_pm_poweroff();
+	// 	}
+	// }
 
 
 	return 0;

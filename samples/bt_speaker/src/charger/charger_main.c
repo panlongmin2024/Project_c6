@@ -58,7 +58,8 @@
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
-
+extern bool dc_power_in_status_read(void);
+extern void battery_remaincap_low_poweroff(void);
 #endif
 
 #if 0
@@ -174,6 +175,7 @@ int charger_mode_check(void)
 				}
 				break;
 
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE		
 
 			case MSG_EXIT_APP:
 				if(power_manager_get_battery_capacity() > DEFAULT_NOPOWER_CAP_LEVEL)
@@ -182,14 +184,17 @@ int charger_mode_check(void)
 					SYS_LOG_INF("%d MSG_EXIT_APP\n",__LINE__);
 				}
 				break;
+
+		
 			case MSG_POWER_KEY:
 				{
+
 					terminaltion = true;
 					SYS_LOG_INF("%d MSG_POWER_KEY\n",__LINE__);
 				}
 				break;
 
-			case MSG_PD_BAT_SINK_FULL:	
+			// case MSG_PD_BAT_SINK_FULL:	
 			case MSG_PD_OTG_MOBILE_EVENT:
 				terminaltion = true;
 				if(msg.type == MSG_PD_OTG_MOBILE_EVENT)
@@ -206,14 +211,13 @@ int charger_mode_check(void)
 				logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
 			
 //				}
-		
-#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 				//extern int pd_manager_deinit(void);
 				pd_manager_deinit(1);
-#endif							
+						
 				sys_pm_poweroff();
 				
 				break;	
+#endif					
 
 			default:
 				SYS_LOG_ERR("error type: 0x%x! \n", msg.type);

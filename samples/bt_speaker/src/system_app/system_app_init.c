@@ -60,6 +60,7 @@
 #include <logic.h>
 #include "system_le_audio.h"
 #include "system_app.h"
+#include <stack_backtrace.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_ACT_EVENT_APP_COMPILE_LEVEL);
 
@@ -593,6 +594,7 @@ void system_app_init(void)
 			pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);
 		}
 	}
+	
 #endif	
 
 #ifdef CONFIG_BT_MANAGER
@@ -630,9 +632,12 @@ void system_app_init(void)
 #endif
 
 #ifdef CONFIG_BT_ADV_MANAGER
-#ifndef CONFIG_BT_LEA_PTS_TEST
-	sys_ble_advertise_init();
+#ifdef CONFIG_BT_LEA_PTS_TEST
+	if (!bt_pts_is_enabled())
 #endif
+	{
+		sys_ble_advertise_init();
+	}
 #endif
 
 #ifdef CONFIG_LOGIC_ANALYZER
@@ -647,6 +652,9 @@ extern int tool_init(void);
 /* #ifdef CONFIG_ACT_EVENT
 	act_event_init(act_event_callback_process);
 #endif */
+
+// extern void wlt_hm_ext_pa_start(void);
+// 	wlt_hm_ext_pa_start();
 
 }
 
@@ -709,8 +717,11 @@ void system_app_init_bte_ready(void)
 #endif
 
 #ifdef CONFIG_BT_LEA_PTS_TEST
-	pts_le_audio_init();
-#else
+	if (bt_pts_is_enabled()) {
+		pts_le_audio_init();
+	} else
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
+	{
 	bt_le_audio_init();
 
 #ifdef CONFIG_BT_LEATWS
@@ -727,10 +738,95 @@ void system_app_init_bte_ready(void)
 	leatws_scan_start();
 #endif
 #endif
-#endif
+	}
 
 	struct app_msg msg = {0};
 
 	msg.type = MSG_BT_ENGINE_READY;
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }
+void ctrl_dump_all_info(void);
+void ctrl_mem_dump_info_all(void);
+
+static void crash_dump_version_info(void)
+{
+	system_library_version_dump();
+	fw_version_dump_current();
+	ctrl_dump_all_info();
+	ctrl_mem_dump_info_all();
+}
+
+CRASH_DUMP_REGISTER(dump_version_info, 1) =
+{
+    .dump = crash_dump_version_info,
+};
+
+#ifdef CONFIG_DEBUG_RAMDUMP
+
+#include <debug/ramdump.h>
+#include <ota_upgrade.h>
+
+static void crash_dump_ramdump(void)
+{
+	if(!ota_upgrade_is_ota_running()){
+		if(ramdump_check() != 0){
+			printk("start ramdump...\n");
+			ramdump_save();
+		}else{
+			printk("ramdump data existed, override\n");
+			ramdump_save();
+		}
+	}else{
+		printk("ota is running, skip ramdump!\n");
+	}
+}
+
+static void crash_dump_ramdump_print(void)
+{
+	int i;
+
+	printk("first ramdump...\n");
+
+	ramdump_print();
+
+	for(i = 0; i < 500; i++){
+		k_busy_wait(1000);
+	}
+
+	printk("second ramdump...\n");
+
+	ramdump_print();
+}
+
+CRASH_DUMP_REGISTER(ramdump_register, 10) =
+{
+    .dump = crash_dump_ramdump,
+};
+
+CRASH_DUMP_REGISTER(ramdump_print_register, 99) =
+{
+    .dump = crash_dump_ramdump_print,
+};
+
+
+#endif
+
+
+
+#if defined(CONFIG_IRQ_STAT)
+void dump_irqstat(void);
+
+CRASH_DUMP_REGISTER(dump_irqstat_info, 11) =
+{
+    .dump = dump_irqstat,
+};
+#endif
+
+#if defined(CONFIG_THREAD_STACK_INFO)
+void kernel_dump_all_thread_stack_usage(void);
+
+CRASH_DUMP_REGISTER(dump_stacks_analyze, 12) =
+{
+    .dump = kernel_dump_all_thread_stack_usage,
+};
+#endif

@@ -47,6 +47,9 @@ void hm_ext_pa_stop(void)
 
 void hm_ext_pa_start(void)
 {
+
+    printk("%s:%d; mute:%d\n", __func__, __LINE__, pa_mute_state);
+
 	if(pa_mute_state == 1){
          printk("pa unmute\n");
          pa_mute_state = 0;
@@ -60,6 +63,24 @@ void hm_ext_pa_start(void)
             amp_tas5828m_pa_start();
         }
     }
+}
+
+
+void wlt_hm_ext_pa_start(void)
+{
+
+    printk("%s:%d; pa play\n", __func__, __LINE__);
+    pa_mute_state = 0;
+    if(ReadODM() == HW_GUOGUANG_BOARD)
+    {
+        #ifdef CONFIG_C_AMP_AW85828
+        aw85xxx_pa_start();
+        #endif
+    }else{
+        //amp_tas5828m_registers_init();
+        amp_tas5828m_pa_start();
+    }
+    
 }
 
 void hm_ext_pa_deinit(void)

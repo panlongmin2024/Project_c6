@@ -2654,6 +2654,7 @@ int _aw85xxx_pa_stop(void)
 void aw85xxx_init()
 {
    
+    printk("[%s,%d] ----start !!!\n", __FUNCTION__, __LINE__);
 	if(amp_aw85xxx_mutex_ptr == NULL){
 		amp_aw85xxx_mutex_ptr = &amp_aw85xxx_mutex;
 		os_mutex_init(amp_aw85xxx_mutex_ptr);
@@ -2680,7 +2681,7 @@ void aw85xxx_init()
 
     aw_dsp_update();
     _aw85xxx_pa_stop();
-    aw_printf("done");
+  //  aw_printf("done");
 
     MS_DELAY(5);
     aw85xxx_pa_start();

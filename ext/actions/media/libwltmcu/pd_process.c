@@ -98,7 +98,7 @@ extern void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event
 #ifdef CONFIG_C_TEST_BATT_MACRO
 
 static uint8_t test_id = 1;
-static int battery_cap= 15;
+static int battery_cap= 3;
 static int battery_temperature=250;
 
 void set_battery_cap(bool flag)
@@ -293,7 +293,7 @@ void battery_read_iic_value(void)
     if(cap_is_valid_cnt >= BATTERY_VALUE_CHECK_TIMERS)
     {
     #ifdef CONFIG_C_TEST_BATT_MACRO
-        printf("Totti debug BAT real cap: %d \n", (u16_t)(buf[1]<<8 | buf[0])); 
+        printf("Totti debug BAT real cap: %d \n", battery_cap); 
         power_manager_set_battery_cap(battery_cap);
     #else
         power_manager_set_battery_cap((u16_t)current_cap);
@@ -349,7 +349,7 @@ static void battery_iic_init(void)
     //pd_manager->global_bat_namager.battery_remain_cap = (u16_t)(buf[1]<<8 | buf[0]);
 
 #ifdef CONFIG_C_TEST_BATT_MACRO
-    printf("Totti debug BAT real cap: %d \n", (u16_t)(buf[1]<<8 | buf[0])); 
+    SYS_LOG_INF("Totti debug BAT real cap: %d \n", battery_cap); 
     power_manager_set_battery_cap(battery_cap);
 #else
     power_manager_set_battery_cap((u16_t)(buf[1]<<8 | buf[0]));
@@ -1654,6 +1654,7 @@ void pd_manager_init(bool flag)
 //#ifdef CONFIG_C_LOGIC_MCU_MSPM0L
     const struct pd_manager_supply_driver_api *api= NULL;
     pd_iic_queue_init(&pd_circles_queue);
+    battery_iic_init();
 
 if(!ReadODM())
 
@@ -1696,11 +1697,11 @@ if(!ReadODM())
 	//pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_CURRENT_1000MA, 0);
 
 #ifdef CONFIG_BATTERY_SECURITY
-    extern unsigned char is_authenticated(void);
-     if(!is_authenticated())
-     {
-         wlt_pd_manager->battery_security_flag = true;
-     }
+    // extern unsigned char is_authenticated(void);
+    //  if(!is_authenticated())
+    //  {
+    //      wlt_pd_manager->battery_security_flag = true;
+    //  }
    	   
 #endif
     thread_timer_init(&wlt_pd_manager->timer, pd_manager_time_hander, NULL);
@@ -1709,7 +1710,7 @@ if(!ReadODM())
     //wlt_led_timer_init();
     extern bool  wlt_mcu_ui_process_init(void);
     wlt_mcu_ui_process_init();
-    battery_iic_init();
+
 
 #ifdef CONFIG_POWER_MANAGER
 	//power_manager_init();
@@ -1717,7 +1718,7 @@ if(!ReadODM())
 #endif  
 
     api->enable(wlt_pd_manager->dev);
-    thread_timer_start(&wlt_pd_manager->timer, PD_RUN_TIME_PERIOD, PD_RUN_TIME_PERIOD);
+    thread_timer_start(&wlt_pd_manager->timer, 0, PD_RUN_TIME_PERIOD);
 
 	wlt_pd_manager->pd_manager_finish_flag = 1;
 }
