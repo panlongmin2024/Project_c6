@@ -127,7 +127,7 @@ void power_manager_battery_display_handle(int led_status ,bool key_flag)
 		printk("[%s/%d],power_first_get_cap_flag = %d \n\n",__func__,__LINE__,power_first_get_cap_flag);
 		return;
 	}
-
+	printk("------> %s,temp_status %d current_cap %d\n",__func__,temp_status,current_cap);
 	if(key_flag){
 		if(temp_status == POWER_SUPPLY_STATUS_DISCHARGE
 		||temp_status == POWER_SUPPLY_STATUS_FULL
