@@ -21,6 +21,7 @@
 #include <ats_cmd/ats.h>
 
 #include <property_manager.h>
+#include <sys_manager.h>
 
 int dolphin_set_vol(int argc, char *argv[]);
 int dolphin_read_frames_start(int argc, char *argv[]);
