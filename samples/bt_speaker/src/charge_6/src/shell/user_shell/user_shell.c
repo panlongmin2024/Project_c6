@@ -21,6 +21,7 @@
 #include <ats_cmd/ats.h>
 
 #include <property_manager.h>
+#include <sys_manager.h>
 
 int dolphin_set_vol(int argc, char *argv[]);
 int dolphin_read_frames_start(int argc, char *argv[]);
@@ -206,6 +207,16 @@ static int shell_user_hex(int argc, char *argv[])
 
 	return 0;
 }
+static int shell_user_enter_standby(int argc, char *argv[])
+{
+	sys_standby_time_set(5,CONFIG_AUTO_POWEDOWN_TIME_SEC);
+	return 0;
+}
+static int shell_user_exit_standby(int argc, char *argv[])
+{
+	sys_standby_time_set(CONFIG_AUTO_STANDBY_TIME_SEC,CONFIG_AUTO_POWEDOWN_TIME_SEC);
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -228,6 +239,8 @@ static const struct shell_cmd commands[] = {
 	{ "set_name", shell_user_set_name, "user set name"},
 	{ "set_mac_name", shell_user_set_mac_name, "user set mac name"},
 	{ "set_hex", shell_user_hex, "user hex2bin"},
+	{ "enter_stb", shell_user_enter_standby, "user enter stangby"},
+	{ "exit_stb", shell_user_exit_standby, "user exit stangby"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };

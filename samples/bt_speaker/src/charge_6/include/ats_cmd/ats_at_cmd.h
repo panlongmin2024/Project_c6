@@ -117,5 +117,7 @@
 
 #define ATS_AT_CMD_MAC_WRITE               	"TL_SET_MAC="
 
+#define ATS_AT_CMD_ENTER_STANDBY           	"TL_ENTER_STANDBY"
+#define ATS_AT_CMD_EXIT_STANDBY           	"TL_EXIT_STANDBY"
 
 #endif

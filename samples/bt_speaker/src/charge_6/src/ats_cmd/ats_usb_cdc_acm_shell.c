@@ -21,6 +21,7 @@
 #include <fw_version.h>
 #include <sys_manager.h>
 #include <nvram_config.h>
+#include <sys_manager.h>
 
 #include<led_manager.h>
 #include<bt_manager_inner.h>
@@ -1415,6 +1416,25 @@ static int cdc_shell_ats_bt_mac_write(struct device *dev, u8_t *buf, int len)
 	return 0;	
 }
 
+static int cdc_shell_ats_enter_standby(struct device *dev, u8_t *buf, int len)
+{	
+	sys_standby_time_set(5,CONFIG_AUTO_POWEDOWN_TIME_SEC);
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	return 0;
+}
+static int cdc_shell_ats_exit_standby(struct device *dev, u8_t *buf, int len)
+{	
+	sys_standby_time_set(CONFIG_AUTO_STANDBY_TIME_SEC,CONFIG_AUTO_POWEDOWN_TIME_SEC);
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_EXIT_STANDBY, sizeof(ATS_CMD_RESP_EXIT_STANDBY)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	return 0;
+}
+
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
 	int index = 0;
@@ -1796,6 +1816,16 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		target_index = index;
 		cdc_shell_ats_bt_mac_write(dev, &buf[target_index], size-target_index-2);
 	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_ENTER_STANDBY, sizeof(ATS_AT_CMD_ENTER_STANDBY)-1))
+	{		   
+		/* enter standby */
+		cdc_shell_ats_enter_standby(dev, NULL, 0);	
+	}		
+	else if (!memcmp(&buf[index],ATS_AT_CMD_EXIT_STANDBY, sizeof(ATS_AT_CMD_EXIT_STANDBY)-1))
+	{		   
+		/* exit standby */
+		cdc_shell_ats_exit_standby(dev, NULL, 0);	
+	}		
 	else	
 	{
 		//ats_usb_cdc_acm_write_data("live ats_usb_cdc_acm_shell_command_handler exit",sizeof("live ats_usb_cdc_acm_shell_command_handler exit")-1);
