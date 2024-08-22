@@ -41,7 +41,6 @@ extern int check_is_wait_adfu(void);
 #ifdef CONFIG_BT_CONTROLER_BQB
 extern bool main_system_is_enter_bqb(void);
 #endif
-int ats_wlt_deinit(void);
 uint8_t ReadODM(void);
 int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size);
 
@@ -750,53 +749,6 @@ static void ats_wlt_rx_timer_cb(struct thread_timer *timer, void* pdata)
 	ats_wlt_read_data_handler(dev);
 }
 
-static void ats_wlt_thread_main_loop(void *p1, void *p2, void *p3)
-{
-    os_sem *callback_sem = (os_sem *)p1;
-
-	struct device *dev = p_ats_wlt_info->ats_uart_dev;
-	struct _ats_wlt_thread_msg_t msg = {0};
-
-    p_ats_wlt_info->thread_running = 1;
-
-    if (callback_sem){
-        os_sem_give(callback_sem);
-    }
-
-	if (!dev){
-        ats_wlt_write_data("device is NULL",sizeof("device is NULL")-1);
-		goto __thread_exit;
-	}
-
-	thread_timer_init(&p_ats_wlt_info->rx_timer, ats_wlt_rx_timer_cb, dev);
-    thread_timer_start(&p_ats_wlt_info->rx_timer, 0, 10);
-	
-	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
-	while (p_ats_wlt_info->enabled) 
-    {
-		if (!k_msgq_get(&p_ats_wlt_info->msgq, &msg, thread_timer_next_timeout()))
-		{
-			switch (msg.type) 
-			{
-				case WLT_ATS_ENTER_OK:
-					ats_wlt_write_data("------>enter OK!\n",20);
-					break;
-				case WLT_ATS_EXIT:
-					ats_wlt_deinit();
-					break;					
-				default:
-
-					continue;
-			}
-		}
-		thread_timer_handle_expired();
-	}
-
-__thread_exit:
-
-    p_ats_wlt_info->thread_running = 0;
-}
-
 int ats_wlt_init(void)
 {
     int ret = -1;
@@ -845,13 +797,13 @@ int ats_wlt_init(void)
 		ats_wlt_write_data("panlm test7",sizeof("panlm test7")-1);
 		goto err_exit;
 	}
-    k_thread_create(&p_ats_wlt_info->thread_data, 
-		(k_thread_stack_t)p_ats_wlt_info->thread_stack,
-        ATS_WLT_THREAD_STACK_SZ,
-        (k_thread_entry_t)ats_wlt_thread_main_loop, &callback_sem, NULL, NULL,
-        ATS_WLT_THREAD_PRIO, 0, K_NO_WAIT);
-    os_sem_take(&callback_sem, K_FOREVER);
-    ats_wlt_write_data("panlm test9\n",sizeof("panlm test9")-1);
+	
+	struct device *dev = p_ats_wlt_info->ats_uart_dev;
+	thread_timer_init(&p_ats_wlt_info->rx_timer, ats_wlt_rx_timer_cb, dev);
+    thread_timer_start(&p_ats_wlt_info->rx_timer, 0, 10);
+	
+	ats_wlt_write_data("------>enter_wlt_factory succefull!\n",40);
+	ats_wlt_write_data("panlm test9\n",sizeof("panlm test9")-1);
     return 0;
 
 err_exit:
@@ -870,31 +822,6 @@ err_exit:
 	ats_wlt_write_data("live fail",sizeof("live fail")-1);
     return ret;
 }
-
-int ats_wlt_deinit(void)
-{
-    if(p_ats_wlt_info){
-        p_ats_wlt_info->enabled = false;
-		
-        while(p_ats_wlt_info->thread_running){
-            k_sleep(1);
-        }
-		if (p_ats_wlt_info->msg_buf){
-			free(p_ats_wlt_info->msg_buf);
-			p_ats_wlt_info->msg_buf = NULL;
-		}
-		if (p_ats_wlt_info->thread_stack){
-			app_mem_free(p_ats_wlt_info->thread_stack);
-			p_ats_wlt_info->thread_stack = NULL;
-		}
-        free(p_ats_wlt_info);
-        p_ats_wlt_info = NULL;
-    }
-	ats_wlt_resp_buf_deinit();
-	trace_dma_print_set(true);//enable system printf
-    return 0;
-}
-
 
 void ats_wlt_start(void)
 {
