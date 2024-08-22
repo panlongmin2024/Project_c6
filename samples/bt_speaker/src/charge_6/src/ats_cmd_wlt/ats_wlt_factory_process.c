@@ -667,16 +667,6 @@ static int ats_wlt_shell_set_gpio_short(struct device *dev, u8_t *buf, int len)
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 	return 0;
 }
-static int ats_wlt_shell_set_gpio_num(struct device *dev, u8_t *buf, int len)
-{
-	int length = (buf[0]-'0')*10 + (buf[1]-'0');
-	hex2bin(ats_wlt_user_gpio_array, buf, length*2);
-	ats_wlt_write_data(buf,len);
-	ats_wlt_write_data(ats_wlt_user_gpio_array,length);
-	ats_wlt_user_gpio_number = length;
-	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
-	return 0;
-}
 
 int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -745,11 +735,6 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	}
 	else if (!memcmp(&buf[index], (ATS_CMD_SET_SHORT), sizeof(ATS_CMD_SET_SHORT)-1)){
 		ats_wlt_shell_set_gpio_short(0, 0, 0);
-	}
-	else if (!memcmp(&buf[index], (ATS_CMD_SET_NUM), sizeof(ATS_CMD_SET_NUM)-1)){
-		index += sizeof(ATS_CMD_SET_NUM)-1;
-		target_index = index;		
-		ats_wlt_shell_set_gpio_num(dev, &buf[target_index], size-target_index-2);
 	}	
 	else{
 	    ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_NG);
