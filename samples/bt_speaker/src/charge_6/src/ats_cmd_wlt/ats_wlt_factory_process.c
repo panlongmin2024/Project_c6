@@ -782,22 +782,6 @@ int ats_wlt_init(void)
 
     p_ats_wlt_info->enabled = true;
 
-	p_ats_wlt_info->msg_buf = malloc(msg_num * msg_size);
-    if (p_ats_wlt_info->msg_buf == NULL)
-    {
-       ats_wlt_write_data("panlm test5",sizeof("panlm test6")-1);
-		goto err_exit;
-    }
-
-	memset(p_ats_wlt_info->msg_buf, 0, sizeof(msg_num * msg_size));
-	k_msgq_init(&p_ats_wlt_info->msgq, p_ats_wlt_info->msg_buf, msg_size, msg_num);
-	p_ats_wlt_info->thread_stack = app_mem_malloc(ATS_WLT_THREAD_STACK_SZ);
-	if (p_ats_wlt_info->thread_stack == NULL)
-	{
-		ats_wlt_write_data("panlm test7",sizeof("panlm test7")-1);
-		goto err_exit;
-	}
-	
 	struct device *dev = p_ats_wlt_info->ats_uart_dev;
 	thread_timer_init(&p_ats_wlt_info->rx_timer, ats_wlt_rx_timer_cb, dev);
     thread_timer_start(&p_ats_wlt_info->rx_timer, 0, 10);
@@ -808,14 +792,6 @@ int ats_wlt_init(void)
 
 err_exit:
 	if (p_ats_wlt_info){
-		if (p_ats_wlt_info->msg_buf){
-			free(p_ats_wlt_info->msg_buf);
-			p_ats_wlt_info->msg_buf = NULL;
-		}
-		if (p_ats_wlt_info->thread_stack){
-			app_mem_free(p_ats_wlt_info->thread_stack);
-			p_ats_wlt_info->thread_stack = NULL;
-		}
 		free(p_ats_wlt_info);
 		p_ats_wlt_info = NULL;
 	}
