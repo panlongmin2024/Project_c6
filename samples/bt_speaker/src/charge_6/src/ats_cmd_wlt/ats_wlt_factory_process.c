@@ -669,10 +669,11 @@ static int ats_wlt_shell_set_gpio_short(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_set_gpio_num(struct device *dev, u8_t *buf, int len)
 {
-	ats_wlt_user_gpio_number = buf[0]*10 + buf[1];
+	int length = buf[0]*10 + buf[1];
 	hex2bin(ats_wlt_user_gpio_array, length, buf, length*2);
 	ats_wlt_write_data(buf,len);
-	ats_wlt_write_data(ats_wlt_user_gpio_array,ats_wlt_user_gpio_number);
+	ats_wlt_write_data(ats_wlt_user_gpio_array,length);
+	ats_wlt_user_gpio_number = length;
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 	return 0;
 }
