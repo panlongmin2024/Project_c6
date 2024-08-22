@@ -77,5 +77,7 @@
 
 #define ATS_CMD_RESP_MAC_SET                         	"TL_SET_MAC="
 
+#define ATS_CMD_RESP_ENTER_STANDBY           			"TL_ENTER_STANDBY="
+#define ATS_CMD_RESP_EXIT_STANDBY           			"TL_EXIT_STANDBY="
 
 #endif
