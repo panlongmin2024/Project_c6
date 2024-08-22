@@ -669,6 +669,7 @@ static int ats_wlt_shell_set_gpio_short(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_set_gpio_num(struct device *dev, u8_t *buf, int len)
 {
+	ats_wlt_user_gpio_number = len/2;
 	ats_wlt_write_data(buf,len);
 
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
