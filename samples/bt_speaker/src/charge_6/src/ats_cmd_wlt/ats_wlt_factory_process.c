@@ -754,8 +754,6 @@ int ats_wlt_init(void)
     int ret = -1;
     os_sem callback_sem = {0};
 
-	int msg_num = 20;
-	int msg_size = sizeof(struct _ats_wlt_thread_msg_t);
 	SYS_LOG_INF("------>\n");
 
 	if (p_ats_wlt_info){
