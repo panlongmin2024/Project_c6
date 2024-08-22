@@ -191,6 +191,21 @@ static int shell_user_set_mac_name(int argc, char *argv[])
 
 	return 0;
 }
+static int shell_user_hex(int argc, char *argv[])
+{
+	char source[10] = "0102030405";
+	char direct[10] = {0};
+	extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
+	hex2bin(direct,source,10);
+	for(int i=0;i<10;i++){
+		printk("------> %s source %d\n",__func__,source[i]);
+	}
+	for(int j=0;j<10;j++){
+		printk("------> %s direct %d\n",__func__,direct[j]);
+	}
+
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -212,6 +227,7 @@ static const struct shell_cmd commands[] = {
 	{ "set_mac", shell_user_set_mac, "user set mac"},
 	{ "set_name", shell_user_set_name, "user set name"},
 	{ "set_mac_name", shell_user_set_mac_name, "user set mac name"},
+	{ "set_hex", shell_user_hex, "user hex2bin"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
