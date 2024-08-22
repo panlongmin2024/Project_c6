@@ -608,15 +608,13 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
 
             if(run_mode_is_demo())
             {
+                set_batt_led_display_timer(-1);     
                 battery_charging_LED_on_all();
             }else{
 				set_batt_led_display_timer(-1);  
                 battery_charging_remaincap_is_full();
             }     
 
-            set_batt_led_display_timer(-1);     
-            battery_charging_remaincap_is_full();
-            set_batt_led_display_timer(-1);
 			if(led_status == BATT_PWR_LED_ON_0_5S){
 				set_pwr_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_5s);
 				set_bt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_0_5s);
@@ -1037,15 +1035,17 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 break;
             }  
 
-            if((bt_mcu_get_first_power_on_flag() == 0)||(bt_mcu_get_bt_wake_up_flag() == 1)){
-                if(pd_get_app_mode_state() && (bt_mcu_get_first_power_on_flag() == 0)){
+            if((bt_mcu_get_first_power_on_flag() == 0)||(bt_mcu_get_bt_wake_up_flag() == 1))
+            {
+                if(pd_get_app_mode_state() && (bt_mcu_get_first_power_on_flag() == 0))
+                {
                     //if(charge_app_exit_cmd() == 1){
-                        if(power_manager_get_battery_capacity() > (BATTERY_DISCHARGE_REMAIN_CAP_LEVEL0))
+                        if(power_manager_get_battery_capacity() > (BATTERY_DISCHARGE_REMAIN_CAP_LEVEL0-3))
                         {
                             struct app_msg msg = {0};
                             msg.type = MSG_POWER_KEY;
                             send_async_msg(APP_ID_MAIN, &msg);
-							 printk("POWER KEY first MSG_POWER_KEY\n");
+							printk("POWER KEY first MSG_POWER_KEY\n");
 							pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
     /* 
                             k_sleep(10);
@@ -1054,9 +1054,11 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
 
                             send_async_msg(CONFIG_SYS_APP_NAME, &msg); */
                         }else{
-                            pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
-                            k_sleep(100);
-                           pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
+                            printk("POWER KEY first, but low battery\n");
+                            // pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
+                            battery_remaincap_low_poweroff();
+                            k_sleep(250);
+                            pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
                         }
                         
                    //}
@@ -1069,10 +1071,12 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                 bt_mcu_send_pw_cmd_poweron();
                 bt_mcu_set_first_power_on_flag(1);
                 printk("POWER KEY first power on\n");
-            }else if(pd_get_app_mode_state()){
-                if(charge_app_exit_cmd() == 1){
-                    if((power_manager_get_battery_capacity() > BATTERY_DISCHARGE_REMAIN_CAP_LEVEL0) || 
-                       ((power_manager_get_battery_capacity() == BATTERY_DISCHARGE_REMAIN_CAP_LEVEL0) && pd_get_sink_charging_state()))
+
+            }else if(pd_get_app_mode_state())
+            {
+                if(charge_app_exit_cmd() == 1)
+                {
+                    if(power_manager_get_battery_capacity() > (BATTERY_DISCHARGE_REMAIN_CAP_LEVEL0-3)) 
                     {
                         struct app_msg msg = {0};
                         msg.type = MSG_POWER_KEY;
@@ -1086,18 +1090,12 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                     }
                     else
                     {
-                        if(!ReadODM())
+                        if(!(pd_get_sink_charging_state() || dc_power_in_status_read()))
                         {
-                            result = pd_get_sink_charging_state();
-                        }else{
-                            result = (sys_pm_get_power_5v_status() == 1) ? 1 : 0; 
-                        }
-
-                        if( result == 0)
-                        {
+                            printk("POWER KEY later, but low battery\n");
                             pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
-                            k_sleep(100);
-                           pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
+                            k_sleep(500);
+                            pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
                         }                        
                     }
                 }

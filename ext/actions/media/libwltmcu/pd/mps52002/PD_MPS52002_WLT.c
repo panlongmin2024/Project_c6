@@ -1,4 +1,4 @@
-#include <zephyr.h>
+ #include <zephyr.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -64,8 +64,15 @@
 #define mps_pd_current_version 0x48
 #define I2C_DEV_ADDR        0x48                    //TODO
 
+// #define INDIA_APP_TEST			0x01
+
+#ifndef INDIA_APP_TEST
 #define I2C_OTA_PD_DEV_ADDR		0x27
 #define I2C_PD_DEV_ADDR     	I2C_OTA_PD_DEV_ADDR+1
+#else
+#define I2C_OTA_PD_DEV_ADDR		0x27
+#define I2C_PD_DEV_ADDR     	I2C_OTA_PD_DEV_ADDR
+#endif
 
 #define MAX_SINK_SOURCE_TIME	0x03
 // #define DEF_MCU_WATER_INT_PIN 0
@@ -1272,12 +1279,14 @@ static void pd_mps52002_status_value(void)
     u8_t buf[4] = {0};
 	u8_t buf1[2] = {0x01,0x00};
 	u8_t buf2[2] = {0x02,0x00};
-	u8_t upgrade_regflag;
+	
 	struct wlt_pd_mps52002_info *pd_mps52002 = p_pd_mps52002_dev->driver_data;
     u8_t pd_ota_complete_flag = 0;
 	mps_ota_get_status(&ota_flag);
     printf("[%s %d] ota_flag:%d \n", __func__, __LINE__, ota_flag);
 
+#ifndef INDIA_APP_TEST
+	u8_t upgrade_regflag;
 	if(ota_flag != 0x88)
 	{
 		pd_ota_complete_flag = WLT_OTA_PD(0);
@@ -1303,6 +1312,8 @@ static void pd_mps52002_status_value(void)
 		    }
 	    }
 	 }
+#endif
+
 	k_sleep(10);
 	//i2c_burst_write(iic_dev, I2C_PD_DEV_ADDR, 0x06, buf2, 2);
 	pd_mps52002_write_reg_value(PD_MOSFET_CTRL, buf2, 2);
@@ -1541,6 +1552,7 @@ void pd_detect_event_report_MPS52002(void){
 	{
 		p_dc_power_in_status = dc_power_in_status_read();
 		pd_mps52002->pd_enter_idle_flag = false;
+		wake_up_pd();
 		SYS_LOG_INF("[%d] DC_POWER_IN = %d \n", __LINE__, p_dc_power_in_status);
 	}
 

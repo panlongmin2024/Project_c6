@@ -123,6 +123,12 @@ static int shell_cmd_stacks_usage(int argc, char *argv[])
 #endif
 	return 0;
 }
+
+void kernel_dump_all_thread_stack_usage(void)
+{
+	shell_cmd_stacks_usage(0, NULL);
+}
+
 #endif
 
 #endif
@@ -373,23 +379,6 @@ void dump_irqstat(void)
 		}
 	}
 }
-
-#if defined(CONFIG_THREAD_STACK_INFO)
-static void kernel_dump_all_thread_stack_usage(void)
-{
-	shell_cmd_stacks_usage(0, NULL);
-}
-
-CRASH_DUMP_REGISTER(dump_stacks_analyze, 2) =
-{
-    .dump = kernel_dump_all_thread_stack_usage,
-};
-#endif
-
-CRASH_DUMP_REGISTER(dump_irqstat_info, 3) =
-{
-    .dump = dump_irqstat,
-};
 
 static int shell_cmd_irqstat(int argc, char *argv[])
 {
@@ -980,6 +969,24 @@ static int shell_cmd_sign(int argc, char *argv[])
 
 #if defined(CONFIG_DEBUG_RAMDUMP)
 #include <debug/ramdump.h>
+
+static void ramdump_print_data(void)
+{
+	int i;
+
+	printk("first ramdump...\n");
+
+	ramdump_print();
+
+	for(i = 0; i < 500; i++){
+		k_busy_wait(1000);
+	}
+
+	printk("second ramdump...\n");
+
+	ramdump_print();
+}
+
 static int shell_cmd_ramdump(int argc, char *argv[])
 {
 	if (argc != 2) {
@@ -991,7 +998,7 @@ static int shell_cmd_ramdump(int argc, char *argv[])
 	}else if (!strcmp(argv[1], "dump")){
 		ramdump_dump();
 	}else if (!strcmp(argv[1], "print")){
-		ramdump_print();
+		ramdump_print_data();
 	}
 	else{
 		printk("usage: ramdump save/dump\n");

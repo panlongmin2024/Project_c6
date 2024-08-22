@@ -391,6 +391,8 @@ void selfapp_config_init(void)
 
 	selfapp_log_dump(selfsta, sizeof(self_stamem_t));
 
+	// selfsta->feedback_tone = 0;
+
 #ifdef CONFIG_PLAYTTS
 	if (selfsta->feedback_tone != !tts_manager_is_locked()) {
 		if (selfsta->feedback_tone == 0) {

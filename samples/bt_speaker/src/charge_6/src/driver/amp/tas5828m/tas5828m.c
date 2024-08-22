@@ -2118,9 +2118,15 @@ const cfg_reg ti_registers[] = {
     { 0x5b, 0x01 },// HPF disable
     { 0x00, 0x00 },
     { 0x7f, 0x00 },
-    { 0x03, 0x03 },
+    { 0x03, 0x02 },
     { 0x78, 0x80 },
 
+};
+
+const cfg_reg ti_play_registers[] = {
+    { 0x00, 0x00 },
+    { 0x7f, 0x00 },
+    { 0x03, 0x03 },
 };
 
 
@@ -2129,3 +2135,5 @@ const cfg_reg ti_registers[] = {
 const int registers_cnt = sizeof(registers)/sizeof(registers[0]);
 
 const int ti_registers_cnt = sizeof(ti_registers)/sizeof(ti_registers[0]);
+
+const int ti_play_registers_cnt = sizeof(ti_play_registers)/sizeof(ti_play_registers[0]);

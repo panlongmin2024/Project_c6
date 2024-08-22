@@ -147,6 +147,7 @@ exit:
 	return 0;
 }
 
+int amp_tas5828m_pa_start();
 
 int amp_tas5828m_registers_init(void)
 {
@@ -207,6 +208,12 @@ int amp_tas5828m_registers_init(void)
 	k_busy_wait(100);
 
 	amp_tas5828m_i2c_register(i2c_dev, ti_registers, ti_registers_cnt, "ti_registers", I2C_DEV_ADDR);
+
+	printk("[%s,%d] delay 500ms\n", __FUNCTION__, __LINE__);
+	k_sleep(500);
+
+ 	amp_tas5828m_pa_start();
+
 
 	printk("[%s,%d] config avdd ok\n", __FUNCTION__, __LINE__);
 
@@ -346,6 +353,10 @@ int amp_tas5828m_pa_start()
 	
 	config.bits.speed = I2C_SPEED_STANDARD;
 	i2c_configure(i2c_dev, config.raw);
+
+	printk("[%s,%d] no delay\n", __FUNCTION__, __LINE__);
+	// k_sleep(300);
+	// printk("[%s,%d] delay 300ms\n", __FUNCTION__, __LINE__);
 
 	// back to page 0 
 	buf[0] = 0x0;
