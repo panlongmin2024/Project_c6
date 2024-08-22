@@ -22,9 +22,9 @@ static bool isWltAtsMode = false;
 const u8_t ats_wlt_gpio_array[] = {
 	0,	1,	
 	//2,	3,//tx rx
-	4,	5,	6,	8,	9,	10,	11,	12,	13,	14,	15,//7->dc5vin
+	4,	5,	6,	7,  8,	9,	10,	11,	12,	13,	14,	15,//7->dc5vin
 	17,	19,	20,	
-	//21,39,//dfu key
+	21,39,//dfu key
 	22,	32,	33,	34,	38,	40,	
 	51,	53 //vro vro_s
 };

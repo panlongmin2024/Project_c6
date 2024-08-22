@@ -341,10 +341,6 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
 			isNeedReset = false;
 		}	
-		if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_SHORT_LONG_UP||key_type==KEY_TYPE_LONG_UP){
-			/* 1.key up,need reset */
-			//isNeedReset = true;
-		}
 		printk("------> isNeedReset %d\n",isNeedReset);
 #ifdef CONFIG_C_TEST_BATT_MACRO 	
 	if(key_val == KEY_PAUSE_AND_RESUME){
