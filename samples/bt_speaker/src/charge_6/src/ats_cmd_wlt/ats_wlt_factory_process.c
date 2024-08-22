@@ -819,6 +819,7 @@ err_exit:
 		free(p_ats_wlt_info);
 		p_ats_wlt_info = NULL;
 	}
+	ats_wlt_resp_buf_deinit();
 	ats_wlt_write_data("live fail",sizeof("live fail")-1);
     return ret;
 }
