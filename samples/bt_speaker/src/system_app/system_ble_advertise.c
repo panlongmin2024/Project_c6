@@ -22,7 +22,7 @@
 #endif
 #include "system_app.h"
 
-#define GFP_BLE_ADV_POWER (-13)//-13
+#define GFP_BLE_ADV_POWER (-11)//-13 //数值调小不容易弹窗----zth
 #define GFP_ADV_SLEEP_TIME (500) // 20 S
 
 
@@ -545,7 +545,7 @@ static int gfp_ble_mgr_adv_enable(void)
 	t->type = BT_DATA_FLAGS;
 	t->len = 2;
 	t->data[0] = BT_LE_AD_LE_EDR_SAME_DEVICE_CTRL | BT_LE_AD_LE_EDR_SAME_DEVICE_HOST;
-
+	//数值调大不容易弹窗----zth
 	if (sys_ble_set_adv_data(adv_data, 4, -20)) {
 #else
 	if (sys_ble_set_adv_data(adv_data, 3, -20)) {
