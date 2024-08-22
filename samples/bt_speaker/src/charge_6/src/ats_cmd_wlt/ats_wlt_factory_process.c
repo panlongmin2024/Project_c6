@@ -28,8 +28,6 @@ const u8_t ats_wlt_gpio_array[] = {
 	22,	32,	33,	34,	38,	40,	
 	51,	53 //vro vro_s
 };
-static u8_t ats_wlt_user_gpio_array[50]={0};
-static u8_t ats_wlt_user_gpio_number = 0;
 
 extern int trace_print_disable_set(unsigned int print_disable);
 extern void console_input_deinit(struct device *dev);
