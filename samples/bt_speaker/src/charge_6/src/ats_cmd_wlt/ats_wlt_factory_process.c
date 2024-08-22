@@ -758,8 +758,6 @@ int ats_wlt_init(void)
 	if (p_ats_wlt_info){
 		return 0;
 	}
-
-	memset(ats_wlt_user_gpio_array,0,sizeof(ats_wlt_user_gpio_array));
 	
 	p_ats_wlt_info = malloc(sizeof(struct _wlt_driver_ctx_t));
 	if (p_ats_wlt_info == NULL)
