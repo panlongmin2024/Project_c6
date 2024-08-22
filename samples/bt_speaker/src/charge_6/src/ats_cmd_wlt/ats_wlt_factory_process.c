@@ -669,7 +669,7 @@ static int ats_wlt_shell_set_gpio_short(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_set_gpio_num(struct device *dev, u8_t *buf, int len)
 {
-	int length = buf[0]*10 + buf[1];
+	int length = (buf[0]-'0')*10 + (buf[1]-'0');
 	hex2bin(ats_wlt_user_gpio_array, buf, length*2);
 	ats_wlt_write_data(buf,len);
 	ats_wlt_write_data(ats_wlt_user_gpio_array,length);
