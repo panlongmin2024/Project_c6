@@ -193,7 +193,7 @@ static int shell_user_set_mac_name(int argc, char *argv[])
 }
 static int shell_user_hex(int argc, char *argv[])
 {
-	char source[10] = "0102030405";
+	char source[10] = "3122533415";
 	char direct[10] = {0};
 	extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
 	hex2bin(direct,source,10);
