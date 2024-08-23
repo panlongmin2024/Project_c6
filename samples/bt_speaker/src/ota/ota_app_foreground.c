@@ -445,15 +445,10 @@ int ota_app_notify(int state, int old_state)
 		if (ota_upgrade_get_backend_type(g_ota) == OTA_BACKEND_TYPE_SELFAPP) {
 			printk("selfapp ota don't auto reboot\n");
 			sys_event_notify(SYS_EVENT_OTA_FINISHED_REBOOT);
-			/*pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
 			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
-			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);*/
-			
-			thread_timer_stop(&ota_led_timer);
-			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
-			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));		
+			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 		} else
 #endif
 		{
