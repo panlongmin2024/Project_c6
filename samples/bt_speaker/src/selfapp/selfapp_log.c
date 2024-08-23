@@ -399,6 +399,9 @@ static int _logsrv_actlog_traverse_callback(uint8_t *data, uint32_t len)
 {
 	logsrv_ctx_t *ctx = logsrv_get_handle();
 	uint32_t xfer_len;
+	if (ctx == NULL) {
+		return -1;
+	}
 
 	while (len > 0) {
 		xfer_len = _logsrv_save_log(ctx, data, len, ctx->log_type);
@@ -726,6 +729,9 @@ int selfapp_logsrv_init(void *data_stream)
 void selfapp_logsrv_exit(void)
 {
 	logsrv_ctx_t *logsrv_ctx = logsrv_get_handle();
+	if (logsrv_ctx == NULL) {
+		return ;
+	}
 
 	logsrv_ctx->new_log_type = TLV_TYPE_LOG_NONE;
 
@@ -744,8 +750,9 @@ void selfapp_logsrv_exit(void)
 int selfapp_logsrv_callback_register(p_logsrv_callback_t cb)
 {
 	logsrv_ctx_t *logsrv_ctx = logsrv_get_handle();
-
-	logsrv_ctx->log_cb = cb;
+	if (logsrv_ctx) {
+		logsrv_ctx->log_cb = cb;
+	}
 
 	return 0;
 }

@@ -1994,7 +1994,7 @@ static int btsrv_connect_disconnected(struct bt_conn *base_conn, uint8_t reason)
     bt_disparam.conn_type = type;
 
 	if(btsrv_autoconn_on_acl_disconnected(base_conn,reason)){
-	btsrv_event_notify_malloc(MSG_BTSRV_BASE, MSG_BTSRV_DISCONNECTED_REASON, (uint8_t *)&bt_disparam, sizeof(bt_disparam), 0);
+	    btsrv_event_notify_malloc(MSG_BTSRV_BASE, MSG_BTSRV_DISCONNECTED_REASON, (uint8_t *)&bt_disparam, sizeof(bt_disparam), 0);
 	}
 
 	btsrv_notify_link_event(base_conn, BT_LINK_EV_ACL_DISCONNECTED, reason);
@@ -2086,6 +2086,12 @@ static int btsrv_connect_a2dp_disconnected(struct bt_conn *base_conn)
 	btsrv_proc_link_change(addr->val, BTSRV_LINK_A2DP_DISCONNECTED);
 
 	return 0;
+}
+
+static int btsrv_connect_a2dp_channel_err(struct bt_conn *base_conn)
+{
+    btsrv_notify_link_event(base_conn, BT_LINK_EV_A2DP_CHANNEL_ERR, 0);
+    return 0;
 }
 
 static int btsrv_connect_avrcp_connected(struct bt_conn *base_conn)
@@ -2662,6 +2668,12 @@ int btsrv_connect_process(struct app_msg *msg)
 		btsrv_connect_proc_switch_sbc_state(msg->ptr, MSG_BTSRV_A2DP_DISCONNECTED);
 		btsrv_adapter_callback(BTSRV_RELEASE_HIGH_PERFORMANCE, NULL);
 		break;
+
+	case MSG_BTSRV_A2DP_CHANNEL_ERR:
+		SYS_LOG_INF("MSG_BTSRV_A2DP_CHANNEL_ERR");
+		btsrv_connect_a2dp_channel_err(msg->ptr);
+	    break;
+
 	case MSG_BTSRV_AVRCP_CONNECTED:
 		SYS_LOG_INF("MSG_BTSRV_AVRCP_CONNECTED");
 		btsrv_connect_avrcp_connected(msg->ptr);

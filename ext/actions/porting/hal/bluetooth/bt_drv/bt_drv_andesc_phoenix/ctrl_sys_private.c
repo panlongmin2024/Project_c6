@@ -157,11 +157,11 @@ extern int btsnoop_write_packet(u8_t type, const u8_t *packet, bool is_received)
 extern int pts_btsrv_cis_send(uint16_t handle, uint8_t *buf, uint16_t *len);
 extern int pts_btsrv_cis_recv(uint16_t handle, uint8_t *buf, uint16_t len,
 			struct bt_cis_recv_report *rx_rpt);
-#else
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
+
 extern int btsrv_cis_send(uint16_t handle, uint8_t *buf, uint16_t *len);
 extern int btsrv_cis_recv(uint16_t handle, uint8_t *buf, uint16_t len,
 			struct bt_cis_recv_report *rx_rpt);
-#endif /*CONFIG_BT_LEA_PTS_TEST*/
 
 #define HCI_EVENT_FILTER
 
@@ -173,6 +173,7 @@ static const uint8_t tx_filter_cmd[][2] = {
 	{0x38, 0x20},
 	{0x39, 0x20},
     {0x05, 0x14},
+    {0x05, 0x20},
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
     {0x1A, 0x0C},
     {0x1E, 0x0C},
@@ -190,6 +191,7 @@ static const uint8_t rx_filter_event[][5] = {
 	{0x0e, 0x04, 0x01, 0x38, 0x20},
 	{0x0e, 0x04, 0x01, 0x39, 0x20},
     {0x0e, 0x07, 0x01, 0x05, 0x14},
+	{0x0e, 0x04, 0x01, 0x05, 0x20},
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
     {0x0e, 0x04, 0x01, 0x1A, 0x0C},
     {0x0e, 0x04, 0x01, 0x1E, 0x0C},
@@ -1628,12 +1630,20 @@ int btdrv_init(btdrv_rx_cb_t rx_cb)
     btdrv_recieve_data_cbk = rx_cb;
     cfg.deliver_data_from_c2h = btdrv_recive_data;
 
-#ifdef CONFIG_BT_LEA_PTS_TEST
-    cfg.cis_send = pts_btsrv_cis_send;
-    cfg.cis_recv = pts_btsrv_cis_recv;
-#else
     cfg.cis_send = btsrv_cis_send;
     cfg.cis_recv = btsrv_cis_recv;
+
+#ifdef CONFIG_BT_LEA_PTS_TEST
+	uint8_t pts_mode = 0;
+	int ret = property_get(CFG_BT_PTS_MODE, &pts_mode, sizeof(pts_mode));
+	if (ret != sizeof(pts_mode)) {
+		pts_mode = 0;
+	}
+	SYS_LOG_INF("mode:%d\n",pts_mode);
+	if (pts_mode == 1) {
+		cfg.cis_send = pts_btsrv_cis_send;
+		cfg.cis_recv = pts_btsrv_cis_recv;
+	}
 #endif /*CONFIG_BT_LEA_PTS_TEST*/
 
 #if 0

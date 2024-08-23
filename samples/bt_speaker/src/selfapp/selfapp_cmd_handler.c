@@ -329,6 +329,7 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 		}else{
 			if(selfctx->secondary_device.validate && strlen(selfctx->secondary_device.bt_name)){
 				memcpy(name, selfctx->secondary_device.bt_name, strlen(selfctx->secondary_device.bt_name));
+				name[SELF_BTNAME_LEN] = '\0';
 			}
 		}
 		len = strlen(name);
@@ -503,7 +504,7 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 
 	case TokenID_Firmware_Version:
 		size = 0;
-		uint8_t  vercode[4];    // 3Bytes is sw version, big endian, 1Byte is hw version
+		uint8_t  vercode[4] = {0,};    // 3Bytes is sw version, big endian, 1Byte is hw version
 		u32_t hwver = 0, swver = fw_version_get_code();
 
 

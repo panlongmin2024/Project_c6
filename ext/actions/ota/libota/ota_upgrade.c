@@ -416,7 +416,7 @@ static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 			//erase temp image
 			ota_storage_erase(ota->storage, file->offset, OTA_ERASE_ALIGN_SIZE);
 		}
-		
+
 		return crc_calc;
 	}
 
@@ -1267,9 +1267,8 @@ static int ota_write_boot_image(struct ota_upgrade_info *ota)
 
 	/* write param file at last */
 	if (param_file && param_part) {
-
 		if (ota_use_no_version_control(ota)) {
-			if (ota_boot_image_is_verify_done(ota, param_file) == 0){
+			if (ota_boot_image_is_verify_done(ota, param_file)){
 				return 0;
 			}
 		}

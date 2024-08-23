@@ -152,7 +152,7 @@ struct ota_backend_sdcard_init_param sdcard_init_param = {
 int ota_app_init_sdcard(void)
 {
 	backend_sdcard =
-	    ota_backend_sdcard_init(ota_app_backend_callback,
+	    ota_backend_disk_init(ota_app_backend_callback,
 				    &sdcard_init_param);
 	if (!backend_sdcard) {
 		SYS_LOG_INF("failed to init sdcard ota");

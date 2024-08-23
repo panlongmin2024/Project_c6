@@ -862,6 +862,8 @@ static int gatt_register(struct bt_gatt_service *svc)
 	struct bt_gatt_attr *attrs = svc->attrs;
 	uint16_t count = svc->attr_count;
 
+	last_handle = handle = 0;
+
 	if (sys_slist_is_empty(&db)) {
 		handle = last_static_handle;
 		last_handle = 0;
@@ -869,8 +871,10 @@ static int gatt_register(struct bt_gatt_service *svc)
 	}
 
 	last = SYS_SLIST_PEEK_TAIL_CONTAINER(&db, last, node);
-	handle = last->attrs[last->attr_count - 1].handle;
-	last_handle = handle;
+	if (last) {
+		handle = last->attrs[last->attr_count - 1].handle;
+		last_handle = handle;
+	}
 
 populate:
 	/* Populate the handles and append them to the list */

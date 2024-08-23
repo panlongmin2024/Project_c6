@@ -160,6 +160,10 @@ static void stream_ble_rx_set_notifyind(struct bt_conn *conn, uint8_t conn_type,
 	io_stream_t stream = find_streame_by_ble_attr(attr);
 
 	SYS_LOG_INF("attr:%p, enable:%d", attr, value);
+
+	if (!stream) {
+		return;
+	}
 	info = (struct gfp_ble_param_t *)stream->data;
 
     if((info->conn != NULL) && (info->conn != conn)){

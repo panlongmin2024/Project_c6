@@ -89,7 +89,18 @@ int system_app_log_transfer(int log_type, int (*traverse_cb)(uint8_t *data, uint
 }
 #else
 
+#define RAMDUMP_PRINT_BUF_SIZE (512)
 
+int system_ramdump_log_transfer(int (*traverse_cb)(uint8_t *data, uint32_t max_len))
+{
+	char *print_buf = mem_malloc(RAMDUMP_PRINT_BUF_SIZE);
+
+	ramdump_transfer(print_buf, RAMDUMP_PRINT_BUF_SIZE, traverse_cb);
+
+	mem_free(print_buf);
+
+	return 0;
+}
 int system_app_log_transfer(int log_type, int (*traverse_cb)(uint8_t *data, uint32_t max_len))
 {
 	SYS_LOG_INF("log type %d\n", log_type);
@@ -99,7 +110,7 @@ int system_app_log_transfer(int log_type, int (*traverse_cb)(uint8_t *data, uint
 
 #ifdef CONFIG_DEBUG_RAMDUMP
 	if(log_type == LOG_TYPE_RAMDUMP)
-		return ramdump_transfer(traverse_cb);
+		return system_ramdump_log_transfer(traverse_cb);
 #endif
 
 	return 0;

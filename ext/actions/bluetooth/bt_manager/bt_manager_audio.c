@@ -3522,6 +3522,10 @@ static int audio_start(uint8_t type)
 			return -EALREADY;
 		}
 
+#ifdef CONFIG_BT_LEA_PTS_TEST
+		pts_le_audio_service_disable();
+#endif
+
 		ret = bt_manager_le_audio_start();
 		if (ret) {
 			SYS_LOG_ERR("%d", ret);

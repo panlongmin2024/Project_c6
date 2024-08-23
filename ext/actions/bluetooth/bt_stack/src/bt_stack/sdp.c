@@ -256,6 +256,7 @@ static void send_err_rsp(struct bt_l2cap_chan *chan, uint16_t err,
 	buf = bt_sdp_create_pdu();
     if(!buf){
         BT_WARN("No memory!");
+		return;
     }
 
 	net_buf_add_be16(buf, err);

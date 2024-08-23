@@ -80,14 +80,36 @@ void btsrv_avrcp_user_callback_ev(struct bt_conn *conn, btsrv_avrcp_event_e even
 	avrcp_user_callback->event_cb(hdl, event, param);
 }
 
+static uint8_t avrcp_tx_buffer_match(struct bt_conn *conn,uint8_t *data,int len){
+	if(!conn || !data){
+		return 0;
+	}
+	//BT_AVRCP_PDU_ID_SET_ABSOLUTE_VOLUME
+	if(len > 12 && data[len - 5] == 0x50 && 
+		data[len - 6] == 0x58 &&
+		data[len - 7] == 0x19 &&
+		data[len - 8] == 0x00){
+		return 1;
+	}
+	return 0;
+}
+
 static void _btsrv_avrcp_ctrl_event_notify_cb(struct bt_conn *conn, uint8_t event_id, uint8_t status)
 {
 	struct btsrv_avrcp_stack_cb param;
+	uint8_t host_pending,controler_pending,ret = 0;
 
 	param.conn = conn;
 	param.event_id = event_id;
 	param.status = status;
 	if (event_id == BT_AVRCP_EVENT_VOLUME_CHANGED) {
+		if(btsrv_rdm_a2dp_get_active_dev() != conn){
+			hostif_bt_br_conn_pending_pkt(conn, &host_pending, &controler_pending);
+			if(host_pending >= bt_dev.br.pkts_num - 2){
+				ret = hostif_bt_conn_drop_tx_buffer(conn,avrcp_tx_buffer_match,host_pending/2);
+				SYS_LOG_INF("pending %d %d drop %d\n",host_pending,controler_pending,ret);
+			}
+		}
 		btsrv_rdm_avrcp_delay_set_absolute_volume(conn, status);
 	}else {
 		btsrv_event_notify_malloc(MSG_BTSRV_AVRCP, MSG_BTSRV_AVRCP_NOTIFY_CB, (uint8_t *)&param, sizeof(param), 0);
@@ -172,6 +194,23 @@ static void _btsrv_avrcp_ctrl_get_volume_cb(struct bt_conn *conn, uint8_t *volum
 
 	avrcp_user_callback->get_volume_cb(hdl, volume, true);
 	SYS_LOG_INF("volume %d\n",*volume);
+}
+
+static void _btsrv_avrcp_ctrl_setvolume_cb(struct bt_conn *conn, uint8_t volume)
+{
+	uint8_t host_pending,controler_pending,ret = 0;
+
+    btsrv_volume_sync_delay_ms() = 0;
+
+    if(btsrv_rdm_a2dp_get_active_dev() != conn){
+        hostif_bt_br_conn_pending_pkt(conn, &host_pending, &controler_pending);
+        if(host_pending >= bt_dev.br.pkts_num - 2){
+            ret = hostif_bt_conn_drop_tx_buffer(conn,avrcp_tx_buffer_match,host_pending/2);
+            SYS_LOG_INF("pending %d %d drop %d\n",host_pending,controler_pending,ret);
+        }
+    }
+   
+    btsrv_rdm_avrcp_delay_set_absolute_volume(conn, volume);
 }
 
 static void _btsrv_avrcp_ctrl_pass_ctrl_cb(struct bt_conn *conn, uint8_t op_id, uint8_t state)
@@ -279,6 +318,7 @@ static const struct bt_avrcp_app_cb btsrv_avrcp_ctrl_cb = {
 	.get_play_status = _btsrv_avrcp_ctrl_get_play_status_cb,
 	.get_volume = _btsrv_avrcp_ctrl_get_volume_cb,
 	.update_id3_info = _btsrv_avrcp_ctrl_update_id3_info_cb,
+	.setvolume = _btsrv_avrcp_ctrl_setvolume_cb,
 };
 
 static void btsrv_avrcp_ctrl_pass_timer_start_stop(bool start)

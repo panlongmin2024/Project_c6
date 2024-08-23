@@ -321,7 +321,9 @@ int btmusic_start_playback(void)
 	}
 
 	if (btmusic->mute_player) {
-		audio_track_mute(audio_system_get_track(), 1);
+		if(audio_system_get_track()){
+			audio_track_mute(audio_system_get_track(), 1);
+		}
 	}else{
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
 		media_player_fade_in(btmusic->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);

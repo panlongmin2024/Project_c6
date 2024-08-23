@@ -407,6 +407,9 @@ static void btsrv_scan_check_state(void)
 	else if(pair_state & BT_PAIR_STATUS_PAIR_MODE){
 		ext_connectable = 1;
 	}
+	else if (btsrv_connect_get_gfp_status()){
+	    ext_connectable = 1;
+	}
     else if(pair_state & BT_PAIR_STATUS_RECONNECT){
         if((btsrv_autoconn_is_phone_first_reconnect()== true)){
             ext_connectable = 0;
@@ -472,10 +475,11 @@ int btsrv_scan_set_param(struct bt_scan_parameter *param)
 
     if (param->scan_mode < BTSRV_SCAN_MODE_MAX) {
     	memcpy(&p_scan->user_param[param->scan_mode], param, sizeof(struct bt_scan_parameter));
+		SYS_LOG_INF("scan_param:%d,%d,%d,%d,%d\n",param->scan_mode,p_scan->user_param[param->scan_mode].inquiry_scan_interval,
+		p_scan->user_param[param->scan_mode].inquiry_scan_window,p_scan->user_param[param->scan_mode].page_scan_interval,p_scan->user_param[param->scan_mode].page_scan_window
+		);
     }
-    SYS_LOG_INF("scan_param:%d,%d,%d,%d,%d\n",param->scan_mode,p_scan->user_param[param->scan_mode].inquiry_scan_interval,
-    p_scan->user_param[param->scan_mode].inquiry_scan_window,p_scan->user_param[param->scan_mode].page_scan_interval,p_scan->user_param[param->scan_mode].page_scan_window
-    );
+
     return 0;
 }
 

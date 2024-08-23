@@ -42,7 +42,7 @@ static void bt_manager_le_audio_callback(btsrv_audio_event_e event,
 #define UNICAST_ANNOUNCEMENT_TARGETED   0x01
 
 #ifdef CONFIG_BT_LEA_PTS_TEST
-static uint8_t bt_le_audio_buf[9680] __aligned(4) __in_section_unique(bthost.bss);
+static uint8_t bt_le_audio_buf[9800] __aligned(4) __in_section_unique(bthost.bss);
 #else
 static uint8_t bt_le_audio_buf[CONFIG_BT_LE_AUDIO_BUF_SIZE] __aligned(4) __in_section_unique(bthost.bss);
 #endif
@@ -739,7 +739,9 @@ static void bt_manager_le_audio_callback(btsrv_audio_event_e event,
 	}
 
 #ifdef CONFIG_BT_LEA_PTS_TEST
-	bt_manger_lea_event_pts_process(event, data, size);
+	if (bt_pts_is_enabled()) {
+		bt_manger_lea_event_pts_process(event, data, size);
+	}
 #endif
 }
 

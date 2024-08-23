@@ -42,6 +42,8 @@
 #define CFG_BT_SC                   "BT_SC"
 #define CFG_BT_CF                   "BT_CF"
 #define CFG_LEA_SIRK                "LEA_SIRK"
+#define CFG_BT_PTS_MODE             "BT_PTS_MODE"
+
 /* LE Audio Keys */
 #define CFG_LEA_KEYS                "LEA_KEYS"
 /* LE Audio Test Address */

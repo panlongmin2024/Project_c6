@@ -118,6 +118,7 @@ source "samples/bt_speaker/src/charge_6/Kconfig"
 source "samples/bt_speaker/src/selfapp/Kconfig"
 source "samples/bt_speaker/src/data_analy/Kconfig"
 source "samples/bt_speaker/src/bmr/Kconfig"
+source "samples/bt_speaker/src/lcmusic/Kconfig"
 
 endmenu
 

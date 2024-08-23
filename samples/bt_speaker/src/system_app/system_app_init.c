@@ -594,7 +594,6 @@ void system_app_init(void)
 			pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);
 		}
 	}
-	
 #endif	
 
 #ifdef CONFIG_BT_MANAGER
@@ -652,7 +651,6 @@ extern int tool_init(void);
 /* #ifdef CONFIG_ACT_EVENT
 	act_event_init(act_event_callback_process);
 #endif */
-
 // extern void wlt_hm_ext_pa_start(void);
 // 	wlt_hm_ext_pa_start();
 
@@ -722,20 +720,19 @@ void system_app_init_bte_ready(void)
 	} else
 #endif /*CONFIG_BT_LEA_PTS_TEST*/
 	{
-	bt_le_audio_init();
-
+		bt_le_audio_init();
 #ifdef CONFIG_BT_LEATWS
 #if defined(CONFIG_BT_LEATWS_FL)
-	bt_le_audio_exit();
-	sys_ble_leatws_adv_unregister();
-	sys_ble_leatws_adv_register();
-	leatws_set_audio_channel(BT_AUDIO_LOCATIONS_FL);
-	leatws_notify_leaudio_reinit();
+		bt_le_audio_exit();
+		sys_ble_leatws_adv_unregister();
+		sys_ble_leatws_adv_register();
+		leatws_set_audio_channel(BT_AUDIO_LOCATIONS_FL);
+		leatws_notify_leaudio_reinit();
 #elif defined(CONFIG_BT_LEATWS_FR)
-	bt_le_audio_exit();
-	sys_ble_leatws_adv_unregister();
-	leatws_set_audio_channel(BT_AUDIO_LOCATIONS_FR);
-	leatws_scan_start();
+		bt_le_audio_exit();
+		sys_ble_leatws_adv_unregister();
+		leatws_set_audio_channel(BT_AUDIO_LOCATIONS_FR);
+		leatws_scan_start();
 #endif
 #endif
 	}
@@ -745,6 +742,8 @@ void system_app_init_bte_ready(void)
 	msg.type = MSG_BT_ENGINE_READY;
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }
+
+
 void ctrl_dump_all_info(void);
 void ctrl_mem_dump_info_all(void);
 

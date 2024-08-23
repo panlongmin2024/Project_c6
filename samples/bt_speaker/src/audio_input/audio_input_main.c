@@ -654,7 +654,13 @@ static int _audio_input_exit(void)
 	if (p_audio_input->ain_handle) {
 		hal_ain_channel_close(p_audio_input->ain_handle);
 		p_audio_input->ain_handle = NULL;
+	}
+
+	if (p_audio_input->plugin_id == DESKTOP_PLUGIN_ID_SPDIFRX_IN){
 		os_delayed_work_cancel(&p_audio_input->spdifrx_cb_work);
+	}
+	if (p_audio_input->plugin_id == DESKTOP_PLUGIN_ID_I2SRX_IN){
+		os_delayed_work_cancel(&p_audio_input->i2srx_cb_work);
 	}
 
 	audio_input_view_deinit();

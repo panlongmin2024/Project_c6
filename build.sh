@@ -123,6 +123,8 @@ elif [ "$1" = "-lib" ]; then
 	BUILD_SDK_LIB=1
 elif [ "$1" = "-p" ]; then
     PACK_FW_ONLY=1
+elif [ "$1" = "-db" ]; then
+    BUILD_COMPILE_COMMANDS_DB=1
 else
 	print_usage
 	exit 1
@@ -221,6 +223,11 @@ if [ -d ${PRJ_BASE}/app_conf/${CONFIG} ]; then
 		MAKE_APP_PARAM_GEN+=" KBUILD_NOCMDDEP=1"
 	fi
 
+	if hash ccache 2>/dev/null; then
+		echo "use ccache"
+		MAKE_APP_PARAM_GEN+=" USE_CCACHE=1"
+	fi
+
 	mkdir -p ${OUTDIR}
 	mkdir -p ${OUTDIR}/sdfs
 
@@ -242,31 +249,41 @@ if [ -d ${PRJ_BASE}/app_conf/${CONFIG} ]; then
 
 	if [ "${PACK_FW_ONLY}" != "1" ]; then
 		echo -e "\n--== Build main application for board ${BOARD} ==--\n\n"
-		make ${MAKE_APP_PARAM_GEN}
+		if [ "${BUILD_COMPILE_COMMANDS_DB}" = "1" ]; then
+			if hash bear 2>/dev/null; then
+				bear make ${MAKE_APP_PARAM_GEN}
+			else
+				make ${MAKE_APP_PARAM_GEN}
+			fi
+		else
+			make ${MAKE_APP_PARAM_GEN}
+		fi
 	fi
 
 	CONF_FILE=${PRJ_BASE}/outdir/${BOARD}_${CONFIG}/.config
 	source $CONF_FILE
 	if [ "X$CONFIG_ACTIONS_IMG_LOAD" == "Xy" ] ; then
-		IMG_FILE="not_exist"
-		if [ "X$CONFIG_ACTIONS_IMG_FCC" == "Xy" ] ; then
-			IMG_FILE=${SDK_ROOT}/boards/${ARCH}/${BOARD}/pt1.bin
-		else
-			if [ "X$CONFIG_ACTIONS_IMG_RF_NS" == "Xy" ] ; then
-				IMG_FILE=${SDK_ROOT}/boards/${ARCH}/${BOARD}/pd1.bin
-			fi
+
+		IMG_DIR=${PRJ_BASE}/test_bin/${CONFIG_SOC}
+
+		IMG_FILE=${IMG_DIR}/pd1.bin
+		if [ -f ${IMG_FILE} ] ; then
+			cp ${IMG_FILE}  ${OUTDIR}/sdfs/
+			#echo "cp ${IMG_FILE}  ${OUTDIR}/sdfs/"
 		fi
 
-	# 	if [ -f ${IMG_FILE} ] ; then
-	# 		echo "Add sdfs with image file ${IMG_FILE}"
-    #    #			rm -f ${OUTDIR}/sdfs/*.dsp
-	# 		rm -f ${OUTDIR}/sdfs/pd*.bin
-	# 		rm -f ${OUTDIR}/sdfs/pt*.bin
-	# 		cp ${IMG_FILE}  ${OUTDIR}/sdfs/
-	# 	else
-	# 		echo -e "\e[35m not found ${IMG_FILE} \e[m"
-	# 		exit -1
-	# 	fi
+		IMG_FILE=${IMG_DIR}/pt1.bin
+		if [ -f ${IMG_FILE} ] ; then
+			cp ${IMG_FILE}  ${OUTDIR}/sdfs/
+			#echo "cp ${IMG_FILE}  ${OUTDIR}/sdfs/"
+		fi
+
+		IMG_FILE=${IMG_DIR}/srrc.bin
+		if [ -f ${IMG_FILE} ] ; then
+			cp ${IMG_FILE}  ${OUTDIR}/sdfs/
+			#echo "cp ${IMG_FILE}  ${OUTDIR}/sdfs/"
+		fi
+
 	fi
 
 	if [ "${PACK_FW_ONLY}" = "1" ]; then
@@ -310,3 +327,12 @@ fi
 echo -e "\n--== Pack firmware for board ${BOARD} ==--\n\n"
 make -C ${PRJ_BASE} BOARD=${BOARD} APP_CONFIG=${CONFIG} O=${OUTDIR} firmware
 python ${OUTDIR}/_firmware/rom_ram_size_report -r -o ${OUTDIR}
+
+#move compile_commands.json to outdir
+if [ "${BUILD_COMPILE_COMMANDS_DB}" = "1" ]; then
+	if [ -f compile_commands.json ];then
+		echo "Configure compile_commands.json for vscode"
+		mkdir -p build
+		mv compile_commands.json ./build
+	fi
+fi

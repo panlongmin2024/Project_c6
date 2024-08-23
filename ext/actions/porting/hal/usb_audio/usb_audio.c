@@ -84,6 +84,35 @@ static int usb_audio_tx_dummy(void)
 			usb_audio->usb_audio_play_load,
 			MAX_UPLOAD_PACKET, &wrote);
 }
+
+/**
+ * @brief: Gets the bit depth of the current audio receiver.
+ *
+ * @note: This function returns the bit depth value in the current audio receiver format configuration.
+ *
+ * @param: void
+ *
+ * @return: The bit depth of the current configuration
+ */
+uint8_t USB_AudioSinkBitDepthGet(void)
+{
+	return g_stAudioSinkFormat.ucBitDepth;
+}
+
+/**
+ * @brief: Set the bit depth of the audio sink.
+ *
+ * @note: This function is used to update the bit depth value in the current audio receiver format configuration.
+ *
+ * @param: Updated configuration bit depth
+ *
+ * @return: void
+ */
+void USB_AudioSinkBitDepthSet(uint8_t ucUpdBitDepth)
+{
+	g_stAudioSinkFormat.ucBitDepth = ucUpdBitDepth;
+}
+
 #endif
 
 static void _usb_audio_stream_state_notify(u8_t stream_event)
@@ -151,28 +180,35 @@ static int _usb_audio_check_stream(short *pcm_data, u32_t samples)
 
 static int _usb_stream_write(io_stream_t handle, unsigned char *buf, int num)
 {
-#if CONFIG_USB_AUDIO_RESOLUTION == 24
-	int32_t *buffer = (int32_t *)usb_audio->download_buf;
-	int j = 0;
-	for (int i = 0; i+3 <= num; ) {
-		int32_t v = ((int32_t)buf[i++])<<8;
-		v |= ((int32_t)buf[i++])<<16;
-		v |= ((int32_t)buf[i++])<<24;
-		buffer[j++] = v;
-	}
-
-	return stream_write(handle, (unsigned char *)buffer, num * 4 / 3);
-#elif CONFIG_USB_AUDIO_RESOLUTION == 16
 	int32_t *buffer = (int32_t *)usb_audio->download_buf;
 	int16_t *pbuf = (int16_t *)buf;
-	for (int i = 0; i < num/2; i++) {
-		buffer[i] = (int32_t)pbuf[i] << 16;
-	}
+	int j = 0;
 
-	return stream_write(handle, (unsigned char *)buffer, num * 2);
-#else
-	return stream_write(handle, buf, num);
-#endif
+	if(USB_AudioSinkBitDepthGet() == 24)
+	{
+		for (int i = 0; i+3 <= num; )
+		{
+			int32_t v = ((int32_t)buf[i++])<<8;
+			v |= ((int32_t)buf[i++])<<16;
+			v |= ((int32_t)buf[i++])<<24;
+			buffer[j++] = v;
+		}
+
+		return stream_write(handle, (unsigned char *)buffer, num * 4 / 3);
+	}
+	else if(USB_AudioSinkBitDepthGet() == 16)
+	{
+		for (int i = 0; i < num/2; i++)
+		{
+			buffer[i] = (int32_t)pbuf[i] << 16;
+		}
+
+		return stream_write(handle, (unsigned char *)buffer, num * 2);
+	}
+	else
+	{
+		return stream_write(handle, buf, num);
+	}
 }
 
 /*
@@ -416,7 +452,7 @@ int usb_audio_init(usb_audio_event_callback cb)
 		return -ENOMEM;
 	}
 
-#if CONFIG_USB_AUDIO_RESOLUTION == 24
+#if CONFIG_USB_AUDIO_RESOLUTION == 24 || 1
 	usb_audio->download_buf = mem_malloc(MAX_DOWNLOAD_PACKET * 4 / 3);
 #elif CONFIG_USB_AUDIO_RESOLUTION == 16
 	usb_audio->download_buf = mem_malloc(MAX_DOWNLOAD_PACKET * 2);
@@ -438,6 +474,11 @@ int usb_audio_init(usb_audio_event_callback cb)
 	audio_cur_level = audio_system_get_current_volume(AUDIO_STREAM_USOUND);
 	if(audio_cur_level >=16){
 		audio_cur_level= 15;
+	} else if (audio_cur_level < 0) {
+
+		SYS_LOG_DBG("The system audio volume is incorrectly configured, audio_cur_level:%d", audio_cur_level);
+
+		return -ESRCH;
 	}
 	audio_cur_dat = (usb_audio_sink_pa_table[audio_cur_level]/1000) * 256 + 65536;
 	SYS_LOG_DBG("audio_cur_level:%d, audio_cur_dat:0x%x", audio_cur_level, audio_cur_dat);

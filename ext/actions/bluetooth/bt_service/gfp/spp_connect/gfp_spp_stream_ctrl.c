@@ -33,6 +33,7 @@ static void gfp_spp_connected_cb(uint8_t channel, uint8_t *uuid)
 {
     if(!btsrv_gfp){
         SYS_LOG_ERR("GFP INVAL!");
+		return;
     }
     
 	SYS_LOG_INF("channel:%d\n", channel);
@@ -48,6 +49,7 @@ static void gfp_spp_disconnected_cb(uint8_t channel)
 {
     if(!btsrv_gfp){
         SYS_LOG_ERR("GFP INVAL!");
+		return;
     }
 
 	btsrv_gfp->gfp_spp_chl = 0;

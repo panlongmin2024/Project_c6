@@ -136,11 +136,15 @@ static int lea_policy_state_waiting_handler(btmgr_lea_policy_event_e event, void
 				bt_manager_halt_ble();
 				break;
 			}
-			/*check if need update adv data*/
-			struct bt_audio_config * cfg = btif_audio_get_cfg_param();
-			if (cfg->target_announcement) {
-				cfg->target_announcement = 0;
-				bt_manager_le_update_adv_data(cfg);
+
+			if (param) {
+				bt_addr_le_copy(&btmgr_lea_policy_ctx.last_lea_dev_info, (const bt_addr_le_t *)param);
+				/*check if need update adv data*/
+				struct bt_audio_config * cfg = btif_audio_get_cfg_param();
+				if (cfg->target_announcement) {
+					cfg->target_announcement = 0;
+					bt_manager_le_update_adv_data(cfg);
+				}
 				bt_manager_halt_ble();
 				bt_manager_resume_ble();
 				bt_manager_le_audio_adv_enable();
@@ -573,14 +577,16 @@ struct bt_le_adv_param * bt_manager_lea_policy_get_adv_param(uint8_t adv_type, s
 
 		default: /*Undirect connectable Controller-gen rpa adv*/
 		{
-			param->options |= BT_LE_ADV_OPT_USE_IDENTITY;
 #ifdef CONFIG_BT_WHITELIST
 			param->options |= BT_LE_ADV_OPT_FILTER_CONN;
 #endif
 #ifdef CONFIG_BT_PRIVACY
 			param->options |= BT_LE_ADV_OPT_ADDR_RPA;
-			param->peer = &btmgr_lea_policy_ctx.last_lea_dev_info;
 #endif
+			if (bt_addr_le_cmp(&btmgr_lea_policy_ctx.last_lea_dev_info, BT_ADDR_LE_ANY)) {
+				param->peer = &btmgr_lea_policy_ctx.last_lea_dev_info;
+				param->options |= BT_LE_ADV_OPT_USE_IDENTITY;
+			}
 		}
 		break;
 	}

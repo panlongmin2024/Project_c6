@@ -917,6 +917,21 @@ int hostif_bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 #endif
 }
 
+int hostif_bt_conn_drop_tx_buffer(struct bt_conn *conn,bt_conn_buffer_match buffer_match,uint8_t drop_count)
+{
+#ifdef CONFIG_BT_HCI
+	int prio, ret;
+
+	prio = hostif_set_negative_prio();
+	ret = bt_conn_drop_tx_buffer(conn, buffer_match,drop_count);
+	hostif_revert_prio(prio);
+
+	return ret;
+#else
+	return -EIO;
+#endif
+}
+
 int hostif_bt_hfp_hf_register_cb(struct bt_hfp_hf_cb *cb)
 {
 #ifdef CONFIG_BT_HFP_HF

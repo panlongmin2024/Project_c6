@@ -714,7 +714,7 @@ void broadcast_tws_vnd_request_dev_info(){
 }
 
 void broadcast_tws_vnd_notify_dev_info(){
-	uint8_t cmd[40] = { 0 };
+	uint8_t cmd[SELF_DEFAULT_SN_LEN + SELF_BTNAME_LEN + 20] = { 0 };
 	uint8_t serial_num[SELF_DEFAULT_SN_LEN] = { 0 };
 	uint8_t name[SELF_BTNAME_LEN + 1] = { 0 };
 	uint16_t temp_acl_handle = 0;

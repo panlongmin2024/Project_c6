@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <zephyr/types.h>
 
-#define SELF_BTNAME_LEN    (16)
+#define SELF_BTNAME_LEN    (32)
 #define SELF_SN_LEN    (16)
 #define SELF_DEFAULT_SN "Do Not-available"
 #define SELF_DEFAULT_SN_LEN (sizeof(SELF_DEFAULT_SN))

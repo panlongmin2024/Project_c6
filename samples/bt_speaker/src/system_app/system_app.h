@@ -59,6 +59,8 @@ int system_event_map_init(void);
 void system_app_enter_poweroff(bool tws_trigger);
 void system_app_init(void);
 
+void system_library_version_dump(void);
+
 int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len);
 
 int send_message_to_foregroup(uint8_t msg_type, int event_id, void *event_data, int event_data_size);

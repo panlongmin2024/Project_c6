@@ -741,6 +741,17 @@ void usb_audio_source_set_vol_info(uint8_t vol_type, int vol_dat);
 void usb_audio_source_register_start_cb(usb_audio_start cb);
 void usb_audio_source_register_inter_in_ep_cb(usb_ep_callback cb);
 void usb_audio_source_register_volume_sync_cb(usb_audio_volume_sync cb);
+
+/**
+ * This function returns the bit depth value in the current audio receiver format configuration.
+ */
+uint8_t USB_AudioSinkBitDepthGet(void);
+
+/**
+ * This function is used to update the bit depth value in the current audio receiver format configuration.
+ */
+void USB_AudioSinkBitDepthSet(uint8_t ucUpdBitDepth);
+
 #ifdef __cplusplus
 }
 #endif

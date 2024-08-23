@@ -493,6 +493,11 @@ static int bmr_handle_sink_release(struct bt_broadcast_report *rep)
     struct bt_broadcast_chan *chan;
     chan = find_broad_chan(rep->handle,rep->id);
 
+	if(NULL == chan) {
+		SYS_LOG_WRN("No chan 0x%x, %d", rep->handle, rep->id);
+		return -1;
+	}
+
 	bmr_stop_playback();
 	bmr_exit_playback();
 	SYS_EVENT_INF(EVENT_BMR_SINK_RELEASE,chan->handle,chan->id);

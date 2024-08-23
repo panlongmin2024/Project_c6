@@ -49,17 +49,6 @@ static const u32_t delays_standard[] = {
 	[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(4000),
 };
 
-
-// static const u32_t delays_fast[] = {
-// 	[T_LOW] = NS_TO_SYS_CLOCK_HW_CYCLES(1200),
-// 	[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(1200),
-// };
-
-// static const u32_t delays_standard[] = {
-// 	[T_LOW] = NS_TO_SYS_CLOCK_HW_CYCLES(2000),
-// 	[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(2100),
-// };
-
 int i2c_bitbang_configure(struct i2c_bitbang *context, u32_t dev_config)
 {
 	union dev_config config = { .raw = dev_config };

@@ -25,6 +25,7 @@ struct bt_avrcp_app_cb {
 	void (*get_play_status)(struct bt_conn *conn, uint32_t *song_len, uint32_t *song_pos, uint8_t *play_state);
 	void (*get_volume)(struct bt_conn *session, uint8_t *volume);
 	void (*update_id3_info)(struct bt_conn *session, struct id3_info * info);
+	void (*setvolume)(struct bt_conn *conn,uint8_t volume);
 };
 
 /* Register avrcp app callback function */

@@ -301,9 +301,16 @@ void bt_manager_btsrv_ready(void)
 
 #ifdef CONFIG_BT_BLE
 	bt_manager_ble_init();
+
+#ifdef CONFIG_BT_PTS_TEST
+	if (bt_pts_is_enabled()) {
 #ifdef CONFIG_BT_LEA_PTS_TEST
-	bt_manager_pts_test_start();
+		bt_manager_pts_test_start();
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
+		btif_bt_set_pts_config(true);
+	}
 #endif /*CONFIG_BT_PTS_TEST*/
+
 #endif /*CONFIG_BT_BLE*/
 
 
@@ -666,6 +673,12 @@ int bt_manager_link_event(void *param)
 		memcpy(&acl_param[0], (uint8_t *)(&in_param->hdl), sizeof(in_param->hdl));
 		acl_param[2] = in_param->param;
 		bt_manager_audio_conn_event(BT_DISCONNECTED,acl_param, sizeof(acl_param));
+
+        if(info->need_reconnect){
+            info->need_reconnect = 0;
+            bt_manager_manual_reconnect();
+        }
+
 		bt_mgr_free_dev_info(info);
 		btmgr_poff_check_phone_disconnected();
 #ifdef GFP_AUTO_TEST
@@ -763,6 +776,12 @@ int bt_manager_link_event(void *param)
 			info->notified_tts = 0;
 		}
 		break;
+
+        case BT_LINK_EV_A2DP_CHANNEL_ERR:
+        info->need_reconnect = 1;
+        bt_manager_br_disconnect(&info->addr);
+        break;
+
 	case BT_LINK_EV_AVRCP_CONNECTED:
         bt_manager_check_new_connected(info);
 		info->avrcp_connected = 1;
@@ -1346,7 +1365,9 @@ int bt_manager_init(bt_manager_event_callback_t event_callback)
 	btif_did_register_processer();
 
 #ifdef CONFIG_BT_LEA_PTS_TEST
-	btif_pts_register_processer();
+	if (bt_pts_is_enabled()) {
+		btif_pts_register_processer();
+	}
 #endif
 
 #ifdef CONFIG_GFP_PROFILE
@@ -1462,7 +1483,9 @@ void bt_manager_deinit(void)
 	btif_disable_service();
 
 #ifdef CONFIG_BT_LEA_PTS_TEST
-	btif_pts_stop();
+	if (bt_pts_is_enabled()) {
+		btif_pts_stop();
+	}
 #endif
 
 #if 0

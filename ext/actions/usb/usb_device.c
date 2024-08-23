@@ -468,9 +468,9 @@ int usb_device_register_string_descriptor(enum usb_device_str_desc type,
 	return 0;
 }
 
-static void change_strdesc_to_unicode(u8_t *str_desc, u8_t *unicode_buf)
+static void change_strdesc_to_unicode(u8_t *str_desc, u8_t str_len, u8_t *unicode_buf)
 {
-	for (u8_t i = 2, j = 0; i < unicode_buf[0] && i <= CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN*2; i++) {
+	for (u8_t i = 2, j = 0; i < str_len; i++) {
 		if (i%2 == 0) {
 			unicode_buf[i] = str_desc[j++];
 		} else {
@@ -481,10 +481,14 @@ static void change_strdesc_to_unicode(u8_t *str_desc, u8_t *unicode_buf)
 
 static void usb_process_str_des(u8_t *des_ptr)
 {
+	uint8_t len_str=STRING_LENGTH(des_ptr)+ 2;
+	if(len_str>sizeof(str_desc_buf))
+		len_str=sizeof(str_desc_buf);
 	memset(str_desc_buf, 0, sizeof(str_desc_buf));
-	str_desc_buf[0] = STRING_LENGTH(des_ptr) + 2;
+	str_desc_buf[0] = len_str;
 	str_desc_buf[1] = USB_STRING_DESC;
-	change_strdesc_to_unicode(des_ptr, str_desc_buf);
+
+	change_strdesc_to_unicode(des_ptr, len_str, str_desc_buf);
 }
 
 static inline bool device_qual(u8_t **data)

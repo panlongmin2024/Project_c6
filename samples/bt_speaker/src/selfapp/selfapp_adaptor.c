@@ -329,7 +329,7 @@ static u16_t selfapp_get_addr_crc(void)
 #define MAC_STR_LEN (12+1)
 	int ret;
 	uint16_t crc;
-	uint8_t mac[6];
+	uint8_t mac[MAC_STR_LEN];  // only 6bytes used
 	uint8_t mac_str[MAC_STR_LEN];
 
 	memset(mac_str, 0, MAC_STR_LEN);

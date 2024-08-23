@@ -319,6 +319,11 @@ static void _btsrv_a2dp_media_handler_cb(struct bt_conn *conn, uint8_t *data, ui
 		if (cp_type == BT_AVDTP_AV_CP_TYPE_SCMS_T) {
 			head_len++;
 		}
+ 
+        if(len < head_len){
+            btsrv_event_notify(MSG_BTSRV_CONNECT, MSG_BTSRV_A2DP_CHANNEL_ERR, conn);
+            return;
+        }
 
 #ifdef CONFIG_DEBUG_DATA_RATE
 		_btsrv_a2dp_debug_data_rate(conn, len - head_len);

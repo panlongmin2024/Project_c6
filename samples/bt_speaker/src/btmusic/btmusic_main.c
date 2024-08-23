@@ -88,6 +88,9 @@ void btmusic_delay_start(struct thread_timer *ttimer, void *expiry_fn_arg)
 
 int btmusic_bms_source_init(void)
 {
+	if (!p_btmusic_app)
+		return -EINVAL;
+
 	struct bt_broadcast_source_create_param param = { 0 };
 	struct bt_broadcast_source_big_param big_param;
 	struct bt_le_per_adv_param per_adv_param = { 0 };
@@ -111,9 +114,6 @@ int btmusic_bms_source_init(void)
 	// TODO:
 	uint16_t appearance = 0x885;	/* Audio Source + Broadcasting Device */
 	int ret;
-
-	if (!p_btmusic_app)
-		return -EINVAL;
 
 	if (thread_timer_is_running(&p_btmusic_app->broadcast_start_timer))
 		thread_timer_stop(&p_btmusic_app->broadcast_start_timer);

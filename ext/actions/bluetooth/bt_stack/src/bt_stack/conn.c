@@ -4102,4 +4102,36 @@ int bt_pts_conn_creat_add_sco_cmd(struct bt_conn *br_conn)
 	return 0;
 }
 
+int bt_conn_drop_tx_buffer(struct bt_conn *conn,bt_conn_buffer_match buffer_match,uint8_t drop_count)
+{
+	struct net_buf *buf;
+	struct k_fifo tx_queue;
+	uint8_t drop = 0;
+
+	if (!conn || !buffer_match) {
+		return -EIO;
+	}
+
+	k_fifo_init(&tx_queue);
+
+	k_sched_lock();
+	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
+		if(drop < drop_count && buffer_match(conn,buf->data,buf->len)){
+			if (tx_data(buf)->tx) {
+				tx_free(tx_data(buf)->tx);
+			}
+			net_buf_unref(buf);
+			drop++;
+		}else{
+			net_buf_put(&tx_queue,buf);
+		}
+	}
+
+	while ((buf = net_buf_get(&tx_queue, K_NO_WAIT))) {
+		net_buf_put(&conn->tx_queue,buf);
+	}
+	k_sched_unlock();
+	return drop;
+}
+
 /* Actions add end */

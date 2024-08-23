@@ -58,6 +58,12 @@ static u8_t gfp_adv_len = 0;
 
 extern int bt_rand(void *buf, unsigned int len);
 
+static void free_pointer(void *ptr) {
+	if(ptr != NULL){
+		mem_free(ptr);
+	}
+}
+
 /**
  * Takes a 32-byte shared key generated from ECDH and chops it down to 16-bytes
  * to be used with AES.
@@ -213,13 +219,18 @@ int init_key_based_pairing(uint8_t* packet, int packet_length)
     uint8_t *private_key = (u8_t *)mem_malloc(ECDH_PRIVATE_KEY_SIZE);
     uint8_t *shared_key = (u8_t *)mem_malloc(ECDH_SHARED_KEY_SIZE);
 
+	if((!key) || (!buffer) || (!ble_address) ||
+		(!public_address) || (!public_key) || (!private_key) || (!shared_key)){
+	       SYS_LOG_ERR("MALLOC ERROR");
+		   ret = -1;
+		   goto keybase_pair_exit;
+	}
+
 	if (packet_length == AES_BLOCK_SIZE) {
 		int success = 0;
 
 		bluetooth_provider->get_ble_address(ble_address);
 		bluetooth_provider->get_public_address(public_address);
-
-		SYS_LOG_INF("init_key_based_pairing\n");
 
 		for (i = 0; i < storage_provider->get_num_account_keys(); i++) {
 			storage_provider->get_account_key(i, key);
@@ -298,13 +309,15 @@ int init_key_based_pairing(uint8_t* packet, int packet_length)
 		goto keybase_pair_exit;
 	}
 
+/*  two phone mode, not need force pair mode
 	if ((packet_length == AES_BLOCK_SIZE) && 
 		(packet[0] == BASED_PAIRING_REQUEST))
 	{
 		bt_manager_enter_pair_mode();
 	}
+*/
 
-	//print_hex_comm("packet:",packet,16);
+	print_hex_comm("based pairing:",packet,16);
 	// Packet now contains the decoded information, so use it as needed.
 	if (packet[0] == ACTION_REQUESET) {
 		if(packet[1] & ACTION_REQUEST_ADDITIONAL_DATA){
@@ -343,17 +356,17 @@ int init_key_based_pairing(uint8_t* packet, int packet_length)
 	}
 
 keybase_pair_exit:
-    mem_free(key);
-    mem_free(buffer);
-    mem_free(ble_address);
-    mem_free(public_address);
-    mem_free(public_key);
-    mem_free(private_key);
-    mem_free(shared_key);
+    free_pointer(key);
+    free_pointer(buffer);
+    free_pointer(ble_address);
+    free_pointer(public_address);
+    free_pointer(public_key);
+    free_pointer(private_key);
+    free_pointer(shared_key);
     return ret;
 }
 
-void personalized_name_response(void)
+void personalized_name_response(int base_pairing_flag)
 {
     u8_t *counter;
     u8_t *hamc_data;
@@ -366,10 +379,28 @@ void personalized_name_response(void)
 	int response_size;
 
     device_name = (u8_t *)mem_malloc(PERSONALIZED_NAME_SIZE);
+	if(!device_name){
+		return;
+	}
+    memset(device_name,0,PERSONALIZED_NAME_SIZE);
+
 	size_t name_len = bluetooth_provider->get_personalized_name(device_name);
     if(name_len == 0){
-        mem_free(device_name);
-        return;
+        if((base_pairing_flag & FP_BASED_PAIR_RETROACTIVELY_WRITING_ACCOUNT_KEY) == 0){
+            mem_free(device_name);
+            return;
+        }
+        else{
+            memset(device_name,0,PERSONALIZED_NAME_SIZE);
+            name_len = property_get(CFG_BT_NAME, device_name, PERSONALIZED_NAME_SIZE - 1);
+            if(name_len == 0){
+                mem_free(device_name);
+                return;
+            }
+            else{
+                name_len = strlen(device_name);
+            }
+        }
     }
 
 	SYS_LOG_INF("%d %s",name_len,device_name);
@@ -380,6 +411,10 @@ void personalized_name_response(void)
     response = (u8_t *)mem_malloc(PERSONALIZED_NAME_SIZE + AES_NONCEZ_SIZE + HMAC_SHA256_HEAD8);
     ctx = mem_malloc(sizeof(struct tc_aes_key_sched_struct));
     hmac_state = mem_malloc(sizeof(struct tc_hmac_state_struct));
+	if((!counter) || (!hamc_data) || (!nonce_aes)||
+		(!response) || (!ctx) || (!hmac_state)){
+		goto exit;
+	}
 
 	memset(counter,0,COUNTER_SIZE);
 	//ramdon = random();
@@ -409,13 +444,14 @@ void personalized_name_response(void)
 		  response_size,
 		  BLE_ADDITIONAL_DATA);
 
-    mem_free(counter);
-    mem_free(hamc_data);
-    mem_free(nonce_aes);
-    mem_free(response);
-    mem_free(ctx);
-    mem_free(hmac_state);
-    mem_free(device_name);
+exit:
+	free_pointer(counter);
+	free_pointer(hamc_data);
+	free_pointer(nonce_aes);
+	free_pointer(response);
+	free_pointer(ctx);
+	free_pointer(hmac_state);
+	free_pointer(device_name);
 }
 
 
@@ -475,7 +511,7 @@ int perform_key_based_pairing(uint8_t* request, int request_length)
 	if(ret & FP_BASED_PAIR_NOTIFY_EXISTING_NAME){
 //		SYS_LOG_INF("account_key_writed %d",ble_account_info.account_key_writed);
 //		if (ble_account_info.account_key_writed)
-	    personalized_name_response();
+	    personalized_name_response(ret);
 	}
 
 	if(ret & FP_BASED_PAIR_RETROACTIVELY_WRITING_ACCOUNT_KEY){
@@ -588,6 +624,9 @@ int account_key_written(uint8_t* packet, int packet_length)
 		crypto_provider->decrypt(ble_account_info.current_shared_key, packet);
 		storage_provider->add_account_key(packet);
 		ble_account_info.account_key_writed = 1;
+
+		gfp_adv_len = 0;  // ¸üÐÂ ACCOUTN ADV 
+
 		SYS_LOG_INF("account_key_written %d", ble_account_info.account_key_writed);
 		return 1;
 	}
@@ -597,7 +636,8 @@ int account_key_written(uint8_t* packet, int packet_length)
 /** Called when an additional data has been written by the seeker. */
 int additional_data_written(uint8_t* packet, int packet_length)
 {
-    u8_t *counter = (u8_t *)mem_malloc(COUNTER_SIZE);
+	int ret = 0;
+	u8_t *counter = (u8_t *)mem_malloc(COUNTER_SIZE);
     u8_t *hamc_data = (u8_t *)mem_malloc(HMAC_SHA256_SIZE);
     u8_t *nonce_aes = (u8_t *)mem_malloc(AES_NONCEZ_SIZE + PERSONALIZED_NAME_SIZE);
     u8_t *personalized_name = (u8_t *)mem_malloc(PERSONALIZED_NAME_SIZE);
@@ -606,9 +646,17 @@ int additional_data_written(uint8_t* packet, int packet_length)
 
 	u8_t personalized_name_len;
 
+	if((!counter) || (!hamc_data) || (!nonce_aes)||
+		(!personalized_name) || (!ctx) || (!hmac_state)){
+		SYS_LOG_ERR("MALLOC ERROR");
+		ret = -1;
+		goto exit;
+	}
+
 	if(packet_length <= HMAC_SHA256_HEAD8 + AES_NONCEZ_SIZE){
 		SYS_LOG_ERR("ERROR");
-		return -1;
+		ret = -1;
+		goto exit;
 	}
 	memset(personalized_name,0,PERSONALIZED_NAME_SIZE);
 
@@ -627,13 +675,14 @@ int additional_data_written(uint8_t* packet, int packet_length)
 	//print_hex_comm("PERSONALLIZED:",personalized_name,personalized_name_len);
 	bluetooth_provider->update_personalized_name(personalized_name,personalized_name_len,true);
 
-    mem_free(counter);
-    mem_free(hamc_data);
-    mem_free(nonce_aes);
-    mem_free(personalized_name);
-    mem_free(ctx);
-    mem_free(hmac_state);
-    return 0;
+exit:
+    free_pointer(counter);
+    free_pointer(hamc_data);
+    free_pointer(nonce_aes);
+    free_pointer(personalized_name);
+    free_pointer(ctx);
+    free_pointer(hmac_state);
+    return ret;
 }
 
 void get_fast_pair_account_data(uint8_t *out, uint8_t *len ,fp_battery_value_t *battery)
@@ -763,7 +812,7 @@ void personalized_name_clear(void)
 
 void personalized_name_update(uint8_t *name,uint8_t size)
 {
-    uint8_t len;
+    uint8_t len = 0;
     u8_t name_buffer[PERSONALIZED_NAME_SIZE];
 
     if (!bluetooth_provider)

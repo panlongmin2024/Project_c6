@@ -200,6 +200,8 @@ typedef struct bt_mgr_dev_info {
 	uint8_t	 avrcp_remote_support_vol_sync:1;
 	uint8_t	 phone_connect_request:1;
 	uint8_t	 key_miss:1;
+    uint8_t  need_reconnect:1;
+
     uint8_t  avrcp_remote_vol;
     uint8_t  avrcp_ext_status;  /* BT_MANAGER_AVRCP_EXT_STATUS */
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
@@ -436,6 +438,7 @@ int bt_manager_disconnect_inactive_audio_conn(void);
 
 #ifdef CONFIG_BT_LEA_PTS_TEST
 void bt_manger_lea_event_pts_process(btsrv_audio_event_e event, void *data, int size);
+void pts_le_audio_service_disable(void);
 #endif
 
 #endif

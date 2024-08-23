@@ -103,6 +103,17 @@ static void usb_audio_status_cb(enum usb_dc_status_code status, u8_t *param)
 				audio_download_streaming_enabled = false;
 			} else {
 				audio_download_streaming_enabled = true;
+
+				/* 24bit */
+				if(alt_setting == 1)
+				{
+					USB_AudioSinkBitDepthSet(CONFIG_USB_AUDIO_DEVICE_SINK_FIRST_BIT_DEPTH);
+				}
+				/* 16bit */
+				else
+				{
+					USB_AudioSinkBitDepthSet(CONFIG_USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH);
+				}
 			}
 
 			if (audio_sink_start_cb) {
