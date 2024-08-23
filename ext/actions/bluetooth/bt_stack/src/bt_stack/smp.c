@@ -929,6 +929,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 	struct bt_keys_link_key *exist_link_key = NULL;
 	uint8_t ilk[16];
 
+	memset(&link_key, 0, sizeof(struct bt_keys_link_key));
 	BT_INFO("LTK to BR linkkey, LTK Type: %d", conn->le.keys->flags);
 
 	/* TODO handle errors? */
@@ -5748,7 +5749,7 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.recv = bt_smp_recv,
 	};
 
-#if defined (CONFIG_BT_SMP_MASTER_DISALLOWED)
+#if 0//defined (CONFIG_BT_SMP_MASTER_DISALLOWED)
 	if (conn->role == BT_HCI_ROLE_MASTER) {
 		BT_WARN("master disallowed!");
 		return -EINVAL;

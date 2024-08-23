@@ -73,8 +73,15 @@ config XSPI1_NOR_ACTS_DEV_NAME
 	help
 	  Specify the device name for SPI1 NOR flash driver.
 
+config OTA_BACKEND_DISK
+    bool "OTA upgrade by disk"
+    default n
+    help
+      This option enables OTA upgrade by disk, like sdcard or uhost.
+
 config OTA_BACKEND_SDCARD
     bool "OTA upgrade by SDCARD Support"
+	depends on OTA_BACKEND_DISK
     select MMC
 	select MUTIPLE_VOLUME_MANAGER
 	select FILE_STREAM
@@ -83,6 +90,19 @@ config OTA_BACKEND_SDCARD
     default n
     help
       This option enables OTA upgrade by SDCARD.
+
+config OTA_BACKEND_UHOST
+    bool "OTA upgrade by UHOST Support"
+    depends on OTA_BACKEND_DISK
+	select USB_HOST
+	select USB_HOST_STACK
+	select USB_HOST_STORAGE
+	select MUTIPLE_VOLUME_MANAGER
+	select FILE_STREAM
+	select STREAM
+    default n
+    help
+      This option enables OTA upgrade by UHOST.
 
 config OTA_BACKEND_BLUETOOTH
     bool "OTA upgrade by Bluetooth Support "

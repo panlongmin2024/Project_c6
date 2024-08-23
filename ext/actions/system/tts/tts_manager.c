@@ -321,8 +321,8 @@ static void _tts_manager_play_event_notify(uint32_t event, void *data, uint32_t 
 			tts_ctx->dvfs_set = 0;
 			soc_dvfs_unset_level(SOC_DVFS_LEVEL_FULL_PERFORMANCE, "tts");
 		}
-		_tts_manager_trigger_stop_tts(tts_ctx);
 	#endif
+		_tts_manager_trigger_stop_tts(tts_ctx);
 		break;
 	case PARSER_EVENT_STOP_COMPLETE:
 	#if 0

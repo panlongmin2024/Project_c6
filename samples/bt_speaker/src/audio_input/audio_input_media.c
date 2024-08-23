@@ -183,9 +183,13 @@ int audio_input_init_playback(void)
 	} else if (init_param.stream_type == AUDIO_STREAM_MIC_IN) {
 		init_param.channels = 1;
 		init_param.sample_rate = 48;
+		init_param.sample_bits = 32;
 		init_param.capture_channels_input = 1;
+		init_param.capture_channels_output = 1;
 		init_param.capture_sample_rate_input = 48;
 		init_param.capture_sample_rate_output = 48;
+		init_param.capture_sample_bits = 32;
+		audio_system_set_output_sample_rate(48);
 	} else {
 		SYS_LOG_ERR("Not supported stream type\n");
 		goto err_exit;

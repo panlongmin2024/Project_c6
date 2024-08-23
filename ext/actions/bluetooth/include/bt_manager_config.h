@@ -184,7 +184,7 @@ typedef struct
     unsigned char reconnect_tws_interval;            // 重试回连 TWS 设备间隔时间 (秒)
     unsigned char reconnect_tws_times_by_startup;    // 开机回连 TWS 设备尝试次数,      0 ~ 100, 设置为 0 时不限次数
     unsigned char reconnect_times_by_timeout;        // 超时断开回连尝试次数,           0 ~ 100, 设置为 0 时不限次数
-    unsigned char reconnect_resume_play;        // 超时回连是否恢复播放
+    unsigned char reconnect_resume_play;             // 超时回连是否恢复播放
 
     unsigned char enter_pair_mode_when_startup_reconnect_fail;  // 开机回连失败时进入配对模式
     unsigned char always_reconnect_last_device;      // 只回连最后一个设备，即使支持多设备,0:不启用,1：启用

@@ -249,6 +249,7 @@ struct bt_avrcp_event_cb {
 	void (*get_play_status)(struct bt_avrcp *session, uint32_t *song_len, uint32_t *song_pos, uint8_t *play_state);
 	void (*get_volume)(struct bt_avrcp *session, uint8_t *volume);
 	void (*update_id3_info)(struct bt_avrcp *session, struct id3_info * info);
+	void (*setvolume)(struct bt_avrcp *session,uint8_t param);
 };
 
 int bt_avrcp_init(void);

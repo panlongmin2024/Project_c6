@@ -208,9 +208,7 @@ void sys_pm_deep_sleep_routinue(void)
 
 	uint32_t vout_ctl_backup;
 
-#ifdef CONFIG_PM_SLEEP_TIME_TRACE
 	uint32_t deep_sleep_time;
-#endif
 
 	pm_backup_registers(backup_reg);
 
@@ -220,8 +218,10 @@ void sys_pm_deep_sleep_routinue(void)
 
     k_busy_wait(300);
 
+	deep_sleep_time = sys_pm_get_rc_timestamp();
+
 #ifdef CONFIG_PM_SLEEP_TIME_TRACE
-	deep_sleep_start_time = sys_pm_get_rc_timestamp();
+	deep_sleep_start_time = deep_sleep_time;
 
     if(light_sleep_start_time){
         light_sleep_total_time += deep_sleep_start_time - light_sleep_start_time;
@@ -234,15 +234,17 @@ void sys_pm_deep_sleep_routinue(void)
 	soc_pm_deep_power_ctrl();
 #endif
 
+    deep_sleep_time = sys_pm_get_rc_timestamp() - deep_sleep_time;
+
 #ifdef CONFIG_PM_SLEEP_TIME_TRACE
-    deep_sleep_time = sys_pm_get_rc_timestamp() - deep_sleep_start_time;
 
     deep_sleep_total_time += deep_sleep_time;
-    /* compensate ticks with sleep time */
-    _sys_clock_tick_count += _ms_to_ticks(deep_sleep_time);
 
     light_sleep_start_time = sys_pm_get_rc_timestamp();
 #endif
+
+    /* compensate ticks with sleep time */
+    _sys_clock_tick_count += _ms_to_ticks(deep_sleep_time);
 
     soc_pmu_deep_wakeup(vout_ctl_backup);
 

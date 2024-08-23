@@ -339,12 +339,13 @@ void bt_manager_avrcp_sync_vol_to_local(uint16_t hdl, uint8_t music_vol, bool sy
   #if 0
     system_volume_sync_remote_to_device(AUDIO_STREAM_MUSIC, music_vol);
   #else
-	struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
+	//struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
     bt_mgr_dev_info_t* dev_info = bt_mgr_find_dev_info_by_hdl(hdl);
     btmgr_sync_ctrl_cfg_t * cfg =  bt_manager_get_sync_ctrl_config();
     uint8_t  avrcp_vol;
     bt_mgr_dev_info_t * a2dp_active_dev = bt_mgr_get_a2dp_active_dev();
     bool notify_app = true;
+    uint16_t media_handle;
 
     if (dev_info == NULL ||
 		dev_info->is_tws ||
@@ -374,21 +375,20 @@ void bt_manager_avrcp_sync_vol_to_local(uint16_t hdl, uint8_t music_vol, bool sy
 
     /* no current A2DP active device
      */
-	printk("a2dp handle set %d cur %d\n",dev_info->hdl,bt_manager->cur_a2dp_hdl);
-    //if ((a2dp_active_dev && dev_info->hdl != a2dp_active_dev->hdl)||((bt_manager->cur_a2dp_hdl)&&(bt_manager->cur_a2dp_hdl != dev_info->hdl)))
-    if (a2dp_active_dev && dev_info->hdl != bt_manager_media_get_active_br_handle())
+    media_handle = bt_manager_media_get_active_br_handle();
+    if(a2dp_active_dev)
     {
-		SYS_LOG_INF("no active ad2p dev %x, %x\n", dev_info->hdl, bt_manager_media_get_active_br_handle());
-        notify_app = false;
+        if(media_handle && dev_info->hdl != media_handle){
+            SYS_LOG_INF("no active ad2p dev %x, %x\n", dev_info->hdl,media_handle);
+            notify_app = false;
+        }
     }
-	SYS_LOG_INF("hdl 0x%x bt_music_vol: %d,avrcp_remote_vol: %d\n", dev_info->hdl, dev_info->bt_music_vol,dev_info->avrcp_remote_vol);
+	SYS_LOG_INF("hdl 0x%x bt_vol:%d,rm_vol:%d\n", dev_info->hdl, dev_info->bt_music_vol,dev_info->avrcp_remote_vol);
 
     bt_manager_sync_volume_from_phone(&dev_info->addr, true, music_vol, false, notify_app);
   #endif
 #endif
 }
-
-
 
 void bt_manager_avrcp_sync_origin_vol(uint16_t hdl)
 {

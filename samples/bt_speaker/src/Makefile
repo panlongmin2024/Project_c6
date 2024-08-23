@@ -23,6 +23,7 @@ obj-$(CONFIG_BT_SELF_APP) += selfapp/
 obj-$(CONFIG_DATA_ANALY) += data_analy/
 obj-y += desktop/
 obj-y += system_app/
+obj-$(CONFIG_LCMUSIC_APP) += lcmusic/
 
 obj-$(CONFIG_BUILD_PROJECT_HM_DEMAND_CODE) += charge_6/
 

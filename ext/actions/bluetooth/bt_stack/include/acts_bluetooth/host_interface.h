@@ -594,6 +594,16 @@ int hostif_bt_conn_set_supervision_timeout(struct bt_conn *conn, uint16_t timeou
  */
 int hostif_bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
 
+/** @brief drop tx buffer
+ *
+ *  @param conn  Connection object.
+ *  @param bt_conn_buffer_match only drop buffer matched
+ *  @param drop_count drop buffer count
+ *
+ *  @return count of buffer dropped or negative value in case of error.
+ */
+int hostif_bt_conn_drop_tx_buffer(struct bt_conn *conn,bt_conn_buffer_match buffer_match,uint8_t drop_count);
+
 /************************ hostif hfp *******************************/
 /** @brief Register HFP HF call back function
  *

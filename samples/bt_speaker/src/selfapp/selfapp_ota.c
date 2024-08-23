@@ -863,6 +863,7 @@ static void _selfapp_ota_app_cmd_thread(void *p1, void *p2, void *p3)
 
 static void ota_app_cmd_thread_start(otadfu_handle_t *otadfu)
 {
+	void *streamhdl = NULL;
 	otadfu->thread_terminated = false;
 	otadfu->thread_need_terminated = false;
 
@@ -870,7 +871,10 @@ static void ota_app_cmd_thread_start(otadfu_handle_t *otadfu)
 
 	selfapp_stream_handle_suspend(true);
 
-	sppble_stream_set_rxdata_callback(self_get_streamhdl(), _selfapp_rx_data_callback);
+	streamhdl = self_get_streamhdl();
+	if (streamhdl) {
+		sppble_stream_set_rxdata_callback(streamhdl, _selfapp_rx_data_callback);
+	}
 
 	otadfu->app_cmd_thread_stack = ota_thread_data_buffer;
 
@@ -881,7 +885,10 @@ static void ota_app_cmd_thread_start(otadfu_handle_t *otadfu)
 
 static void ota_app_cmd_thread_stop(otadfu_handle_t *otadfu)
 {
-	sppble_stream_set_rxdata_callback(self_get_streamhdl(), NULL);
+	void *streamhdl = self_get_streamhdl();
+	if (streamhdl) {
+		sppble_stream_set_rxdata_callback(streamhdl, NULL);
+	}
 
 	otadfu->thread_need_terminated = true;
 
@@ -924,6 +931,10 @@ static int dfu_api_open(struct ota_backend *backend)
 	os_mutex_lock(&otadfu_mutex, OS_FOREVER);
 
 	otadfu = otadfu_get_handle();
+	if (otadfu == NULL) {
+		ret = -17;
+		goto label_fail;
+	}
 
 	if (ret == 0) {
 #ifdef OTADFU_BY_DATA_STREAM
@@ -1202,6 +1213,9 @@ int otadfu_SetDfuData(u8_t sequence, u8_t * data, int len)
 
 #ifdef  CONFIG_OTA_SELF_APP
     otadfu_handle_t *otadfu = otadfu_get_handle();
+	if (otadfu == NULL) {
+		return 0;
+	}
 
 	// param data is illegal, renew it
 	ret = dfu_data_buf_write(otadfu, &sequence, &data, len);
@@ -1211,9 +1225,6 @@ int otadfu_SetDfuData(u8_t sequence, u8_t * data, int len)
 		return ret;
 	}
 
-	if (otadfu == NULL) {
-		return 0;
-	}
 
  	if (otadfu->buf_flushing) {
 		return 3;

@@ -1410,13 +1410,15 @@ int bt_manager_bt_read_rssi(uint16_t handle);
 int bt_manager_bt_read_link_quality(uint16_t handle);
 
 /* pts test */
+#ifdef CONFIG_BT_PTS_TEST
+uint8_t bt_pts_is_enabled(void);
 #ifdef CONFIG_BT_LEA_PTS_TEST
 int bt_manager_pts_test_start(void);
 uint8_t pts_test_is_adv_test_enable(void);
 int pts_le_audio_init(void);
 void pts_le_clear_keys(void);
-
 #endif /*CONFIG_BT_LEA_PTS_TEST*/
+#endif /*CONFIG_BT_PTS_TEST*/
 
 typedef int (*tws_config_expect_role_cb_t)(void);
 /**

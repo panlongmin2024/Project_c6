@@ -300,6 +300,8 @@ int mpu_region_is_enable(unsigned int index)
 #ifdef CONFIG_MPU_MONITOR_USER_DATA
 int mpu_user_data_monitor(unsigned int start_addr, unsigned int end_addr)
 {
+    mpu_disable_region(CONFIG_MPU_MONITOR_USER_DATA_INDEX);
+
     /* TEXT地址均是不可写的 */
     mpu_set_address((unsigned int)start_addr, (unsigned int)end_addr - 1, \
         (MPU_CPU_WRITE | MPU_DMA_WRITE), CONFIG_MPU_MONITOR_USER_DATA_INDEX);

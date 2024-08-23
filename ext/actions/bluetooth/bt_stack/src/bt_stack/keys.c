@@ -756,7 +756,7 @@ bool bt_le_get_last_paired_device(bt_addr_le_t* dev)
 		}
 	}
 
-	if (bt_addr_le_cmp(&last->addr, BT_ADDR_LE_ANY)) {
+	if (last->keys && bt_addr_le_cmp(&last->addr, BT_ADDR_LE_ANY)) {
 		bt_addr_le_copy(dev, &last->addr);
 		return true;
 	}

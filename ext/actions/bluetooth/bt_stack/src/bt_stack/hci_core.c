@@ -4963,6 +4963,16 @@ static int bt_init(void)
 {
 	int err;
 
+	if (IS_ENABLED(CONFIG_BT_PROPERTY)) {
+		if (bt_dev.id_count) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_PRESET_ID);
+		}
+
+		BT_DBG("No ID address. should load property");
+		/*need to load IRK before adding resolving list if keys exist*/
+		bt_property_load();
+	}
+
 	err = hci_init();
 	if (err) {
 		return err;
@@ -4980,15 +4990,6 @@ static int bt_init(void)
 		if (err) {
 			return err;
 		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_PROPERTY)) {
-		if (bt_dev.id_count) {
-			atomic_set_bit(bt_dev.flags, BT_DEV_PRESET_ID);
-		}
-
-		BT_DBG("No ID address. should load property");
-		bt_property_load();
 	}
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {

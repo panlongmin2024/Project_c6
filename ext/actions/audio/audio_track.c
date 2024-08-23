@@ -780,6 +780,7 @@ int audio_track_start(struct audio_track_t *handle)
 			|| handle->stream_type == AUDIO_STREAM_SPDIF_IN
 			|| handle->stream_type == AUDIO_STREAM_I2SRX_IN
 			|| handle->stream_type == AUDIO_STREAM_SOUNDBAR
+			|| handle->stream_type == AUDIO_STREAM_MIC_IN
 			|| handle->stream_type == AUDIO_STREAM_LOCAL_MUSIC){
 				prepare_start = 1;
 			}

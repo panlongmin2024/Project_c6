@@ -81,7 +81,7 @@ extern int ramdump_clear(void);
  *
  * @return traverse data length
  */
-extern int ramdump_transfer(int (*traverse_cb)(uint8_t *data, uint32_t max_len));
+extern int ramdump_transfer(char *print_buf, int print_sz, int (*traverse_cb)(uint8_t *data, uint32_t max_len));
 
 /**
  * @brief print ramdump data.

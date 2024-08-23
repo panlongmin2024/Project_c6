@@ -229,7 +229,7 @@ CRASH_DUMP_REGISTER(dump_register, 0) =
     .dump = crash_dump_register,
 };
 
-CRASH_DUMP_REGISTER(dump_backtrace, 9) =
+CRASH_DUMP_REGISTER(dump_backtrace, 90) =
 {
     .dump = crash_dump_backtrace,
 };

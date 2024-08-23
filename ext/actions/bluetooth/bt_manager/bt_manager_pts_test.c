@@ -46,6 +46,34 @@
 
 #define PTS_TEST_SHELL_MODULE		"pts"
 
+typedef enum
+{
+	PTS_MODE_DISABLE = 0,
+	PTS_MODE_ENABLE = 1,
+	PTS_MODE_INVALID = 0xFF,
+} bt_pts_mode_e;
+
+static uint8_t bt_pts_mode = PTS_MODE_INVALID;
+
+uint8_t bt_pts_is_enabled(void)
+{
+	if (bt_pts_mode != PTS_MODE_INVALID) {
+		return bt_pts_mode;
+	}
+
+#if defined(CONFIG_PROPERTY)
+	int len = property_get(CFG_BT_PTS_MODE, &bt_pts_mode, sizeof(bt_pts_mode));
+	if (len != sizeof(bt_pts_mode)) {
+		SYS_LOG_ERR("pts mode get fail:%d\n",len);
+		bt_pts_mode = PTS_MODE_DISABLE;
+	} else {
+		SYS_LOG_INF("mode:%d\n",bt_pts_mode);
+	}
+#endif
+
+	return bt_pts_mode;
+}
+
 static int pts_create_connect(uint8_t a2dp, uint8_t avrcp, uint8_t hfp)
 {
 	int cnt;
@@ -591,6 +619,14 @@ static int pts_config(int argc, char *argv[])
 	cmd = argv[1];
 	SYS_LOG_INF(" :%s\n", cmd);
 	if (!strcmp(cmd, "on")) {
+		bt_pts_mode = PTS_MODE_ENABLE;
+		property_set(CFG_BT_PTS_MODE, &bt_pts_mode, 1);
+		property_flush(CFG_BT_PTS_MODE);
+
+#ifdef CONFIG_BT_LEA_PTS_TEST
+		pts_le_clear_keys();
+#endif
+
 		btif_br_auto_reconnect_stop(BTSRV_STOP_AUTO_RECONNECT_ALL);
 		btif_br_disconnect_device(BTSRV_DISCONNECT_ALL_MODE);
 
@@ -601,6 +637,10 @@ static int pts_config(int argc, char *argv[])
 		printk("\n\n##### PTS Test Prepared Successful #####\n\n");
 		//sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
 	} else if (!strcmp(cmd, "off")){
+		bt_pts_mode = PTS_MODE_DISABLE;
+		property_set(CFG_BT_PTS_MODE, &bt_pts_mode, 1);
+		property_flush(CFG_BT_PTS_MODE);
+
 		btif_bt_set_pts_config(false);
 	}
 

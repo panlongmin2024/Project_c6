@@ -515,6 +515,14 @@ static int shell_bin_test(int argc, char *argv[])
 
 #endif
 
+#ifdef CONFIG_OTA_BACKEND_UHOST
+static int shell_start_uhost_ota(int argc, char *argv[])
+{
+	ota_app_init_uhost();
+	return 0;
+}
+#endif
+
 extern int8_t broadcast_set_sq_mode(int8_t sq_mode);
 
 static int shell_sq_enable(int argc, char *argv[])
@@ -579,10 +587,14 @@ static const struct shell_cmd app_commands[] = {
 	{"print", shell_print_enable, "print enable or disable"},
 
 #ifdef CONFIG_ACTIONS_IMG_LOAD
-	{"bin_test", shell_bin_test, "print enable or disable"},
+	{"bin_test", shell_bin_test, "start load test"},
 #endif
 
 	{"boardcast_sq", shell_sq_enable, "boardcast_sq enable or disable"},
+
+#ifdef CONFIG_OTA_BACKEND_UHOST
+	{"uhost_ota", shell_start_uhost_ota, "start uhost ota"},
+#endif
 
 	{NULL, NULL, NULL}};
 #endif

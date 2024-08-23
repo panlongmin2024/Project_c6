@@ -525,6 +525,19 @@ class firmware(object):
                     else:
                         self.encrypt_file(param_file, self.crc_chunk_size)
 
+    def encrypt_boot_file(self, boot_file):
+        if not os.path.isfile(boot_file):
+            print('Cannot found boot file')
+            return
+
+        for part in self.partitions:
+            if ('file_name' in part.keys() and 'BOOT' == part['type']):
+                if ('true' == part['enable_encryption']):
+                    if ('true' == part['enable_crc']):
+                        self.encrypt_file(boot_file, self.crc_full_chunk_size)
+                    else:
+                        self.encrypt_file(boot_file, self.crc_chunk_size)
+
     def encrypt_temp_file(self, temp_file):
         for part in self.partitions:
             if ('file_name' in part.keys() and 'TEMP' == part['type']):
@@ -976,6 +989,7 @@ class firmware(object):
              # generate OTA firmware without crc/randomizer
             self.copy_ota_files(self.orig_bin_dir, self.ota_dir)
             self.encrypt_param_file(os.path.join(self.ota_dir, self.param_file_name))
+            self.encrypt_boot_file(os.path.join(self.ota_dir, self.boot_file_name))
             self.generate_ota_image_internal(img_bin_file, self.ota_dir, os.path.join(self.ota_dir, 'ota.xml'))
 
         if secure_boot:

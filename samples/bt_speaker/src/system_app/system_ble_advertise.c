@@ -22,7 +22,7 @@
 #endif
 #include "system_app.h"
 
-#define GFP_BLE_ADV_POWER (-11)//-13 //数值调小不容易弹窗----zth
+#define GFP_BLE_ADV_POWER (-10)//-13 //数值调小不容易弹窗----zth
 #define GFP_ADV_SLEEP_TIME (500) // 20 S
 
 
@@ -238,7 +238,7 @@ static bool ble_adv_check_enable(void)
 	 */
 	if (bt_manager_is_pair_mode()) {
 		p->total_time_cnt = 1;
-		p->adv[ADV_TYPE_GFP]->total_adv_cnt = 2;
+		p->adv[ADV_TYPE_GFP]->total_adv_cnt = 3;
 	} else {
 		p->total_time_cnt = 2;
 		p->adv[ADV_TYPE_GFP]->total_adv_cnt = 1;

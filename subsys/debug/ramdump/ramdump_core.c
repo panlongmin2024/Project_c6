@@ -19,11 +19,9 @@
 #include "ramdump_core.h"
 #include <mem_manager.h>
 #include <partition.h>
-
-#define RAMDUMP_PRINT_BUF_SIZE (512)
+#include <crc.h>
 
 extern uint32_t get_exception_esf_info(void);
-
 
 uint32_t ram_get_unused(void)
 {
@@ -420,17 +418,13 @@ int ramdump_clear(void)
 }
 
 
-int ramdump_transfer(int (*traverse_cb)(uint8_t *data, uint32_t max_len))
+int ramdump_transfer(char *print_buf, int print_sz, int (*traverse_cb)(uint8_t *data, uint32_t max_len))
 {
    int ret;
    int traverse_len, len;
-   char *print_buf;
 
-   if(traverse_cb == NULL)
+   if(traverse_cb == NULL || print_buf == NULL)
 	   return 0;
-
-   /* Print buffer */
-   print_buf = mem_malloc(RAMDUMP_PRINT_BUF_SIZE);
 
    /* Verify first to see if stored dump is valid */
    ret = ramdump_check();
@@ -442,7 +436,7 @@ int ramdump_transfer(int (*traverse_cb)(uint8_t *data, uint32_t max_len))
 	   goto out;
    }
 
-   len = ramdump_data_traverse(traverse_cb, print_buf, RAMDUMP_PRINT_BUF_SIZE);
+   len = ramdump_data_traverse(traverse_cb, print_buf, print_sz);
 
    if(len > 0){
 	   traverse_len += len;
@@ -452,18 +446,127 @@ int ramdump_transfer(int (*traverse_cb)(uint8_t *data, uint32_t max_len))
    }
 
 out:
-   mem_free(print_buf);
    return traverse_len;
 }
 
 
-static int ramdump_print_callback(uint8_t *data, uint32_t max_len)
+/* Length of buffer of printable size */
+#define LOG_BUF_SZ		64
+
+/* Length of buffer of printable size plus null character */
+#define LOG_BUF_SZ_RAW		(LOG_BUF_SZ + 1)
+
+#define LOG_DATA_BUF_SZE  (256)
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * These are for internal use only, so skip these in
+ * public documentation.
+ */
+
+#define RAMDUMP_BEGIN_STR	"BEGIN#"
+#define RAMDUMP_END_STR	"END#"
+#define RAMDUMP_ERROR_STR	"ERROR CANNOT DUMP#"
+#define RAMDUMP_CRC32_STR	"CRC32#"
+
+/*
+ * Need to prefix ramdump strings to make it easier to parse
+ * as log module adds its own prefixes.
+ */
+#define RAMDUMP_PREFIX_STR	"#CD:"
+
+struct ramdump_print_ctx{
+	int error;
+	char data_buf[LOG_DATA_BUF_SZE];
+	char log_buf[LOG_BUF_SZ_RAW];
+	uint32_t crc_value;
+};
+
+static int hex2char(uint8_t x, char *c)
 {
-	print_buffer((const void *)data, 1, max_len, 16, -1);
+	if (x <= 9) {
+		*c = x + '0';
+	} else  if (x <= 15) {
+		*c = x - 10 + 'a';
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void ramdump_print_start(void)
+{
+	printk("\r\n"RAMDUMP_PREFIX_STR RAMDUMP_BEGIN_STR"\r\n");
+}
+
+static void ramdump_print_end(int error, uint32_t crc_value)
+{
+	if (error != 0) {
+		printk(RAMDUMP_PREFIX_STR RAMDUMP_ERROR_STR"\r\n");
+	}
+
+	printk(RAMDUMP_PREFIX_STR RAMDUMP_CRC32_STR "0x%x\n", crc_value);
+	printk(RAMDUMP_PREFIX_STR RAMDUMP_END_STR"\r\n");
+}
+
+void ramdump_print_buffer_output(uint8_t *buf, size_t buflen)
+{
+	uint8_t log_ptr = 0;
+	size_t remaining = buflen;
+	size_t i = 0;
+	struct ramdump_print_ctx *ctx = (struct ramdump_print_ctx *)ram_get_unused();
+
+	if ((buf == NULL) || (buflen == 0)) {
+		ctx->error = -EINVAL;
+		remaining = 0;
+	}
+
+	ctx->crc_value = utils_crc32(ctx->crc_value, buf, buflen);
+
+	while (remaining > 0) {
+		if (hex2char(buf[i] >> 4, &ctx->log_buf[log_ptr]) < 0) {
+			printk("dump err %x\n", buf[i]);
+			ctx->error = -EINVAL;
+			break;
+		}
+		log_ptr++;
+
+		if (hex2char(buf[i] & 0xf, &ctx->log_buf[log_ptr]) < 0) {
+			printk("dump err %x\n", buf[i]);
+			ctx->error = -EINVAL;
+			break;
+		}
+		log_ptr++;
+
+		i++;
+		remaining--;
+
+		if ((log_ptr >= LOG_BUF_SZ) || (remaining == 0)) {
+			ctx->log_buf[log_ptr] = '\0';
+			printk(RAMDUMP_PREFIX_STR "%s \n", (char *)(ctx->log_buf));
+			log_ptr = 0;
+
+			k_busy_wait(1000);
+		}
+	}
+}
+
+int ramdump_print_callback(uint8_t *data, uint32_t max_len)
+{
+	ramdump_print_buffer_output(data,  max_len);
 	return 0;
 }
 
 int ramdump_print(void)
 {
-	return ramdump_transfer(ramdump_print_callback);
+	struct ramdump_print_ctx *ctx = (struct ramdump_print_ctx *)ram_get_unused();
+
+	memset(ctx, 0, sizeof(struct ramdump_print_ctx));
+
+	ramdump_print_start();
+	ramdump_transfer(ctx->data_buf, LOG_DATA_BUF_SZE, ramdump_print_callback);
+	ramdump_print_end(ctx->error, ctx->crc_value);
+
+	return ctx->error;
 }

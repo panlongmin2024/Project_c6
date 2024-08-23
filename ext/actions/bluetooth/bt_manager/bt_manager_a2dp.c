@@ -559,8 +559,12 @@ void bt_manager_auto_reconnect_resume_play(uint16_t hdl)
 
 	if (!dev_info->need_resume_play)
 		return;
-	
+
 	dev_info->need_resume_play = 0;
+
+	if (reconnect_config->reconnect_resume_play == 0) {
+		return;
+	}
 
 	SYS_LOG_WRN("ready resume play");
 	

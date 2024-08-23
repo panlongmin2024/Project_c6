@@ -64,7 +64,7 @@ ifdef CONFIG_ACTIONS_ALGORITHMS_LIBRARY
   endif
 
   ifdef CONFIG_PARSER_AAC
-     ALL_LIBS += _k1_a23_p
+     ALL_LIBS += _k1_aac_p
   endif
 
   ifdef CONFIG_PARSER_WAV
@@ -72,7 +72,7 @@ ifdef CONFIG_ACTIONS_ALGORITHMS_LIBRARY
   endif
 
   ifdef CONFIG_PARSER_WMA
-     ALL_LIBS += _k1_w13_p
+     ALL_LIBS += _k1_wma_p
   endif
 
   ifdef CONFIG_PARSER_M4A

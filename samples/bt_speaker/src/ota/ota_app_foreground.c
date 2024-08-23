@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define SYS_LOG_DOMAIN "ota"
+
 #include <kernel.h>
 #include <device.h>
 #include <thread_timer.h>
@@ -58,6 +60,7 @@
 #include <serial_flasher.h>
 #include <broadcast.h>
 #endif
+#include <fs_manager.h>
 
 #define CONFIG_OTA_APP_AUTO_START
 
@@ -71,17 +74,22 @@
 #define OTA_STORAGE_DEVICE_NAME		CONFIG_XSPI_NOR_ACTS_DEV_NAME
 #endif
 
-#define CONFIG_OTA_THREAD_STACK_SIZE (2048)
+//#define CONFIG_OTA_THREAD_STACK_SIZE (2048)
+
+static k_tid_t g_ota_sub_thread = NULL;
 
 static struct ota_upgrade_info *g_ota;
 #ifdef CONFIG_OTA_BACKEND_SDCARD
 static struct ota_backend *backend_sdcard;
 #endif
+#ifdef CONFIG_OTA_BACKEND_UHOST
+static struct ota_backend *backend_uhost;
+#endif
 #ifdef CONFIG_OTA_BACKEND_BLUETOOTH
 static struct ota_backend *backend_bt;
 #endif
 static bool is_sd_ota = false;
-static bool is_ota_need_poweroff;
+static bool is_ota_need_poweroff = false;
 
 #ifdef CONFIG_OTA_BACKEND_UART
 static struct ota_backend *backend_uart;
@@ -207,15 +215,35 @@ extern void ota_app_backend_callback(struct ota_backend *backend, int cmd,
 	}
 }
 
+#ifdef CONFIG_OTA_BACKEND_UHOST
+struct ota_backend_disk_init_param uhost_init_param = {
+	.fpath = "USB:ota.bin",
+};
+
+int ota_app_init_uhost(void)
+{
+	backend_uhost =
+		ota_backend_disk_init(ota_app_backend_callback,
+				&uhost_init_param);
+	if (!backend_uhost) {
+		SYS_LOG_INF("failed to init uhost ota");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+#endif
+
+
 #ifdef CONFIG_OTA_BACKEND_SDCARD
-struct ota_backend_sdcard_init_param sdcard_init_param = {
+struct ota_backend_disk_init_param sdcard_init_param = {
 	.fpath = "SD:ota.bin",
 };
 
 int ota_app_init_sdcard(void)
 {
 	backend_sdcard =
-	    ota_backend_sdcard_init(ota_app_backend_callback,
+	    ota_backend_disk_init(ota_app_backend_callback,
 				    &sdcard_init_param);
 	if (!backend_sdcard) {
 		SYS_LOG_INF("failed to init sdcard ota");
@@ -371,6 +399,7 @@ void serial_flasher_save_letws_data(uint8_t *data, uint32_t len)
 
 static void sys_reboot_by_ota(void)
 {
+	SYS_LOG_INF("");
 	struct app_msg msg = { 0 };
 	msg.type = MSG_REBOOT;
 	msg.cmd = REBOOT_REASON_OTA_FINISHED;
@@ -515,12 +544,13 @@ static void ota_app_start_ota_upgrade(void)
 }
 #endif
 
-static void ota_app_stop_ota_upgrade(void)
+static void ota_app_stop_ota_upgrade(bool app_switch)
 {
 	struct app_msg msg = { 0 };
 
 	msg.type = MSG_OTA_APP_EVENT;
 	msg.cmd = MSG_OTA_MESSAGE_CMD_EXIT_APP;
+	msg.value = app_switch;
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }
 
@@ -550,7 +580,6 @@ static int _ota_app_init(void *p1, void *p2, void *p3)
 
 
 #ifdef CONFIG_OTA_APP_AUTO_START
-	//app_switch_lock(1);
 	ota_app_start_ota_upgrade();
 #endif
 
@@ -582,10 +611,8 @@ static int _ota_exit(void)
 
 static void ota_thread_deal(void *p1, void *p2, void *p3)
 {
-	uint32_t switch_last_app;
+	uint32_t switch_last_app = 1;
 	struct ota_upgrade_check_param param;
-
-	switch_last_app = 1;
 
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
 	/* to fix ble rx data error for low frequency */
@@ -600,65 +627,77 @@ static void ota_thread_deal(void *p1, void *p2, void *p3)
 	param.data_buf = media_mem_get_cache_pool(OTA_UPGRADE_BUF,  AUDIO_STREAM_TTS);
 	param.data_buf_size = media_mem_get_cache_pool_size(OTA_UPGRADE_BUF,  AUDIO_STREAM_TTS);
 
-#ifdef CONFIG_PLAYTTS
-	tts_manager_lock();
-	tts_manager_wait_finished(true);
-#endif
-
 	desktop_manager_lock();
 	if (ota_upgrade_check(g_ota, &param)) {
 		ota_view_show_upgrade_result("Fail", true);
 		desktop_manager_unlock();
-		if(!is_ota_need_poweroff){
+		if (!is_ota_need_poweroff) {
 			switch_last_app = 1;
 		}
 	} else {
 		ota_view_show_upgrade_result("Succ", false);
 	}
 
-#ifdef CONFIG_PLAYTTS
-	tts_manager_unlock();
-#endif
-
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
 	soc_dvfs_unset_level(SOC_DVFS_LEVEL_ALL_PERFORMANCE, "ota");
 #endif
 
-#ifdef CONFIG_OTA_APP_AUTO_START
-	//app_switch_unlock(1);
-	ota_app_stop(switch_last_app);
-#endif
-
-	ota_app_stop_ota_upgrade();
+	ota_app_stop_ota_upgrade(switch_last_app);
 }
-
 
 static void _ota_create_sub_thread(void)
 {
 	uint8_t *thread_stack;
 	uint32_t thread_stack_size;
 
-#ifdef CONFIG_PLAYTTS
-	tts_manager_wait_finished(true);
-#endif
+	if(g_ota_sub_thread != NULL) {
+		SYS_LOG_WRN("ota thread was created");
+		return;
+	}
 
 	thread_stack = media_mem_get_cache_pool(OTA_THREAD_STACK,  AUDIO_STREAM_TTS);
 	thread_stack_size = media_mem_get_cache_pool_size(OTA_THREAD_STACK,  AUDIO_STREAM_TTS);
 
-	printk("create thread stack %p size %x\n", thread_stack, thread_stack_size);
+	SYS_LOG_INF("stack %p size %x\n", thread_stack, thread_stack_size);
 
 	if (!thread_stack) {
 		return;
 	}
 
-	os_thread_create(thread_stack, thread_stack_size,
+#ifdef CONFIG_PLAYTTS
+	//ota thead stack shares memory with media lib
+	tts_manager_wait_finished(true);
+	tts_manager_lock();
+#endif
+
+	g_ota_sub_thread = (k_tid_t)os_thread_create(thread_stack, thread_stack_size,
 			 ota_thread_deal, NULL, NULL, NULL, 5, 0, OS_NO_WAIT);
 
 }
 
-static void _ota_destory_sub_thread(void)
+static void _ota_exit_sub_thread(bool app_switch)
 {
-	printk("ota sub thread exit\n");
+	if(g_ota_sub_thread == NULL) {
+		SYS_LOG_WRN("no ota thread");
+		return;
+	}
+	SYS_LOG_INF("%d", app_switch);
+
+	//Has ota sub thread exited?
+	//Sleep to let ota sub thread exit.
+	k_sleep(10);
+
+	g_ota_sub_thread = NULL;
+#ifdef CONFIG_PLAYTTS
+	//ota thead stack shares memory with media lib
+	tts_manager_unlock();
+#endif
+
+#ifdef CONFIG_OTA_APP_AUTO_START
+	ota_app_stop(app_switch);
+#endif
+
+
 }
 
 void ota_input_event_proc(struct app_msg *msg)
@@ -689,7 +728,7 @@ static int _ota_proc_msg(struct app_msg *msg)
 				power_led_cnt = 0;
 				success = 0;
 			}else if(msg->cmd == MSG_OTA_MESSAGE_CMD_EXIT_APP){
-				_ota_destory_sub_thread();
+				_ota_exit_sub_thread(msg->value);
 				thread_timer_stop(&ota_led_timer);
 			}
 			break;
@@ -731,31 +770,6 @@ static int _ota_dump_app_state(void)
 	return 0;
 }
 
-#ifdef CONFIG_DEBUG_RAMDUMP
-
-#include <debug/ramdump.h>
-#include <stack_backtrace.h>
-
-static void crash_dump_ramdump(void)
-{
-	if(!ota_upgrade_is_ota_running()){
-		if(ramdump_check() != 0){
-			printk("start ramdump...\n");
-			ramdump_save();
-		}else{
-			printk("ramdump data existed\n");
-		}
-	}else{
-		printk("ota is running, skip ramdump!\n");
-	}
-}
-
-CRASH_DUMP_REGISTER(ramdump_register, 1) =
-{
-    .dump = crash_dump_ramdump,
-};
-
-#endif
 
 DESKTOP_PLUGIN_DEFINE(DESKTOP_PLUGIN_ID_OTA, _ota_app_init, _ota_exit, _ota_proc_msg, \
 	_ota_dump_app_state, NULL, NULL, NULL);

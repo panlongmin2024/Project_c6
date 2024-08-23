@@ -79,8 +79,8 @@ struct aotg_dc_ep_ctrl_prv {
  */
 struct usb_aotg_dc_prv {
 	usb_dc_status_callback status_cb;
-	struct aotg_dc_ep_ctrl_prv in_ep_ctrl[USB_AOTG_IN_EP_NUM];
-	struct aotg_dc_ep_ctrl_prv out_ep_ctrl[USB_AOTG_OUT_EP_NUM];
+	struct aotg_dc_ep_ctrl_prv in_ep_ctrl[USB_AOTG_IN_EP_NUM + 1];
+	struct aotg_dc_ep_ctrl_prv out_ep_ctrl[USB_AOTG_OUT_EP_NUM + 1];
 	uint8_t attached;
 	uint8_t phase;	/* Control transfer stage */
 	uint8_t speed;
@@ -2614,6 +2614,7 @@ static int usb_aotg_dma_init(void)
 	usb_aotg_dma.dma_dev = device_get_binding(CONFIG_DMA_0_NAME);
 	if (!usb_aotg_dma.dma_dev) {
 		printk("%s no dma_dev\n", __func__);
+		return -ENODEV;
 	}
 
 	/*
@@ -2622,6 +2623,7 @@ static int usb_aotg_dma_init(void)
 	usb_aotg_dma.epout_dma_single = dma_request(usb_aotg_dma.dma_dev, 0xff);
 	if (usb_aotg_dma.epout_dma_single < 0) {
 		printk("%s epout single dma_request\n", __func__);
+		return -ENODEV;
 	}
 
 	usb_aotg_dma.epout_dma_config_single.channel_direction = PERIPHERAL_TO_MEMORY;
@@ -2636,6 +2638,7 @@ static int usb_aotg_dma_init(void)
 		&usb_aotg_dma.epout_dma_config_single);
 	if (ret) {
 		printk("%s epout single dma_config %d\n", __func__, ret);
+		return -ENODEV;
 	}
 
 	/*
@@ -2644,6 +2647,7 @@ static int usb_aotg_dma_init(void)
 	usb_aotg_dma.epout_dma_burst8 = dma_request(usb_aotg_dma.dma_dev, 0xff);
 	if (usb_aotg_dma.epout_dma_burst8 < 0) {
 		printk("%s epout burst8 dma_request\n", __func__);
+		return -ENODEV;
 	}
 
 	usb_aotg_dma.epout_dma_config_burst8.channel_direction = PERIPHERAL_TO_MEMORY;
@@ -2658,6 +2662,7 @@ static int usb_aotg_dma_init(void)
 		&usb_aotg_dma.epout_dma_config_burst8);
 	if (ret) {
 		printk("%s epout burst8 dma_config %d\n", __func__, ret);
+		return -ENODEV;
 	}
 
 	/*
@@ -2666,6 +2671,7 @@ static int usb_aotg_dma_init(void)
 	usb_aotg_dma.epin_dma = dma_request(usb_aotg_dma.dma_dev, 0xff);
 	if (usb_aotg_dma.epin_dma < 0) {
 		printk("%s epin dma_request\n", __func__);
+		return -ENODEV;
 	}
 	usb_aotg_dma.epout_dma_config_single.channel_direction = MEMORY_TO_PERIPHERAL;
 	usb_aotg_dma.epout_dma_config_single.dma_callback = usb_aotg_epin_dma_callback;
@@ -2679,6 +2685,7 @@ static int usb_aotg_dma_init(void)
 		&usb_aotg_dma.epout_dma_config_single);
 	if (ret) {
 		printk("%s epin dma_config %d\n", __func__, ret);
+		return -ENODEV;
 	}
 
 	return 0;

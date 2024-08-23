@@ -261,7 +261,7 @@ static int pts_broadcast_source_start(int argc, char *argv[])
 {
 	uint8_t local_name[33] = {0};
 
-	struct bt_broadcast_source_create_param param = { 0 };
+	struct bt_broadcast_source_create_param *param = { 0 };
 	struct bt_broadcast_source_big_param big_param;
 	struct bt_le_adv_param adv_param = { 0 };
 	struct bt_le_per_adv_param per_adv_param = { 0 };
@@ -500,32 +500,40 @@ static int pts_broadcast_source_start(int argc, char *argv[])
 	adv_param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
 	adv_param.sid = BT_EXT_ADV_SID_BROADCAST;
 
-	param.broadcast_id = 0;
-	memcpy(local_name, "Broadcaster",11);
-	param.local_name = local_name;
-	param.broadcast_name = local_name;
-	param.qos = qos;
-	param.appearance = appearance;
-	param.num_subgroups = 1;
-	param.subgroup = (struct bt_broadcast_subgroup *)&subgroup;
-	param.big_param = &big_param;
-	param.per_adv_param = &per_adv_param;
-	param.adv_param = &adv_param;
+	param = mem_malloc(sizeof(*param));
+	if (param == NULL) {
+		SYS_LOG_ERR("alloc failed\n");
+		return -EINVAL;
+	}
 
-	ret = bt_manager_broadcast_source_create(&param);
+	param->broadcast_id = 0;
+	memcpy(local_name, "Broadcaster",11);
+	param->local_name = local_name;
+	param->broadcast_name = local_name;
+	param->qos = qos;
+	param->appearance = appearance;
+	param->num_subgroups = 1;
+	param->subgroup = (struct bt_broadcast_subgroup *)&subgroup;
+	param->big_param = &big_param;
+	param->per_adv_param = &per_adv_param;
+	param->adv_param = &adv_param;
+
+	ret = btif_broadcast_source_create(param);
 	if (ret < 0) {
 		SYS_LOG_ERR("failed");
-		return ret;
+		goto exit;
 	}
 	s_ctx.bis_num = bis_num;
 
-	return 0;
+exit:
+	mem_free(param);
+	return ret;
 }
 
 
 static int pts_broadcast_source_enable(int argc, char *argv[])
 {
-	bt_manager_broadcast_source_enable(0);
+	btif_broadcast_source_enable(0);
 	return 0;
 }
 
@@ -2611,6 +2619,33 @@ int pts_le_audio_init(void)
 	pts_reset_ext_adv(0, NULL);
 
 	return 0;
+}
+
+extern const struct bt_gatt_service_static mcs_svc;
+extern const struct bt_gatt_service_static gtbs_svc;
+extern const struct bt_gatt_service_static mics_aics_svc0;
+extern const struct bt_gatt_service_static mics_svc;
+extern const struct bt_gatt_service_static vcs_svc;
+extern const struct bt_gatt_service_static vcs_vocs_svc;
+#if defined(CONFIG_BT_VOCS)
+extern const struct bt_gatt_service_static vocs_svc;
+#endif
+void pts_le_audio_service_disable(void)
+{
+	if (bt_pts_is_enabled()) {
+		bt_gatt_svc_disable(&vcs_svc);
+	} else {
+#ifndef CONFIG_BT_LE_AUDIO_MASTER
+		bt_gatt_svc_disable(&mcs_svc);
+		bt_gatt_svc_disable(&gtbs_svc);
+#endif
+		bt_gatt_svc_disable(&mics_aics_svc0);
+		bt_gatt_svc_disable(&mics_svc);
+		bt_gatt_svc_disable(&vcs_vocs_svc);
+#if defined(CONFIG_BT_VOCS)
+		bt_gatt_svc_disable(&vocs_svc);
+#endif
+	}
 }
 
 void bt_manger_lea_event_pts_process(btsrv_audio_event_e event, void *data, int size)

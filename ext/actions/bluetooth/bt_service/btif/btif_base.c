@@ -197,11 +197,12 @@ int btif_br_disconnect(bd_address_t *bd)
 
 void btif_br_set_gfp_mode(bool valid)
 {
-	int flags;
+    int flags;
 
-	flags = btsrv_set_negative_prio();
-	btsrv_connect_set_gfp_status(valid);
-	btsrv_revert_prio(flags);
+    flags = btsrv_set_negative_prio();
+    btsrv_connect_set_gfp_status(valid);
+    btsrv_scan_update_mode(true);
+    btsrv_revert_prio(flags);
 }
 
 

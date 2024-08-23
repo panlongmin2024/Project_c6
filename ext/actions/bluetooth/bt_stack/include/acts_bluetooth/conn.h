@@ -1771,6 +1771,17 @@ int bt_conn_set_snoop_switch_lock(struct bt_conn *conn, uint8_t lock);
  */
 int bt_conn_is_le_switch_connected(struct bt_conn *conn);
 
+typedef uint8_t (*bt_conn_buffer_match)(struct bt_conn *conn,uint8_t *data,int len);
+/** @brief drop buffer in tx queue
+ *
+ *  @param conn Connection object.
+ *  @param buffer_match drop the matched buffer.
+ *  @param drop_count count of the buffer to drop.
+ *
+ *  @return count of buffer dropped.
+ */
+int bt_conn_drop_tx_buffer(struct bt_conn *conn,bt_conn_buffer_match buffer_match,uint8_t drop_count);
+
 /* Actions add end */
 
 #ifdef __cplusplus

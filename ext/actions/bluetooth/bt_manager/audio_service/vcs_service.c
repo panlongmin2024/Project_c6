@@ -51,8 +51,31 @@ BT_GATT_SERVICE_DEFINE(vcs_svc,
 			       bt_vcs_read_flags, NULL, NULL),
 	BT_GATT_CCC(flags_cfg_changed,
 		    BT_GATT_PERM_READ | BT_AUDIO_GATT_PERM_WRITE),
-#if (defined(CONFIG_BT_LEA_PTS_TEST) && defined(CONFIG_BT_VOCS))
+);
+
+#ifdef CONFIG_BT_LEA_PTS_TEST
+BT_GATT_SERVICE_DEFINE(vcs_vocs_svc,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS),
+	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_STATE,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+			       BT_AUDIO_GATT_PERM_READ,
+			       bt_vcs_read_vol_state, NULL, NULL),
+	BT_GATT_CCC(volume_state_cfg_changed,
+		    BT_GATT_PERM_READ | BT_AUDIO_GATT_PERM_WRITE),
+	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_CONTROL,
+			       BT_GATT_CHRC_WRITE,
+			       BT_AUDIO_GATT_PERM_WRITE,
+			       NULL, bt_vcs_write_control, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_FLAGS,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+			       BT_AUDIO_GATT_PERM_READ,
+			       bt_vcs_read_flags, NULL, NULL),
+	BT_GATT_CCC(flags_cfg_changed,
+		    BT_GATT_PERM_READ | BT_AUDIO_GATT_PERM_WRITE),
+#if defined(CONFIG_BT_VOCS)
 	BT_GATT_INCLUDE_SERVICE((void *)attr_vocs_svc),
 #endif
 );
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
+
 #endif /* CONFIG_BT_VCS_SERVICE */

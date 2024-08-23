@@ -463,6 +463,7 @@ static int _sys_standby_process_normal(void)
 	u32_t wakelocks = sys_wakelocks_check();
 	static uint8_t refresh_flag = 0x00;
 	static int tmp_test_idle_cnt = 0;
+	static u32_t last_timestamp;
 
 	if((refresh_flag != sys_pm_get_power_5v_status()))
 	{	
@@ -502,6 +503,11 @@ static int _sys_standby_process_normal(void)
 #endif
 	if((++tmp_test_idle_cnt%10) == 0)
 		SYS_LOG_INF("idle time %d", sys_wakelocks_get_free_time());
+
+	if((sys_wakelocks_get_free_time() - last_timestamp) > 10000){
+		SYS_LOG_INF("idle time %d", sys_wakelocks_get_free_time());
+		last_timestamp = sys_wakelocks_get_free_time();
+	}
 
 	if (sys_wakelocks_get_free_time() > standby_context->auto_standby_time)
 		_sys_standby_enter_s1();
@@ -965,7 +971,6 @@ int system_get_power_run_mode(void)
 }
 void sys_standby_time_set(u32_t standby,u32_t power)
 {
-	SYS_LOG_INF("------> standby %d power %d\n", standby,power);
 	standby_context = &global_standby_context;
 	standby_context->auto_standby_time = standby*1000;
 	standby_context->auto_powerdown_time = power*1000;

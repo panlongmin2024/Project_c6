@@ -117,6 +117,7 @@ timeline_t *audio_policy_get_encode_timeline(uint8_t stream_type, u8_t format,vo
 		|| stream_type == AUDIO_STREAM_LINEIN
 		|| stream_type == AUDIO_STREAM_I2SRX_IN
 		|| stream_type == AUDIO_STREAM_SPDIF_IN
+		|| stream_type == AUDIO_STREAM_MIC_IN
 		|| stream_type == AUDIO_STREAM_LOCAL_MUSIC)
 		&& format == NAV_TYPE) {
 		return timeline_get_by_type_and_onwer(TIMELINE_TYPE_MEDIA_ENCODE,tx_timeline_owner);
@@ -344,6 +345,7 @@ int audio_policy_get_out_input_start_threshold(uint8_t stream_type, int format, 
 	case AUDIO_STREAM_SPDIF_IN:
 	case AUDIO_STREAM_LINEIN:
 	case AUDIO_STREAM_I2SRX_IN:
+	case AUDIO_STREAM_MIC_IN:
 		th = 22;
 		break;
 	case AUDIO_STREAM_TTS:
@@ -584,7 +586,8 @@ u16_t audio_policy_get_record_pcm_buff_size(u8_t stream_type, int sample_rate_in
 		}
 	} else if (stream_type == AUDIO_STREAM_SPDIF_IN
 		|| stream_type == AUDIO_STREAM_LINEIN
-		|| stream_type == AUDIO_STREAM_I2SRX_IN) {
+		|| stream_type == AUDIO_STREAM_I2SRX_IN
+		|| stream_type == AUDIO_STREAM_MIC_IN) {
 		//TODO: support for 44.1k
 		pcm_buff_size =  sample_rate_input * 2 * 2 * 2 * 2;
 
@@ -628,7 +631,8 @@ u16_t audio_policy_get_track_pcm_buff_size(u8_t stream_type, int sample_rate, ui
 		|| stream_type == AUDIO_STREAM_LINEIN
 		|| stream_type == AUDIO_STREAM_I2SRX_IN
 		|| stream_type == AUDIO_STREAM_USOUND
-		|| stream_type == AUDIO_STREAM_LOCAL_MUSIC) {
+		|| stream_type == AUDIO_STREAM_LOCAL_MUSIC
+		|| stream_type == AUDIO_STREAM_MIC_IN) {
 		//TODO: support for 44.1k
 		pcm_buff_size =  sample_rate * 2 * 2 * 2 * 2;
 
@@ -830,6 +834,7 @@ int audio_policy_get_channel_resample_aps(uint8_t stream_type, int format, bool 
 	case AUDIO_STREAM_USOUND:
 	case AUDIO_STREAM_SOUNDBAR:
 	case AUDIO_STREAM_SPDIF_IN:
+	case AUDIO_STREAM_MIC_IN:
 	case AUDIO_STREAM_LINEIN:
 	case AUDIO_STREAM_I2SRX_IN:
 	case AUDIO_STREAM_LOCAL_MUSIC:
@@ -1346,7 +1351,8 @@ int audio_policy_get_increase_threshold(int format, u8_t stream_type)
 				return 38;
 			}
 #else
-			if (stream_type == AUDIO_STREAM_SPDIF_IN || stream_type == AUDIO_STREAM_LINEIN || stream_type == AUDIO_STREAM_I2SRX_IN) {
+			if (stream_type == AUDIO_STREAM_SPDIF_IN || stream_type == AUDIO_STREAM_LINEIN || stream_type == AUDIO_STREAM_I2SRX_IN
+				|| stream_type == AUDIO_STREAM_MIC_IN) {
 				return 32 + audio_policy_get_bis_link_delay_ms();
 			} else if (stream_type == AUDIO_STREAM_USOUND ||stream_type == AUDIO_STREAM_LOCAL_MUSIC) {
 				return 32 + audio_policy_get_bis_link_delay_ms();

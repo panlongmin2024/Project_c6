@@ -483,8 +483,29 @@ void main_hotplug_event_handle(struct app_msg *msg)
 		}
 #endif
 		break;
-	case HOTPLUG_SDCARD:
-	case HOTPLUG_USB_HOST:
+
+#ifdef CONFIG_LCMUSIC_APP
+	case HOTPLUG_SDCARD: {
+		if (msg->value == HOTPLUG_IN) {
+			system_app_launch_add(DESKTOP_PLUGIN_ID_SDCARD_PLAYER, 1);
+		}
+		else if (msg->value == HOTPLUG_OUT) {
+			system_app_launch_del(DESKTOP_PLUGIN_ID_SDCARD_PLAYER);
+		}
+		break;
+	}
+
+	case HOTPLUG_USB_HOST: {
+		if (msg->value == HOTPLUG_IN) {
+			system_app_launch_add(DESKTOP_PLUGIN_ID_USB_PLAYER, 1);
+		}
+		else if (msg->value == HOTPLUG_OUT) {
+			system_app_launch_del(DESKTOP_PLUGIN_ID_USB_PLAYER);
+		}
+		break;
+	}
+#endif
+
 	default:
 		SYS_LOG_WRN("skip type: %d!\n", msg->cmd);
 		break;

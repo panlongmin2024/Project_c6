@@ -153,6 +153,7 @@ static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0));
 		set_power_first_factory_reset_flag(1);
 		set_property_factory_reset_flag(0);
+	    pd_manager_set_poweron_filte_battery_led(WLT_FILTER_NOTHING);
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
 	}
 	#ifdef CONFIG_BT_SELF_APP

@@ -8,6 +8,8 @@
  * @file
  * @brief ota view
  */
+#define SYS_LOG_DOMAIN "ota"
+
 #include <logging/sys_log.h>
 #include "ota_app.h"
 #include "app_ui.h"
