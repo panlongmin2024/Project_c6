@@ -226,12 +226,13 @@ void key_event_handle(struct device *dev, struct input_value *val)
 	default:
 		break;
 	}
-	SYS_LOG_INF("Plm debnug:val=0x%x type:0x%x report_type:0x%x time:%d need:%d lock:%d\n",
-				val->code,input_manager->press_type,input_manager->report_key_value,input_manager->press_timer,need_report,input_manager_islock());
+	SYS_LOG_INF("Plm debnug:val=0x%x type:0x%x report_type:0x%x time:%d need:%d\n",
+				val->code,input_manager->press_type,input_manager->report_key_value,input_manager->press_timer,need_report);
 	if (need_report) {
 		input_manager->report_key_value = input_manager->press_type
 									| input_manager->press_code;
 		if (input_manager->event_cb) {
+			SYS_LOG_INF("------> key report!\n");
 			input_manager->event_cb(input_manager->report_key_value, EV_KEY);
 		}
 
