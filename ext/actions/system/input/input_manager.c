@@ -68,7 +68,7 @@ struct input_manager_info *input_manager;
 void report_key_event(struct k_work *work)
 {
 	struct input_manager_info *input = CONTAINER_OF(work, struct input_manager_info, work_item);
-
+	SYS_LOG_INF("----> keyvalue %x\n",input->report_key_value);
 	if (input_manager->filter_itself) {
 		if ((input->report_key_value & KEY_TYPE_SHORT_UP)
 			|| (input->report_key_value & KEY_TYPE_DOUBLE_CLICK)
