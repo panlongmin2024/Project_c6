@@ -249,8 +249,10 @@ void key_event_handle(struct device *dev, struct input_value *val)
 	#ifdef CONFIG_INPUT_MUTIPLE_CLICK
 		if (is_support_mutiple_click(input_manager->press_code)) {
 			input_manager->report_stamp = k_uptime_get();
+			SYS_LOG_INF("------> mutiple-1\n");
 			os_delayed_work_submit(&input_manager->work_item, QUICKLY_CLICK_DURATION + KEY_EVENT_CANCEL_DURATION);
 		} else {
+			SYS_LOG_INF("------> mutiple-2\n");
 			os_delayed_work_submit(&input_manager->work_item, 0);
 		}
 	#else
