@@ -333,10 +333,21 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
 	if(key_val != KEY_F1){
 		/* need reset led time at key_down or short! */
-		if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_LONG_DOWN){
-			printk("------> light up battery led!");
-			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
-		}		
+		if(key_val == KEY_PAUSE_AND_RESUME){
+			/*!!!PLAY按键因为判断双击，long_down消息特别慢*/
+			if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_LONG_DOWN||key_type==KEY_TYPE_SHORT_LONG_UP){
+				printk("------> playkey light up battery led!");
+				pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+			}		
+		}
+		else{
+			if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_LONG_DOWN){
+				printk("------> light up battery led!");
+				pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+			}			
+		}
+		
+		
 #ifdef CONFIG_C_TEST_BATT_MACRO 	
 	if(key_val == KEY_PAUSE_AND_RESUME){
 		wlt_simulation_test_switch();

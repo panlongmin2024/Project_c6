@@ -232,7 +232,6 @@ void key_event_handle(struct device *dev, struct input_value *val)
 		input_manager->report_key_value = input_manager->press_type
 									| input_manager->press_code;
 		if (input_manager->event_cb) {
-			SYS_LOG_INF("------> report: 0x%x!\n",input_manager->report_key_value);
 			input_manager->event_cb(input_manager->report_key_value, EV_KEY);
 		}
 
