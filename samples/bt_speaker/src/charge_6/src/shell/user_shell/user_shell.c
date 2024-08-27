@@ -217,6 +217,12 @@ static int shell_user_exit_standby(int argc, char *argv[])
 	sys_standby_time_set(CONFIG_AUTO_STANDBY_TIME_SEC,CONFIG_AUTO_POWEDOWN_TIME_SEC);
 	return 0;
 }
+static int shell_user_get_mode(int argc, char *argv[])
+{
+	int system_get_power_run_mode(void);
+	printk("------> %s current_mode %d\n",__func__,system_get_power_run_mode());
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -241,6 +247,7 @@ static const struct shell_cmd commands[] = {
 	{ "set_hex", shell_user_hex, "user hex2bin"},
 	{ "enter_stb", shell_user_enter_standby, "user enter stangby"},
 	{ "exit_stb", shell_user_exit_standby, "user exit stangby"},
+	{ "get_mode", shell_user_get_mode, "user get mode"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
