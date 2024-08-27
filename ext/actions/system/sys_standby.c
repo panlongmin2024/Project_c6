@@ -192,7 +192,7 @@ static int _sys_standby_check_auto_powerdown(bool flag)
 			
 		}
 
-		SYS_LOG_INF("[%d] vBus down!!!\n", __LINE__);
+		SYS_LOG_INF("[%d] vBus down!!!  mode %d\n", __LINE__,system_get_power_run_mode());
 
 	}else{
 		if (dc_power_in_status_read()) {
