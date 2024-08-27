@@ -482,7 +482,7 @@ void system_app_init(void)
 #ifdef CONFIG_PLAYTTS
 			tts_manager_lock();
 #endif			
-			trace_init();
+			//trace_init();
 			//ats_wlt_start();
 		}
 #endif
@@ -546,7 +546,7 @@ void system_app_init(void)
 			}
 		}
 	}else{
-		system_app_ota_init();
+		//system_app_ota_init();
 
 		system_ready();
 	}
