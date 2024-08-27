@@ -483,7 +483,7 @@ void system_app_init(void)
 			tts_manager_lock();
 #endif			
 			trace_init();
-			ats_wlt_start();
+			//ats_wlt_start();
 		}
 #endif
 #endif
