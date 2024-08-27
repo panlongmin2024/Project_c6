@@ -546,7 +546,7 @@ void system_app_init(void)
 			}
 		}
 	}else{
-		//system_app_ota_init();
+		system_app_ota_init();
 
 		system_ready();
 	}
