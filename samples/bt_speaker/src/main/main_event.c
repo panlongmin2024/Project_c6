@@ -464,7 +464,7 @@ void main_hotplug_event_handle(struct app_msg *msg)
 				if(!pd_manager_get_source_change_state())
 				{
 #ifdef CONFIG_LED_MANAGER
-					led_manager_set_display(128, LED_OFF, OS_FOREVER, NULL);
+					//led_manager_set_display(128, LED_OFF, OS_FOREVER, NULL);
 #endif	
 					sys_event_notify(SYS_EVENT_POWER_OFF);
 				}
