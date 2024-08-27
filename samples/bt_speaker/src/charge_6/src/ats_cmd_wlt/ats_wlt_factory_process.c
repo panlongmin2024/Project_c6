@@ -546,23 +546,31 @@ static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, i
 }
 static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
-	int result;
+	int ret1,ret2;
 	u8_t buffer[1+1] = {6,0};
 
 	ats_wlt_response_at_data(
 		dev, ATS_RESP_ENTER_NON_SIGNAL, sizeof(ATS_RESP_ENTER_NON_SIGNAL)-1, 
 		ATS_AT_CMD_RESP_OK, sizeof(ATS_AT_CMD_RESP_OK)-1);
 
-    result = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
-	property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
-	
-	if (result != 0){
-		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_NG);
+    ret1 = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
+	if(ret1==0){
+		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
 	}
-	else{
+
+	ret2 = property_set_int(CFG_BIN_TEST_ID, 1);
+	if(ret2 == 0) {
+		property_flush(CFG_BIN_TEST_ID);
+	}
+
+	if (ret1==0 && ret2==0){
 		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 		sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
 	}
+	else{
+		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_NG);
+	}
+	
 	return 0;
 }
 static int ats_wlt_shell_enter_adfu(struct device *dev, u8_t *buf, int len)
