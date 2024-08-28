@@ -1516,7 +1516,9 @@ static int cdc_shell_ats_rst_reboot(struct device *dev, u8_t *buf, int len)
 	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
 	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
 
-	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);	
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_RST_REBOOT, sizeof(ATS_CMD_RESP_RST_REBOOT)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 
 	return 0;
 }

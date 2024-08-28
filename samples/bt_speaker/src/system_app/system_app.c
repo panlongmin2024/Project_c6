@@ -235,7 +235,18 @@ static void system_btmgr_event_proc(struct app_msg* msg)
 	}
 }
 extern bool run_mode_is_demo(void);
-
+/* plm add for ats rst->reboot */
+void ats_test_rst_reboot_check(void)
+{
+	/* if command is rst->reboot,then check if need reboot */
+	char buf[2]={0};
+	SYS_LOG_INF("\n");
+	int ret = property_get(CFG_USER_ATS_REBOOT_SYSTEM,buf,1);
+	printf("------> ret %d reboot_dat %d\n",ret,buf[0]);
+	if(buf[0] == 6){
+		sys_pm_reboot(0);
+	}		
+}
 static void system_sys_event_proc(struct app_msg *msg)
 {
 	
@@ -307,7 +318,7 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 					SYS_EVENT_INF(EVENT_SYSTEM_REBOOT, msg.cmd);
 					#ifdef CONFIG_DATA_ANALY
 					data_analy_exit();
-					#endif
+					#endif				
 					system_power_reboot(msg.cmd);
 					break;
 
@@ -394,6 +405,7 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 					#ifdef CONFIG_DATA_ANALY
 					data_analy_exit();
 					#endif
+					ats_test_rst_reboot_check();
 				break;
 
 				default:

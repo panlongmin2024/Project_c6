@@ -140,8 +140,8 @@ void main_input_event_handle(struct app_msg *msg)
 		printf("------> factory reset ret %d reboot_dat %d\n",ret,buf[0]);
 		if(buf[0] == 6){
 			/* ATS set reboot flag, need reboot */
-			system_restore_factory_config();
-			sys_pm_reboot(0);
+			//system_restore_factory_config();
+			//sys_pm_reboot(0);
 		}
 		else{
 			sys_event_notify(SYS_EVENT_POWER_OFF);
