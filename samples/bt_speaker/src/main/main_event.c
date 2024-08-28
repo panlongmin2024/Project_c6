@@ -137,7 +137,7 @@ void main_input_event_handle(struct app_msg *msg)
 #endif
 		char buf[2]={0};
 		int ret = property_get(CFG_USER_ATS_REBOOT_SYSTEM,buf,1);
-		printf("------> ret %d reboot_dat %d\n",ret,buf[0]);
+		printf("------> factory reset ret %d reboot_dat %d\n",ret,buf[0]);
 		if(buf[0] == 6){
 			/* ATS set reboot flag, need reboot */
 			system_restore_factory_config();
