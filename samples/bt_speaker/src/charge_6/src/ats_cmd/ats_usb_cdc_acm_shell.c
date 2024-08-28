@@ -1492,7 +1492,7 @@ static int cdc_shell_ats_get_all_ver(struct device *dev, u8_t *buf, int len)
 	buffer[3] = (hwver%10)+'0';//sw + hw
 
 	//hex_to_string_2(pd_ver,buffer+5);
-	bin2hex(buffer+5, pd_ver, 1);
+	bin2hex(buffer+5, &pd_ver, 1);
 	hex_to_string_2(logic_ver, buffer+8);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
