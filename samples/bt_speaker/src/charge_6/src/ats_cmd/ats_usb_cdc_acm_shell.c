@@ -1479,7 +1479,7 @@ static int cdc_shell_ats_get_logic_ver(struct device *dev, u8_t *buf, int len)
 }
 static int cdc_shell_ats_get_all_ver(struct device *dev, u8_t *buf, int len)
 {	
-	uint8_t buffer[11] = "0000+00+00";
+	uint8_t buffer[22+1] = "BT:XXXX-PD:XX-Logic:XX";
 	
 	u8_t logic_ver = (u8_t)mcu_ui_get_logic_version();
 	u8_t pd_ver = pd_get_pd_version();
@@ -1488,17 +1488,36 @@ static int cdc_shell_ats_get_all_ver(struct device *dev, u8_t *buf, int len)
 	uint8_t hwver = fw_version_get_hw_code();
 	uint32_t swver_hex;
 	swver_hex = (((swver>>0)&0xf)*10) + (((swver>>8)&0xf)*100) + (((swver>>16)&0xf)*1000);
-	hex_to_string_4(swver_hex,buffer);
-	buffer[3] = (hwver%10)+'0';//sw + hw
+	hex_to_string_4(swver_hex,buffer+3);
+	buffer[6] = (hwver%10)+'0';//sw + hw
 
-	bin2hex(buffer+5, &pd_ver, 1);
-	hex_to_string_2(logic_ver, buffer+8);
+	bin2hex(buffer+11, &pd_ver, 1);
+	hex_to_string_2(logic_ver, buffer+20);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_GET_ALL_VER, sizeof(ATS_CMD_RESP_GET_ALL_VER)-1, 
 		buffer, sizeof(buffer)-1);		
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 	
+	return 0;
+}
+static int cdc_shell_ats_rst_reboot(struct device *dev, u8_t *buf, int len)
+{	
+	u8_t buffre[1+1] = {6,0};
+
+	/* 1.factory info reset */
+	struct app_msg msg = { 0 };
+    msg.type = MSG_INPUT_EVENT;
+    msg.cmd = MSG_FACTORY_DEFAULT;
+	msg.value = ATS_SYS_REBOOT_DELAY_TIME_MS;
+    send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
+
+	/* 2.save reboot flag */
+	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
+	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
+
+	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);	
+
 	return 0;
 }
 
@@ -1907,6 +1926,11 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* get all ver */
 		cdc_shell_ats_get_all_ver(dev, NULL, 0);
+	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_RST_REBOOT, sizeof(ATS_AT_CMD_RST_REBOOT)-1))
+	{		   
+		/* reset and reboot */
+		cdc_shell_ats_rst_reboot(dev, NULL, 0);
 	}	
 	else	
 	{

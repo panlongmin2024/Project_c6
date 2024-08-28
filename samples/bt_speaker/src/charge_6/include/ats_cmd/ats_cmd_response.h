@@ -83,5 +83,6 @@
 #define ATS_CMD_RESP_GET_CHIP_ID           				"TL_GET_CHIP_ID="
 #define ATS_CMD_RESP_GET_LOGIC_VER           			"TL_GET_LOGIC_VER="
 #define ATS_CMD_RESP_GET_ALL_VER           				"TL_DUT_ALL_VER="
+#define ATS_CMD_RESP_RST_REBOOT	           				"TL_RST_REBOOT="
 
 #endif

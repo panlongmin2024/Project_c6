@@ -123,5 +123,6 @@
 #define ATS_AT_CMD_GET_CHIP_ID           	"TL_GET_CHIP_ID"
 #define ATS_AT_CMD_GET_LOGIC_VER           	"TL_GET_LOGIC_VER"
 #define ATS_AT_CMD_GET_ALL_VER           	"TL_DUT_ALL_VER"
+#define ATS_AT_CMD_RST_REBOOT	           	"TL_RST_REBOOT"
 
 #endif
