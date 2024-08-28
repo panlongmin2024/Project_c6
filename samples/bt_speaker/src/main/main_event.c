@@ -135,18 +135,8 @@ void main_input_event_handle(struct app_msg *msg)
 #ifdef CONFIG_BT_SELF_APP
 		selfapp_config_reset();
 #endif
-		char buf[2]={0};
-		int ret = property_get(CFG_USER_ATS_REBOOT_SYSTEM,buf,1);
-		printf("------> factory reset ret %d reboot_dat %d\n",ret,buf[0]);
-		if(buf[0] == 6){
-			/* ATS set reboot flag, need reboot */
-			//system_restore_factory_config();
-			//sys_pm_reboot(0);
-		}
-		else{
-			sys_event_notify(SYS_EVENT_POWER_OFF);
-			system_restore_factory_config();			
-		}
+		sys_event_notify(SYS_EVENT_POWER_OFF);
+		system_restore_factory_config();	
 		break;
 	case MSG_KEY_SWITCH_APP:
 		if (bt_manager_tws_get_dev_role() != BTSRV_TWS_SLAVE) {
