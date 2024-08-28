@@ -759,6 +759,15 @@ bool mcu_ui_get_enable_bat_led_state(void)
     return val;
 }
 
+/* for factory test! */
+int mcu_ui_get_logic_version(void)
+{
+	int val = -1;
+	val = mcu_ui_get_led_code(MCU_SUPPLY_PROP_READ_LOGIC_VER);
+	
+    return val;
+}
+
 void mcu_ui_set_led_enable_state(int state)
 {
     printk("\n%s,state:0x%x \n",__func__,state);

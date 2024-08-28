@@ -113,7 +113,10 @@ enum mcu_manager_supply_property {
 	MCU_SUPPLY_PROP_FACTORY_TEST_KEY,
 
     MCU_SUPPLY_PROP_JUST_UP_LED_LEVEL,
-    MCU_SUPPLY_PROP_JUST_DOWN_LED_LEVEL
+    MCU_SUPPLY_PROP_JUST_DOWN_LED_LEVEL,
+
+	/* for factory test! */
+	MCU_SUPPLY_PROP_READ_LOGIC_VER
 };
 
 typedef union {

@@ -55,6 +55,7 @@ extern int pd_manager_test_set_sink_charge_current(u8_t step);
 extern int pd_manager_test_get_sink_charge_current(u8_t *sink_charge_step);
 extern u32_t fw_version_get_sw_code(void);
 extern u8_t fw_version_get_hw_code(void);
+extern int mcu_ui_get_logic_version(void);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -1434,6 +1435,66 @@ static int cdc_shell_ats_exit_standby(struct device *dev, u8_t *buf, int len)
 
 	return 0;
 }
+static int cdc_shell_ats_get_chip_id(struct device *dev, u8_t *buf, int len)
+{	
+	uint32_t uuid[4];
+	uint8_t uuid_str[UUID_STR_DATA_LEN + 1];
+    soc_get_system_uuid(uuid);
+	bin2hex(uuid_str, uuid, 16);
+	uuid_str[32] =  0;
+	
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_AT_CMD_GET_CHIP_ID, sizeof(ATS_AT_CMD_GET_CHIP_ID)-1, 
+		uuid_str, sizeof(uuid_str)-1);
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_AT_CMD_GET_CHIP_ID, sizeof(ATS_AT_CMD_GET_CHIP_ID)-1, 
+		(u8)uuid, sizeof(uuid));		
+
+	return 0;
+}
+static int cdc_shell_ats_get_logic_ver(struct device *dev, u8_t *buf, int len)
+{	
+	int ver = mcu_ui_get_logic_version();
+	char buffer[2] = {0};
+
+	if(ver>=0){
+		hex_to_string_2((u8_t)ver, buffer);
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_AT_CMD_GET_LOGIC_VER, sizeof(ATS_AT_CMD_GET_LOGIC_VER)-1, 
+			buffer, sizeof(buffer));		
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
+	}
+
+	return 0;
+}
+static int cdc_shell_ats_get_all_ver(struct device *dev, u8_t *buf, int len)
+{	
+	uint8_t buffer[11] = "0000+00+00";
+	
+	u8_t logic_ver = (u8_t)mcu_ui_get_logic_version();
+	u8_t pd_ver = pd_get_pd_version();
+	
+	uint32_t swver = fw_version_get_sw_code(); //for example 0x010700-1.7.0
+	uint8_t hwver = fw_version_get_hw_code();
+	uint32_t swver_hex;
+	swver_hex = (((swver>>0)&0xf)*10) + (((swver>>8)&0xf)*100) + (((swver>>16)&0xf)*1000);
+	hex_to_string_4(swver_hex,buffer);
+	buffer[3] = (hwver%10)+'0';//sw + hw
+
+	hex_to_string_2(pd_ver,buffer+5);
+	hex_to_string_2(logic_ver, buffer+8);
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_AT_CMD_GET_ALL_VER, sizeof(ATS_AT_CMD_GET_ALL_VER)-1, 
+		buffer, sizeof(buffer));		
+	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	
+	return 0;
+}
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -1825,7 +1886,22 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* exit standby */
 		cdc_shell_ats_exit_standby(dev, NULL, 0);	
-	}		
+	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_CHIP_ID, sizeof(ATS_AT_CMD_GET_CHIP_ID)-1))
+	{		   
+		/* get chip id */
+		cdc_shell_ats_get_chip_id(dev, NULL, 0);	
+	}
+	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_LOGIC_VER, sizeof(ATS_AT_CMD_GET_LOGIC_VER)-1))
+	{		   
+		/* get logic version */
+		cdc_shell_ats_get_logic_ver(dev, NULL, 0);
+	}
+	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_ALL_VER, sizeof(ATS_AT_CMD_GET_ALL_VER)-1))
+	{		   
+		/* get all ver */
+		cdc_shell_ats_get_all_ver(dev, NULL, 0);
+	}	
 	else	
 	{
 		//ats_usb_cdc_acm_write_data("live ats_usb_cdc_acm_shell_command_handler exit",sizeof("live ats_usb_cdc_acm_shell_command_handler exit")-1);
@@ -1837,3 +1913,4 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 __exit_exit:
     return -1;
 }
+
