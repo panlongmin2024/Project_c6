@@ -220,7 +220,8 @@ static int shell_user_exit_standby(int argc, char *argv[])
 static int shell_user_get_mode(int argc, char *argv[])
 {
 	int system_get_power_run_mode(void);
-	printk("------> %s current_mode %d\n",__func__,system_get_power_run_mode());
+	u8_t system_get_device_standby_mode(void);
+	printk("------> %s current_mode %d standby_sta %d\n",__func__,system_get_power_run_mode(),system_get_device_standby_mode());
 	return 0;
 }
 
