@@ -227,7 +227,6 @@ static int shell_user_get_mode(int argc, char *argv[])
 static int shell_user_get_uuid(int argc, char *argv[])
 {
 	uint32_t uuid[4];
-	uint8_t uuid_str[32 + 1];
 	int soc_get_system_uuid(unsigned int *uuid);
     soc_get_system_uuid(uuid);
 	printk("------> %s 0x%x 0x%x 0x%x 0x%x\n ",__func__,uuid[0],uuid[1],uuid[2],uuid[3]);
