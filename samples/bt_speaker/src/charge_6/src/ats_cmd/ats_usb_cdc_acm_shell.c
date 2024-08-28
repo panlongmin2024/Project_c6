@@ -1420,10 +1420,19 @@ static int cdc_shell_ats_bt_mac_write(struct device *dev, u8_t *buf, int len)
 
 static int cdc_shell_ats_enter_standby(struct device *dev, u8_t *buf, int len)
 {	
+	char buffer[2] = {0};
 	sys_standby_time_set(5,CONFIG_AUTO_POWEDOWN_TIME_SEC);
+	//ats_usb_cdc_acm_cmd_response_at_data(
+	//	dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
+	//	ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	u8_t system_get_device_standby_mode(void);
+	u8_t sta = system_get_device_standby_mode();
+	hex_to_string_2(sta, buffer);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
-		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+		buffer, sizeof(buffer));
+
 
 	return 0;
 }
@@ -1432,7 +1441,7 @@ static int cdc_shell_ats_exit_standby(struct device *dev, u8_t *buf, int len)
 	sys_standby_time_set(CONFIG_AUTO_STANDBY_TIME_SEC,CONFIG_AUTO_POWEDOWN_TIME_SEC);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_EXIT_STANDBY, sizeof(ATS_CMD_RESP_EXIT_STANDBY)-1, 
-		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);			
 
 	return 0;
 }
