@@ -577,7 +577,10 @@ void system_app_init(void)
 #endif
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-	//user_app_later_init();
+#ifdef CONFIG_WLT_ATS_ENABLE
+	if(!ats_wlt_get_enter_state())
+#endif
+	user_app_later_init();
 	tts_manager_add_event_lisener(main_system_tts_event_nodify);
 	if(run_mode_is_demo()&&(!dc_power_in_status_read())){
 		SYS_LOG_INF("[%d] run_mode_is_demo, but No dc_power_in \n", __LINE__);

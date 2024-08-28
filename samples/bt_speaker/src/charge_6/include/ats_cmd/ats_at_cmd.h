@@ -120,4 +120,8 @@
 #define ATS_AT_CMD_ENTER_STANDBY           	"TL_ENTER_STANDBY"
 #define ATS_AT_CMD_EXIT_STANDBY           	"TL_EXIT_STANDBY"
 
+#define ATS_AT_CMD_GET_CHIP_ID           	"TL_GET_CHIP_ID"
+#define ATS_AT_CMD_GET_LOGIC_VER           	"TL_GET_LOGIC_VER"
+#define ATS_AT_CMD_GET_ALL_VER           	"TL_DUT_ALL_VER"
+
 #endif

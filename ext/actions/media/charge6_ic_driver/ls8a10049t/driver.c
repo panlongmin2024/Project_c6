@@ -1036,7 +1036,12 @@ static int mcu_ls8a10049t_wlt_get_property(struct device *dev,enum mcu_manager_s
 
         case MCU_SUPPLY_PROP_ENABLE_LED_BAT:
             val->intval = bt_mcu_get_enable_bat_led_code();
-            break; 					  
+            break; 		
+
+		/* for factory test! */
+        case MCU_SUPPLY_PROP_READ_LOGIC_VER:
+            val->intval = get_ls8a10049t_read_Version();
+            break; 			
         default:
             break;               
     }

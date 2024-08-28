@@ -80,4 +80,8 @@
 #define ATS_CMD_RESP_ENTER_STANDBY           			"TL_ENTER_STANDBY="
 #define ATS_CMD_RESP_EXIT_STANDBY           			"TL_EXIT_STANDBY="
 
+#define ATS_CMD_RESP_GET_CHIP_ID           				"TL_GET_CHIP_ID="
+#define ATS_CMD_RESP_GET_LOGIC_VER           			"TL_GET_LOGIC_VER="
+#define ATS_CMD_RESP_GET_ALL_VER           				"TL_DUT_ALL_VER="
+
 #endif
