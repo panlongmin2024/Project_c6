@@ -70,6 +70,9 @@ LOG_MODULE_DECLARE(main, CONFIG_ACT_EVENT_APP_COMPILE_LEVEL);
 #include <run_mode/run_mode.h>
 #include <wltmcu_manager_supply.h>
 #endif
+
+#include <board.h>
+
 system_app_context_t system_app_context;
 
 extern int bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len);
