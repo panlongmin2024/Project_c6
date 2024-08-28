@@ -1449,7 +1449,7 @@ static int cdc_shell_ats_get_chip_id(struct device *dev, u8_t *buf, int len)
 
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_AT_CMD_GET_CHIP_ID, sizeof(ATS_AT_CMD_GET_CHIP_ID)-1, 
-		(u8_t)uuid, sizeof(uuid));		
+		(u8_t *)uuid, sizeof(uuid));		
 
 	return 0;
 }
