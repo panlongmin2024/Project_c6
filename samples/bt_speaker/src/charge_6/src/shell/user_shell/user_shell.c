@@ -224,6 +224,15 @@ static int shell_user_get_mode(int argc, char *argv[])
 	printk("------> %s current_mode %d standby_sta %d\n",__func__,system_get_power_run_mode(),system_get_device_standby_mode());
 	return 0;
 }
+static int shell_user_get_uuid(int argc, char *argv[])
+{
+	uint32_t uuid[4];
+	uint8_t uuid_str[32 + 1];
+	int soc_get_system_uuid(unsigned int *uuid);
+    soc_get_system_uuid(uuid);
+	printk("------> %s 0x%x 0x%x 0x%x 0x%x\n ",__func__,uuid[0],uuid[1],uuid[2],uuid[3]);
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -249,6 +258,7 @@ static const struct shell_cmd commands[] = {
 	{ "enter_stb", shell_user_enter_standby, "user enter stangby"},
 	{ "exit_stb", shell_user_exit_standby, "user exit stangby"},
 	{ "get_mode", shell_user_get_mode, "user get mode"},
+	{ "get_uuid", shell_user_get_uuid, "user uuid"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
