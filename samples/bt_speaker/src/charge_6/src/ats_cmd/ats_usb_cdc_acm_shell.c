@@ -63,7 +63,8 @@ void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[2] = '0' + num%100/10;
 	buf[3] = '0' + num%10;
 }
-void hex_to_string_2(u32_t num, u8_t *buf) {
+void hex_to_string_2(u8_t num, u8_t *buf) {
+	/* for example */
 	buf[0] = '0' + num%100/10;
 	buf[1] = '0' + num%10;
 }
@@ -250,7 +251,7 @@ static int cdc_shell_ats_bt_rssi(struct device *dev, u8_t *buf, int len)
    u8_t buffer[3+1] = "-99";
 	
 	RSSI_VALUE = -bt_manager_bt_read_rssi(0);
-	hex_to_string_2(RSSI_VALUE,buffer+1);
+	hex_to_string_2((u8_t)RSSI_VALUE,buffer+1);
 	//snprintf(buffer, sizeof(buffer), "%04d", RSSI_VALUE);
 	ats_usb_cdc_acm_cmd_response_at_data(
 			dev, ATS_CMD_RESP_READ_RSSI, sizeof(ATS_CMD_RESP_READ_RSSI)-1, 
@@ -1419,10 +1420,19 @@ static int cdc_shell_ats_bt_mac_write(struct device *dev, u8_t *buf, int len)
 
 static int cdc_shell_ats_enter_standby(struct device *dev, u8_t *buf, int len)
 {	
+	char buffer[2] = {0};
 	sys_standby_time_set(5,CONFIG_AUTO_POWEDOWN_TIME_SEC);
+	//ats_usb_cdc_acm_cmd_response_at_data(
+	//	dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
+	//	ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	u8_t system_get_device_standby_mode(void);
+	u8_t sta = system_get_device_standby_mode();
+	hex_to_string_2(sta, buffer);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
-		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+		buffer, sizeof(buffer));
+
 
 	return 0;
 }
@@ -1431,7 +1441,7 @@ static int cdc_shell_ats_exit_standby(struct device *dev, u8_t *buf, int len)
 	sys_standby_time_set(CONFIG_AUTO_STANDBY_TIME_SEC,CONFIG_AUTO_POWEDOWN_TIME_SEC);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_EXIT_STANDBY, sizeof(ATS_CMD_RESP_EXIT_STANDBY)-1, 
-		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);			
 
 	return 0;
 }
@@ -1444,12 +1454,8 @@ static int cdc_shell_ats_get_chip_id(struct device *dev, u8_t *buf, int len)
 	uuid_str[32] =  0;
 	
 	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_AT_CMD_GET_CHIP_ID, sizeof(ATS_AT_CMD_GET_CHIP_ID)-1, 
-		uuid_str, sizeof(uuid_str)-1);
-
-	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_AT_CMD_GET_CHIP_ID, sizeof(ATS_AT_CMD_GET_CHIP_ID)-1, 
-		(u8_t *)uuid, sizeof(uuid));		
+		dev, ATS_CMD_RESP_GET_CHIP_ID, sizeof(ATS_CMD_RESP_GET_CHIP_ID)-1, 
+		uuid_str, sizeof(uuid_str)-1);	
 
 	return 0;
 }
@@ -1461,7 +1467,7 @@ static int cdc_shell_ats_get_logic_ver(struct device *dev, u8_t *buf, int len)
 	if(ver>=0){
 		hex_to_string_2((u8_t)ver, buffer);
 		ats_usb_cdc_acm_cmd_response_at_data(
-			dev, ATS_AT_CMD_GET_LOGIC_VER, sizeof(ATS_AT_CMD_GET_LOGIC_VER)-1, 
+			dev, ATS_CMD_RESP_GET_LOGIC_VER, sizeof(ATS_CMD_RESP_GET_LOGIC_VER)-1, 
 			buffer, sizeof(buffer));		
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 	}
@@ -1485,11 +1491,12 @@ static int cdc_shell_ats_get_all_ver(struct device *dev, u8_t *buf, int len)
 	hex_to_string_4(swver_hex,buffer);
 	buffer[3] = (hwver%10)+'0';//sw + hw
 
-	hex_to_string_2(pd_ver,buffer+5);
+	//hex_to_string_2(pd_ver,buffer+5);
+	bin2hex(buffer+5, pd_ver, 1);
 	hex_to_string_2(logic_ver, buffer+8);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_AT_CMD_GET_ALL_VER, sizeof(ATS_AT_CMD_GET_ALL_VER)-1, 
+		dev, ATS_CMD_RESP_GET_ALL_VER, sizeof(ATS_CMD_RESP_GET_ALL_VER)-1, 
 		buffer, sizeof(buffer));		
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 	
