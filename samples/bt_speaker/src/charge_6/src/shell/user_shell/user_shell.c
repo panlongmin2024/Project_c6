@@ -232,7 +232,7 @@ static int shell_user_get_uuid(int argc, char *argv[])
 	printk("------> %s 0x%x 0x%x 0x%x 0x%x\n ",__func__,uuid[0],uuid[1],uuid[2],uuid[3]);
 	return 0;
 }
-static int shell_user_get_uuid(int argc, char *argv[])
+static int shell_user_reset(int argc, char *argv[])
 {
 	int cdc_shell_ats_rst_reboot(struct device *dev, u8_t *buf, int len);
 	cdc_shell_ats_rst_reboot(0,0,0);
@@ -264,7 +264,7 @@ static const struct shell_cmd commands[] = {
 	{ "exit_stb", shell_user_exit_standby, "user exit stangby"},
 	{ "get_mode", shell_user_get_mode, "user get mode"},
 	{ "get_uuid", shell_user_get_uuid, "user uuid"},
-	{ "set_reset", shell_user_get_uuid, "user reset"},
+	{ "set_reset", shell_user_reset, "user reset"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
