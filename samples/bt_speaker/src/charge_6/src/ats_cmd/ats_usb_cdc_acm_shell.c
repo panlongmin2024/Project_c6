@@ -1501,7 +1501,7 @@ static int cdc_shell_ats_get_all_ver(struct device *dev, u8_t *buf, int len)
 	
 	return 0;
 }
-static int cdc_shell_ats_rst_reboot(struct device *dev, u8_t *buf, int len)
+int cdc_shell_ats_rst_reboot(struct device *dev, u8_t *buf, int len)
 {	
 	u8_t buffre[1+1] = {6,0};
 
@@ -1512,7 +1512,7 @@ static int cdc_shell_ats_rst_reboot(struct device *dev, u8_t *buf, int len)
 	msg.value = ATS_SYS_REBOOT_DELAY_TIME_MS;
     send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 
-	/* 2.save reboot flag */
+	/* 2.set reboot flag */
 	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
 	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
 
