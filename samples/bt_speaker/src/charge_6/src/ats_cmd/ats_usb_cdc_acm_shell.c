@@ -1432,9 +1432,7 @@ static int cdc_shell_ats_enter_standby(struct device *dev, u8_t *buf, int len)
 	//ats_usb_cdc_acm_cmd_response_at_data(
 	//	dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
 	//	ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
-
-	u8_t system_get_device_standby_mode(void);
-	u8_t sta = system_get_device_standby_mode();
+	u8_t sta = 0;
 	hex_to_string_2(sta, buffer);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
