@@ -546,7 +546,7 @@ static int ats_wlt_shell_enter_signal_test_mode(struct device *dev, u8_t *buf, i
 }
 static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
-	int ret1,ret2;
+	int ret1;
 	u8_t buffer[1+1] = {6,0};
 
 	ats_wlt_response_at_data(
@@ -558,12 +558,7 @@ static int ats_wlt_shell_enter_nonsignal_test_mode(struct device *dev, u8_t *buf
 		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
 	}
 
-	ret2 = property_set_int(CFG_BIN_TEST_ID, 1);
-	if(ret2 == 0) {
-		property_flush(CFG_BIN_TEST_ID);
-	}
-
-	if (ret1==0 && ret2==0){
+	if (ret1==0){
 		ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 		sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
 	}
