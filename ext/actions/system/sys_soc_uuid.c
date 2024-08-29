@@ -220,7 +220,9 @@ int uuid_sign_msg_write(int is_read)
 
 void user_uuid_init(void)
 {
-	sys_uuid_verify();
+	int ret = -1;
+	ret = sys_uuid_verify();
+	printk("------> user_uuid_init ret %d\r\n",ret);
 }
 
 int user_uuid_verify(void)
