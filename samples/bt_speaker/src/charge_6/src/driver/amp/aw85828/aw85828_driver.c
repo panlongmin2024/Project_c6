@@ -2628,8 +2628,10 @@ static int amp_aw85xxx_enable_flag = 0;
 static os_mutex amp_aw85xxx_mutex;
 static os_mutex *amp_aw85xxx_mutex_ptr = NULL;
 
-int _aw85xxx_pa_stop(void)
+int aw85xxx_pa_stop(void)
 {
+
+#if 0
     /* mute all channel*/
     i2c_write_bits(0x4, ~(0x03<<7), 0x3<<7);
 
@@ -2646,8 +2648,30 @@ int _aw85xxx_pa_stop(void)
     i2c_write_bits(0x4, ~(0x01<<0), 0x1<<0);
 
     aw_printf("done");
-
     return AW_OK;
+#endif
+
+	aw_printf("start");
+	/* mute all channel*/
+	i2c_write_bits(0x4, ~(0x03<<7), 0x3<<7);
+
+	i2c_write_bits(0x1f, ~(0x03<<0), 0x0<<0);
+	i2c_write_bits(0x1f, ~(0x03<<3), 0x0<<3);
+	i2c_write_bits(0x1f, ~(0x03<<6), 0x0<<3);
+	i2c_write_bits(0x55, ~(0x01<<2), 0x0<<2);
+	i2c_write_bits(0x55, ~(0x01<<3), 0x0<<3);
+	i2c_write_bits(0x63, ~(0x01<<3), 0x0<<3);
+	i2c_write_bits(0x67, ~(0x01<<6), 0x1<<6);
+	/* amp power down */
+	i2c_write_bits(0x4, ~(0x01<<1), 0x1<<1);
+	/* dsp bypass */
+	i2c_write_bits(0x4, ~(0x01<<2), 0x1<<2);
+	i2c_write_bits(0x5D, ~(0x07<<4), 0x3<<4);
+	/* power down */
+	i2c_write_bits(0x4, ~(0x01<<0), 0x1<<0);
+    aw_printf("done");
+	return AW_OK;
+
 }
 
 /*Extern API: aw_init*/
@@ -2680,7 +2704,7 @@ void aw85xxx_init()
     aw_reg_update(&init_register_tab[0], sizeof(init_register_tab)/sizeof(struct reg_tab));
 
     aw_dsp_update();
-    _aw85xxx_pa_stop();
+    aw85xxx_pa_stop();
   //  aw_printf("done");
 
     MS_DELAY(5);
@@ -2698,30 +2722,23 @@ _exit:
 }
 
 /******* Extern API: aw_pa_stop() *******/
-int aw85xxx_pa_stop(void)
+int aw85xxx_pa_deinit(void)
 {
     struct device *gpio_dev = NULL;
-  
+   
 	if(amp_aw85xxx_mutex_ptr == NULL){
 		amp_aw85xxx_mutex_ptr = &amp_aw85xxx_mutex;
 		os_mutex_init(amp_aw85xxx_mutex_ptr);
 	}
 	os_mutex_lock(amp_aw85xxx_mutex_ptr, OS_FOREVER);
 
-    /* mute all channel*/
-    i2c_write_bits(0x4, ~(0x03<<7), 0x3<<7);
+    if(!amp_aw85xxx_enable_flag)
+    {
+        printk("[%s,%d] ----have been quit!!!\n", __FUNCTION__, __LINE__);   
+        goto _exit;
+    }
 
-    /* dsp bypass */
-    i2c_write_bits(0x4, ~(0x01<<2), 0x1<<2);
-
-	i2c_write_bits(0x63, ~(0x01<<3), 0x0<<3);
-	i2c_write_bits(0x67, ~(0x01<<6), 0x1<<6);
-
-    /* amp power down */
-    i2c_write_bits(0x4, ~(0x01<<1), 0x1<<1);
-
-    /* power down */
-    i2c_write_bits(0x4, ~(0x01<<0), 0x1<<0);
+    aw85xxx_pa_stop();
 
 	k_sleep(5);
 	gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
@@ -2757,6 +2774,7 @@ int aw85xxx_pa_start(void)
 {
     unsigned int reg_val = 0;
 
+#if 0
     /* power up */
     i2c_write_bits(0x4, ~(0x01<<0), 0x0<<0);
 
@@ -2795,6 +2813,41 @@ int aw85xxx_pa_start(void)
     i2c_read_reg(0x01, &reg_val);
 
     aw_printf("done, chip st 0x01 = %x", reg_val);
+
+#endif
+
+    aw_printf("start");
+	i2c_write_bits(0x63, ~(0x01<<3), 0x0<<3);
+	i2c_write_bits(0x67, ~(0x01<<6), 0x0<<6);
+	i2c_write_bits(0x4, ~(0x01<<0), 0x0<<0);
+	MS_DELAY(2);
+	 /* dsp enable */
+    if(!g_is_dsp_bypas)
+    {
+        i2c_write_bits(0x4, ~(0x01<<2), 0x0<<2);
+    }
+        
+
+	i2c_write_bits(0x55, ~(0x01<<3),0x01<<3);
+	i2c_write_bits(0x55, ~(0x01<<2),0x01<<2);
+	i2c_write_bits(0x1f, ~(0x07<<0), 0x02<<0);
+	i2c_write_bits(0x1f, ~(0x07<<3), 0x01<<3);
+	i2c_write_bits(0x1f, ~(0x07<<6), 0x03<<6);
+
+    i2c_write_bits(0x63, ~(0x01<<3), 0x0<<3);
+	i2c_write_bits(0x4, ~(0x01<<1), 0x0<<1);
+	MS_DELAY(1);
+	i2c_write_bits(0x67, ~(0x01<<6), 0x0<<6);
+	MS_DELAY(10);
+	i2c_write_bits(0x5D, ~(0x07<<4), 0x1<<4);
+	i2c_write_bits(0x4, ~(0x03<<7), 0x0<<7);
+
+    /* read chip status */
+    i2c_read_reg(0x01, &reg_val);
+
+    aw_printf("done, chip st 0x01 = %x", reg_val);
+
+
     return AW_OK;
 }
 

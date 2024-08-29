@@ -98,7 +98,7 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 		board_power_lock_enable(false);
 		#endif
 
-		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE //vcc VBAT同时掉电
+		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE //vcc VBAT同时锟斤拷锟斤拷
 		soc_dvfs_set_level(SOC_DVFS_LEVEL_FULL_PERFORMANCE, "poweroff");
 		#ifdef CONFIG_LOGIC_MCU_LS8A10023T
 		printk("[%s,%d] logic_mcu_ls8a10023t start\n", __FUNCTION__, __LINE__);
@@ -115,6 +115,7 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 
 		printk("[%s,%d] logic_mcu_ls8a10023t end\n", __FUNCTION__, __LINE__);
 		#endif
+		printk("[%s,%d] send pd deinit message!\n", __FUNCTION__, __LINE__);
 		pd_srv_sync_exit();
 		while(1);
 		#endif

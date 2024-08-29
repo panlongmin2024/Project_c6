@@ -8,9 +8,9 @@
 
 #ifdef CONFIG_C_AMP_AW85828
 extern int aw85xxx_pa_start(void);
-extern int _aw85xxx_pa_stop(void);
-extern void aw85xxx_init();
 extern int aw85xxx_pa_stop(void);
+extern void aw85xxx_init();
+extern int aw85xxx_pa_deinit(void);
 #endif
 #ifdef CONFIG_C_AMP_TAS5828M
 extern int amp_tas5828m_registers_init(void);
@@ -32,7 +32,7 @@ void hm_ext_pa_stop(void)
         pa_mute_state = 1;
         if(ReadODM() == HW_GUOGUANG_BOARD){
             #ifdef CONFIG_C_AMP_AW85828
-            _aw85xxx_pa_stop();
+            aw85xxx_pa_stop();
             #endif
         }	
         else{
@@ -89,7 +89,7 @@ void hm_ext_pa_deinit(void)
     if(hw_info == HW_GUOGUANG_BOARD)
     {
         #ifdef CONFIG_C_AMP_AW85828
-        aw85xxx_pa_stop();
+        aw85xxx_pa_deinit();
         #endif
     }else{
         #ifdef CONFIG_C_AMP_TAS5828M

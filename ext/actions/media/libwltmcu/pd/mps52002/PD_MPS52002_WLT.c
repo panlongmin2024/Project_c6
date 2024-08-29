@@ -61,7 +61,7 @@
  * @}
  */
 
-#define mps_pd_current_version 0x48
+#define mps_pd_current_version 0x49
 #define I2C_DEV_ADDR        0x48                    //TODO
 
 // #define INDIA_APP_TEST			0x01
@@ -179,7 +179,7 @@ static void mps_ota_get_status(u8_t *status);
 #define WLT_FULL_DEBOUNCE_TIMEOUT        6
 #define MAX_SOURCE_DISC_COUNT           8
 #define MAX_SINK_CHECK_MOBILE_TIME		15
-#define MIN_SINK_CHECK_MOBILE_TIME		1
+#define MIN_SINK_CHECK_MOBILE_TIME		5
 
 
 enum ti_pd_reg_address_t{
@@ -2279,6 +2279,10 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			/**********************water warning status:1 water,0 not water****************************************** */
 			val->intval = logic_mcu_ls8a10049t_get_water_warning_status();	
 			break;	
+		case PD_SUPPLY_PROP_TYPEC_WATER_WARNING_TRIGGER_CNT:
+		//return 0:未触发，1：准备触发， 2：至少有一个或两个都已经触发， 3：一个已经触发一个准备触发
+			val->intval = logic_mcu_ls8a10049t_get_water_triggered_cnt();
+			break;
         default:
             break;	  
     }

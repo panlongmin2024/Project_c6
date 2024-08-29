@@ -211,7 +211,6 @@ int amp_tas5828m_registers_init(void)
 
 	printk("[%s,%d] delay 500ms\n", __FUNCTION__, __LINE__);
 	k_sleep(500);
-
  	amp_tas5828m_pa_start();
 
 
@@ -229,20 +228,24 @@ exit:
 
 int amp_tas5828m_registers_deinit(void)
 {
-
 	struct device *i2c_dev = NULL;
 	union dev_config config = {0};
 	struct device *gpio_dev = NULL;
 	uint8_t buf[10]={0};
-	
-	
 
 	if(amp_tas5828m_mutex_ptr == NULL){
 		amp_tas5828m_mutex_ptr = &amp_tas5828m_mutex;
 		os_mutex_init(amp_tas5828m_mutex_ptr);
 	}
 	os_mutex_lock(amp_tas5828m_mutex_ptr, OS_FOREVER);
-    i2c_dev = device_get_binding(CONFIG_I2C_GPIO_0_NAME);
+
+	if(!amp_tas5828m_enable_flag)
+    {
+        printk("[%s,%d] ----have been quit!!!\n", __FUNCTION__, __LINE__);   
+        goto exit;
+    }
+   
+	i2c_dev = device_get_binding(CONFIG_I2C_GPIO_0_NAME);
 	if (!i2c_dev) 
 	{
 		printk("[%s,%d] i2c_dev not found\n", __FUNCTION__, __LINE__);
@@ -268,7 +271,6 @@ int amp_tas5828m_registers_deinit(void)
 	// write 03h deep sleep mode
 	buf[0] = 0x0a;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x03 , buf, 1);
-
 
 	k_sleep(20);
 	gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);

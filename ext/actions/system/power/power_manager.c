@@ -624,7 +624,7 @@ static int _power_manager_work_handle(void)
 	int dut_is_charging;
 	if(ReadODM())
 	{
-		dut_is_charging = power_manager_get_dc5v_status();
+		dut_is_charging = pd_get_sink_charging_state();					// power_manager_get_dc5v_status();
 		
 	}else{
 		dut_is_charging = pd_get_sink_charging_state();					//3 nods
@@ -691,6 +691,9 @@ static int _power_manager_work_handle(void)
 		{
 			power_manager->report_timestamp = os_uptime_get_32();
 		}
+
+
+		
 		if((os_uptime_get_32() - power_manager->report_timestamp) >= (DEFAULT_POWER_OFF_PERIODS/2))
 		{
 _POWER_OFF_:			
@@ -822,12 +825,12 @@ int power_manager_early_init(void)
 
 	if(run_mode_is_demo())
 	{
-		k_sleep(300);
+		k_sleep(500);
 		SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
 		if(pd_manager_check_mobile())
 		{
 			SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
-			
+			k_sleep(1000);		
 			logic_mcu_ls8a10023t_otg_mobile_det();
 			//extern int pd_manager_deinit(void);
 			pd_manager_deinit(1);
