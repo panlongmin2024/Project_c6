@@ -2275,7 +2275,10 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			/* for factory test */
 			val->intval = pd_mps52002->pd_test_sink_charge_step; 
 			break;
-			
+		case PD_SUPPLY_PROP_TYPEC_WATER_WARNING_STATUS:
+			/**********************water warning status:1 water,0 not water****************************************** */
+			val->intval = logic_mcu_ls8a10049t_get_water_warning_status();	
+			break;	
         default:
             break;	  
     }

@@ -47,6 +47,21 @@ extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
 #ifdef CONFIG_BT_SELF_APP
 extern int selfapp_get_feedback_tone_ext(void);
 #endif
+#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+extern void main_system_tts_set_play_warning_tone_flag(bool flag);
+static bool charge_app_pa_status = false;
+#endif
+
+int charge_app_is_enter(void)
+{
+	int app_id = desktop_manager_get_plugin_id();
+	printk("[%s/%d],app_id %d \n\n",__func__,__LINE__,app_id);
+	if ((app_id == DESKTOP_PLUGIN_ID_CHARGER) ||(charge_app_state != CHARGING_APP_NORMAL)) {
+		return 1;
+	}
+	return 0;
+}
+
 int charge_app_get_state(void)
 {
 	return charge_app_state;
@@ -85,6 +100,11 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 	switch (event) {
 	case TTS_EVENT_START_PLAY:
 		SYS_LOG_INF("%s start", tts_id);
+		#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+		if(!memcmp(tts_id,"c_err.mp3",9)){
+			main_system_tts_set_play_warning_tone_flag(true);
+		}
+		#endif
 		input_manager_lock();
 		break;
 	case TTS_EVENT_STOP_PLAY:
@@ -95,6 +115,9 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 			tts_manager_wait_finished(1);
 			os_sleep(100);
 			printk("wati 100ms output\n");
+#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+			charge_app_pa_status = false;
+#endif			
 			hm_ext_pa_deinit();		
 			external_dsp_ats3615_deinit();
 
@@ -110,7 +133,12 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 				sys_pm_poweroff();
 			}	
 		}
-		
+		#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+		if(memcmp(tts_id,"c_err.mp3",sizeof("c_err.mp3")) == 0){
+			charge_app_state = CHARGING_APP_OK;
+			main_system_tts_set_play_warning_tone_flag(false);
+		}
+		#endif
 		break;
 	default:
 		break;
@@ -127,6 +155,18 @@ int charge_app_real_exit_deal(void)
 		extern int pd_manager_deinit(int value);
 		tts_manager_wait_finished(1);
 		property_flush(NULL);
+		#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+		if(charge_app_pa_status)
+		{
+			os_sleep(100);
+			SYS_LOG_INF("wati 100ms output\n");
+#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+			charge_app_pa_status = false;
+#endif			
+			hm_ext_pa_deinit();		
+			external_dsp_ats3615_deinit();			
+		}
+		#endif
 		pd_srv_sync_exit();		
 	}
 	return 0;
@@ -177,21 +217,34 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	desktop_manager_lock();
 	input_manager_lock();
 	charge_app_view_init();
-	if(!get_property_factory_reset_flag()){
-		//pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
-		//pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
-		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
-		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0));
-	}else{
-		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
-		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_CONNECTED);
-		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);
-		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_ON); // all led turn on
-		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));
+	#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+	if(mcu_ui_get_poweron_from_charge_warnning_status())
+	{
+#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+		charge_app_pa_status = true;
+#endif	
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));	
+		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,CHARGING_WARNING);
 	}
-	thread_timer_init(&reset_timer, charge_app_timer, NULL);
-	thread_timer_start(&reset_timer,2000,2000);
+	else
+	#endif
+	{
+		if(!get_property_factory_reset_flag()){
+			//pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+			//pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
+			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0));
+		}else{
+			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
+			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_CONNECTED);
+			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);
+			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_ON); // all led turn on
+			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));
+		}
+		thread_timer_init(&reset_timer, charge_app_timer, NULL);
+		thread_timer_start(&reset_timer,2000,2000);
+	}
 	tts_manager_add_event_lisener(charge_system_tts_event_nodify);
     pd_set_app_mode_state(CHARGING_APP_MODE);
 	pd_manager_send_disc();
@@ -205,9 +258,20 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	system_app_set_auracast_mode(0);
 	self_music_effect_ctrl_set_enable(1);
 	power_off_no_tts = 0;
-	ret = tts_manager_play("poweroff.mp3", PLAY_IMMEDIATELY);
-	if(ret != 0 )
-		power_off_no_tts = 1;
+	#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+	if(mcu_ui_get_poweron_from_charge_warnning_status())
+	{
+		tts_manager_play("c_err.mp3", PLAY_IMMEDIATELY);
+		hotplug_charger_init();	
+
+	}
+	else
+	#endif
+	{
+		ret = tts_manager_play("poweroff.mp3", PLAY_IMMEDIATELY);
+		if(ret != 0 )
+			power_off_no_tts = 1;
+	}
 	p_charge_app_app->tts_start_time = os_uptime_get_32();
 	//tts_manager_lock();
 	//sys_standby_time_set(5,5);
@@ -244,6 +308,9 @@ static int _charge_app_exit(void)
 #endif
 
  exit:
+	#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+	mcu_ui_set_poweron_from_charge_warnning_status(0);
+	#endif
 	external_dsp_ats3615_load(0);
 	hm_ext_pa_init();
 
@@ -296,6 +363,19 @@ static int charge_app_msg_pro(struct app_msg *msg)
 		logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
 		pd_manager_deinit(1);	
 		sys_pm_poweroff();
+		break;
+#endif
+#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+	case MSG_CHARGE_WARNNING_OPEN_PA:
+		if(charge_app_pa_status == false)
+		{
+			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
+			external_dsp_ats3615_load(0);
+			hm_ext_pa_init();
+			//bt_manager_init_dev_volume();
+			tts_manager_unlock();
+			charge_app_pa_status = true;
+		}
 		break;
 #endif
 	default:

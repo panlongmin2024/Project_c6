@@ -68,7 +68,7 @@ struct input_manager_info *input_manager;
 void report_key_event(struct k_work *work)
 {
 	struct input_manager_info *input = CONTAINER_OF(work, struct input_manager_info, work_item);
-	SYS_LOG_INF("----> keyvalue %x\n",input->report_key_value);
+
 	if (input_manager->filter_itself) {
 		if ((input->report_key_value & KEY_TYPE_SHORT_UP)
 			|| (input->report_key_value & KEY_TYPE_DOUBLE_CLICK)
@@ -226,8 +226,7 @@ void key_event_handle(struct device *dev, struct input_value *val)
 	default:
 		break;
 	}
-	//SYS_LOG_INF("Plm debnug:val=0x%x type:0x%x report_type:0x%x time:%d need:%d\n",
-	//			val->code,input_manager->press_type,input_manager->report_key_value,input_manager->press_timer,need_report);
+
 	if (need_report) {
 		input_manager->report_key_value = input_manager->press_type
 									| input_manager->press_code;
@@ -248,10 +247,8 @@ void key_event_handle(struct device *dev, struct input_value *val)
 	#ifdef CONFIG_INPUT_MUTIPLE_CLICK
 		if (is_support_mutiple_click(input_manager->press_code)) {
 			input_manager->report_stamp = k_uptime_get();
-			SYS_LOG_INF("------> mutiple-1\n");
 			os_delayed_work_submit(&input_manager->work_item, QUICKLY_CLICK_DURATION + KEY_EVENT_CANCEL_DURATION);
 		} else {
-			SYS_LOG_INF("------> mutiple-2\n");
 			os_delayed_work_submit(&input_manager->work_item, 0);
 		}
 	#else

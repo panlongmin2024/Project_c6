@@ -694,7 +694,8 @@ void system_app_init_bte_ready(void)
 	}
 #endif
 
-	if(run_mode_is_demo() == false){
+	if((run_mode_is_demo() == false) && !mcu_ui_get_poweron_from_charge_warnning_status())
+	{
 		bt_manager_start_wait_connect();
 		if(bt_manager_power_on_setup){
 			bt_manager_powon_auto_reconnect(0);

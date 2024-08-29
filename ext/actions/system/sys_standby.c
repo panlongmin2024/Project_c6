@@ -192,8 +192,8 @@ static int _sys_standby_check_auto_powerdown(bool flag)
 			return 0;
 			
 		}
-		u8_t system_get_device_standby_mode(void);
-		SYS_LOG_INF("[%d] vBus down!!!  mode %d 0x%x\n", __LINE__,system_get_power_run_mode(),system_get_device_standby_mode());
+
+		SYS_LOG_INF("[%d] vBus down!!!\n", __LINE__);
 
 	}else{
 		if (dc_power_in_status_read()) {
@@ -481,38 +481,12 @@ static int _sys_standby_enter_s3(void)
 	return wakeup_src;
 }
 #endif
-extern void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
-extern bool ats_is_enable(void);
-char user_char2asi(char x)
-{
-	if(x>9){
-		return (x-10)+'A';
-	}
-	else{
-		return x+'0';
-	}
-}
-int hex_to_string_8(u32_t dat, u8_t *buf)
-{
-	int tmp = 0;
-	for(int i = 0; i < 8; i++){
-		tmp = dat&0xf0000000;
-		tmp>>=28;
-		*buf++ = user_char2asi((char)tmp);
-		
-		dat<<=4;
-	}
-	return 0;
-}
-
 static int _sys_standby_process_normal(void)
 {
 	u32_t wakelocks = sys_wakelocks_check();
 	static uint8_t refresh_flag = 0x00;
 	static int tmp_test_idle_cnt = 0;
 	static u32_t last_timestamp;
-	char buf_send[25]="time:00000000:00000000";
-	u32_t time_get = 0;
 
 	if((refresh_flag != sys_pm_get_power_5v_status()))
 	{	
@@ -523,9 +497,6 @@ static int _sys_standby_process_normal(void)
 	/**have sys wake lock*/
 	if (wakelocks) {
 		SYS_LOG_DBG("wakelocks: 0x%08x\n", wakelocks);
-		if(ats_is_enable()){
-			//ats_usb_cdc_acm_write_data("------> EXIT 1",15);
-		}
 		goto disable_s1;
 	}
 
@@ -533,9 +504,6 @@ static int _sys_standby_process_normal(void)
 	/** check DC5V plug in */
 	if (sys_pm_get_power_5v_status()) {
 		SYS_LOG_DBG("DC5V plug in and not enter standby");
-		if(ats_is_enable()){
-			//ats_usb_cdc_acm_write_data("------> EXIT 2",15);
-		}		
 		goto disable_s1;
 	}
 #endif
@@ -543,9 +511,6 @@ static int _sys_standby_process_normal(void)
 
 	if (sys_get_bt_host_wake_up_pending()) {
 		sys_set_bt_host_wake_up_pending(0);
-		if(ats_is_enable()){
-			//ats_usb_cdc_acm_write_data("------> EXIT 3",15);
-		}		
 		goto disable_s1;
 	}
 
@@ -556,9 +521,6 @@ static int _sys_standby_process_normal(void)
 #ifdef CONFIG_TWS
 	if (!bt_manager_tws_check_is_woodpecker()) {
 		SYS_LOG_DBG("281B tws not enter s1");
-		if(ats_is_enable()){
-			//ats_usb_cdc_acm_write_data("------> EXIT 4",15);
-		}		
 		goto disable_s1;
 	}
 #endif
@@ -573,10 +535,6 @@ static int _sys_standby_process_normal(void)
 	if (sys_wakelocks_get_free_time() > standby_context->auto_standby_time)
 		_sys_standby_enter_s1();
 
-	time_get = sys_wakelocks_get_free_time();
-	hex_to_string_8(time_get,buf_send+5);
-	hex_to_string_8(standby_context->auto_standby_time,buf_send+14);
-	//ats_usb_cdc_acm_write_data(buf_send,sizeof(buf_send));
 	return 0;
 
 disable_s1:
@@ -1040,9 +998,5 @@ void sys_standby_time_set(u32_t standby,u32_t power)
 	standby_context->auto_standby_time = standby*1000;
 	standby_context->auto_powerdown_time = power*1000;
 	standby_context->auto_powerdown_time_init = power*1000;
-}
-u8_t system_get_device_standby_mode(void)
-{
-	return standby_context->standby_state;
 }
 #endif

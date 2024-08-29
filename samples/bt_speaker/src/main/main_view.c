@@ -150,7 +150,7 @@ static int smart_handle_volume(void)
 	} 
 
 	SYS_LOG_INF("vol=%d\n", vol);
-	//bt_manager_set_smartcontrol_vol_sync(0);//choleÀµ“Ù¡ø–Ë“™±£¥Ê”ÎÕ¨≤Ω 2024.8.16   zth
+	//bt_manager_set_smartcontrol_vol_sync(0);//choleÀµÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ“™ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÕ¨ÔøΩÔøΩ 2024.8.16   zth
 	system_volume_set(AUDIO_STREAM_MUSIC, vol, true);
 	bt_manager_set_smartcontrol_vol_sync(1);
 
@@ -239,11 +239,13 @@ static void main_app_view_deal(u32_t ui_event)
 		dev = device_get_binding(CONFIG_INPUT_DEV_ACTS_ADCKEY_NAME);
 		if (dev)
 			input_dev_disable(dev);	
-#endif			
+#endif	
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));		
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,CHARGING_WARNING);
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));//ÈîÅ‰ΩèÈò≤Ê≠¢Ë¢´ÂΩ±Âìç
 		if(!is_charge_warning_flag)
 		{
-			bt_manager_disconnect_all_device();//charge warning –Ë“™∂œø™¿∂—¿---2024.8.16 zth
+			bt_manager_disconnect_all_device();//charge warning ÔøΩÔøΩ“™ÔøΩœøÔøΩÔøΩÔøΩÔøΩÔøΩ---2024.8.16 zth
 			is_charge_warning_flag = true;
 		}
 		break;			
@@ -253,14 +255,25 @@ static void main_app_view_deal(u32_t ui_event)
 		dev = device_get_binding(CONFIG_INPUT_DEV_ACTS_ADCKEY_NAME);
 		if (dev)
 			input_dev_enable(dev);	
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));	
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,REMOVE_CHARGING_WARNING);
-		bt_manager_update_led_display();
-		#ifdef CONFIG_LED_MANAGER
-		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-		#endif
-		if(system_app_get_auracast_mode())
+		#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+		//offcharge mode donot need to update led status
+		if(pd_get_app_mode_state() == CHARGING_APP_MODE)
 		{
-			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);//ª÷∏¥auracastµ∆ 2024.8.16----zth
+			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+		}
+		else
+		#endif
+		{
+			bt_manager_update_led_display();
+			#ifdef CONFIG_LED_MANAGER
+			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+			#endif
+			if(system_app_get_auracast_mode())
+			{
+				pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);//ÔøΩ÷∏ÔøΩauracastÔøΩÔøΩ 2024.8.16----zth
+			}
 		}
 		is_charge_warning_flag = false;
 		break;	
@@ -296,7 +309,14 @@ static int main_app_view_proc(u8_t view_id, u8_t msg_id, u32_t ui_event)
 	SYS_LOG_INF(" msg_id %d ui_event %d\n", msg_id, ui_event);
 	switch (msg_id) {
 	case MSG_VIEW_CREATE:
+	#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+		if(!mcu_ui_get_poweron_from_charge_warnning_status())
+		{
+			main_app_view_deal(UI_EVENT_POWER_ON);
+		}
+	#else
 		main_app_view_deal(UI_EVENT_POWER_ON);
+	#endif	
 		break;
 	case MSG_VIEW_PAINT:
 		main_app_view_deal(ui_event);
