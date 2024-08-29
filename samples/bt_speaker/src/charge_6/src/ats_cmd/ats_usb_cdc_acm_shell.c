@@ -1232,7 +1232,7 @@ static int cdc_shell_ats_exit_auracast(struct device *dev, u8_t *buf, int len)
 }
 static int cdc_shell_ats_nosignal_test_mode(struct device *dev, u8_t *buf, int len)
 {
-	int ret1,ret2;
+	int ret1;
 	u8_t buffer[1+1] = {6,0};
 
 	ats_usb_cdc_acm_cmd_response_at_data(
@@ -1244,12 +1244,7 @@ static int cdc_shell_ats_nosignal_test_mode(struct device *dev, u8_t *buf, int l
 		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
 	}
 
-	ret2 = property_set_int(CFG_BIN_TEST_ID, 1);
-	if(ret2 == 0) {
-		property_flush(CFG_BIN_TEST_ID);
-	}
-
-	if (ret1==0 && ret2==0){
+	if (ret1==0){
 		sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
 	}
 
