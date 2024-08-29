@@ -69,7 +69,12 @@ int system_app_launch_init(void)
     SYS_LOG_INF("++++++++++++def_desktop_id: %d+++++++\n", def_desktop_id);
 	//TODO:linein or usound hotplug
 	k_mutex_init(&mutex);
-
+#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
+	if(mcu_ui_get_poweron_from_charge_warnning_status())
+	{
+		def_desktop_id = DESKTOP_PLUGIN_ID_CHARGER;
+	}
+#endif
 	if (run_mode_is_demo())
 	{
 		def_desktop_id = DESKTOP_PLUGIN_ID_DEMO;

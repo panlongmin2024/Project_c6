@@ -141,6 +141,11 @@ config BATTERY_SECURITY
     prompt "HM battry security"
    depends on C_LOGIC_MCU
    # depends on BUILD_PROJECT_HM_DEMAND_CODE
+    default n
+config HM_CHARGE_WARNNING_ACTION_FROM_X4
+    bool
+    prompt "HM charge warnning actions as X4"
+    depends on BUILD_PROJECT_HM_DEMAND_CODE
     default n	
 source "ext/actions/media/libal/Kconfig"
 source "ext/actions/media/libwltmcu/Kconfig"

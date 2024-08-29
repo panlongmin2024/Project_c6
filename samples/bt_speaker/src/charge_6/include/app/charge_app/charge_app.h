@@ -36,4 +36,5 @@ extern int charge_app_enter_cmd(void);
 extern int charge_app_exit_cmd(void);
 extern int charge_app_real_exit_deal(void);
 extern void charge_app_tts_event_proc(struct app_msg *msg);
+extern int charge_app_is_enter(void);
 #endif

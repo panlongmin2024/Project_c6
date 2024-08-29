@@ -90,6 +90,7 @@ enum pd_manager_supply_property {
     PD_SUPPLY_PROP_PD_VERSION,
 	PD_SUPPLY_PROP_TEST_SINK_CHARAGE_CURRENT,//for factory test
 	PD_SUPPLY_PROP_TEST_GET_SINK_CHARGE_STEP,//for factory test
+    PD_SUPPLY_PROP_TYPEC_WATER_WARNING_STATUS,//1:HAVE WATER WARNIG; 0: DONOT HAVE water WARNIG
 
     PD_SUPPLY_PROP_IDLE,
 
@@ -334,7 +335,8 @@ uint8_t wlt_simulation_test_switch(void);
 void mcu_ui_power_hold_fn(void);
 #endif
 
-
+uint8_t mcu_ui_get_poweron_from_charge_warnning_status(void);
+void mcu_ui_set_poweron_from_charge_warnning_status(uint8_t status);
 typedef enum{
 
     PD_EVENT_SOURCE_REFREST = 1,
@@ -385,4 +387,6 @@ extern int pd_srv_sync_send_msg(int event, int value);
 extern int pd_srv_event_notify(int event ,int value);
 
 extern uint8_t Read_hw_ver(void);
+extern bool logic_mcu_ls8a10049t_get_water_warning_status(void);
+
 #endif
