@@ -1432,7 +1432,7 @@ static int cdc_shell_ats_enter_standby(struct device *dev, u8_t *buf, int len)
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
 		buffer, sizeof(buffer));
-
+	sys_wake_unlock(6);//unlock standby
 
 	return 0;
 }
@@ -1442,6 +1442,8 @@ static int cdc_shell_ats_exit_standby(struct device *dev, u8_t *buf, int len)
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_EXIT_STANDBY, sizeof(ATS_CMD_RESP_EXIT_STANDBY)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);			
+
+	sys_wake_lock(6);//lock standby again
 
 	return 0;
 }
