@@ -458,6 +458,8 @@ static int _sys_standby_enter_s3(void)
 	return wakeup_src;
 }
 #endif
+extern void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
+extern bool ats_is_enable(void);
 static int _sys_standby_process_normal(void)
 {
 	u32_t wakelocks = sys_wakelocks_check();
@@ -474,6 +476,9 @@ static int _sys_standby_process_normal(void)
 	/**have sys wake lock*/
 	if (wakelocks) {
 		SYS_LOG_DBG("wakelocks: 0x%08x\n", wakelocks);
+		if(ats_is_enable()){
+			ats_usb_cdc_acm_write_data("------> EXIT 1",15);
+		}
 		goto disable_s1;
 	}
 
@@ -481,6 +486,9 @@ static int _sys_standby_process_normal(void)
 	/** check DC5V plug in */
 	if (sys_pm_get_power_5v_status()) {
 		SYS_LOG_DBG("DC5V plug in and not enter standby");
+		if(ats_is_enable()){
+			ats_usb_cdc_acm_write_data("------> EXIT 2",15);
+		}		
 		goto disable_s1;
 	}
 #endif
@@ -488,6 +496,9 @@ static int _sys_standby_process_normal(void)
 
 	if (sys_get_bt_host_wake_up_pending()) {
 		sys_set_bt_host_wake_up_pending(0);
+		if(ats_is_enable()){
+			ats_usb_cdc_acm_write_data("------> EXIT 3",15);
+		}		
 		goto disable_s1;
 	}
 
@@ -498,6 +509,9 @@ static int _sys_standby_process_normal(void)
 #ifdef CONFIG_TWS
 	if (!bt_manager_tws_check_is_woodpecker()) {
 		SYS_LOG_DBG("281B tws not enter s1");
+		if(ats_is_enable()){
+			ats_usb_cdc_acm_write_data("------> EXIT 4",15);
+		}		
 		goto disable_s1;
 	}
 #endif
