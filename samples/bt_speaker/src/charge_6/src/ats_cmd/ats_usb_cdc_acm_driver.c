@@ -154,13 +154,13 @@ static void cdc_acm_thread_main_loop(void *p1, void *p2, void *p3)
 					buffer[1] = '1';
 					ats_usb_cdc_acm_cmd_response_at_data(
 					dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
-					buffer, sizeof(buffer));
+					buffer, sizeof(buffer)-1);
 					break;	
 				case 12:
 					buffer[1] = '2';
 					ats_usb_cdc_acm_cmd_response_at_data(
 					dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
-					buffer, sizeof(buffer));
+					buffer, sizeof(buffer)-1);
 					break;						
 				default:
 					SYS_LOG_ERR("error: 0x%x\n", msg.type);
