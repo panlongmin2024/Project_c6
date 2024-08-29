@@ -22,9 +22,9 @@
 #endif
 #include "system_app.h"
 
-#define GFP_BLE_ADV_POWER (-8)//-13 //数值调小不容易弹窗----zth
+#define GFP_BLE_ADV_POWER (-9)//-13 //数值调小不容易弹窗----zth
 #define GFP_ADV_SLEEP_TIME (500) // 20 S
-
+#define GFP_CERTIFICATION 1
 
 #ifdef CONFIG_GFP_PROFILE
 #define ADV_INTERVAL_MS (50)
@@ -681,7 +681,7 @@ static btmgr_adv_register_func_t gfp_ble_adv_funcs = {
 };
 #endif
 
-static btmgr_adv_register_func_t ota_ble_adv_funcs = {
+btmgr_adv_register_func_t ota_ble_adv_funcs = {
 	.adv_enabled = 0,
 	.advert_state = 0,
 	.cur_adv_cnt = 0,
@@ -739,7 +739,9 @@ int sys_ble_advertise_init(void)
 #ifdef CONFIG_GFP_PROFILE
 	sys_ble_adv_register(ADV_TYPE_GFP, &gfp_ble_adv_funcs);
 #endif
+#ifndef GFP_CERTIFICATION
 	sys_ble_adv_register(ADV_TYPE_OTA, &ota_ble_adv_funcs);
+#endif	
 #ifdef LEAUDIO_LEGENCY_ADV
 	sys_ble_adv_register(ADV_TYPE_LEAUDIO, &lea_adv_funcs);
 #endif
@@ -769,8 +771,9 @@ void sys_ble_advertise_deinit(void)
 	struct ble_adv_mngr *p = &ble_adv_info;
 
 	thread_timer_stop(&p->check_adv_timer);
-
+	#ifndef GFP_CERTIFICATION
 	sys_ble_adv_register(ADV_TYPE_OTA, NULL);
+	#endif
 #ifdef CONFIG_GFP_PROFILE
 	sys_ble_adv_register(ADV_TYPE_GFP, NULL);
 #endif
