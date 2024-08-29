@@ -35,6 +35,7 @@
 #include <app_launch.h>
 #include <wltmcu_manager_supply.h>
 #include <sys_wakelock.h>
+#include <sys_event.h>
 
 #define CFG_USER_INFO_0   			"USER_INFO_0"
 #define CFG_USER_INFO_1   			"USER_INFO_1"
@@ -58,6 +59,7 @@ extern u32_t fw_version_get_sw_code(void);
 extern u8_t fw_version_get_hw_code(void);
 extern int mcu_ui_get_logic_version(void);
 extern int bt_mcu_send_pw_cmd_powerdown(void);
+extern void sys_event_notify(uint32_t event);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -224,7 +226,7 @@ static int cdc_shell_ats_power_off(struct device *dev, u8_t *buf, int len)
 		dev, ATS_CMD_RESP_POWER_OFF, sizeof(ATS_CMD_RESP_POWER_OFF)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 	
-	bt_mcu_send_pw_cmd_powerdown();
+	sys_event_notify(SYS_EVENT_POWER_OFF);
 
 	return 0;
 }
