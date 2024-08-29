@@ -64,6 +64,7 @@
 #ifdef CONFIG_BLUETOOTH
 #include <bt_manager.h>
 #endif
+#include "ats_cmd/ats.h"
 
 #define STANDBY_MIN_TIME_SEC (10)
 #define STANDBY_BT_MIN_SLEEP_MSEC (10)
@@ -217,7 +218,20 @@ static int _sys_standby_check_auto_powerdown(bool flag)
 
 	return ret;
 }
-
+void ats_test_send_enter_s1(void)
+{
+	struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
+	ats_msg.type = 11;
+	ats_msg.value = 0;
+	k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
+}
+void ats_test_send_enter_s2(void)
+{
+	struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
+	ats_msg.type = 12;
+	ats_msg.value = 0;
+	k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
+}
 static int _sys_standby_enter_s1(void)
 {
 	pwm_breath_ctrl_t ctrl;
@@ -280,6 +294,7 @@ static int _sys_standby_enter_s1(void)
 	input_manager_lock();
 #endif
 
+	ats_test_send_enter_s1();
 	//bt_manager_sys_event_notify(SYS_EVENT_BT_WAIT_PAIR);
 	/**set ble state stanyby*/
 	SYS_LOG_INF("Enter S1");
@@ -346,7 +361,6 @@ static int _sys_standby_exit_s1(void)
 	return 0;
 }
 
-
 static int _sys_standby_enter_s2(void)
 {
 	standby_context->standby_state = STANDBY_S2;
@@ -370,6 +384,8 @@ static int _sys_standby_enter_s2(void)
 	bt_manager_halt_ble();
 #endif
 #endif
+
+	ats_test_send_enter_s2();
 
 	SYS_LOG_INF("Enter S2");
 	return 0;

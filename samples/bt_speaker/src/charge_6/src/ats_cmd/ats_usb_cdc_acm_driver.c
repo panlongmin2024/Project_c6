@@ -115,7 +115,7 @@ static void rx_timer_cb(struct thread_timer *timer, void* pdata)
 static void cdc_acm_thread_main_loop(void *p1, void *p2, void *p3)
 {
     os_sem *callback_sem = (os_sem *)p1;
-
+	char buffer[2+1] = "00";
 	struct device *dev = p_ctx->usb_cdc_acm_dev;
 	struct _ats_usb_cdc_acm_thread_msg_t msg = {0};
 
@@ -150,6 +150,18 @@ static void cdc_acm_thread_main_loop(void *p1, void *p2, void *p3)
 				case 1:
 					ats_usb_cdc_acm_key_check_report(dev, msg.value);
 					break;
+				case 11:
+					buffer[1] = '1';
+					ats_usb_cdc_acm_cmd_response_at_data(
+					dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
+					buffer, sizeof(buffer));
+					break;	
+				case 12:
+					buffer[1] = '2';
+					ats_usb_cdc_acm_cmd_response_at_data(
+					dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
+					buffer, sizeof(buffer));
+					break;						
 				default:
 					SYS_LOG_ERR("error: 0x%x\n", msg.type);
 					continue;
