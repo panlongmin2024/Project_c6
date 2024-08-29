@@ -34,6 +34,7 @@
 
 #include <app_launch.h>
 #include <wltmcu_manager_supply.h>
+#include <sys_wakelock.h>
 
 #define CFG_USER_INFO_0   			"USER_INFO_0"
 #define CFG_USER_INFO_1   			"USER_INFO_1"
