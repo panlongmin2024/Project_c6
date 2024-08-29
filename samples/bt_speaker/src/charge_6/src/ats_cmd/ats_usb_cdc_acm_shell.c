@@ -60,6 +60,7 @@ extern u8_t fw_version_get_hw_code(void);
 extern int mcu_ui_get_logic_version(void);
 extern int bt_mcu_send_pw_cmd_powerdown(void);
 extern void sys_event_notify(uint32_t event);
+extern int charge_app_enter_cmd(void);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -226,7 +227,7 @@ static int cdc_shell_ats_power_off(struct device *dev, u8_t *buf, int len)
 		dev, ATS_CMD_RESP_POWER_OFF, sizeof(ATS_CMD_RESP_POWER_OFF)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 	
-	sys_event_notify(SYS_EVENT_POWER_OFF);
+	charge_app_enter_cmd();
 
 	return 0;
 }
