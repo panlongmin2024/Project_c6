@@ -148,6 +148,8 @@ static int sys_uuid_verify(void)
 			//if(val == 1)
 			//	enter_verify_fail_func();
 		}
+		enter_verify_fail_func();
+		return -1;
 	}
 
 
