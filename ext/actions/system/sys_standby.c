@@ -553,7 +553,7 @@ static int _sys_standby_process_normal(void)
 	time_get = sys_wakelocks_get_free_time();
 	hex_to_string_8(time_get,buf_send+5);
 	hex_to_string_8(standby_context->auto_standby_time,buf_send+14);
-	ats_usb_cdc_acm_write_data(buf_send,sizeof(buf_send));
+	//ats_usb_cdc_acm_write_data(buf_send,sizeof(buf_send));
 	return 0;
 
 disable_s1:
