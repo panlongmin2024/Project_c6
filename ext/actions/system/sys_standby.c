@@ -218,26 +218,33 @@ static int _sys_standby_check_auto_powerdown(bool flag)
 
 	return ret;
 }
+/* for factory test */
 void ats_test_send_enter_s0(void)
 {
-	struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
-	ats_msg.type = 10;
-	ats_msg.value = 0;
-	k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
+	if(ats_is_enable()){
+		struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
+		ats_msg.type = 10;
+		ats_msg.value = 0;
+		k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
+	}
 }
 void ats_test_send_enter_s1(void)
 {
-	struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
-	ats_msg.type = 11;
-	ats_msg.value = 0;
-	k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
+	if(ats_is_enable()){
+		struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
+		ats_msg.type = 11;
+		ats_msg.value = 0;
+		k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
+	}
 }
 void ats_test_send_enter_s2(void)
 {
-	struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
-	ats_msg.type = 12;
-	ats_msg.value = 0;
-	k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
+	if(ats_is_enable()){
+		struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
+		ats_msg.type = 12;
+		ats_msg.value = 0;
+		k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
+	}
 }
 static int _sys_standby_enter_s1(void)
 {
@@ -364,6 +371,8 @@ static int _sys_standby_exit_s1(void)
 		SYS_LOG_INF("resume %s\n", CONFIG_FRONT_APP_NAME);
 		os_thread_resume(t);
 	}
+
+	ats_test_send_enter_s0();
 	SYS_LOG_INF("Exit S1");
 	return 0;
 }
