@@ -218,6 +218,13 @@ static int _sys_standby_check_auto_powerdown(bool flag)
 
 	return ret;
 }
+void ats_test_send_enter_s0(void)
+{
+	struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
+	ats_msg.type = 10;
+	ats_msg.value = 0;
+	k_msgq_put(get_ats_usb_cdc_acm_thread_msgq(), &ats_msg, K_NO_WAIT);
+}
 void ats_test_send_enter_s1(void)
 {
 	struct _ats_usb_cdc_acm_thread_msg_t ats_msg = {0};
