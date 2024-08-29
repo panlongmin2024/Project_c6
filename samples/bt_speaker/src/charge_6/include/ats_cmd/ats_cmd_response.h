@@ -86,4 +86,6 @@
 #define ATS_CMD_RESP_RST_REBOOT	           				"TL_RST_REBOOT="
 #define ATS_CMD_RESP_POWER_OFF                			"TL_POWREOFF="
 
+#define ATS_CMD_RESP_SWITCH_DEMO	           			"TL_SWITCH_DEMO="
+
 #endif
