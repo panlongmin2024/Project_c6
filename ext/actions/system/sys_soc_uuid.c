@@ -145,10 +145,9 @@ static int sys_uuid_verify(void)
 					return -1;
 			}
 			printk("sys_uuid_verify fail DV?=%d\n",val);
-			if(val == 1)
-				enter_verify_fail_func();
+			//if(val == 1)
+			//	enter_verify_fail_func();
 		}
-		return -1;
 	}
 
 
