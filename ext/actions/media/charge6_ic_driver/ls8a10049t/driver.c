@@ -1256,6 +1256,40 @@ bool logic_mcu_ls8a10049t_get_water_warning_status(void)
 	return ret;
 }
 
+/**********************get water trigger cnt****************************************** */
+//return 0:未触发，1：准备触发， 2：至少有一个或两个都已经触发， 3：一个已经触发一个准备触发
+//
+/*********************************************************** */
+uint8_t logic_mcu_ls8a10049t_get_water_triggered_cnt(void)
+{
+	uint8_t triggered_cnt = 0;
+#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
+
+	uint8_t temp;
+
+	temp = mcu_int_info.water0_triggered_cnt | mcu_int_info.water1_triggered_cnt;
+	/*
+	switch(temp)
+	{
+		case 0:
+		case 1:
+		triggered_cnt = temp;
+		break;
+
+		case 2:
+		case 3:
+		triggered_cnt = 2;
+		break;
+
+		default:
+		break
+	}
+	*/
+	triggered_cnt = temp;
+#endif	
+	return triggered_cnt;
+}
+
 static void logic_mcu_ls8a10049t_int_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
 	uint8_t event = 0;	
@@ -1403,6 +1437,7 @@ void wlt_logic_mcu_ls8a10049t_int_fn(void)
 					mcu_water_flag &= (~(0x01 << LS8A10049T_INT_EVENT_WATER0_BIT));			
 					logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
 					mcu_int_info.water0_remove_filter_time = 0;
+					mcu_int_info.water0_triggered_cnt = 0;
 				}
 				else
 				{
@@ -1440,6 +1475,7 @@ void wlt_logic_mcu_ls8a10049t_int_fn(void)
 					mcu_water_flag &= (~(0x01 << LS8A10049T_INT_EVENT_WATER1_BIT));			
 					logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
 					mcu_int_info.water1_remove_filter_time = 0;
+					mcu_int_info.water1_triggered_cnt = 0;
 				}
 				else
 				{
@@ -1572,7 +1608,7 @@ static int mcu_ls8a10049t_input_event_report(void)
 				}
 				if(mcu_int_info.water0_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
 				{
-						mcu_int_info.water0_triggered_cnt = 0;
+						//mcu_int_info.water0_triggered_cnt = 0;
 						para.mcu_event_val = MCU_INT_CMD_WATER_IN;
 
 						if (dev->mcu_notify) {
@@ -1620,7 +1656,7 @@ static int mcu_ls8a10049t_input_event_report(void)
 				}				
 				if(mcu_int_info.water1_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
 				{
-						mcu_int_info.water1_triggered_cnt = 0;
+						//mcu_int_info.water1_triggered_cnt = 0;
 						para.mcu_event_val = MCU_INT_CMD_WATER_IN;
 
 						if (dev->mcu_notify) {

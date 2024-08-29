@@ -168,6 +168,7 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 			SYS_LOG_INF("Demo: msg.value:0x%X, %d\n", msg.value, run_mode_is_demo());
 			if(run_mode_is_demo())
 			{
+				k_sleep(1000);
 				logic_mcu_ls8a10023t_otg_mobile_det();
 				sys_event_notify(SYS_EVENT_POWER_OFF);
 			}

@@ -91,6 +91,7 @@ enum pd_manager_supply_property {
 	PD_SUPPLY_PROP_TEST_SINK_CHARAGE_CURRENT,//for factory test
 	PD_SUPPLY_PROP_TEST_GET_SINK_CHARGE_STEP,//for factory test
     PD_SUPPLY_PROP_TYPEC_WATER_WARNING_STATUS,//1:HAVE WATER WARNIG; 0: DONOT HAVE water WARNIG
+    PD_SUPPLY_PROP_TYPEC_WATER_WARNING_TRIGGER_CNT,
 
     PD_SUPPLY_PROP_IDLE,
 
@@ -388,5 +389,5 @@ extern int pd_srv_event_notify(int event ,int value);
 
 extern uint8_t Read_hw_ver(void);
 extern bool logic_mcu_ls8a10049t_get_water_warning_status(void);
-
+extern uint8_t logic_mcu_ls8a10049t_get_water_triggered_cnt(void);
 #endif

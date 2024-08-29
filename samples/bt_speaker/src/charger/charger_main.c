@@ -207,7 +207,7 @@ int charger_mode_check(void)
 				// struct device *logic_mcu_ls8a10023t_dev = device_get_binding(CONFIG_LOGIC_MCU_LS8A10023T_DEV_NAME);
 				// if (logic_mcu_ls8a10023t_dev)
 				// {
-
+				k_sleep(1000);
 				logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
 			
 //				}

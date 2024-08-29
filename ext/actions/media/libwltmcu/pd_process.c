@@ -715,6 +715,21 @@ void pd_manager_mcu_int_deal(void)
 	
 }
 
+int pd_manager_check_water_alarm(void)
+{
+    union pd_manager_supply_propval val;
+
+    if(wlt_pd_manager == NULL)
+        return -1;
+
+    const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_VOLT_VAULE, &val);
+
+    return val.intval;
+
+}
+
+
 #ifdef OTG_PHONE_POWER_NEED_SHUTDOWN
 static void pa_manager_otg_phone_power_handle(void)
 {
@@ -793,38 +808,51 @@ void pd_manager_battery_low_check_otg(bool force_flag)
 
             if(wlt_pd_manager->otg_off_flag)
             {
-                if(power_manager_get_battery_capacity() >= (BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1 + 1))
+                if(!pd_manager_check_water_alarm())
                 {
-                    wlt_pd_manager->otg_off_flag = false;
-                    pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 0);
+                    if(power_manager_get_battery_capacity() >= (BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1 + 1))
+                    {
+                        wlt_pd_manager->otg_off_flag = false;
+                        pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 0);
+                    }
                 }                  
             }else{
 
-                if(power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1) 
+                if(pd_manager_check_water_alarm())
                 {
-
-                    if(sys_check_standby_state())
+                    if(!wlt_pd_manager->otg_off_flag)
                     {
-                        SYS_LOG_INF("[%d] source volt < 15, power down! \n", __LINE__);
-                        pd_manager_deinit(0);
-                        sys_pm_poweroff();               
-
-
+                        wlt_pd_manager->otg_off_flag = true;
+                        pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 1);
                     }
-                    else{
-                        
-                        if(!wlt_pd_manager->otg_off_flag)
-                        {
-                            wlt_pd_manager->otg_off_flag = true;
-                            pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 1);
-                        }
-                    }    
-
-                }else if(force_flag)
+                }else
                 {
-                    wlt_pd_manager->otg_off_flag = false;
-                    pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 0);
-                }               
+                    if(power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1) 
+                    {
+
+                        if(sys_check_standby_state())
+                        {
+                            SYS_LOG_INF("[%d] source volt < 15, power down! \n", __LINE__);
+                            pd_manager_deinit(0);
+                            sys_pm_poweroff();               
+
+
+                        }
+                        else{
+                            
+                            if(!wlt_pd_manager->otg_off_flag)
+                            {
+                                wlt_pd_manager->otg_off_flag = true;
+                                pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 1);
+                            }
+                        }    
+
+                    }else if(force_flag)
+                    {
+                        wlt_pd_manager->otg_off_flag = false;
+                        pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 0);
+                    } 
+                }              
             }
         }
 
@@ -842,6 +870,8 @@ void pd_manager_battery_low_check_otg(bool force_flag)
     }
 
 }
+
+
 
 
 /*
@@ -865,7 +895,9 @@ bool pd_set_source_refrest(void)
 
     }else{
         // pd_manager_disable_charging(false);
+
         pd_manager_battery_low_check_otg(true);
+        
         // k_sleep(500);
         pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_SSRC, 0);
     }
@@ -938,8 +970,6 @@ int pd_manager_get_volt_info(void)
 
     return val.intval;
 }
-
-
 
 void pd_manager_G1_G2_debounce_process(bool flag)
 {
@@ -1503,7 +1533,7 @@ static void pd_manager_time_hander(struct thread_timer *ttimer, void *expiry_fn_
 
     //pd_manger_poweron_filte_battery_led_handle();
     pd_managet_typec_high_temp_protect();
-
+ 
 
 #ifdef OTG_PHONE_POWER_NEED_SHUTDOWN
     pa_manager_otg_phone_power_handle();
@@ -1525,7 +1555,8 @@ struct odm_detect_info {
 };
 
 
-uint8_t ReadODM(void)
+
+uint8_t wlt_ReadODM(void)
 
 {
     u32_t value;
@@ -1593,6 +1624,40 @@ uint8_t ReadODM(void)
     //return 1;
 #endif
 
+}
+
+
+uint8_t ReadODM(void)
+{
+    static u8_t odm_value = 0x00;
+    static u8_t odm_first_read = 0;
+
+    if(odm_first_read)
+    {
+        return odm_value;
+    }
+
+    odm_first_read = true;
+    odm_value = wlt_ReadODM();
+
+    if(odm_value != wlt_ReadODM())
+    {
+        printf("%s,%d; ODM first read is Error! \n", __func__, __LINE__);
+        k_sleep(50);
+        odm_value = wlt_ReadODM();
+    }
+
+    if(odm_value == HW_3NOD_BOARD)
+    {
+        printf("%s,%d; ODM is WorldElite \n", __func__, __LINE__);
+    }else if(odm_value == HW_GUOGUANG_BOARD)
+    {
+        printf("%s,%d; ODM is GuoGuang \n", __func__, __LINE__);
+    }else{
+        printf("%s,%d; ODM is Tonly \n", __func__, __LINE__);
+    }
+    return odm_value;
+    
 }
 
 void pd_init_and_disable_charge(bool flag)
@@ -1773,11 +1838,11 @@ int pd_manager_deinit(int value)
 
     thread_timer_stop(&wlt_pd_manager->timer);
     pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);                // stop pd timer;
-    k_sleep(80);
+    k_sleep(50);
 
     pd_manager_v_sys_g1_g2(PD_V_BUS_G1_G2_DEINIT);
     pd_manager_send_cmd_code(PD_SUPPLY_PROP_POWERDOWN, value);
-    k_sleep(150);
+    k_sleep(120);
     bt_mcu_send_pw_cmd_powerdown();
 
     return 0;

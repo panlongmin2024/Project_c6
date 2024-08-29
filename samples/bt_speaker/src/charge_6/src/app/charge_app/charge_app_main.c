@@ -359,7 +359,7 @@ static int charge_app_msg_pro(struct app_msg *msg)
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	case MSG_PD_BAT_SINK_FULL:
-
+	
 		logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
 		pd_manager_deinit(1);	
 		sys_pm_poweroff();

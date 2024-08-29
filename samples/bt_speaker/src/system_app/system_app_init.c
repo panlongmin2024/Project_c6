@@ -164,17 +164,12 @@ static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 			if(btdrv_get_bqb_mode()){
 				sys_pm_reboot(7);
 			}
-			if(run_mode_is_demo())
-			{
-				// input_manager_lock();
-				// tts_manager_lock();
-				// tts_manager_wait_finished(1);
-				os_sleep(50);
-				printk("wati 50ms output\n");
-				hm_ext_pa_deinit();		
-				external_dsp_ats3615_deinit();
-			}
-
+			
+			os_sleep(50);
+			printk("wati 50ms output\n");
+			hm_ext_pa_deinit();		
+			external_dsp_ats3615_deinit();
+			
 		}
 		if(!memcmp(tts_id,"c_err.mp3",9)){
 			main_system_tts_set_play_warning_tone_flag(false);
@@ -556,9 +551,11 @@ void system_app_init(void)
 	}
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+
 	printf("%s:%d led_manager_set_display\n", __func__, __LINE__);
 	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);						// power led
 	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);	
+
 #endif
 
 
@@ -588,7 +585,7 @@ void system_app_init(void)
 	tts_manager_add_event_lisener(main_system_tts_event_nodify);
 	if(run_mode_is_demo()&&(!dc_power_in_status_read())){
 		SYS_LOG_INF("[%d] run_mode_is_demo, but No dc_power_in \n", __LINE__);
-		//system_power_off();
+		system_power_off();
 	}else{
 #ifdef CONFIG_BT_CONTROLER_BQB
 		if(!main_system_is_enter_bqb())
