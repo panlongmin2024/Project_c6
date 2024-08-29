@@ -219,7 +219,9 @@ static int cdc_shell_ats_reboot(struct device *dev, u8_t *buf, int len)
 
 static int cdc_shell_ats_power_off(struct device *dev, u8_t *buf, int len)
 {
-	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_POWER_OFF, sizeof(ATS_CMD_RESP_POWER_OFF)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 	
 	ats_sys_power_off();
 
