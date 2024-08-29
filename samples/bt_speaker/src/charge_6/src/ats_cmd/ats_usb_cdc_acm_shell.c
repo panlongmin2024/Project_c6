@@ -1527,6 +1527,19 @@ int cdc_shell_ats_rst_reboot(struct device *dev, u8_t *buf, int len)
 
 	return 0;
 }
+int cdc_shell_ats_switch_demo_mode(struct device *dev, u8_t *buf, int len)
+{	
+	struct app_msg msg = { 0 };
+    msg.type = MSG_INPUT_EVENT;
+    msg.cmd = MSG_DEMO_SWITCH;
+    send_async_msg("main", &msg);
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_SWITCH_DEMO, sizeof(ATS_CMD_RESP_SWITCH_DEMO)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	return 0;
+}
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -1939,6 +1952,11 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* reset and reboot */
 		cdc_shell_ats_rst_reboot(dev, NULL, 0);
 	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_SWITCH_DEMO, sizeof(ATS_AT_CMD_SWITCH_DEMO)-1))
+	{		   
+		/* switch demo mode */
+		cdc_shell_ats_switch_demo_mode(dev, NULL, 0);
+	}			
 	else	
 	{
 		//ats_usb_cdc_acm_write_data("live ats_usb_cdc_acm_shell_command_handler exit",sizeof("live ats_usb_cdc_acm_shell_command_handler exit")-1);
