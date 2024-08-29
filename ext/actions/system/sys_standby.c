@@ -460,28 +460,7 @@ static int _sys_standby_enter_s3(void)
 #endif
 extern void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
 extern bool ats_is_enable(void);
-char user_char2asi(char x)
-{
-	if(x>9){
-		return (x-10)+'A';
-	}
-	else{
-		return x+'0';
-	}
-}
-int hex_to_string_8(u32_t dat, u8_t *buf)
-{
-	int tmp = 0;
-	for(int i = 0; i < 8; i++){
-		tmp = dat&0xf0000000;
-		tmp>>=28;
-		*buf++ = user_char2asi((char)tmp);
-		
-		dat<<=4;
-	}
-	return 0;
-}
-
+extern char *bin2hex(char *dst, const void *src, unsigned long count);
 static int _sys_standby_process_normal(void)
 {
 	u32_t wakelocks = sys_wakelocks_check();
@@ -551,8 +530,8 @@ static int _sys_standby_process_normal(void)
 		_sys_standby_enter_s1();
 
 	time_get = sys_wakelocks_get_free_time();
-	hex_to_string_8(time_get,buf_send+5);
-	hex_to_string_8(standby_context->auto_standby_time,buf_send+14);
+	bin2hex(buf_send+5, &time_get, 4);
+	bin2hex(buf_send+14, &standby_context->auto_standby_time, 4);
 	ats_usb_cdc_acm_write_data(buf_send,sizeof(buf_send));
 	return 0;
 
