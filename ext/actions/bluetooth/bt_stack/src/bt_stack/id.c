@@ -225,6 +225,9 @@ static void le_rpa_invalidate(void)
 #if defined(CONFIG_BT_PRIVACY)
 static void le_rpa_timeout_submit(void)
 {
+	#if defined(CONFIG_BT_RPA_ADDR_CONSTANT)
+	return;
+	#endif
 	(void)k_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
 }
 
@@ -453,6 +456,9 @@ static void le_update_private_addr(void)
 
 static void le_force_rpa_timeout(void)
 {
+	#if defined(CONFIG_BT_RPA_ADDR_CONSTANT)
+	return;
+	#endif	
 #if defined(CONFIG_BT_PRIVACY)
 	k_delayed_work_cancel_sync(&bt_dev.rpa_update, K_NO_WAIT);
 #endif
@@ -466,7 +472,9 @@ static void rpa_timeout(struct k_work *work)
 	bool adv_enabled = false;
 
 	BT_DBG("");
-
+	#if defined(CONFIG_BT_RPA_ADDR_CONSTANT)
+	return;
+	#endif
 	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 		struct bt_conn *conn =
 			bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
@@ -1407,6 +1415,9 @@ int bt_setup_random_id_addr(void)
 #if defined(CONFIG_BT_CENTRAL)
 static inline bool rpa_timeout_valid_check(void)
 {
+	#if defined(CONFIG_BT_RPA_ADDR_CONSTANT)
+	return true;
+	#endif
 #if defined(CONFIG_BT_PRIVACY)
 	uint32_t remaining_ms = __ticks_to_ms(
 		k_delayed_work_remaining_get(&bt_dev.rpa_update));
