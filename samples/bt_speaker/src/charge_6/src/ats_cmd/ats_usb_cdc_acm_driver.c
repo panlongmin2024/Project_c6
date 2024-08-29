@@ -150,6 +150,12 @@ static void cdc_acm_thread_main_loop(void *p1, void *p2, void *p3)
 				case 1:
 					ats_usb_cdc_acm_key_check_report(dev, msg.value);
 					break;
+				case 10:
+					buffer[1] = '0';
+					ats_usb_cdc_acm_cmd_response_at_data(
+					dev, ATS_CMD_RESP_ENTER_STANDBY, sizeof(ATS_CMD_RESP_ENTER_STANDBY)-1, 
+					buffer, sizeof(buffer)-1);
+					break;				
 				case 11:
 					buffer[1] = '1';
 					ats_usb_cdc_acm_cmd_response_at_data(
