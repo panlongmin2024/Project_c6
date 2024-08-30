@@ -445,7 +445,11 @@ int power_manager_sync_slave_battery_state(void)
 						printk("[%s/%d], POWER_SUPPLY_STATUS_CHARGING !!!\n\n",__func__,__LINE__);
 					   pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);	
 					}
-					else
+					else if(temp_status == POWER_SUPPLY_STATUS_EXT_CHARGING && charge_status > POWER_SUPPLY_STATUS_DISCHARGE)
+					{	
+						pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_EXT_CAHARGE);
+					}
+					else 
 					{
 						 //pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);
 					}
