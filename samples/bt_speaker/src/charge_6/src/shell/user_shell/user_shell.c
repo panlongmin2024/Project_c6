@@ -240,10 +240,6 @@ int shell_user_enter_fcc(int argc, char *argv[])
 	int ret1;
 	u8_t buffer[1+1] = {6,0};
 
-	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_CMD_RESP_NOSIGTESTMODE_IN, sizeof(ATS_CMD_RESP_NOSIGTESTMODE_IN)-1, 
-		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
-
     ret1 = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
 	if(ret1==0){
 		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
