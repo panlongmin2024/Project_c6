@@ -664,6 +664,7 @@ extern int tool_init(void);
 // 	wlt_hm_ext_pa_start();
 
 	if(check_is_wait_adfu()){
+		SYS_LOG_INF("------>srrc_enter dfu\n");
 		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
 	}
 
