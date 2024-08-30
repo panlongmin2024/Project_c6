@@ -662,7 +662,8 @@ extern int tool_init(void);
 #endif */
 // extern void wlt_hm_ext_pa_start(void);
 // 	wlt_hm_ext_pa_start();
-
+	int shell_user_enter_fcc(int argc, char *argv[]);
+	shell_user_enter_fcc(0,0);
 }
 
 static void main_freq_init(void)
