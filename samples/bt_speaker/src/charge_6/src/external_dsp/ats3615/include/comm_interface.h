@@ -28,7 +28,7 @@ int ats3615_comm_send_battery_volt(float battery_volt);
 int ext_dsp_send_battery_volt(float battery_volt);
 int ext_dsp_set_eq_param(dolphin_eq_band_t * eq_bands, int bands_count);
 
-int ats3615_comm_send_user_eq(dolphin_eq_band_t * eq_bands);
+int ats3615_comm_send_user_eq(dolphin_eq_band_t * eq_bands, int bands_count);
 
 extern int ext_dsp_set_bypass(int bypass);
 

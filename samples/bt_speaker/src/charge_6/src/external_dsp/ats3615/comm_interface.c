@@ -15,7 +15,7 @@
 #include <logging/sys_log.h>
 #endif
 
-#define NUM_EQ_PRESETS 6
+
 #define NUM_EQ_BANDS 5
 
 static dolphin_host2dsp_t ats3615_com_host_data_cache = { 0 };
@@ -48,7 +48,7 @@ int ats3615_comm_send_battery_volt(float battery_volt)
     return ret;
 }
 
-int ats3615_comm_send_user_eq(dolphin_eq_band_t * eq_bands)
+int ats3615_comm_send_user_eq(dolphin_eq_band_t * eq_bands, int bands_count)
 {
     if (!eq_bands)
         return -1;
@@ -57,16 +57,16 @@ int ats3615_comm_send_user_eq(dolphin_eq_band_t * eq_bands)
     memset(&comm, 0, sizeof(comm));
 
     // copy preset to dolphin_com structure
-    memcpy(comm.host.usereq, eq_bands, sizeof(dolphin_eq_band_t) * NUM_EQ_BANDS);
+    memcpy(comm.host.usereq, eq_bands, sizeof(dolphin_eq_band_t) * bands_count);
 
     // update bit mask for bands to be updated (all of them !)
-    comm.host.change_bits_usereq_bands = (1 << NUM_EQ_BANDS) - 1;
+    comm.host.change_bits_usereq_bands = (1 << bands_count) - 1;
 
     // update change flags
     comm.host.change_flags |= FLAG_CHANGE_USER_EQ;
 
-    memcpy(ats3615_com_host_data_cache.usereq, eq_bands, sizeof(dolphin_eq_band_t) * NUM_EQ_BANDS);
-    ats3615_com_host_data_cache.change_bits_usereq_bands = (1 << NUM_EQ_BANDS) - 1;
+    memcpy(ats3615_com_host_data_cache.usereq, eq_bands, sizeof(dolphin_eq_band_t) * bands_count);
+    ats3615_com_host_data_cache.change_bits_usereq_bands = (1 << bands_count) - 1;
     ats3615_com_host_data_cache.change_flags |= FLAG_CHANGE_USER_EQ;
 
     int ret = dolphin_comm_send_ex(&comm);
@@ -168,73 +168,6 @@ int ext_dsp_volume_control_delay_proc(void)
 
 #endif
 
-
-
-
-static dolphin_eq_band_t eq_presets[NUM_EQ_PRESETS][NUM_EQ_BANDS] =  /* xtreme 4 given by David */
-{ 
-    /* User EQ (band gains can be modified by user) */
-    {
-        { 120,   0, 0.707,  DOLPHIN_EQ_TYPE_LS2 },
-        { 400,   0, 1.5,    DOLPHIN_EQ_TYPE_EQ2 },
-        { 1250,  0, 1.5,    DOLPHIN_EQ_TYPE_EQ2 },
-        { 4000,  0, 1.5,    DOLPHIN_EQ_TYPE_EQ2 },
-        { 8000,  0, 0.707,  DOLPHIN_EQ_TYPE_HS2 },
-    },
-    /* Signature */
-    {
-        { 100,    0, 1, DOLPHIN_EQ_TYPE_EQ2 },
-        { 1000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
-        { 2000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
-        { 7000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
-        { 10000,  0, 1, DOLPHIN_EQ_TYPE_EQ2 },
-    },
-    /* Relaxing	*/
-    {
-        { 200, -4, 0.5   	, DOLPHIN_EQ_TYPE_LS2 },
-        { 1000, 0, 1	    , DOLPHIN_EQ_TYPE_EQ2 },
-        { 1500, -3, 1       , DOLPHIN_EQ_TYPE_EQ2 },
-        { 6000, -3, 0.5     , DOLPHIN_EQ_TYPE_HS2 },
-        { 10000, 0, 0.7     , DOLPHIN_EQ_TYPE_LP2 },
-    },
-    /* Vocal */
-    {
-        { 80, -5, 0.5	    , DOLPHIN_EQ_TYPE_LS2 },
-        { 1000, 4, 1	    , DOLPHIN_EQ_TYPE_EQ2 },
-        { 4000, 4, 1	    , DOLPHIN_EQ_TYPE_EQ2 },
-        { 9000, -2, 0.7	    , DOLPHIN_EQ_TYPE_EQ2 },
-        { 9000, 0, 0.7      , DOLPHIN_EQ_TYPE_LP2 },
-    },
-    /* Energetic */
-    {
-        { 60, -2, 0.7	, DOLPHIN_EQ_TYPE_LS2 },
-        { 200, 7, 1.5	, DOLPHIN_EQ_TYPE_EQ2 },
-        { 1500, 3, 2	, DOLPHIN_EQ_TYPE_EQ2 },
-        { 7000, 2, 2	, DOLPHIN_EQ_TYPE_EQ2 },
-        { 10000, 0, 1   , DOLPHIN_EQ_TYPE_EQ2 },
-    },
-    /* Party */
-    {
-        { 100, 0, 1	    , DOLPHIN_EQ_TYPE_EQ2 },
-        { 250, 5, 3	    , DOLPHIN_EQ_TYPE_EQ2 },
-        { 3000, 3, 1	, DOLPHIN_EQ_TYPE_EQ2 },
-        { 7000, 5, 0.7  , DOLPHIN_EQ_TYPE_HS2 },
-        { 10000, 0, 1   , DOLPHIN_EQ_TYPE_EQ2 },
-    }
-};
-
-
-void ext_dsp_switch_eq_presets(void)
-{
-    static u8_t eq_index = -1;
-    eq_index = (eq_index + 1) % NUM_EQ_PRESETS;
-
-    printk("ext_dsp_switch_eq_presets  %d \n", eq_index);
-    // ats3615_comm_send_user_eq(&(eq_presets[eq_index][0]));
-    ext_dsp_set_eq_param(&(eq_presets[eq_index][0]), NUM_EQ_BANDS);
-}
-
-
 int ext_dsp_set_bypass(int bypass)
 {
     printk("ext_dsp_set_bypass  %d \n", bypass);
@@ -262,9 +195,7 @@ int ext_dsp_set_eq_param(dolphin_eq_band_t * eq_bands, int bands_count)
         printk("bands[%d].q_value   = %d.%01d \n", i, (int)eq_bands[i].q, ((int)(eq_bands[i].q * 10)) % 10);
         printk("bands[%d].type      = %d \n", i, eq_bands[i].type);
     }
-
-    int ret = ats3615_comm_send_user_eq(eq_bands);
-
+    int ret = ats3615_comm_send_user_eq(eq_bands, bands_count);
     return ret;
 }
 

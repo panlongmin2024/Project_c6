@@ -504,9 +504,11 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 
 	case TokenID_Firmware_Version:
 		size = 0;
-		uint8_t  vercode[4] = {0,};    // 3Bytes is sw version, big endian, 1Byte is hw version
-		u32_t hwver = 0, swver = fw_version_get_code();
-
+		u8_t vercode[4];	// 3Bytes is sw version, big endian, 1Byte is hw version
+		extern u32_t fw_version_get_sw_code(void);
+		extern u8_t fw_version_get_hw_code(void);
+		u32_t hwver = fw_version_get_hw_code();
+		u32_t swver = fw_version_get_sw_code();
 
 		if(!device_id){
 			vercode[0] = hex2dec_digitpos((swver >> 16) & 0xFF);

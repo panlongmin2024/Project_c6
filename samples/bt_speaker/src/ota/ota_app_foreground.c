@@ -553,9 +553,13 @@ static void ota_app_stop_ota_upgrade(bool app_switch)
 	msg.value = app_switch;
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }
-
+static u8_t pwr_key_ota_end_flag = 0;
 void ota_led_timer_pro(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
+  
+   if(pwr_key_ota_end_flag)
+   	return;
+    SYS_LOG_INF("enter");
 	power_led_cnt++;
 	if(power_led_cnt < 1){
 		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
@@ -588,6 +592,7 @@ static int _ota_app_init(void *p1, void *p2, void *p3)
 #endif
 
 	bt_manager_halt_ble();
+	pwr_key_ota_end_flag = 0;
 
 	thread_timer_init(&ota_led_timer, ota_led_timer_pro, NULL);
 	return 0;
@@ -608,6 +613,8 @@ static int _ota_exit(void)
 	input_manager_unlock();
 	return 0;
 }
+
+
 
 static void ota_thread_deal(void *p1, void *p2, void *p3)
 {
@@ -715,6 +722,15 @@ void ota_input_event_proc(struct app_msg *msg)
 	}
 }
 
+int power_key_ota_exit(void)
+{
+   pwr_key_ota_end_flag = 1;
+	thread_timer_stop(&ota_led_timer);
+	SYS_LOG_INF("ota_led_timer = \n");
+
+	return 0;
+}
+
 static int _ota_proc_msg(struct app_msg *msg)
 {
 
@@ -724,6 +740,7 @@ static int _ota_proc_msg(struct app_msg *msg)
 		case MSG_OTA_APP_EVENT: {
 			if(msg->cmd == MSG_OTA_MESSAGE_CMD_INIT_APP){
 				_ota_create_sub_thread();
+				pwr_key_ota_end_flag = 0;
 				thread_timer_start(&ota_led_timer,500,500);
 				power_led_cnt = 0;
 				success = 0;

@@ -658,8 +658,8 @@ void extern_dsp_3615_io_enable(int enable)
 		gpio_pin_configure(gpio_dev, DSP_EN_PIN, GPIO_DIR_OUT);
 		gpio_pin_write(gpio_dev, DSP_EN_PIN, 0);
 
-		//gpio_pin_configure(gpio_dev, DSP_POWER_EN_PIN, GPIO_DIR_OUT);
-		// gpio_pin_write(gpio_dev, DSP_POWER_EN_PIN, 0);		
+		 gpio_pin_configure(gpio_dev, DSP_POWER_EN_PIN, GPIO_DIR_OUT);
+		 gpio_pin_write(gpio_dev, DSP_POWER_EN_PIN, 0);		
        	if(ReadODM())
 		{
 			// gpio_pin_configure(gpio_dev, AMP_AVDD_PW_ON, GPIO_DIR_OUT | GPIO_POL_NORMAL);

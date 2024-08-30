@@ -1162,6 +1162,16 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                     bt_mcu_send_pw_cmd_poweron();
                     break;
                 }
+				extern int ota_exit_cmd(void);
+				if(ota_exit_cmd() == 1)
+				{
+				    printk("POWER KEY exit OTA\n");
+                     // struct app_msg msg = {0};
+                       // msg.type = MSG_EXIT_APP;
+                     //   send_async_msg(APP_ID_OTA, &msg);
+                     int power_key_ota_exit(void);
+					 power_key_ota_exit();
+				}
 				pd_manager_set_poweron_filte_battery_led(WLT_FILTER_STANDBY_POWEROFF);
 /* 				if(!run_mode_is_demo())
 				  led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL); */
@@ -1475,7 +1485,7 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
                         pd_manager_disable_charging(true);
                     }else if(pd_manager_get_source_status())
                     {
-                        pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 1);
+                        //pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 1);
                     }
                     if(!main_system_tts_get_play_warning_tone_flag())
                     {

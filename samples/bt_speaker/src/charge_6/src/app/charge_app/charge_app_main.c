@@ -95,6 +95,18 @@ int charge_app_exit_cmd(void)
 	return 1;
 }
 
+int ota_exit_cmd(void)
+{
+	
+	int app_id = desktop_manager_get_plugin_id();
+	printk("[%s/%d],app_id %d \n\n",__func__,__LINE__,app_id);
+	if (app_id == DESKTOP_PLUGIN_ID_OTA) {
+	      return 1;
+		}
+	
+	return 0;
+}
+
 static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 {
 	switch (event) {
