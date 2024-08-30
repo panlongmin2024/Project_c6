@@ -663,13 +663,13 @@ extern int tool_init(void);
 // extern void wlt_hm_ext_pa_start(void);
 // 	wlt_hm_ext_pa_start();
 
-	if(check_is_wait_adfu()){
+	/*if(check_is_wait_adfu()){
 		SYS_LOG_INF("------>srrc_enter dfu\n");
 		sys_pm_reboot(REBOOT_TYPE_GOTO_ADFU);
 	}
 
 	int shell_user_enter_fcc(int argc, char *argv[]);
-	shell_user_enter_fcc(0,0);
+	shell_user_enter_fcc(0,0);*/
 }
 
 static void main_freq_init(void)
