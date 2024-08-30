@@ -278,9 +278,14 @@ static void system_sys_event_proc(struct app_msg *msg)
 #ifdef CONFIG_INPUT_MANAGER
 		input_manager_lock();
 #endif
-		pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
-		pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
-		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
+		//pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+		//pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+		//pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
+
+		/* panlm add,poweroff all led off together */
+		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
+		
 		system_exit_front_app();
 	}
 #ifdef CONFIG_OTA_BACKEND_LETWS_STREAM
