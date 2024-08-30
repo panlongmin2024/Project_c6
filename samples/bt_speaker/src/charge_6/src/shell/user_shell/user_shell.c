@@ -235,6 +235,26 @@ static int shell_user_reset(int argc, char *argv[])
 	cdc_shell_ats_rst_reboot(0,0,0);
 	return 0;
 }
+int shell_user_enter_fcc(int argc, char *argv[])
+{
+	int ret1;
+	u8_t buffer[1+1] = {6,0};
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_NOSIGTESTMODE_IN, sizeof(ATS_CMD_RESP_NOSIGTESTMODE_IN)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+    ret1 = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
+	if(ret1==0){
+		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
+	}
+
+	if (ret1==0){
+		sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
+	}
+
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -262,6 +282,7 @@ static const struct shell_cmd commands[] = {
 	{ "get_mode", shell_user_get_mode, "user get mode"},
 	{ "get_uuid", shell_user_get_uuid, "user uuid"},
 	{ "set_reset", shell_user_reset, "user reset"},
+	{ "enter_fcc", shell_user_enter_fcc, "user enter fcc"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
