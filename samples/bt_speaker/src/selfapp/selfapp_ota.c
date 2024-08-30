@@ -850,7 +850,7 @@ static void _selfapp_ota_app_cmd_thread(void *p1, void *p2, void *p3)
 		}else{
 			if(otadfu->state == DFUSTA_DOWNLOADING){
 				SYS_LOG_ERR("wait cmd timeout!");
-				dfureport_state(otadfu->state);
+				//dfureport_state(otadfu->state);
 			}
 
 			printk("wait cmd timeout %d\n", otadfu->thread_need_terminated);
@@ -1181,6 +1181,7 @@ static void otadfu_callback(int event)
 	} else if (event == OTA_BREAKPOINT_REPORT) {
 		otadfu->flag_bp_waiting = 1;
     } else if(event == OTA_UPLOADING) {
+		dfureport_image_state(0x01);
         otadfu_set_state(DFUSTA_UPLOADING);
         dfureport_state(otadfu->state);
         while(!otadfu->flag_send_complete) {
@@ -1378,7 +1379,7 @@ int otadfu_AppTriggerUpgrade(void)
 
     otadfu_handle_t* otadfu = otadfu_get_handle();
 
-	dfureport_image_state(0x0);
+	//dfureport_image_state(0x0);
 
     if(otadfu){
         otadfu->flag_send_complete = true;

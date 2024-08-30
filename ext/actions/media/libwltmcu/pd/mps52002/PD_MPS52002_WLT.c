@@ -2746,11 +2746,12 @@ int pd_mps52002_init(void)
 	    gpio_pin_write(pd_mps52002->gpio_dev, GPIO_PIN_EXTEND_RST, 1);
         gpio_pin_configure(pd_mps52002->gpio_dev, GPIO_PIN_PD_RST, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 		gpio_pin_configure(pd_mps52002->gpio_dev, GPIO_PIN_PA6, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
+		gpio_pin_write(pd_mps52002->gpio_dev, GPIO_PIN_PA6, 1);
 		gpio_pin_configure(pd_mps52002->gpio_dev, GPIO_PIN_PD_SOURCE, GPIO_DIR_IN | GPIO_PUD_PULL_UP);
 	    k_sleep(10);
 	    gpio_pin_write(pd_mps52002->gpio_dev, GPIO_PIN_PD_RST, 0);
 		gpio_pin_write(pd_mps52002->gpio_dev, GPIO_PIN_PA6, 0);
-       // k_sleep(100);
+        k_sleep(100);
     }
 
 

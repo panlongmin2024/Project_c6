@@ -164,12 +164,17 @@ static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 			if(btdrv_get_bqb_mode()){
 				sys_pm_reboot(7);
 			}
-			
-			os_sleep(50);
-			printk("wati 50ms output\n");
-			hm_ext_pa_deinit();		
-			external_dsp_ats3615_deinit();
-			
+			if(run_mode_is_demo())
+			{
+				// input_manager_lock();
+				// tts_manager_lock();
+				// tts_manager_wait_finished(1);
+				os_sleep(50);
+				printk("wati 50ms output\n");
+				hm_ext_pa_deinit();		
+				external_dsp_ats3615_deinit();
+			}
+
 		}
 		if(!memcmp(tts_id,"c_err.mp3",9)){
 			main_system_tts_set_play_warning_tone_flag(false);

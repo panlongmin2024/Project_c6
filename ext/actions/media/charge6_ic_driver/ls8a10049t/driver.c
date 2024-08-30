@@ -1287,6 +1287,7 @@ uint8_t logic_mcu_ls8a10049t_get_water_triggered_cnt(void)
 	*/
 	triggered_cnt = temp;
 #endif	
+	SYS_LOG_INF("%d\n",triggered_cnt);
 	return triggered_cnt;
 }
 

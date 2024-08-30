@@ -723,7 +723,7 @@ int pd_manager_check_water_alarm(void)
         return -1;
 
     const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
-    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_SINK_VOLT_VAULE, &val);
+    api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_TYPEC_WATER_WARNING_TRIGGER_CNT, &val);
 
     return val.intval;
 

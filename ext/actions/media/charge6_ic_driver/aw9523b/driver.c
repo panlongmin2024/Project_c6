@@ -203,6 +203,7 @@ int io_expend_aw9523b_led_mode_output(int port, int pin, int level)
 
     if(port == AW8523B_PORT_0)  
     {
+        printk("\n%s,pin = 0x%x level = 0x%x\n",__func__,pin,value);
         i2c_burst_write(i2c_dev, AW9523B_I2C_ADDR, P0_0_DIM4 + pin, &value, 1);
     }  
     
@@ -274,6 +275,8 @@ int io_expend_aw9523b_registers_init(void)
 	}
 	
 	gpio_pin_configure(gpio_dev, PIN_IO_EXPEND_RST, GPIO_DIR_OUT | GPIO_POL_NORMAL);
+	gpio_pin_write(gpio_dev, PIN_IO_EXPEND_RST, 0);
+	k_sleep(10);
 	gpio_pin_write(gpio_dev, PIN_IO_EXPEND_RST, 1);
 
 #if 0 //PD_VDD_EN
