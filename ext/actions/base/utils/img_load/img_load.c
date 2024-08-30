@@ -109,7 +109,7 @@ void img_code_manage(void)
 	char *IMAGE_NAME = NULL;
 
 	int bin_id = property_get_int(CFG_BIN_TEST_ID, -1);
-	bin_id = BIN_TEST_ID_SRRC;//BIN_TEST_ID_PORDUCE
+	bin_id = BIN_TEST_ID_PORDUCE;//BIN_TEST_ID_PORDUCE
 	if(bin_id <= BIN_TEST_ID_NONE || bin_id >= BIN_TEST_ID_MAX)
 		return;
 
