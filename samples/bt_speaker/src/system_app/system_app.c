@@ -285,6 +285,7 @@ static void system_sys_event_proc(struct app_msg *msg)
 		/* panlm add,poweroff all led off together */
 		led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
 		
 		system_exit_front_app();
 	}
