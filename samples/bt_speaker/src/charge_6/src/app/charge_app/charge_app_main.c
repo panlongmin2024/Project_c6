@@ -291,6 +291,8 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	sys_wake_lock(WAKELOCK_WAKE_UP);
 	SYS_LOG_INF("init finished\n");
 
+	extern uint8_t pd_manager_get_poweron_filte_battery_led(void);
+	SYS_LOG_INF("------>led_state %d\n",pd_manager_get_poweron_filte_battery_led());
 	return ret;
 }
 
