@@ -154,7 +154,7 @@ void batt_led_manager_set_display(int led_status)
 power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
 	    	 {
 	    	    printk("batt_led_manager_set_display led_status = %d\n",led_status);
-	    	   led_status = BATT_LED_NORMAL_OFF;
+	    	   //led_status = BATT_LED_NORMAL_OFF;
 			 }
     	}
    }
