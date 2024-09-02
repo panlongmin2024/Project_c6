@@ -251,6 +251,17 @@ int shell_user_enter_fcc(int argc, char *argv[])
 
 	return 0;
 }
+static int shell_user_info(int argc, char *argv[])
+{
+	int desktop_manager_get_plugin_id(void);
+	uint8_t pd_get_app_mode_state(void);
+	
+	int id = desktop_manager_get_plugin_id();
+	uint8_t app_mode = pd_get_app_mode_state();
+
+	printk("------> desktop_id app_mode %d %d   \n",id,app_mode);
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -279,6 +290,7 @@ static const struct shell_cmd commands[] = {
 	{ "get_uuid", shell_user_get_uuid, "user uuid"},
 	{ "set_reset", shell_user_reset, "user reset"},
 	{ "enter_fcc", shell_user_enter_fcc, "user enter fcc"},
+	{ "user_info", shell_user_info, "user get info"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
