@@ -140,6 +140,7 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 
 			hotplug_charger_init();	
 			charge_app_state = CHARGING_APP_OK;
+			pd_set_app_mode_state(CHARGING_APP_MODE);
 			if(charge_app_force_power_off == 1){
 				pd_manager_deinit(0);		
 				sys_pm_poweroff();
@@ -258,7 +259,7 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 		thread_timer_start(&reset_timer,2000,2000);
 	}
 	tts_manager_add_event_lisener(charge_system_tts_event_nodify);
-    pd_set_app_mode_state(CHARGING_APP_MODE);
+//    pd_set_app_mode_state(CHARGING_APP_MODE);
 	pd_manager_send_disc();
 	system_set_power_run_mode(1);
 	bt_manager_set_autoconn_info_need_update(0);

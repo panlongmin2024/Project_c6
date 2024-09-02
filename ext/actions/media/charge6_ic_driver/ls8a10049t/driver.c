@@ -91,11 +91,14 @@ typedef struct {
 	uint8_t water0_triggered_cnt;
 	uint8_t water1_triggered_cnt;
 	uint8_t ntc_triggered_cnt;
+	uint8_t dc_in_triggered_cnt;
 	uint32_t water0_filter_time;
 	uint32_t water1_filter_time;
+	uint32_t dc_in_filter_time;
 	uint32_t ntc_filter_time;
 	uint32_t water0_remove_filter_time;
 	uint32_t water1_remove_filter_time;	
+	uint32_t dc_in_remove_filter_time;
 #endif	
 }mcu_int_info_t;
 
@@ -1409,6 +1412,50 @@ void wlt_logic_mcu_ls8a10049t_int_fn(void)
 					printk("\n%s,%d,ntc_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.ntc_triggered_cnt);
 					mcu_int_info.ntc_triggered_cnt = 0;
 			}
+	}
+
+	if((mcu_int_info.dc_in_triggered_cnt > 0))
+	{
+		if(!_ls8a10049t_check_usb_cable_in_status(dev))
+		{
+			if(mcu_int_info.dc_in_remove_filter_time == 0)
+			{
+				mcu_int_info.dc_in_remove_filter_time = os_uptime_get_32();
+			}
+
+			if((os_uptime_get_32() - mcu_int_info.dc_in_remove_filter_time) > FIRST_TRIGGER_FILTER_TIME)
+			{
+				printk("\n%s,%d,dc_in_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.dc_in_triggered_cnt);
+				mcu_int_info.dc_in_triggered_cnt = 0;
+				mcu_int_info.dc_in_remove_filter_time = 0;
+				//USB拔掉解除报警
+				if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)
+				|| logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)){
+					if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)){
+						logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
+						mcu_int_info.water0_remove_filter_time = 0;
+						mcu_int_info.water0_triggered_cnt--;
+						mcu_int_info.water0_filter_time = os_uptime_get_32();
+					}
+
+					if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)){
+						logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
+						mcu_int_info.water1_remove_filter_time = 0;
+						mcu_int_info.water1_triggered_cnt--;
+						mcu_int_info.water1_filter_time = os_uptime_get_32();
+					}
+
+					para.mcu_event_val = MCU_INT_CMD_WATER_OUT;
+
+					if (dev->mcu_notify) {
+						dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
+					}
+					else{
+						printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
+					}
+				}
+			}
+		}
 	}
 #endif
 	if(logic_mcu_ls8a10049t_get_int_event() == 0){

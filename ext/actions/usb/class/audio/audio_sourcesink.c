@@ -107,12 +107,12 @@ static void usb_audio_status_cb(enum usb_dc_status_code status, u8_t *param)
 				/* 24bit */
 				if(alt_setting == 1)
 				{
-					USB_AudioSinkBitDepthSet(CONFIG_USB_AUDIO_DEVICE_SINK_FIRST_BIT_DEPTH);
+					USB_AudioSinkBitDepthSet(CONFIG_USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH);
 				}
 				/* 16bit */
 				else
 				{
-					USB_AudioSinkBitDepthSet(CONFIG_USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH);
+					USB_AudioSinkBitDepthSet(CONFIG_USB_AUDIO_DEVICE_SINK_FIRST_BIT_DEPTH);
 				}
 			}
 
@@ -383,15 +383,15 @@ static void usb_audio_device_sink_handle_get_cur(struct usb_setup_packet *psetup
 		*data = (u8_t *)&usb_audio_mute_vol;
 		*len  = MUTE_LENGTH;
 	} else if (psetup->wValue == ((VOLUME_CONTROL << 8) | MAIN_CHANNEL_NUMBER0)) {
-		SYS_LOG_DBG("sink get main_ch vol");
+		SYS_LOG_INF("sink get main_ch vol %d\n",sink_ch0_cur_vol);
 		*data = (u8_t *) &sink_ch0_cur_vol;
 		*len = VOLUME_LENGTH;
 	} else if (psetup->wValue == ((VOLUME_CONTROL << 8) | MAIN_CHANNEL_NUMBER1)) {
-		SYS_LOG_DBG("sink get ch_1 vol");
+		SYS_LOG_DBG("sink get ch_1 vol %d\n",sink_ch1_cur_vol);
 		*data = (u8_t *) &sink_ch1_cur_vol;
 		*len = VOLUME_LENGTH;
 	} else if (psetup->wValue == ((VOLUME_CONTROL << 8) | MAIN_CHANNEL_NUMBER2)) {
-		SYS_LOG_DBG("sink get ch_2 vol");
+		SYS_LOG_DBG("sink get ch_2 vol %d\n",sink_ch2_cur_vol);
 		*data = (u8_t *) &sink_ch2_cur_vol;
 		*len = VOLUME_LENGTH;
 	}

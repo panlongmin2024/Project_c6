@@ -98,7 +98,7 @@ extern void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event
 #ifdef CONFIG_C_TEST_BATT_MACRO
 
 static uint8_t test_id = 1;
-static int battery_cap= 3;
+static int battery_cap= 25;
 static int battery_temperature=250;
 
 void set_battery_cap(bool flag)
@@ -674,7 +674,7 @@ int pd_manager_send_cmd_code(uint8_t type, int code)
 
 void pd_manager_disable_charging(bool flag)
 {
-    // if(wlt_pd_manager->pd_sink_status_flag)
+    if(wlt_pd_manager->pd_sink_dischg_flag != flag)
     {
         SYS_LOG_INF("[%d]; flag=%d", __LINE__, flag);
 
@@ -1055,7 +1055,7 @@ void pd_manager_over_temp_protect(void)
     //     return;
     // }
 
-    if(wlt_pd_manager->pd_sink_dischg_flag)
+    if((wlt_pd_manager->pd_sink_dischg_flag) && (!pd_manager_check_water_alarm()))
     {
         if((power_manager_get_battery_temperature() <= 430) && (power_manager_get_battery_temperature() >= 20))
         {    
@@ -1086,42 +1086,54 @@ void pd_manager_over_temp_protect(void)
         }
     } 
 
-    if(wlt_pd_manager->dc_sink_charge_count <= PD_CHARGE_TEN_MINITE_COUNT)   
-    {
-        wlt_pd_manager->dc_sink_charge_count++;
-    }
 
-    if(wlt_pd_manager->dc_sink_charge_count == PD_CHARGE_TEN_MINITE_COUNT)
-    {
+    if(wlt_pd_manager->pd_sink_status_flag)
+    {   
+
+       // SYS_LOG_INF("Totti temp:%d, temp_ten_flag%d\n", power_manager_get_battery_temperature(), temp_ten_flag);
+
         if((power_manager_get_battery_temperature() <= 100) && (power_manager_get_battery_temperature() >= 10))
         {
-            SYS_LOG_INF("[%d] set current 1500ma \n", __LINE__);
-            temp_ten_flag = 1;
-            pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
+            if(!temp_ten_flag)
+            {
+                temp_ten_flag = 1;
+                SYS_LOG_INF("[%d] set current 1500ma \n", __LINE__);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
+            }
+
         }else if((power_manager_get_battery_temperature() < 440) && (power_manager_get_battery_temperature() > 100))
         {
-            SYS_LOG_INF("[%d] set current 2400ma \n", __LINE__);
-            pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 0);
-        }
-    }
-
-    if((power_manager_get_battery_temperature() <= 100) && (power_manager_get_battery_temperature() >= 10))
-    {
-        if(!temp_ten_flag)
-        {
-            temp_ten_flag = 1;
-            SYS_LOG_INF("[%d] set current 1500ma \n", __LINE__);
-            pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
+            if(temp_ten_flag)
+            {
+                temp_ten_flag = 0;
+                SYS_LOG_INF("[%d] set current 2400ma \n", __LINE__);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 0);
+            }        
         }
 
-    }else if((power_manager_get_battery_temperature() < 440) && (power_manager_get_battery_temperature() > 100))
-    {
-        if(temp_ten_flag)
+
+        if(wlt_pd_manager->dc_sink_charge_count <= PD_CHARGE_TEN_MINITE_COUNT)   
         {
-            temp_ten_flag = 0;
-            SYS_LOG_INF("[%d] set current 2400ma \n", __LINE__);
-            pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 0);
-        }        
+            wlt_pd_manager->dc_sink_charge_count++;
+        }
+
+        if(wlt_pd_manager->dc_sink_charge_count == PD_CHARGE_TEN_MINITE_COUNT)
+        {
+            
+            if((power_manager_get_battery_temperature() <= 100) && (power_manager_get_battery_temperature() >= 10))
+            {
+                temp_ten_flag = 1;
+                SYS_LOG_INF("[%d] set current 1500ma \n", __LINE__);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
+
+            }else if((power_manager_get_battery_temperature() < 440) && (power_manager_get_battery_temperature() > 100))
+            {
+                SYS_LOG_INF("[%d] set current 2400ma \n", __LINE__);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 0);
+            }
+        }
+    }else{
+        temp_ten_flag = 0x00;
     }
   
 }
@@ -1502,7 +1514,6 @@ static void pd_manager_time_hander(struct thread_timer *ttimer, void *expiry_fn_
 
     if(wlt_pd_manager->pd_sink_status_flag)
     {
-        pd_manager_over_temp_protect();
         pd_manager_G1_G2_debounce_process(true);
 
     }else if(wlt_pd_manager->pd_source_status_flag)
@@ -1516,6 +1527,8 @@ static void pd_manager_time_hander(struct thread_timer *ttimer, void *expiry_fn_
         wlt_pd_manager->dc_sink_charge_count = 0;
        
     }
+
+    pd_manager_over_temp_protect();
 
     pd_manager_source_change_debunce_process();
 

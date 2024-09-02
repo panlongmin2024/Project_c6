@@ -84,7 +84,7 @@ static int usb_audio_tx_dummy(void)
 			usb_audio->usb_audio_play_load,
 			MAX_UPLOAD_PACKET, &wrote);
 }
-
+#endif
 /**
  * @brief: Gets the bit depth of the current audio receiver.
  *
@@ -112,8 +112,6 @@ void USB_AudioSinkBitDepthSet(uint8_t ucUpdBitDepth)
 {
 	g_stAudioSinkFormat.ucBitDepth = ucUpdBitDepth;
 }
-
-#endif
 
 static void _usb_audio_stream_state_notify(u8_t stream_event)
 {
@@ -452,13 +450,8 @@ int usb_audio_init(usb_audio_event_callback cb)
 		return -ENOMEM;
 	}
 
-#if CONFIG_USB_AUDIO_RESOLUTION == 24 || 1
 	usb_audio->download_buf = mem_malloc(MAX_DOWNLOAD_PACKET * 4 / 3);
-#elif CONFIG_USB_AUDIO_RESOLUTION == 16
-	usb_audio->download_buf = mem_malloc(MAX_DOWNLOAD_PACKET * 2);
-#else
-	usb_audio->download_buf = mem_malloc(MAX_DOWNLOAD_PACKET);
-#endif
+	
 	if (!usb_audio->download_buf) {
 		mem_free(usb_audio->usb_audio_play_load);
 		mem_free(usb_audio);
@@ -472,6 +465,7 @@ int usb_audio_init(usb_audio_event_callback cb)
 	usb_audio->out_packet_count = 0;
 
 	audio_cur_level = audio_system_get_current_volume(AUDIO_STREAM_USOUND);
+	audio_cur_level = audio_cur_level*16/audio_policy_get_volume_level();
 	if(audio_cur_level >=16){
 		audio_cur_level= 15;
 	} else if (audio_cur_level < 0) {
@@ -481,7 +475,7 @@ int usb_audio_init(usb_audio_event_callback cb)
 		return -ESRCH;
 	}
 	audio_cur_dat = (usb_audio_sink_pa_table[audio_cur_level]/1000) * 256 + 65536;
-	SYS_LOG_DBG("audio_cur_level:%d, audio_cur_dat:0x%x", audio_cur_level, audio_cur_dat);
+	SYS_LOG_INF("audio_cur_level:%d, audio_cur_dat:0x%x", audio_cur_level, audio_cur_dat);
 
 	usb_audio_device_sink_register_start_cb(_usb_audio_sink_start_stop);
 	usb_audio_device_register_inter_out_ep_cb(_usb_audio_out_ep_complete);

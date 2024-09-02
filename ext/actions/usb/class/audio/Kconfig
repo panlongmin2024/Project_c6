@@ -347,19 +347,20 @@ config USB_AUDIO_DEVICE_SOURCE_SAM_FREQ_UPLOAD
 	help
 	  USB Audio source sampling frequency (unit: Hz).
 
-config USB_AUDIO_DEVICE_SINK_FIRST_BIT_DEPTH
-	int
-	prompt "The byte size of the sampling bit for each sample of the first configuration"
-	default 24
-	help
-	  The byte size of the sampling bit for each sample of the first configuration.
 
+config USB_AUDIO_DEVICE_SINK_FIRST_BIT_DEPTH
+	  int
+	  prompt "The byte size of the sampling bit for each sample of the first configuration"
+	  default 24
+	  help
+		The byte size of the sampling bit for each sample of the first configuration.
+  
 config USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH
-	int
-	prompt "The byte size of the sampling bit for each sample of the second configuration"
-	default 16
-	help
-	  The byte size of the sampling bit for each sample of the second configuration.
+	  int
+	  prompt "The byte size of the sampling bit for each sample of the second configuration"
+	  default 16
+	  help
+		The byte size of the sampling bit for each sample of the second configuration.
 
 config USB_AUDIO_DEVICE_SINK_SAMPLE_FREQ_TYPE
 	int

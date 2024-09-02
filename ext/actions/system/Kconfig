@@ -50,14 +50,14 @@ config SYS_WAKELOCK
 config AUTO_STANDBY_TIME_SEC
     int "delay how long (second) to enter standby"
     depends on SYS_STANDBY
-	default 1170
+	default 1140
     help
     This option set the time to enter standby when system idle
 
 config AUTO_POWEDOWN_TIME_SEC
     int "delay how long (second) to auto power down"
     depends on SYS_STANDBY
-	default 1169
+	default 1139
     help
     This option set the time to enter auto power down
 

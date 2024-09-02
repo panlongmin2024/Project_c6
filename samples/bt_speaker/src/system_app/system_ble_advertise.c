@@ -24,7 +24,7 @@
 
 #define GFP_BLE_ADV_POWER (-9)//-13 //数值调小不容易弹窗----zth
 #define GFP_ADV_SLEEP_TIME (500) // 20 S
-#define GFP_CERTIFICATION 1
+//#define GFP_CERTIFICATION 1
 
 #ifdef CONFIG_GFP_PROFILE
 #define ADV_INTERVAL_MS (50)

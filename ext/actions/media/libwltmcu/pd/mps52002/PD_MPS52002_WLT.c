@@ -177,7 +177,7 @@ static void mps_ota_get_status(u8_t *status);
 
 #define WLT_OTG_DEBOUNCE_TIMEOUT        6
 #define WLT_FULL_DEBOUNCE_TIMEOUT        6
-#define MAX_SOURCE_DISC_COUNT           8
+#define MAX_SOURCE_DISC_COUNT           10
 #define MAX_SINK_CHECK_MOBILE_TIME		15
 #define MIN_SINK_CHECK_MOBILE_TIME		5
 
@@ -397,7 +397,7 @@ void pd_mps52002_pd_24A_proccess(int val)
     // i2c_configure(iic_dev, config.raw);JBLCH6-524
 
   	if(val)
-    	buf[0] = 0x1e;
+    	buf[0] = 0x1a;
   	else
   		buf[0] = 0x30;
   

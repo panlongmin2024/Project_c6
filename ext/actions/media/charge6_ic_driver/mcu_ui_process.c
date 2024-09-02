@@ -1478,15 +1478,12 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
 
                 charge_flag = sys_pm_get_power_5v_status();
                 printk("\n%s/%d,charge_flag:%d,dc:%d\n",__func__,__LINE__,charge_flag,dc_power_in_status_read());
-                if(charge_flag || dc_power_in_status_read())
+                if(/*charge_flag || */dc_power_in_status_read())
                 {
-                    if(pd_manager_get_sink_status_flag())
-                    {
-                        pd_manager_disable_charging(true);
-                    }else if(pd_manager_get_source_status())
-                    {
-                        //pd_manager_send_cmd_code(PD_SUPPLY_PROP_OTG_OFF, 1);
-                    }
+
+                    pd_manager_disable_charging(true);
+                    // otg off must be early， so process in  pd_manager_battery_low_check_otg() funcion
+                    
                     if(!main_system_tts_get_play_warning_tone_flag())
                     {
                         sys_event_notify(SYS_EVENT_CHARGING_WARNING);    

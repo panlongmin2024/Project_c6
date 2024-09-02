@@ -19,9 +19,15 @@
 #define RESOLUTION	CONFIG_USB_AUDIO_RESOLUTION
 #define SUB_FRAME_SIZE	(RESOLUTION >> 3)
 
+/* The first bit is wide using bytes, sorted from largest to smallest */
+#define WIDE_USAGE_FIRST_BIT_ENABLED	(CONFIG_USB_AUDIO_DEVICE_SINK_FIRST_BIT_DEPTH >> 3)
+#define WIDE_USAGE_SECOND_BIT_ENABLED	(CONFIG_USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH >> 3)
+
 /* Max download/upload packet for USB audio device */
-#define MAX_DOWNLOAD_PACKET	(ceiling_fraction(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD, 1000) * SUB_FRAME_SIZE * CONFIG_USB_AUDIO_DOWNLOAD_CHANNEL_NUM)
-#define MAX_UPLOAD_PACKET	(ceiling_fraction(CONFIG_USB_AUDIO_DEVICE_SOURCE_SAM_FREQ_UPLOAD, 1000) * SUB_FRAME_SIZE * CONFIG_USB_AUDIO_UPLOAD_CHANNEL_NUM)
+#define MAX_DOWNLOAD_PACKET		(ceiling_fraction(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD, 1000) * WIDE_USAGE_FIRST_BIT_ENABLED * CONFIG_USB_AUDIO_DOWNLOAD_CHANNEL_NUM)
+#define SECOND_DOWNLOAD_PACKET	(ceiling_fraction(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD, 1000) * WIDE_USAGE_SECOND_BIT_ENABLED * CONFIG_USB_AUDIO_DOWNLOAD_CHANNEL_NUM)
+
+#define MAX_UPLOAD_PACKET		(ceiling_fraction(CONFIG_USB_AUDIO_DEVICE_SOURCE_SAM_FREQ_UPLOAD, 1000) * WIDE_USAGE_SECOND_BIT_ENABLED * CONFIG_USB_AUDIO_UPLOAD_CHANNEL_NUM)
 
 /* Support HD(96000KHz) audio playback */
 #ifdef CONFIG_SUPPORT_HD_AUDIO_PLAY
@@ -82,12 +88,6 @@
 #define HID_INTERRUPT_EP_NUM	1
 #endif
 
-#ifdef CONFIG_SUPPORT_USB_AUDIO_SOURCE
-
-/* The first bit is a wide usage byte */
-#define WIDE_USAGE_FIRST_BIT_ENABLED	(CONFIG_USB_AUDIO_DEVICE_SINK_FIRST_BIT_DEPTH >> 3)
-#define WIDE_USAGE_SECOND_BIT_ENABLED	(CONFIG_USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH >> 3)
-
 /* Define a combination of a single bit depth and sample rate */
 typedef struct
 {
@@ -101,8 +101,6 @@ S_AudioSinkFormat g_stAudioSinkFormat =
     /* Initialize stFormat to the first element of aucFormats (16bit 48kHz) */
     RESOLUTION, CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD
 };
-
-#endif
 
 #define INPUT_TERMINAL1_ID	1
 #define OUTPUT_TERMINAL3_ID	3
@@ -165,8 +163,8 @@ static const u8_t usb_audio_dev_fs_desc[] = {
 	HIGH_BYTE(0x010B),
 	0x04,				/* bNumInterfaces */
 #else
-	LOW_BYTE(0x008E),		/* wTotalLength */
-	HIGH_BYTE(0x008E),
+	LOW_BYTE(0x00B9),		/* wTotalLength */
+	HIGH_BYTE(0x00B9),
 	0x03,				/* bNumInterfaces */
 #endif
 	0x01,				/* bConfigurationValue */
@@ -336,10 +334,66 @@ static const u8_t usb_audio_dev_fs_desc[] = {
 	0x00,				/* iInterface */
 
 	/* Interface_02 Descriptor */
+	USB_INTERFACE_DESC_SIZE,		/* bLength */
+	USB_INTERFACE_DESC, 			/* bDescriptorType */
+	AUDIO_STRE_INTER2,				/* bInterfaceNumber */
+	AUDIO_STRE_INTER2_ALT1, 		/* bAlternateSetting */
+	0x01,							/* bNumEndpoints */
+	/* bInterfaceClass: Audio Interface Class */
+	USB_CLASS_AUDIO,
+	/* bInterfaceSubClass: Audio Streaming Interface SubClass */
+	USB_SUBCLASS_AUDIOSTREAMING,
+	0x00,							/* bInterfaceProtocol */
+	0x00,							/* iInterface */
+
+	/* Audio Streaming Class Specific Interface Descriptor */
+	UAC_DT_AS_HEADER_SIZE,			/* bLength */
+	CS_INTERFACE,					/* bDescriptorType */
+	UAC_AS_GENERAL, 				/* bDescriptorSubtype */
+	INPUT_TERMINAL1_ID, 			/* bTerminalLink */
+	0x01,							/* bDelay */
+	LOW_BYTE(UAC_FORMAT_TYPE_I_PCM),/* wFormatTag: PCM */
+	HIGH_BYTE(UAC_FORMAT_TYPE_I_PCM),
+
+	/* Audio Streaming Format Type Descriptor */
+	0x0B,							/* bLength */
+	CS_INTERFACE,					/* bDescriptorType */
+	UAC_FORMAT_TYPE,				/* bDescriptorSubtype */
+	UAC_FORMAT_TYPE_I,				/* bFormatType */
+	SINK_BNR_CHAN,					/* bNrChannels */
+	WIDE_USAGE_SECOND_BIT_ENABLED, 			/* bSubframeSize */
+	CONFIG_USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH, 					/* bBitResolution */
+	CONFIG_USB_AUDIO_DEVICE_SINK_SAMPLE_FREQ_TYPE,					/* bSamFreqType */
+	SAM_LOW_BYTE(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD),	/* tSamFreq[n] */
+	SAM_MIDDLE_BYTE(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD),
+	SAM_HIGH_BYTE(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD),
+
+	/* Endpoint Descriptor */
+	USB_ENDPOINT_UAC_DESC_SIZE, 	/* bLength */
+	USB_ENDPOINT_DESC,				/* bDescriptorType */
+	/* bEndpointAddress: Direction: OUT - EndpointID: n */
+	CONFIG_USB_AUDIO_DEVICE_SINK_OUT_EP_ADDR,
+	0x09,							/* bmAttributes */
+	LOW_BYTE(SECOND_DOWNLOAD_PACKET),	/* wMaxPacketSize: n byte */
+	HIGH_BYTE(SECOND_DOWNLOAD_PACKET),
+	0x01,							/* bInterval: Must be 1 */
+	0x00,							/* bRefresh: Must be 0 */
+	0x00,							/* bSynchAddress: Asynchronism must be 0 */
+
+	/* Audio Streaming Class Specific Audio Data Endpoint Descriptor */
+	UAC_ISO_ENDPOINT_DESC_SIZE,	 	/* bLength */
+	CS_ENDPOINT,					/* bDescriptorType */
+	UAC_EP_GENERAL, 				/* bDescriptorSubtype */
+	0x01,							/* bmAttributes */
+	0x01,							/* bLockDelayUnits */
+	LOW_BYTE(0x0001),				/* wLockDelay */
+	HIGH_BYTE(0x0001),
+
+	/* Interface_02 Descriptor */
 	USB_INTERFACE_DESC_SIZE,	/* bLength */
 	USB_INTERFACE_DESC,		/* bDescriptorType */
 	AUDIO_STRE_INTER2,		/* bInterfaceNumber */
-	AUDIO_STRE_INTER2_ALT1,		/* bAlternateSetting */
+	AUDIO_STRE_INTER2_ALT2,		/* bAlternateSetting */
 	0x01,				/* bNumEndpoints */
 	/* bInterfaceClass: Audio Interface Class */
 	USB_CLASS_AUDIO,
@@ -389,62 +443,6 @@ static const u8_t usb_audio_dev_fs_desc[] = {
 	0x01,				/* bmAttributes */
 	0x01,				/* bLockDelayUnits */
 	LOW_BYTE(0x0001),		/* wLockDelay */
-	HIGH_BYTE(0x0001),
-
-	/* Interface_02 Descriptor */
-	USB_INTERFACE_DESC_SIZE,		/* bLength */
-	USB_INTERFACE_DESC, 			/* bDescriptorType */
-	AUDIO_STRE_INTER2,				/* bInterfaceNumber */
-	AUDIO_STRE_INTER2_ALT2, 		/* bAlternateSetting */
-	0x01,							/* bNumEndpoints */
-	/* bInterfaceClass: Audio Interface Class */
-	USB_CLASS_AUDIO,
-	/* bInterfaceSubClass: Audio Streaming Interface SubClass */
-	USB_SUBCLASS_AUDIOSTREAMING,
-	0x00,							/* bInterfaceProtocol */
-	0x00,							/* iInterface */
-
-	/* Audio Streaming Class Specific Interface Descriptor */
-	UAC_DT_AS_HEADER_SIZE,			/* bLength */
-	CS_INTERFACE,					/* bDescriptorType */
-	UAC_AS_GENERAL, 				/* bDescriptorSubtype */
-	INPUT_TERMINAL1_ID, 			/* bTerminalLink */
-	0x01,							/* bDelay */
-	LOW_BYTE(UAC_FORMAT_TYPE_I_PCM),/* wFormatTag: PCM */
-	HIGH_BYTE(UAC_FORMAT_TYPE_I_PCM),
-
-	/* Audio Streaming Format Type Descriptor */
-	0x0B,							/* bLength */
-	CS_INTERFACE,					/* bDescriptorType */
-	UAC_FORMAT_TYPE,				/* bDescriptorSubtype */
-	UAC_FORMAT_TYPE_I,				/* bFormatType */
-	SINK_BNR_CHAN,					/* bNrChannels */
-	WIDE_USAGE_SECOND_BIT_ENABLED, 			/* bSubframeSize */
-	CONFIG_USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH, 					/* bBitResolution */
-	CONFIG_USB_AUDIO_DEVICE_SINK_SAMPLE_FREQ_TYPE,					/* bSamFreqType */
-	SAM_LOW_BYTE(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD),	/* tSamFreq[n] */
-	SAM_MIDDLE_BYTE(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD),
-	SAM_HIGH_BYTE(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD),
-
-	/* Endpoint Descriptor */
-	USB_ENDPOINT_UAC_DESC_SIZE, 	/* bLength */
-	USB_ENDPOINT_DESC,				/* bDescriptorType */
-	/* bEndpointAddress: Direction: OUT - EndpointID: n */
-	CONFIG_USB_AUDIO_DEVICE_SINK_OUT_EP_ADDR,
-	0x09,							/* bmAttributes */
-	LOW_BYTE(MAX_DOWNLOAD_PACKET),	/* wMaxPacketSize: n byte */
-	HIGH_BYTE(MAX_DOWNLOAD_PACKET),
-	0x01,							/* bInterval: Must be 1 */
-	0x00,							/* bRefresh: Must be 0 */
-	0x00,							/* bSynchAddress: Asynchronism must be 0 */
-
-	/* Audio Streaming Class Specific Audio Data Endpoint Descriptor */
-	UAC_ISO_ENDPOINT_DESC_SIZE,	 	/* bLength */
-	CS_ENDPOINT,					/* bDescriptorType */
-	UAC_EP_GENERAL, 				/* bDescriptorSubtype */
-	0x01,							/* bmAttributes */
-	0x01,							/* bLockDelayUnits */
-	LOW_BYTE(0x0001),				/* wLockDelay */
 	HIGH_BYTE(0x0001),
 
 #ifdef CONFIG_SUPPORT_HD_AUDIO_PLAY
