@@ -250,6 +250,16 @@ void ats_test_rst_reboot_check(void)
 		sys_pm_reboot(0);
 	}		
 }
+static bool isPoweroff = false;
+void system_set_poweroff(bool is_poweroff)
+{
+	isPoweroff = is_poweroff;
+}
+void system_get_poweroff(void)
+{
+	return isPoweroff;
+}
+
 static void system_sys_event_proc(struct app_msg *msg)
 {
 	
@@ -288,16 +298,19 @@ static void system_sys_event_proc(struct app_msg *msg)
 
 		SYS_LOG_INF("------> all leds off together! led_state %d\n",pd_manager_get_poweron_filte_battery_led());
 		//pd_manager_set_poweron_filte_battery_led(WLT_FILTER_STANDBY_POWEROFF);
-		if(run_mode_is_demo()){
-			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
-			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
-			//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_2S);
-			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
-		}
-		else{
-			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
-			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));		
+		if(!system_get_poweroff()){
+			system_set_poweroff(true);
+			if(run_mode_is_demo()){
+				pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+				pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+				//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_2S);
+				pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
+			}
+			else{
+				led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+				pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
+				pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));		
+			}
 		}
 		system_exit_front_app();
 	}

@@ -36,6 +36,7 @@ struct uuid_ctx{
 
 extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
 extern char *bin2hex(char *dst, const void *src, unsigned long count);
+extern int pd_manager_deinit(int value);
 
 static const unsigned int g_pubkey[]   = {
     0x54c0ea61,
@@ -78,6 +79,7 @@ struct thread_timer uuid_verify_timer;
 static void timeout_poweroff(struct thread_timer *timer, void* pdata)
 {
 	printk("----> %s %d\n",__func__,__LINE__);
+	pd_manager_deinit(0);
 	sys_pm_poweroff();
 }
 static void enter_verify_fail_func(void)

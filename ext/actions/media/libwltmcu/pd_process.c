@@ -451,6 +451,7 @@ static void bt_warning_poweroff_handle_fn(void)
     //bt_mcu_send_pw_cmd_powerdown();
     // pd_bq25798_adc_off();
     // pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);
+    SYS_LOG_INF("------>\n");
     sys_event_notify(SYS_EVENT_POWER_OFF);    
 }
 
