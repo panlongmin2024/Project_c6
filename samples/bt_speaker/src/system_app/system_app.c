@@ -287,11 +287,11 @@ static void system_sys_event_proc(struct app_msg *msg)
 		extern uint8_t pd_manager_get_poweron_filte_battery_led(void);
 
 		SYS_LOG_INF("------> all leds off together! led_state %d\n",pd_manager_get_poweron_filte_battery_led());
-		pd_manager_set_poweron_filte_battery_led(WLT_FILTER_STANDBY_POWEROFF);
+		//pd_manager_set_poweron_filte_battery_led(WLT_FILTER_STANDBY_POWEROFF);
 		if(run_mode_is_demo()){
 			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
-			pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_2S);
+			//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_2S);
 			pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
 		}
 		else{
