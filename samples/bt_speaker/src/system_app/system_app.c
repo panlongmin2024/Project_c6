@@ -253,10 +253,12 @@ void ats_test_rst_reboot_check(void)
 static bool isPoweroff = false;
 void system_set_poweroff(bool is_poweroff)
 {
+	SYS_LOG_INF("------> %d\n",is_poweroff);
 	isPoweroff = is_poweroff;
 }
 bool system_get_poweroff(void)
 {
+	SYS_LOG_INF("------> %d\n",isPoweroff);
 	return isPoweroff;
 }
 
