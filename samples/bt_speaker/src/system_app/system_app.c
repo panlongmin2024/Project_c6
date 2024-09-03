@@ -250,6 +250,11 @@ void ats_test_rst_reboot_check(void)
 		sys_pm_reboot(0);
 	}		
 }
+/* 
+* plm add 
+* when bat<=5%, can receice SYS_EVENT_POWER_OFF 2 times
+* add this code is to pass the second event of SYS_EVENT_POWER_OFF
+*/
 static bool isPoweroff = false;
 void system_set_poweroff(bool is_poweroff)
 {
