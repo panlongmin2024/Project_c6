@@ -579,6 +579,7 @@ void led_status_manger_handle(void)
             }
         } 
         else if(led_dev[i].status == BT_LED_STATUS_FLASH){
+			printk("------> led_timer! led_dev[1] %d\n",led_dev[1].regular_flash_cnt);
             if(led_dev[i].regular_flash_cnt < REGULAR_FLASH_HIGH_LEVEL_TIME){
                 if(led_dev[i].pin_state == false){
                     led_dev[i].pin_state = true;
