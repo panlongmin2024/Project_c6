@@ -255,7 +255,7 @@ void system_set_poweroff(bool is_poweroff)
 {
 	isPoweroff = is_poweroff;
 }
-void system_get_poweroff(void)
+bool system_get_poweroff(void)
 {
 	return isPoweroff;
 }
