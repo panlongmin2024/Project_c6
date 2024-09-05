@@ -504,6 +504,13 @@ void bt_manager_update_led_display(void)
         {
             if (bt_manager_get_connected_dev_num() > 0)
             {
+            	int system_get_standby_mode(void);
+				if(system_get_standby_mode()>0)
+				{
+					SYS_LOG_INF("------> standby mode,bt connected!\n");
+					//standby mode , not need update led display
+					break;
+				}
                 if(pd_manager_get_poweron_filte_battery_led() != WLT_FILTER_STANDBY_POWEROFF)
 				 pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_CONNECTED);
             }

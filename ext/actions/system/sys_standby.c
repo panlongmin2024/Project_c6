@@ -1008,4 +1008,12 @@ void sys_standby_time_set(u32_t standby,u32_t power)
 	standby_context->auto_powerdown_time = power*1000;
 	standby_context->auto_powerdown_time_init = power*1000;
 }
+
+int system_get_standby_mode(void)
+{
+	int ret = -1;
+	ret = standby_context->standby_state;
+	return ret;
+}
+
 #endif
