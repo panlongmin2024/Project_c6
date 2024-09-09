@@ -214,7 +214,7 @@ static int shell_user_enter_standby(int argc, char *argv[])
 }
 static int shell_user_exit_standby(int argc, char *argv[])
 {
-	sys_standby_time_set(CONFIG_AUTO_STANDBY_TIME_SEC,CONFIG_AUTO_POWEDOWN_TIME_SEC);
+	sys_standby_time_set(1,1000);
 	return 0;
 }
 static int shell_user_get_mode(int argc, char *argv[])
