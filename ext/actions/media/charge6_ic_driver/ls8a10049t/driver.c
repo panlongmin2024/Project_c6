@@ -1608,14 +1608,7 @@ static int mcu_ls8a10049t_input_event_report(void)
 			}
             SYS_LOG_INF("power_key_pressed\n");
             if (dev->mcu_notify) {
-				/* plm add: exit wlt test mode! */
-				////start
-				int ats_module_test_mode_write(uint8_t *buf, int size);
-				char buffer[2] = {8,0};
-				ats_module_test_mode_write(buffer,sizeof(buffer)-1);
-				////end
 	             dev->mcu_notify(MCU_INT_TYPE_POWER_KEY, &para);
-				  
             }
             else{
                 printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);

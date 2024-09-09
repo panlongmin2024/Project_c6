@@ -198,11 +198,6 @@ int ats_wlt_enter(void)
 }
 
 /* wlt厂测执行部分 */
-struct k_msgq *get_ats_wlt_factory_thread_msgq(void)
-{
-	return &p_ats_wlt_info->msgq;
-}
-
 static int ats_wlt_resp_buf_init(void)
 {
 	if (ats_wlt_cmd_resp_buf == NULL)

@@ -507,7 +507,7 @@ void bt_manager_update_led_display(void)
             	int system_get_standby_mode(void);
 				if(system_get_standby_mode()>0)
 				{
-					SYS_LOG_INF("------> standby mode,bt connected!\n");
+					SYS_LOG_INF("------> standby mode: %d,bt connected!\n",system_get_standby_mode());
 					//standby mode , not need update led display
 					break;
 				}

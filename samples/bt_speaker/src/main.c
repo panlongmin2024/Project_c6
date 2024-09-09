@@ -34,32 +34,12 @@ bool main_get_enter_att_state(void)
 
 static void main_is_enter_att(void)
 {
-	char buf[2]={0};
-	int ret,fac_dat_ats;
 	printk("\n %s , enter ---\n",__func__);
-
-	ret = property_get(CFG_USER_IN_OUT_ATS_MODULE,buf, 1);
-	fac_dat_ats = property_get_int(CFG_AUTO_ENTER_ATS_MODULE,1);
-	printk("------> get_dat=%d fac_dat_ats=%d att_status=%d\n",buf[0],fac_dat_ats,get_autotest_connect_status());
-
-	if(fac_dat_ats!=0){
-		printk("\n %s , clear old ats flag!\n",__func__);
-		char buffer[2] = {0};
-		int result = property_set_factory(CFG_AUTO_ENTER_ATS_MODULE, buffer, 1);
-		if(result!=0){
-			result = property_set_factory(CFG_AUTO_ENTER_ATS_MODULE, buffer, 1);
-		}	
-	}
-	
     if(get_autotest_connect_status() == 0)
     {
-        enter_att_flag = true;
-		int ats_module_test_mode_write(uint8_t *buf, int size);
-		char buffer[2] = {6,0};
-		ats_module_test_mode_write(buffer,sizeof(buffer)-1);		
+        enter_att_flag = true;	
         return;
     }	
-
 	check_adfu_gpio_key();
 	printk("\n %s , exit ---",__func__);
 }

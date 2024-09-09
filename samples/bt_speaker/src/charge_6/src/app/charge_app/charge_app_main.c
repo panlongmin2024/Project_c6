@@ -357,6 +357,7 @@ struct charge_app_t *charge_app_get_app(void)
 
 static int charge_app_msg_pro(struct app_msg *msg)
 {
+	SYS_LOG_INF("------> type %d cmd %d\n",msg->type,msg->cmd);
 	switch (msg->type) {
 	case MSG_EXIT_APP:
 		//_charge_app_exit();
