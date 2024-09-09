@@ -299,7 +299,7 @@ void ota_app_notify(int state, int old_state)
 
 #ifdef CONFIG_OTA_SELF_APP
 		if (ota_upgrade_get_backend_type(g_ota) == OTA_BACKEND_TYPE_SELFAPP) {
-			printk("selfapp ota don't auto reboot\n");
+			printk("selfapp ota don't auto reboot  %d\n",__LINE__);
 		} else
 #endif
 		{
