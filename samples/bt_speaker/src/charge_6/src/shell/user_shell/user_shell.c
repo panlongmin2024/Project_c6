@@ -265,7 +265,7 @@ static int shell_user_info(int argc, char *argv[])
 static int shell_user_reboot(int argc, char *argv[])
 {
 	sys_pm_reboot(REBOOT_REASON_REBOOT_AND_POWERON);
-	printk("------> desktop_id app_mode %d %d   \n",id,app_mode);
+	printk("------> shell_user_reboot %d   \n");
 	return 0;
 }
 
