@@ -1245,18 +1245,26 @@ static void mcu_power_key_deal_fn(mcu_manager_charge_event_para_t *para)
 
 static void mcu_dc_event_deal_fn(mcu_manager_charge_event_para_t *para)
 {
+    static bool dc_plug_status = false;
+
     bt_mcu_set_first_power_on_flag(1);
     if(para->mcu_event_val == MCU_INT_CMD_DC_IN)
     {
         bt_mcu_send_cmd_code(MCU_INT_TYPE_DC, MCU_INT_CMD_DC_IN);
-        SYS_LOG_INF("------> dc_in_OK\n");
-        /* keep led on during pd recognition */
-        bool run_mode_is_demo(void);
-        if(!run_mode_is_demo()){
-            if(get_batt_led_display_timer()>0){
-                pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+        /***********exuce only one********************************* */
+        if(!dc_plug_status)
+        {
+            SYS_LOG_INF("------> dc_in_OK\n");
+            /* keep led on during pd recognition */
+            bool run_mode_is_demo(void);
+            if(!run_mode_is_demo()){
+                if(get_batt_led_display_timer()>0){
+                    pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+                }
             }
+            dc_plug_status = true;
         }
+        
         if(charge_warnning.dc_in_triggered_cnt == 0)
         {
             charge_warnning.dc_in_triggered_cnt++;
@@ -1272,7 +1280,7 @@ static void mcu_dc_event_deal_fn(mcu_manager_charge_event_para_t *para)
             }
         }
     }else{
-        
+        dc_plug_status = false;
         if((charge_warnning.dc_in_triggered_cnt > 0))
         {
             if(charge_warnning.dc_in_remove_filter_time == 0)
