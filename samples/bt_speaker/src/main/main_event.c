@@ -136,7 +136,7 @@ void main_input_event_handle(struct app_msg *msg)
 		selfapp_config_reset();
 #endif
 
-		if(msg->value = 0x0606){
+		if(msg->value == 0x0606){
 			/* for ats test mode, GGEC factory reset and reboot */
 			sys_event_notify(SYS_EVENT_FACTORYRESET_AND_REBOOT);
 		}
