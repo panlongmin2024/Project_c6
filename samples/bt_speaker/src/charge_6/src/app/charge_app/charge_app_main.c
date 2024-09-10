@@ -64,6 +64,7 @@ int charge_app_is_enter(void)
 
 int charge_app_get_state(void)
 {
+	printk("------> get charge_app_state %d\n",charge_app_state);
 	return charge_app_state;
 }
 
