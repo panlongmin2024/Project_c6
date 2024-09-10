@@ -215,9 +215,10 @@ static int cdc_shell_ats_reboot(struct device *dev, u8_t *buf, int len)
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 	
 	/* save reboot flag! */
-	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
-	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
-	sys_pm_reboot(0);
+	//property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
+	//property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
+	//sys_pm_reboot(0);
+	sys_pm_reboot(REBOOT_REASON_REBOOT_AND_POWERON);
 	return 0;
 }
 

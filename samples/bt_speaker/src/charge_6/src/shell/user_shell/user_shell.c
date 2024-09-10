@@ -262,6 +262,13 @@ static int shell_user_info(int argc, char *argv[])
 	printk("------> desktop_id app_mode %d %d   \n",id,app_mode);
 	return 0;
 }
+static int shell_user_reboot(int argc, char *argv[])
+{
+	sys_pm_reboot(REBOOT_REASON_REBOOT_AND_POWERON);
+	printk("------> desktop_id app_mode %d %d   \n",id,app_mode);
+	return 0;
+}
+
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -291,6 +298,7 @@ static const struct shell_cmd commands[] = {
 	{ "set_reset", shell_user_reset, "user reset"},
 	{ "enter_fcc", shell_user_enter_fcc, "user enter fcc"},
 	{ "user_info", shell_user_info, "user get info"},
+	{ "user_reboot", shell_user_reboot, "user reboot"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
