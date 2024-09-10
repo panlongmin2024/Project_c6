@@ -111,7 +111,7 @@ static void main_input_enter_pairing_mode(void)
 
 void main_input_event_handle(struct app_msg *msg)
 {
-	SYS_LOG_INF("cmd %d\n", msg->cmd);
+	SYS_LOG_INF("cmd %d value 0x%x\n", msg->cmd,msg->values);
 	switch (msg->cmd) {
 	case MSG_KEY_POWER_OFF:
 		sys_event_notify(SYS_EVENT_POWER_OFF);
@@ -135,8 +135,15 @@ void main_input_event_handle(struct app_msg *msg)
 #ifdef CONFIG_BT_SELF_APP
 		selfapp_config_reset();
 #endif
-		sys_event_notify(SYS_EVENT_POWER_OFF);
-		system_restore_factory_config();	
+
+		if(msg->value = 0x0606){
+			/* for ats test mode, GGEC factory reset and reboot */
+			sys_event_notify(SYS_EVENT_FACTORYRESET_AND_REBOOT);
+		}
+		else{
+			sys_event_notify(SYS_EVENT_POWER_OFF);
+			system_restore_factory_config();	
+		}
 		break;
 	case MSG_KEY_SWITCH_APP:
 		if (bt_manager_tws_get_dev_role() != BTSRV_TWS_SLAVE) {
