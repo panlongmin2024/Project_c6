@@ -88,7 +88,9 @@ int charge_app_exit_cmd(void)
 		}
 		tts_manager_wait_finished(1);
 		desktop_manager_unlock();
-		charge_app_state = CHARGING_APP_EXIT;    
+		
+		charge_app_state = CHARGING_APP_EXIT;   
+		printk("------> charge_app_state %d\n",charge_app_state);
 		system_app_launch_switch(DESKTOP_PLUGIN_ID_CHARGER,DESKTOP_PLUGIN_ID_BR_MUSIC);
 		return 0;
 	}
@@ -140,6 +142,7 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 
 			hotplug_charger_init();	
 			charge_app_state = CHARGING_APP_OK;
+			printk("------> charge_app_state %d\n",charge_app_state);
 			pd_set_app_mode_state(CHARGING_APP_MODE);
 			if(charge_app_force_power_off == 1){
 				pd_manager_deinit(0);		
@@ -149,6 +152,7 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 		#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
 		if(memcmp(tts_id,"c_err.mp3",sizeof("c_err.mp3")) == 0){
 			charge_app_state = CHARGING_APP_OK;
+			printk("------> charge_app_state %d\n",charge_app_state);
 			main_system_tts_set_play_warning_tone_flag(false);
 		}
 		#endif
@@ -227,6 +231,7 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	}
 	hotplug_charger_deinit();
 	charge_app_state = CHARGING_APP_INIT;
+	printk("------> charge_app_state %d\n",charge_app_state);
 	desktop_manager_lock();
 	input_manager_lock();
 	charge_app_view_init();
@@ -344,6 +349,7 @@ static int _charge_app_exit(void)
 	input_manager_unlock();
 	sys_wake_unlock(WAKELOCK_WAKE_UP);
 	charge_app_state = CHARGING_APP_NORMAL; 
+	printk("------> charge_app_state %d\n",charge_app_state);
 	soc_dvfs_unset_level(SOC_DVFS_LEVEL_HIGH_PERFORMANCE, "power_on");
 	//sys_standby_time_set(CONFIG_AUTO_STANDBY_TIME_SEC,CONFIG_AUTO_POWEDOWN_TIME_SEC);
 	SYS_LOG_INF("exit finished\n");

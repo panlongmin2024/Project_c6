@@ -490,8 +490,6 @@ void led_status_manger_handle(void)
 #else
 void led_status_manger_handle(void)
 {
-    
-
 	 for(uint8_t i = 0; i < LED_NUMBLE;i++){
         if(led_dev[i].status != led_dev[i].pre_status ){
           led_dev[i].pre_status = led_dev[i].status;
