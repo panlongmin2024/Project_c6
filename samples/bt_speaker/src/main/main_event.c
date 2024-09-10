@@ -138,12 +138,13 @@ void main_input_event_handle(struct app_msg *msg)
 
 		if(msg->value == 0x0606){
 			/* for ats test mode, GGEC factory reset and reboot */
+			k_sleep(500);
 			sys_event_notify(SYS_EVENT_FACTORYRESET_AND_REBOOT);
 		}
 		else{
-			sys_event_notify(SYS_EVENT_POWER_OFF);
-			system_restore_factory_config();	
+			sys_event_notify(SYS_EVENT_POWER_OFF);	
 		}
+		system_restore_factory_config();
 		break;
 	case MSG_KEY_SWITCH_APP:
 		if (bt_manager_tws_get_dev_role() != BTSRV_TWS_SLAVE) {
