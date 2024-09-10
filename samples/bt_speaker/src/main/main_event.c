@@ -111,7 +111,7 @@ static void main_input_enter_pairing_mode(void)
 
 void main_input_event_handle(struct app_msg *msg)
 {
-	SYS_LOG_INF("cmd %d value 0x%x\n", msg->cmd,msg->values);
+	SYS_LOG_INF("cmd %d value 0x%x\n", msg->cmd,msg->value);
 	switch (msg->cmd) {
 	case MSG_KEY_POWER_OFF:
 		sys_event_notify(SYS_EVENT_POWER_OFF);
