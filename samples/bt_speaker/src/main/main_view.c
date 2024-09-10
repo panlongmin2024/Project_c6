@@ -19,6 +19,7 @@
 #include "main_app.h"
 #include <sys_manager.h>
 #include "power_manager.h"
+#include <soc_pm.h>
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 const ui_key_map_t common_keymap[] = {
