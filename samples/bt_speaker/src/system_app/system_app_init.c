@@ -321,19 +321,6 @@ static void system_app_ota_init(void)
 #endif
 }
 
-/* after poweron, check whether ats reboot */
-void ats_test_check_reboot_and_poweron(u16_t reboot_type, u8_t reason)
-{
-	SYS_LOG_INF("------> reboot_type 0x%x reason %x \n",reboot_type,reason);
-	if(reason & REBOOT_REASON_REBOOT_AND_POWERON){
-		extern void bt_mcu_set_first_power_on_flag(bool flag);
-		bt_mcu_set_first_power_on_flag(1);
-		extern void set_batt_led_display_timer(int deley100ms);
-		extern void pd_manager_set_poweron_filte_battery_led(uint8_t flag);
-		set_batt_led_display_timer(-1);
-		pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
-	}	
-}
 void system_app_init(void)
 {
 	bool play_welcome = true;
@@ -353,17 +340,21 @@ void system_app_init(void)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	g_reboot_type = reboot_type;
 	g_reboot_reason = reason;
-	if(REBOOT_REASON_OTA_FINISHED & g_reboot_reason){
+	SYS_LOG_INF("------> g_reboot_type 0x%x g_reboot_reason 0x%x",g_reboot_type,g_reboot_reason);
+	if(REBOOT_REASON_OTA_FINISHED & g_reboot_reason || reason & REBOOT_REASON_REBOOT_AND_POWERON){
 		extern void bt_mcu_set_first_power_on_flag(bool flag);
 		bt_mcu_set_first_power_on_flag(1);
-	     extern void set_batt_led_display_timer(int deley100ms);
-		 extern void pd_manager_set_poweron_filte_battery_led(uint8_t flag);
-		  set_batt_led_display_timer(-1);
-		  SYS_LOG_INF("[%d];  REBOOT_REASON_OTA_FINISHED", __LINE__);
-		  pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
+		extern void set_batt_led_display_timer(int deley100ms);
+		extern void pd_manager_set_poweron_filte_battery_led(uint8_t flag);
+		set_batt_led_display_timer(-1);
+		if(REBOOT_REASON_OTA_FINISHED & g_reboot_reason){
+			SYS_LOG_INF("[%d];  REBOOT_REASON_OTA_FINISHED", __LINE__);
 		}
-
-	ats_test_check_reboot_and_poweron(g_reboot_type,g_reboot_reason);
+		else{
+			SYS_LOG_INF("[%d];  REBOOT_REASON_REBOOT_AND_POWERON", __LINE__);
+		}
+		pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
+	}
 #endif	
 #else
 	reboot_type = g_reboot_type;
