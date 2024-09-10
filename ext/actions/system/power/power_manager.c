@@ -445,12 +445,7 @@ int power_manager_sync_slave_battery_state(void)
 						printk("[%s/%d], POWER_SUPPLY_STATUS_CHARGING !!!\n\n",__func__,__LINE__);
 					   pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);	
 					}
-					else if(temp_status == POWER_SUPPLY_STATUS_EXT_CHARGING && charge_status == POWER_SUPPLY_STATUS_DISCHARGE)
-					{	
-						printk("[%s/%d], POWER_SUPPLY_STATUS_EXT_CHARGING !!!\n\n",__func__,__LINE__);
-						pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_EXT_CAHARGE);
-					}
-					else 
+					else
 					{
 						 //pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);
 					}
@@ -717,7 +712,10 @@ _POWER_OFF_:
 			} 
 			else
 			{		
-				sys_event_notify(SYS_EVENT_BATTERY_TOO_LOW);
+			   if(pd_manager_get_poweron_filte_battery_led() != WLT_FILTER_STANDBY_POWEROFF)
+				 {
+				  sys_event_notify(SYS_EVENT_BATTERY_TOO_LOW);
+			   	 }
 			}
 		}
 		return 0;

@@ -22,7 +22,7 @@
 #endif
 #include "system_app.h"
 
-#define GFP_BLE_ADV_POWER (-9)//-13 //数值调小不容易弹窗----zth
+#define GFP_BLE_ADV_POWER (-10)//-13 //数值调小不容易弹窗----zth
 #define GFP_ADV_SLEEP_TIME (500) // 20 S
 //#define GFP_CERTIFICATION 1
 

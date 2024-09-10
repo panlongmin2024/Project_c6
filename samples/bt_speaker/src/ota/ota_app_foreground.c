@@ -443,7 +443,7 @@ int ota_app_notify(int state, int old_state)
 
 #ifdef CONFIG_OTA_SELF_APP
 		if (ota_upgrade_get_backend_type(g_ota) == OTA_BACKEND_TYPE_SELFAPP) {
-			printk("selfapp ota don't auto reboot  %d\n",__LINE__);
+			printk("selfapp ota don't auto reboot\n");
 			sys_event_notify(SYS_EVENT_OTA_FINISHED_REBOOT);
 			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);

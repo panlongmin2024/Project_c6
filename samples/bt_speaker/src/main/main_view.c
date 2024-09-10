@@ -255,7 +255,8 @@ static void main_app_view_deal(u32_t ui_event)
 		dev = device_get_binding(CONFIG_INPUT_DEV_ACTS_ADCKEY_NAME);
 		if (dev)
 			input_dev_enable(dev);	
-		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));	
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
+		#if 1	
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,REMOVE_CHARGING_WARNING);
 		#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
 		//offcharge mode donot need to update led status
@@ -275,6 +276,7 @@ static void main_app_view_deal(u32_t ui_event)
 				pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);//�ָ�auracast�� 2024.8.16----zth
 			}
 		}
+		#endif
 		is_charge_warning_flag = false;
 		break;	
 

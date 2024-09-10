@@ -89,8 +89,7 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 		property_factory_reset();
 	}
 #endif
-	void system_set_poweroff(bool is_poweroff);
-	system_set_poweroff(false);
+
 		/** if usb charge not realy power off , goto card reader mode*/
 	// if (sys_pm_get_power_5v_status() != 1) 				// logic ic changed
 	{

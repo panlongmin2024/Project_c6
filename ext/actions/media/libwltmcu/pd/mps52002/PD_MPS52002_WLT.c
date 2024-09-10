@@ -1889,14 +1889,14 @@ void pd_read_volt_current_process1(void)
 	SYS_LOG_INF("mps2761 sink volt:%d, curr:%d", pd_mps52002->volt_value, pd_mps52002->cur_value);
 	
 }
-#define receive_times 10
-int16 value_array[receive_times];
+#define OTG_LOW_CURRENT_TIMES 10
+int16 value_array[OTG_LOW_CURRENT_TIMES];
 int16 cal_Average_current(int16 value)
 {
   static u8_t times = 0,times1 = 0;
   int16 avr_value = 0;
    SYS_LOG_INF("value = %d",value);
-  if(times < receive_times)
+  if(times < OTG_LOW_CURRENT_TIMES)
   {
      value_array[times++] = value;
   }
@@ -1911,26 +1911,25 @@ int16 cal_Average_current(int16 value)
          times1 ++;
 	  }
 
-	  if((times1 > 5) ||
- (value < 300))
+	  if((times1 > 5) ||(value < 300))
 	  	{
-           for(u8_t i = 0;i < receive_times -1;i++)
+           for(u8_t i = 0;i < (OTG_LOW_CURRENT_TIMES -1);i++)
 		   	{
 		      //SYS_LOG_INF("avr_value = %d", value_array[i]);
 		       value_array[i] = value_array[i+1];
 		    }
-	           value_array[receive_times -1] = value;	
+	           value_array[OTG_LOW_CURRENT_TIMES -1] = value;	
 	   }
 	
   }
 
-  if(times == receive_times)
+  if(times == OTG_LOW_CURRENT_TIMES)
   {
-    for(u8_t j = 0;j<receive_times;j++)
+    for(u8_t j = 0 ;j<OTG_LOW_CURRENT_TIMES; j++)
     {
       avr_value += value_array[j];
 	}
-     avr_value /=10;
+     avr_value /= OTG_LOW_CURRENT_TIMES;
 	 SYS_LOG_INF("avr_value = %d", avr_value);
   }
   else
@@ -2022,10 +2021,14 @@ void pd_read_volt_current_process2(void)
 			  
 		    }
         }else{
+		  small_current_flag = 0;
+		  memset(value_array, 0, 10);
 			otg_debounce_cnt = 0;
 		}
     }else{
           otg_debounce_cnt = 0;
+		  small_current_flag = 0;
+		  memset(value_array, 0, 10);
     }
 }
 
@@ -2101,9 +2104,10 @@ bool pd_mps52002_ats_switch_volt(u8_t PDO_index)
 //extern void mcu_ls8a10049t_int_deal(void);
 extern int 	mcu_ui_ota_deal(void);
 extern void led_status_manger_handle(void);
-extern void wlt_logic_mcu_ls8a10049t_int_fn(void);
+//extern void wlt_logic_mcu_ls8a10049t_int_fn(void);
 extern void batt_led_display_timeout(void);
 extern void  amp_aw85xxx_read_buf(void);
+extern void mcu_charge_warnning_event_deal(void);
 
 static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
@@ -2157,7 +2161,8 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 				{
 					pd_mps52002->battery_notify();
 				}
-				wlt_logic_mcu_ls8a10049t_int_fn();
+				//wlt_logic_mcu_ls8a10049t_int_fn();
+				mcu_charge_warnning_event_deal();
 				break;
 
 			case (MCU_ONE_SECOND_PERIOD-22):
@@ -2280,8 +2285,8 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			val->intval = logic_mcu_ls8a10049t_get_water_warning_status();	
 			break;	
 		case PD_SUPPLY_PROP_TYPEC_WATER_WARNING_TRIGGER_CNT:
-		//return 0:未触发，1：准备触发， 2：至少有一个或两个都已经触发， 3：一个已经触发一个准备触发
-			val->intval = logic_mcu_ls8a10049t_get_water_triggered_cnt();
+		/*********return 0:none，1：rerady， 2：triggered	*///////////		
+			val->intval = mcu_get_water_charge_warnning_status();
 			break;
         default:
             break;	  

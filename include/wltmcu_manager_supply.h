@@ -105,6 +105,7 @@ typedef enum
     WLT_FILTER_CHARGINE_WARNING,
     WLT_FILTER_STANDBY_POWEROFF,
     WLT_FILTER_DISCHARGE_POWERON,
+    WLT_FILTER_EIXT_STANDBY_POWEROFF,
   
 } wlt_filter_led_t;
 
@@ -389,5 +390,5 @@ extern int pd_srv_event_notify(int event ,int value);
 
 extern uint8_t Read_hw_ver(void);
 extern bool logic_mcu_ls8a10049t_get_water_warning_status(void);
-extern uint8_t logic_mcu_ls8a10049t_get_water_triggered_cnt(void);
+extern uint8_t mcu_get_water_charge_warnning_status(void);
 #endif

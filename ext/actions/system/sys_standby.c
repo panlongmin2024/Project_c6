@@ -212,7 +212,7 @@ static int _sys_standby_check_auto_powerdown(bool flag)
 			}
 			ret = 1;
 			power_state = 1;
-			pd_manager_set_poweron_filte_battery_led(WLT_FILTER_STANDBY_POWEROFF);
+			pd_manager_set_poweron_filte_battery_led(WLT_FILTER_EIXT_STANDBY_POWEROFF);
 		}
 	}
 
@@ -496,9 +496,13 @@ static int _sys_standby_process_normal(void)
 	static uint8_t refresh_flag = 0x00;
 	static int tmp_test_idle_cnt = 0;
 	static u32_t last_timestamp;
+	int ret;
 
-	if((refresh_flag != sys_pm_get_power_5v_status()))
-	{	
+	
+	ret = sys_pm_get_power_5v_status() ? 1:0; 
+	ret |= dc_power_in_status_read();	 
+	if((refresh_flag != ret))
+	 {	
 		refresh_flag = sys_pm_get_power_5v_status();
 		sys_wakelocks_free_time_reset();
 		SYS_LOG_INF("refresh_flag: %d", refresh_flag);

@@ -490,6 +490,8 @@ void led_status_manger_handle(void)
 #else
 void led_status_manger_handle(void)
 {
+    
+
 	 for(uint8_t i = 0; i < LED_NUMBLE;i++){
         if(led_dev[i].status != led_dev[i].pre_status ){
           led_dev[i].pre_status = led_dev[i].status;
@@ -640,22 +642,39 @@ void led_status_manger_handle(void)
                 }               
             }
         } 
-		    led_dev[i].very_slow_flash_cnt++;
-		    if(led_dev[i].very_slow_flash_cnt >= VERY_SLOW_FLASH_HIGH_LEVEL_TIME + VERY_SLOW_FLASH_LOW_LEVEL_TIME){
-		        led_dev[i].very_slow_flash_cnt = 0;
-		    }
-		   // led_dev[i].slow_flash_cnt++;
-		    if(led_dev[i].slow_flash_cnt >= SLOW_FLASH_HIGH_LEVEL_TIME + SLOW_FLASH_LOW_LEVEL_TIME){
-		        led_dev[i].slow_flash_cnt = 0;
-		    }
-		    led_dev[i].regular_flash_cnt++;
-		    if(led_dev[i].regular_flash_cnt >= REGULAR_FLASH_HIGH_LEVEL_TIME + REGULAR_FLASH_LOW_LEVEL_TIME){
-		        led_dev[i].regular_flash_cnt = 0;
-		    }
-		    led_dev[i].quick_flash_cnt++;   
-		    if(led_dev[i].quick_flash_cnt >= GUICK_FLASH_HIGH_LEVEL_TIME + GUICK_FLASH_LOW_LEVEL_TIME){
-		        led_dev[i].quick_flash_cnt = 0;
-		    } 
+        led_dev[i].very_slow_flash_cnt++;
+        if(led_dev[i].very_slow_flash_cnt >= VERY_SLOW_FLASH_HIGH_LEVEL_TIME + VERY_SLOW_FLASH_LOW_LEVEL_TIME){
+            led_dev[i].very_slow_flash_cnt = 0;
+        }
+        led_dev[i].slow_flash_cnt++;
+        if(led_dev[i].slow_flash_cnt >= SLOW_FLASH_HIGH_LEVEL_TIME + SLOW_FLASH_LOW_LEVEL_TIME){
+            led_dev[i].slow_flash_cnt = 0;
+        }
+        led_dev[i].regular_flash_cnt++;
+        if(led_dev[i].regular_flash_cnt >= REGULAR_FLASH_HIGH_LEVEL_TIME + REGULAR_FLASH_LOW_LEVEL_TIME){
+            led_dev[i].regular_flash_cnt = 0;
+        }
+        led_dev[i].quick_flash_cnt++;   
+        if(led_dev[i].quick_flash_cnt >= GUICK_FLASH_HIGH_LEVEL_TIME + GUICK_FLASH_LOW_LEVEL_TIME){
+            led_dev[i].quick_flash_cnt = 0;
+            /*防止灯闪不一致，同步*/
+            for(uint8_t j = 0;j < LED_NUMBLE;j++)
+            {
+                if(led_dev[j].status != BT_LED_STATUS_QUICK_FLASH)
+                {
+                    break;
+                }
+                if(j == (LED_NUMBLE - 1))
+                {
+                    for(uint8_t n = 0;n < LED_NUMBLE;n++)
+                    {
+                        led_dev[n].quick_flash_cnt = 0;
+                    }
+                }
+            }
+            
+        } 
+
     }       
 } 
 

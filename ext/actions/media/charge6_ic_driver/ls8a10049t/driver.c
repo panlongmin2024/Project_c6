@@ -33,11 +33,12 @@
 #include <logging/sys_log.h>
 #include <wltmcu_manager_supply.h>
 #include <property_manager.h>
+#include "board.h"
 
 #define NTC_STATUS_NORMAL_TEMPERATURE			0
 #define NTC_STATUS_OVER_TEMPERATURE				1
 
-#define LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
+//#define LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
 #define CHARGE_WARNNING_FILTER_TIMES           2
 #define FIRST_TRIGGER_FILTER_TIME           1800
 
@@ -82,6 +83,7 @@ enum {
 	LS8A10049T_INT_EVENT_WATER0_BIT = 0,
 	LS8A10049T_INT_EVENT_WATER1_BIT,
 	LS8A10049T_INT_EVENT_NTC_BIT,
+	LS8A10049T_INT_EVENT_DC_BIT,
 };
 
 typedef struct {
@@ -113,8 +115,8 @@ extern bool key_water_status_read(void);
 
 static struct logic_mcu_ls8a10049t_device_data_t logic_mcu_ls8a10049t_device_data;
 static mcu_int_info_t mcu_int_info = { 0 };
-static struct thread_timer ls8a10049t_int_event_timer;
-static struct thread_timer ls8a10049t_dc_in_timer;
+//static struct thread_timer ls8a10049t_int_event_timer;
+//static struct thread_timer ls8a10049t_dc_in_timer;
 
 inline struct logic_mcu_ls8a10049t_device_data_t * logic_mcu_ls8a10049t_get_device_data(void)
 {
@@ -126,6 +128,30 @@ inline struct logic_mcu_ls8a10049t_device_data_t * logic_mcu_ls8a10049t_get_devi
 u8_t get_ls8a10049t_read_Version(void)
 {
   return LS8A10049T_VERSION;
+}
+
+static void logic_mcu_ls8a10049t_set_int_event(uint8_t event)
+{
+	mcu_int_info.mcu_int_event |= (0x01 << event);
+}
+
+static void logic_mcu_ls8a10049t_clear_int_event(uint8_t event)
+{
+	mcu_int_info.mcu_int_event &= (~(0x01 << event));
+}
+
+static uint8_t logic_mcu_ls8a10049t_get_int_event(void)
+{
+	return mcu_int_info.mcu_int_event;
+}
+
+static bool logic_mcu_ls8a10049t_is_int_event(uint8_t event)
+{
+	bool ret = false;
+	if((mcu_int_info.mcu_int_event & (0x01 << event)) == (0x01 << event)){
+		ret = true;
+	}
+	return ret;
 }
 /**
  * @brief 开机成功锁电
@@ -1206,8 +1232,26 @@ static void mcu_ls8a10049t_wlt_response(struct device *dev,enum mcu_manager_supp
 
         case MCU_INT_TYPE_DC:
             //bt_mcu_send_iic_cmd_code(BT_MCU_ACK_IIC_ADDR, MCU_INT_TYPE_DC, val->intval);
+			if(value == MCU_INT_CMD_DC_OUT)
+			{
+				logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_DC_BIT);
+			}
             break;
-        
+
+        case MCU_INT_TYPE_NTC:
+			if(value == MCU_INT_CMD_WATER_OUT)
+			{
+				logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_NTC_BIT);
+			}
+            break;
+
+		case MCU_INT_TYPE_WATER:
+			if(value == MCU_INT_CMD_TEMPERATURE_NORMAL)
+			{
+				logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
+				logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
+			}
+            break;	
         default:
 
             break;
@@ -1223,31 +1267,8 @@ static const struct mcu_manager_supply_driver_api mcu_ls8a10049t_wlt_driver_api 
 };
 
 #if 1
-uint8_t pd_get_app_mode_state(void);
+//uint8_t pd_get_app_mode_state(void);
 
-static void logic_mcu_ls8a10049t_set_int_event(uint8_t event)
-{
-	mcu_int_info.mcu_int_event |= (0x01 << event);
-}
-
-static void logic_mcu_ls8a10049t_clear_int_event(uint8_t event)
-{
-	mcu_int_info.mcu_int_event &= (~(0x01 << event));
-}
-
-static uint8_t logic_mcu_ls8a10049t_get_int_event(void)
-{
-	return mcu_int_info.mcu_int_event;
-}
-
-static bool logic_mcu_ls8a10049t_is_int_event(uint8_t event)
-{
-	bool ret = false;
-	if((mcu_int_info.mcu_int_event & (0x01 << event)) == (0x01 << event)){
-		ret = true;
-	}
-	return ret;
-}
 /**********************water warning status:1 water,0 not water****************************************** */
 bool logic_mcu_ls8a10049t_get_water_warning_status(void)
 {
@@ -1259,338 +1280,100 @@ bool logic_mcu_ls8a10049t_get_water_warning_status(void)
 	return ret;
 }
 
-/**********************get water trigger cnt****************************************** */
-//return 0:未触发，1：准备触发， 2：至少有一个或两个都已经触发， 3：一个已经触发一个准备触发
-//
-/*********************************************************** */
-uint8_t logic_mcu_ls8a10049t_get_water_triggered_cnt(void)
+static void logic_mcu_warnning_and_dc_status_detect(struct logic_mcu_ls8a10049t_device_data_t *dev)
 {
-	uint8_t triggered_cnt = 0;
-#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-
-	uint8_t temp;
-
-	temp = mcu_int_info.water0_triggered_cnt | mcu_int_info.water1_triggered_cnt;
-	/*
-	switch(temp)
-	{
-		case 0:
-		case 1:
-		triggered_cnt = temp;
-		break;
-
-		case 2:
-		case 3:
-		triggered_cnt = 2;
-		break;
-
-		default:
-		break
-	}
-	*/
-	triggered_cnt = temp;
-#endif	
-	//SYS_LOG_INF("%d\n",triggered_cnt);
-	return triggered_cnt;
-}
-
-static void logic_mcu_ls8a10049t_int_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)
-{
-	uint8_t event = 0;	
-    struct logic_mcu_ls8a10049t_device_data_t *dev = NULL;
-    mcu_manager_charge_event_para_t para;
 	uint8_t mcu_water_flag = 0;
-    dev = logic_mcu_ls8a10049t_get_device_data();
+	mcu_manager_charge_event_para_t para;
+	if(logic_mcu_ls8a10049t_get_int_event()){
 
-	 printk("ZTH DEBUD: %s:%d\n", __func__, __LINE__);
-	 event = logic_mcu_ls8a10049t_get_int_event();
-	 //if((event & (0x01 << LS8A10049T_INT_EVENT_WATER0_BIT)) == (0x01 << LS8A10049T_INT_EVENT_WATER0_BIT)){
-	 if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)
-	 || logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)){
-		if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)){
-			int water0_leak = _ls8a10049t_check_water0_leak(dev);
-			if (!water0_leak) {
-				SYS_LOG_INF("water0_leak OUT\n");
-				mcu_water_flag &= (~(0x01 << LS8A10049T_INT_EVENT_WATER0_BIT));			
-				logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
+		if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_DC_BIT)){	
+			//int usb_cable_in = _ls8a10049t_check_usb_cable_in_status(dev);
+			int usb_cable_in = dc_power_in_status_read();
+			if (usb_cable_in) {
+				//SYS_LOG_INF("DC IN\n");
+				para.mcu_event_val = MCU_INT_CMD_DC_IN;
 
 			}
 			else{
-				SYS_LOG_INF("water0_leak in\n");
-				mcu_water_flag |= (0x01 << LS8A10049T_INT_EVENT_WATER0_BIT);	
+				SYS_LOG_INF("DC OUT\n");
+				para.mcu_event_val = MCU_INT_CMD_DC_OUT;
 			}
-	
-		}
 
-		if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)){	
-			int water1_leak = _ls8a10049t_check_water1_leak(dev);
-			if (!water1_leak) {
-				SYS_LOG_INF("water1_leak OUT\n");
-				mcu_water_flag &= (~(0x01 << LS8A10049T_INT_EVENT_WATER1_BIT));
-				logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
+			if (dev->mcu_notify) {
+				dev->mcu_notify(MCU_INT_TYPE_DC, &para);
 			}
 			else{
-				SYS_LOG_INF("water1_leak in\n");
-				mcu_water_flag |= (0x01 << LS8A10049T_INT_EVENT_WATER1_BIT);
-			}				 		
+				printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
+			}				
 		}
 
-		if(mcu_water_flag){
-			para.mcu_event_val = MCU_INT_CMD_WATER_IN;
-		}
-		else{
-			para.mcu_event_val = MCU_INT_CMD_WATER_OUT;
-		}
+		if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)
+		/*|| logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)*/){
+			if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)){
+				int water0_leak = _ls8a10049t_check_water0_leak(dev);
+				int water1_leak = _ls8a10049t_check_water1_leak(dev);
+				if (!water0_leak && !water1_leak) {				
 
-		if (dev->mcu_notify) {
-			dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
-		}
-		else{
-			printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-		}					
-	 }
-
-	 //if((event & (0x01 << LS8A10049T_INT_EVENT_NTC_BIT)) == (0x01 << LS8A10049T_INT_EVENT_NTC_BIT)){
-	 if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_NTC_BIT)){	
-		int over_temperature = _ls8a10049t_check_ntc_status(dev);
-		if (over_temperature) {
-			SYS_LOG_INF("normal_temperature\n");
-            para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_NORMAL;
-
-			logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_NTC_BIT);
-		}
-		else{
-			SYS_LOG_INF("OVER_temperature\n");
-            para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_HIGH;
-		}
-
-		if (dev->mcu_notify) {
-			dev->mcu_notify(MCU_INT_TYPE_NTC, &para);
-		}
-		else{
-			printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-		}				
-	 }
-
-	 if(logic_mcu_ls8a10049t_get_int_event() == 0){
-		mcu_int_info.mcu_int_flag = 0;
-		thread_timer_stop(&ls8a10049t_int_event_timer);
-	 }
-     
-}
-
-void wlt_logic_mcu_ls8a10049t_int_fn(void)
-{
-	uint8_t event = 0;	
-    struct logic_mcu_ls8a10049t_device_data_t *dev = NULL;
-    mcu_manager_charge_event_para_t para;
-	uint8_t mcu_water_flag = 0;
-	dev = logic_mcu_ls8a10049t_get_device_data();
-#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-	if((mcu_int_info.water0_triggered_cnt < CHARGE_WARNNING_FILTER_TIMES) && (mcu_int_info.water0_triggered_cnt > 0))
-	{
-			if(!_ls8a10049t_check_water0_leak(dev))
-			{
-					printk("\n%s,%d,water0_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.water0_triggered_cnt);
-					mcu_int_info.water0_triggered_cnt = 0;
-			}
-	}
-
-	if((mcu_int_info.water1_triggered_cnt < CHARGE_WARNNING_FILTER_TIMES) && (mcu_int_info.water1_triggered_cnt > 0))
-	{
-			if(!_ls8a10049t_check_water1_leak(dev))
-			{
-					printk("\n%s,%d,water1_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.water1_triggered_cnt);
-					mcu_int_info.water1_triggered_cnt = 0;
-			}
-	}
-
-	if((mcu_int_info.ntc_triggered_cnt < CHARGE_WARNNING_FILTER_TIMES) && (mcu_int_info.ntc_triggered_cnt > 0))
-	{
-			if(_ls8a10049t_check_ntc_status(dev))
-			{
-					printk("\n%s,%d,ntc_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.ntc_triggered_cnt);
-					mcu_int_info.ntc_triggered_cnt = 0;
-			}
-	}
-
-	if((mcu_int_info.dc_in_triggered_cnt > 0))
-	{
-		if(!_ls8a10049t_check_usb_cable_in_status(dev))
-		{
-			if(mcu_int_info.dc_in_remove_filter_time == 0)
-			{
-				mcu_int_info.dc_in_remove_filter_time = os_uptime_get_32();
-			}
-
-			if((os_uptime_get_32() - mcu_int_info.dc_in_remove_filter_time) > FIRST_TRIGGER_FILTER_TIME)
-			{
-				printk("\n%s,%d,dc_in_triggered_cnt:%d\n",__func__,__LINE__,mcu_int_info.dc_in_triggered_cnt);
-				mcu_int_info.dc_in_triggered_cnt = 0;
-				mcu_int_info.dc_in_remove_filter_time = 0;
-				//USB拔掉解除报警
-				if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)
-				|| logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)){
-					if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)){
-						logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
-						mcu_int_info.water0_remove_filter_time = 0;
-						mcu_int_info.water0_triggered_cnt--;
-						mcu_int_info.water0_filter_time = os_uptime_get_32();
-					}
-
-					if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)){
-						logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
-						mcu_int_info.water1_remove_filter_time = 0;
-						mcu_int_info.water1_triggered_cnt--;
-						mcu_int_info.water1_filter_time = os_uptime_get_32();
-					}
-
-					para.mcu_event_val = MCU_INT_CMD_WATER_OUT;
-
-					if (dev->mcu_notify) {
-						dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
-					}
-					else{
-						printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-					}
-				}
-			}
-		}
-	}
-#endif
-	if(logic_mcu_ls8a10049t_get_int_event() == 0){
-
-		return;
-	}
-	k_sleep(1);
-    //dev = logic_mcu_ls8a10049t_get_device_data();
-
-	printk("ZTH DEBUD: %s:%d\n", __func__, __LINE__);
-	event = logic_mcu_ls8a10049t_get_int_event();
-	 //if((event & (0x01 << LS8A10049T_INT_EVENT_WATER0_BIT)) == (0x01 << LS8A10049T_INT_EVENT_WATER0_BIT)){
-	 if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)
-	 || logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)){
-		if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)){
-			int water0_leak = _ls8a10049t_check_water0_leak(dev);
-			if (!water0_leak) {				
-				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				SYS_LOG_INF("water0_leak OUT,water0_remove_filter_time:%d\n",mcu_int_info.water0_remove_filter_time);
-				if(mcu_int_info.water0_remove_filter_time == 0)
-				{
-					mcu_int_info.water0_remove_filter_time = os_uptime_get_32();
-				}
-
-				if((os_uptime_get_32() - mcu_int_info.water0_remove_filter_time) > FIRST_TRIGGER_FILTER_TIME)
-				{
 					mcu_water_flag &= (~(0x01 << LS8A10049T_INT_EVENT_WATER0_BIT));			
-					logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
-					mcu_int_info.water0_remove_filter_time = 0;
-					mcu_int_info.water0_triggered_cnt = 0;
+
 				}
-				else
-				{
+				else{
+					SYS_LOG_INF("water0_leak in\n");
 					mcu_water_flag |= (0x01 << LS8A10049T_INT_EVENT_WATER0_BIT);
 				}
-				#else
-				SYS_LOG_INF("water0_leak OUT\n");
-				mcu_water_flag &= (~(0x01 << LS8A10049T_INT_EVENT_WATER0_BIT));			
-				logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
-				#endif
+
+			}
+			if(mcu_water_flag){
+				para.mcu_event_val = MCU_INT_CMD_WATER_IN;
+			}
+			else{
+				para.mcu_event_val = MCU_INT_CMD_WATER_OUT;
+			}
+
+			if (dev->mcu_notify) {
+				dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
+			}
+			else{
+				printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
+			}					
+		}
+
+		if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_NTC_BIT)){	
+			int over_temperature = _ls8a10049t_check_ntc_status(dev);
+			if (over_temperature) {
+				SYS_LOG_INF("normal_temperature\n");
+				para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_NORMAL;
 
 			}
 			else{
-				SYS_LOG_INF("water0_leak in\n");
-				mcu_water_flag |= (0x01 << LS8A10049T_INT_EVENT_WATER0_BIT);
-				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				mcu_int_info.water0_remove_filter_time = 0;	
-				#endif
+				SYS_LOG_INF("OVER_temperature\n");
+				para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_HIGH;
 			}
-	
-		}
 
-		if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)){	
-			int water1_leak = _ls8a10049t_check_water1_leak(dev);
-			if (!water1_leak) {
-				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				SYS_LOG_INF("water1_leak OUT,water1_remove_filter_time:%d\n",mcu_int_info.water1_remove_filter_time);
-				if(mcu_int_info.water1_remove_filter_time == 0)
-				{
-					mcu_int_info.water1_remove_filter_time = os_uptime_get_32();
-				}
-
-				if((os_uptime_get_32() - mcu_int_info.water1_remove_filter_time) > FIRST_TRIGGER_FILTER_TIME)
-				{
-					mcu_water_flag &= (~(0x01 << LS8A10049T_INT_EVENT_WATER1_BIT));			
-					logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
-					mcu_int_info.water1_remove_filter_time = 0;
-					mcu_int_info.water1_triggered_cnt = 0;
-				}
-				else
-				{
-					mcu_water_flag |= (0x01 << LS8A10049T_INT_EVENT_WATER1_BIT);
-				}
-				#else
-				SYS_LOG_INF("water1_leak OUT\n");
-				mcu_water_flag &= (~(0x01 << LS8A10049T_INT_EVENT_WATER1_BIT));
-				logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
-				#endif
+			if (dev->mcu_notify) {
+				dev->mcu_notify(MCU_INT_TYPE_NTC, &para);
 			}
 			else{
-				SYS_LOG_INF("water1_leak in\n");
-				mcu_water_flag |= (0x01 << LS8A10049T_INT_EVENT_WATER1_BIT);
-				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				mcu_int_info.water1_remove_filter_time = 0;	
-				#endif
-			}				 		
-		}
+				printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
+			}				
+		}	
+	}
 
-		if(mcu_water_flag){
-			para.mcu_event_val = MCU_INT_CMD_WATER_IN;
-		}
-		else{
-			para.mcu_event_val = MCU_INT_CMD_WATER_OUT;
-		}
-
-		if (dev->mcu_notify) {
-			dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
-		}
-		else{
-			printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-		}					
-	 }
-
-	 //if((event & (0x01 << LS8A10049T_INT_EVENT_NTC_BIT)) == (0x01 << LS8A10049T_INT_EVENT_NTC_BIT)){
-	 if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_NTC_BIT)){	
-		int over_temperature = _ls8a10049t_check_ntc_status(dev);
-		if (over_temperature) {
-			SYS_LOG_INF("normal_temperature\n");
-            para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_NORMAL;
-
-			logic_mcu_ls8a10049t_clear_int_event(LS8A10049T_INT_EVENT_NTC_BIT);
-		}
-		else{
-			SYS_LOG_INF("OVER_temperature\n");
-            para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_HIGH;
-		}
-
-		if (dev->mcu_notify) {
-			dev->mcu_notify(MCU_INT_TYPE_NTC, &para);
-		}
-		else{
-			printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-		}				
-	 }
-
-
-     
 }
-
 
 static int mcu_ls8a10049t_input_event_report(void)
 {
     struct logic_mcu_ls8a10049t_device_data_t *dev = NULL;
     mcu_manager_charge_event_para_t para;
     dev = logic_mcu_ls8a10049t_get_device_data();
+
+	logic_mcu_warnning_and_dc_status_detect(dev);
+
+	if(key_water_status_read())
+    {
+		return -1;
+	}
+
 	SYS_LOG_INF("logic_mcu_int_handle\n");
 
 	do {
@@ -1600,173 +1383,50 @@ static int mcu_ls8a10049t_input_event_report(void)
 			//void *fg_app = app_manager_get_current_app();
 			printk("[%s:%d] current_app : %d!\n", __func__, __LINE__,pd_get_app_mode_state());
 			//if (fg_app && !strcmp(fg_app, APP_ID_CHARGE_APP_NAME)) {
-			if(pd_get_app_mode_state() == CHARGING_APP_MODE){
+			//if(pd_get_app_mode_state() == CHARGING_APP_MODE){
 				para.mcu_event_val = MCU_INT_CMD_POWERON;	
-			}
-			else{
-				para.mcu_event_val = MCU_INT_CMD_POWEROFF;	
-			}
+			//}
+			//else{
+			//	para.mcu_event_val = MCU_INT_CMD_POWEROFF;	
+			//}
             SYS_LOG_INF("power_key_pressed\n");
             if (dev->mcu_notify) {
+				/* plm add: exit wlt test mode! */
+				////start
+				int ats_module_test_mode_write(uint8_t *buf, int size);
+				char buffer[2] = {8,0};
+				ats_module_test_mode_write(buffer,sizeof(buffer)-1);
+				////end
 	             dev->mcu_notify(MCU_INT_TYPE_POWER_KEY, &para);
+				  
             }
             else{
                 printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
             }
 		}
 
-		int usb_cable_in = _ls8a10049t_check_usb_cable_in_status(dev);
-		if (usb_cable_in) {
-			SYS_LOG_INF("usb_cable_in\n");
-            para.mcu_event_val = MCU_INT_CMD_DC_IN;
-
-            if (dev->mcu_notify) {
-                dev->mcu_notify(MCU_INT_TYPE_DC, &para);
-            }
-            else{
-                printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-            }            
-		}
-		if(!logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)){
-			int water0_leak = _ls8a10049t_check_water0_leak(dev);
-			if (water0_leak) {
-				SYS_LOG_INF("water0_leak\n");
-				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				mcu_int_info.water0_remove_filter_time = 0;
-				if(mcu_int_info.water0_triggered_cnt == 0)
-				{
-						mcu_int_info.water0_triggered_cnt++;
-						mcu_int_info.water0_filter_time = os_uptime_get_32();
-				}
-				else
-				{
-						//防止其他事件触发而进入，过滤1.8秒
-						if((os_uptime_get_32() - mcu_int_info.water0_filter_time) > 2*FIRST_TRIGGER_FILTER_TIME)
-						{
-								mcu_int_info.water0_triggered_cnt++;
-								mcu_int_info.water0_filter_time = os_uptime_get_32();
-						}
-				}
-				if(mcu_int_info.water0_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
-				{
-						//mcu_int_info.water0_triggered_cnt = 0;
-						para.mcu_event_val = MCU_INT_CMD_WATER_IN;
-
-						if (dev->mcu_notify) {
-								dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
-						}
-						else{
-								printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-						}
-						logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
-
-				}
-				#else				
-				para.mcu_event_val = MCU_INT_CMD_WATER_IN;
-
-				if (dev->mcu_notify) {
-					dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
-				}
-				else{
-					printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-				}
-				logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
-				#endif
+		if(!logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_DC_BIT)){
+			int usb_cable_in = _ls8a10049t_check_usb_cable_in_status(dev);
+			if (usb_cable_in) {
+				SYS_LOG_INF("usb_cable_in\n");
+				logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_DC_BIT);         
 			}
 		}
 
-		if(!logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER1_BIT)){
+		if(!logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_WATER0_BIT)){
+			int water0_leak = _ls8a10049t_check_water0_leak(dev);
 			int water1_leak = _ls8a10049t_check_water1_leak(dev);
-			if (water1_leak) {
-				SYS_LOG_INF("water1_leak\n");
-				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				mcu_int_info.water1_remove_filter_time = 0;
-				if(mcu_int_info.water1_triggered_cnt == 0)
-				{
-						mcu_int_info.water1_triggered_cnt++;
-						mcu_int_info.water1_filter_time = os_uptime_get_32();
-				}
-				else
-				{
-						//防止其他事件触发而进入，过滤1.8*2秒
-						if((os_uptime_get_32() - mcu_int_info.water1_filter_time) > 2*FIRST_TRIGGER_FILTER_TIME)
-						{
-								mcu_int_info.water1_triggered_cnt++;
-								mcu_int_info.water1_filter_time = os_uptime_get_32();
-						}
-				}				
-				if(mcu_int_info.water1_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
-				{
-						//mcu_int_info.water1_triggered_cnt = 0;
-						para.mcu_event_val = MCU_INT_CMD_WATER_IN;
-
-						if (dev->mcu_notify) {
-								dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
-						}
-						else{
-								printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-						}
-						logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
-
-				}
-				#else				
-				para.mcu_event_val = MCU_INT_CMD_WATER_IN;
-
-				if (dev->mcu_notify) {
-					dev->mcu_notify(MCU_INT_TYPE_WATER, &para);
-				}
-				else{
-					printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-				}
-				logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_WATER1_BIT);
-				#endif
+			if (water0_leak | water1_leak) {
+				SYS_LOG_INF("water0_leak\n");
+				logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_WATER0_BIT);
 			}
 		}
 
 		if(!logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_NTC_BIT)){	
 			int over_temperature = _ls8a10049t_check_ntc_status(dev);
 			if (!over_temperature) {
-				SYS_LOG_INF("over_temperature\n");
-				#ifdef LS8A10049T_CHARGE_WARNNING_ANTI_SHAKE
-				if(mcu_int_info.ntc_triggered_cnt == 0)
-				{
-						mcu_int_info.ntc_triggered_cnt++;
-						mcu_int_info.ntc_filter_time = os_uptime_get_32();
-				}
-				else
-				{
-						//防止其他事件触发而进入，过滤1.8秒
-						if((os_uptime_get_32() - mcu_int_info.ntc_filter_time) > FIRST_TRIGGER_FILTER_TIME)
-						{
-								mcu_int_info.ntc_triggered_cnt++;
-								mcu_int_info.ntc_filter_time = os_uptime_get_32();
-						}
-				}				
-				if(mcu_int_info.ntc_triggered_cnt == CHARGE_WARNNING_FILTER_TIMES)
-				{
-						mcu_int_info.ntc_triggered_cnt = 0;
-						para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_HIGH;
-
-						if (dev->mcu_notify) {
-								dev->mcu_notify(MCU_INT_TYPE_NTC, &para);
-						}
-						else{
-								printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-						}
-						logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_NTC_BIT);
-
-				}
-				#else				
-				para.mcu_event_val = MCU_INT_CMD_TEMPERATURE_HIGH;
-
-				if (dev->mcu_notify) {
-					dev->mcu_notify(MCU_INT_TYPE_NTC, &para);
-				}
-				else{
-					printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-				}
+				SYS_LOG_INF("over_temperature\n");				
 				logic_mcu_ls8a10049t_set_int_event(LS8A10049T_INT_EVENT_NTC_BIT);
-				#endif
 			}
 		}
 		if(logic_mcu_ls8a10049t_get_int_event()){
@@ -1789,66 +1449,16 @@ static int mcu_ls8a10049t_input_event_report(void)
 int mcu_ls8a10049t_int_deal(void)
 {
 	int ret = 0;
-	if(!key_water_status_read())
-    {
- 		os_sched_lock();
 
-        mcu_ls8a10049t_input_event_report();
+	ret = mcu_ls8a10049t_input_event_report();
 
-		os_sched_unlock();   
-		ret = 1;    
-    }
 	return ret;
 }
 #endif
+
 bool mcu_ls8a10049t_is_dc_in(void)
 {
     return (ls8a10049t_dc_in_flag == 1);
-}
-
-static void logic_mcu_ls8a10049t_dc_intimer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)
-{
-    struct logic_mcu_ls8a10049t_device_data_t *dev = NULL;
-    mcu_manager_charge_event_para_t para;
-	static uint8_t two_second_cnt = 0;
-	static uint8_t first_charge = 0;
-
-	two_second_cnt++;
-    dev = logic_mcu_ls8a10049t_get_device_data();
-
-	int power_key_pressed = _ls8a10049t_check_power_key_pressed(dev);
-	if (power_key_pressed) {
-		two_second_cnt = 0;
-		ls8a10049t_dc_in_flag = 0;
-		thread_timer_stop(&ls8a10049t_dc_in_timer);
-		return;
-	}
-
-	int usb_cable_in = _ls8a10049t_check_usb_cable_in_status(dev);
-	if (!usb_cable_in) {
-		if(first_charge == 0)
-	   	{
-			SYS_LOG_INF("usb_cable_out\n");
-			para.mcu_event_val = MCU_INT_CMD_DC_OUT;
-
-			if (dev->mcu_notify) {
-				dev->mcu_notify(MCU_INT_TYPE_DC, &para);
-			}
-			else{
-				printk("[%s:%d] MCU notify function did not register!\n", __func__, __LINE__);
-			} 
-		}
-		first_charge = 1;
-		two_second_cnt = 0; 
-		ls8a10049t_dc_in_flag = 0;
-		thread_timer_stop(&ls8a10049t_dc_in_timer);          
-	}
-	if(two_second_cnt > 10){
-		two_second_cnt = 0;
-		ls8a10049t_dc_in_flag = 0;
-		thread_timer_stop(&ls8a10049t_dc_in_timer); 
-	}
-	
 }
 
 void logic_mcu_ls8a10049t_int_first_handle(void)
@@ -1915,7 +1525,7 @@ int logic_mcu_LS8A10049T_init(void)
 	gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 
 	gpio_pin_configure(gpio_dev, 23, GPIO_DIR_IN | GPIO_PUD_PULL_UP);
-	thread_timer_init(&ls8a10049t_dc_in_timer, logic_mcu_ls8a10049t_dc_intimer_fn, NULL);
+	//thread_timer_init(&ls8a10049t_dc_in_timer, logic_mcu_ls8a10049t_dc_intimer_fn, NULL);
 
 	//_logic_mcu_ls8a10049t_int_handle(dev);
 
@@ -1924,7 +1534,7 @@ int logic_mcu_LS8A10049T_init(void)
 	//bt_mcu_set_first_power_on_flag();
 
 	//clear_no_use_warrings();
-	thread_timer_init(&ls8a10049t_int_event_timer, logic_mcu_ls8a10049t_int_timer_fn, NULL);
+	//thread_timer_init(&ls8a10049t_int_event_timer, logic_mcu_ls8a10049t_int_timer_fn, NULL);
 	
 	io_expend_aw9523b_registers_init();
     return 0;
