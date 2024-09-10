@@ -413,20 +413,6 @@ static int _ls8a10049t_check_power_key_pressed(struct logic_mcu_ls8a10049t_devic
 	reg_7b.bit7 = 1;
 	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_7B, (u8_t *)&reg_7b, 1);
 
-	/* plm add: for factory test! */
-	////start
-	char buf[2]={0};
-	int ret = property_get(CFG_USER_ATS_REBOOT_SYSTEM,buf,1);
-	printf("------> ret %d reboot_dat %d\n",ret,buf[0]);
-	if(buf[0] == 6){
-		u8_t buffer[1+1] = {8,0};
-		property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffer,1);
-		property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
-		power_key_press = 1;
-		return power_key_press;
-	}
-	////end
-
     return power_key_press;
 }
 

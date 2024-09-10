@@ -571,14 +571,9 @@ static int ats_wlt_shell_enter_adfu(struct device *dev, u8_t *buf, int len)
 }
 static int ats_wlt_shell_system_reset(struct device *dev, u8_t *buf, int len)
 {
-	u8_t buffre[1+1] = {6,0};
-	/* save reboot flag! */
-	property_set(CFG_USER_ATS_REBOOT_SYSTEM,buffre,1);
-	property_flush(CFG_USER_ATS_REBOOT_SYSTEM);
-	sys_pm_reboot(0);
+	sys_pm_reboot(REBOOT_REASON_REBOOT_AND_POWERON);
 	return 0;
 }
-
 
 static int ats_wlt_shell_set_gpio_high(struct device *dev, u8_t *buf, int len)
 {

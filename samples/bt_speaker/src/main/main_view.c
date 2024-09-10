@@ -286,7 +286,12 @@ static void main_app_view_deal(u32_t ui_event)
 	case UI_EVENT_MCU_FW_FAIL:
 		break;
 	case UI_EVENT_MCU_FW_UPDATED:
-		break;		
+		break;	
+
+	case UI_EVENT_FACTORY_AND_REBOOT:
+		sys_pm_reboot(REBOOT_REASON_REBOOT_AND_POWERON);
+		break;	
+	
 	}
 	if (is_need_play_tts(ui_event)) {
 #ifdef CONFIG_PLAYTTS
