@@ -209,7 +209,7 @@ static int cdc_shell_ats_exit_ats_and_reset(struct device *dev, u8_t *buf, int l
 
 static int cdc_shell_ats_reboot(struct device *dev, u8_t *buf, int len)
 {
-	u8_t buffre[1+1] = {6,0};
+	//u8_t buffre[1+1] = {6,0};
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_DUT_REBOOT, sizeof(ATS_CMD_RESP_DUT_REBOOT)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
