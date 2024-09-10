@@ -466,7 +466,7 @@ void system_app_init(void)
 		pd_srv_sync_init();
 	}
 
-	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED ) {
+	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED && reason != REBOOT_REASON_REBOOT_AND_POWERON) {
 		bool enter_stub_tool = false;
 
 #if (defined CONFIG_TOOL && defined CONFIG_ACTIONS_ATT)
