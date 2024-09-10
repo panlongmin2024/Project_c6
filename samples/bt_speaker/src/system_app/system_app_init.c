@@ -363,7 +363,7 @@ void system_app_init(void)
 		  pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
 		}
 
-	ats_test_check_reboot_and_poweron(g_reboot_type,g_reboot_reason);
+	//ats_test_check_reboot_and_poweron(g_reboot_type,g_reboot_reason);
 #endif	
 #else
 	reboot_type = g_reboot_type;
