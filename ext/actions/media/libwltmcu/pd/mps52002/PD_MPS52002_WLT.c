@@ -2145,8 +2145,8 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 
 		}else{
 
-			void user_read_rssi(void);
-			user_read_rssi();
+			//void user_read_rssi(void);
+			//user_read_rssi();
     		pd_detect_event_report_MPS52002();
     		//mcu_ls8a10049t_int_deal();
 		}
