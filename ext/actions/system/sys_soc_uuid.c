@@ -19,6 +19,7 @@
 #include <mem_manager.h>
 #include <thread_timer.h>
 #include <gpio.h>
+#include <sys_event.h>
 
 #define UUID_STR_DATA_LEN       (32)
 #define UUID_MSG_SIGNATURE_LEN  (256)
