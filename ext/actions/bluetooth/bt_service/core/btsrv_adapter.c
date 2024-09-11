@@ -506,7 +506,7 @@ static void btsrv_adapter_monitor_link_quality_timer_handler(struct thread_timer
         //if(btsrv_rdm_is_a2dp_stream_open(active_conn) || ats_is_enable())
 		{
             info->quality_time++;
-			SYS_LOG_INF("------> info->quality_time %d\n",info->quality_time);
+			//SYS_LOG_INF("------> info->quality_time %d\n",info->quality_time);
             hostif_bt_br_read_rssi(active_conn,btsrv_read_rssi_event_cb);
             if(info->quality_time >= 5){
                 info->quality_time = 0;
