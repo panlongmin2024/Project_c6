@@ -1738,12 +1738,24 @@ void user_read_rssi(void)
 {
 	int RSSI_VALUE = -99;
 	struct bt_manager_context_t *bt_manager = bt_manager_get_context();
-
+	char uart_str[] = "------> bt_state=00 rssi=-99";
+		
 	if(bt_manager->bt_state==3){
 		RSSI_VALUE = -bt_manager_bt_read_rssi(0);
 	}
 	else{
 		
 	}
-	SYS_LOG_INF("------> bt_state %d  rssi %d\n",bt_manager->bt_state,RSSI_VALUE);	
+
+	void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
+	bool ats_is_enable(void);
+	if(ats_is_enable()){
+		uart_str[18] = bt_manager->bt_state+'0';
+		uart_str[26] = RSSI_VALUE/10 + '0';
+		uart_str[27] = RSSI_VALUE%10 + '0';
+		ats_usb_cdc_acm_write_data(uart_str,sizeof(uart_str));
+	}
+	else{
+		SYS_LOG_INF("------> bt_state %d  rssi %d\n",bt_manager->bt_state,RSSI_VALUE);	
+	}
 }
