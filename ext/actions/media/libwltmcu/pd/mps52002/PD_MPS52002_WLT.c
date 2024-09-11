@@ -35,6 +35,7 @@
 #include <logging/sys_log.h>
 
 #include <bt_manager.h>
+#include<bt_manager_inner.h>
 
 /*
  * Copyright (c) 2017 Intel Corporation
