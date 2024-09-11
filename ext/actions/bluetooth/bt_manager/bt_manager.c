@@ -1733,3 +1733,17 @@ uint8_t bt_manager_get_smartcontrol_vol_sync(void)
 	printk("\n%s,smartcontrol_vol_syn:%d\n",__func__,cfg_feature->smartcontrol_vol_syn);
 	return cfg_feature->smartcontrol_vol_syn;
 }
+
+void user_read_rssi(void)
+{
+	int RSSI_VALUE = -99;
+	struct bt_manager_context_t *bt_manager = bt_manager_get_context();
+
+	if(bt_manager->bt_state==3){
+		RSSI_VALUE = -bt_manager_bt_read_rssi(0);
+	}
+	else{
+		
+	}
+	SYS_LOG_INF("------> bt_state %d  rssi %d\n",bt_manager->bt_state,RSSI_VALUE);	
+}

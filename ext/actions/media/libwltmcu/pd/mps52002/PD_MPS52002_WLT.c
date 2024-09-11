@@ -34,8 +34,6 @@
 
 #include <logging/sys_log.h>
 
-#include <bt_manager.h>
-#include<bt_manager_inner.h>
 
 /*
  * Copyright (c) 2017 Intel Corporation
@@ -2110,19 +2108,7 @@ extern void led_status_manger_handle(void);
 extern void batt_led_display_timeout(void);
 extern void  amp_aw85xxx_read_buf(void);
 extern void mcu_charge_warnning_event_deal(void);
-void user_read_rssi(void)
-{
-	int RSSI_VALUE = -99;
-	struct bt_manager_context_t *bt_manager = bt_manager_get_context();
 
-	if(bt_manager->bt_state==3){
-		RSSI_VALUE = -bt_manager_bt_read_rssi(0);
-	}
-	else{
-		
-	}
-	SYS_LOG_INF("------> bt_state %d  rssi %d\n",bt_manager->bt_state,RSSI_VALUE);	
-}
 static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
     // const struct wlt_pd_mps52002_config *cfg = p_pd_mps52002_dev->config->config_info;
@@ -2159,6 +2145,7 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 
 		}else{
 
+			void user_read_rssi(void);
 			user_read_rssi();
     		pd_detect_event_report_MPS52002();
     		//mcu_ls8a10049t_int_deal();
