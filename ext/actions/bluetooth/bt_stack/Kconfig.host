@@ -360,7 +360,7 @@ config BT_RPA_ADDR_CONSTANT
 	bool "Le rpa address no update"
 	depends on BT_PRIVACY
 	default n
-	
+
 config BT_RPA_TIMEOUT
 	int "Resolvable Private Address timeout"
 	depends on BT_PRIVACY

@@ -20,6 +20,13 @@
 #include <mem_manager.h>
 #include <partition.h>
 #include <crc.h>
+#ifdef CONFIG_WATCHDOG
+#include <watchdog_hal.h>
+#endif
+
+#ifdef CONFIG_TASK_WDT
+#include <debug/task_wdt.h>
+#endif
 
 extern uint32_t get_exception_esf_info(void);
 
@@ -31,7 +38,7 @@ uint32_t ram_get_unused(void)
 static int ramdump_compress_data(char *src, int ilen, char *dst)
 {
 	int out_sz;
-	char *tmp_ptr = (char *)0x70000;
+	char *tmp_ptr = (char *)(ram_get_unused() + 0x10000);
 
 #if defined(CONFIG_DEBUG_RAMDUMP_COMPRESS_USE_LZ4)
 #include "lz4/lz4hc.h"
@@ -305,7 +312,7 @@ int ramdump_get_used_size(void)
 
 }
 
-int ramdump_data_traverse(int (*traverse_cb)(uint8_t *data, uint32_t max_len), uint8_t *buf, uint32_t len)
+int ramdump_data_traverse(uint8_t *buf, uint32_t len, int (*traverse_cb)(uint8_t *data, uint32_t max_len))
 {
     uint32_t read_len;
     uint32_t read_addr;
@@ -338,7 +345,16 @@ int ramdump_data_traverse(int (*traverse_cb)(uint8_t *data, uint32_t max_len), u
         }
 
         total_len -= read_len;
-    }
+
+#ifdef CONFIG_WATCHDOG
+		watchdog_clear();
+#endif
+
+#ifdef CONFIG_TASK_WDT
+		task_wdt_feed_all();
+#endif
+
+	}
 
     return part_size;
 }
@@ -436,7 +452,7 @@ int ramdump_transfer(char *print_buf, int print_sz, int (*traverse_cb)(uint8_t *
 	   goto out;
    }
 
-   len = ramdump_data_traverse(traverse_cb, print_buf, print_sz);
+   len = ramdump_data_traverse(print_buf, print_sz, traverse_cb);
 
    if(len > 0){
 	   traverse_len += len;
@@ -468,7 +484,8 @@ out:
 #define RAMDUMP_END_STR	"END#"
 #define RAMDUMP_ERROR_STR	"ERROR CANNOT DUMP#"
 #define RAMDUMP_CRC32_STR	"CRC32#"
-
+#define RAMDUMP_BLOCK_CRC32_STR	"BLOCK#"
+#define RAMDUMP_BLOCK_SIZE  (2048)
 /*
  * Need to prefix ramdump strings to make it easier to parse
  * as log module adds its own prefixes.
@@ -480,6 +497,9 @@ struct ramdump_print_ctx{
 	char data_buf[LOG_DATA_BUF_SZE];
 	char log_buf[LOG_BUF_SZ_RAW];
 	uint32_t crc_value;
+	uint32_t crc_block_value;
+	uint16_t item_cnt;
+	uint16_t block_cnt;
 };
 
 static int hex2char(uint8_t x, char *c)
@@ -500,13 +520,20 @@ static void ramdump_print_start(void)
 	printk("\r\n"RAMDUMP_PREFIX_STR RAMDUMP_BEGIN_STR"\r\n");
 }
 
-static void ramdump_print_end(int error, uint32_t crc_value)
+static void ramdump_print_end(struct ramdump_print_ctx *ctx)
 {
-	if (error != 0) {
-		printk(RAMDUMP_PREFIX_STR RAMDUMP_ERROR_STR"\r\n");
+	if (ctx->item_cnt != 0){
+		printk(RAMDUMP_PREFIX_STR RAMDUMP_BLOCK_CRC32_STR"%d#" "0x%x \n", ctx->block_cnt, ctx->crc_block_value);
+		k_busy_wait(1000);
 	}
 
-	printk(RAMDUMP_PREFIX_STR RAMDUMP_CRC32_STR "0x%x\n", crc_value);
+	if (ctx->error != 0) {
+		printk(RAMDUMP_PREFIX_STR RAMDUMP_ERROR_STR"\r\n");
+		k_busy_wait(1000);
+	}
+
+	printk(RAMDUMP_PREFIX_STR RAMDUMP_CRC32_STR "0x%x\n", ctx->crc_value);
+	k_busy_wait(1000);
 	printk(RAMDUMP_PREFIX_STR RAMDUMP_END_STR"\r\n");
 }
 
@@ -523,6 +550,7 @@ void ramdump_print_buffer_output(uint8_t *buf, size_t buflen)
 	}
 
 	ctx->crc_value = utils_crc32(ctx->crc_value, buf, buflen);
+	ctx->crc_block_value = utils_crc32(ctx->crc_block_value, buf, buflen);
 
 	while (remaining > 0) {
 		if (hex2char(buf[i] >> 4, &ctx->log_buf[log_ptr]) < 0) {
@@ -548,6 +576,15 @@ void ramdump_print_buffer_output(uint8_t *buf, size_t buflen)
 			log_ptr = 0;
 
 			k_busy_wait(1000);
+
+			ctx->item_cnt++;
+			if(ctx->item_cnt == (RAMDUMP_BLOCK_SIZE / LOG_BUF_SZ)){
+				printk(RAMDUMP_PREFIX_STR RAMDUMP_BLOCK_CRC32_STR"%d#" "0x%x \n", ctx->block_cnt, ctx->crc_block_value);
+				ctx->block_cnt++;
+				ctx->item_cnt = 0;
+				ctx->crc_block_value = 0;
+				k_busy_wait(1000);
+			}
 		}
 	}
 }
@@ -566,7 +603,7 @@ int ramdump_print(void)
 
 	ramdump_print_start();
 	ramdump_transfer(ctx->data_buf, LOG_DATA_BUF_SZE, ramdump_print_callback);
-	ramdump_print_end(ctx->error, ctx->crc_value);
+	ramdump_print_end(ctx);
 
 	return ctx->error;
 }

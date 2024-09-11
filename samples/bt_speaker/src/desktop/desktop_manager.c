@@ -14,6 +14,7 @@
 #include <bt_manager.h>
 #include "app_defines.h"
 #include "app_ui.h"
+#include <tts_manager.h>
 #ifdef CONFIG_PROPERTY
 #include <property_manager.h>
 #endif
@@ -211,6 +212,7 @@ int desktop_manager_switch(int plugin_id, uint32_t switch_mode)
 
 	SYS_LOG_INF("plugin %d Enter.", plugin_id);
 
+	tts_manager_disable_filter();
 	ctx->cur_plugin->enter(ctx->cur_plugin->p1, ctx->cur_plugin->p2, ctx->cur_plugin->p3);
 
 Exit:

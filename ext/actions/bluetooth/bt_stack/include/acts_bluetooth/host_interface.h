@@ -407,6 +407,17 @@ int hostif_bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
  */
 int hostif_bt_conn_disconnect_by_handle(uint16_t handle, uint8_t reason);
 
+/** @brief Disconnect gatt over br channel.
+ *
+ *  Disconnect gatt over br l2cap channel.
+ *
+ *  @param conn Connection to disconnect.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int hostif_bt_gatt_over_br_disconnect(struct bt_conn *conn);
+
+
 /** @brief Initiate an BR/EDR connection to a remote device.
  *
  *  Allows initiate new BR/EDR link to remote peer using its address.

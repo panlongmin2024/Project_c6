@@ -8,12 +8,13 @@ import argparse
 import binascii
 import sys
 import zlib
-
+import re
 
 RAMDUMP_PREFIX_STR = "#CD:"
 
 RAMDUMP_BEGIN_STR = RAMDUMP_PREFIX_STR + "BEGIN#"
 RAMDUMP_CRC32_STR = RAMDUMP_PREFIX_STR + "CRC32#"
+RAMDUMP_BLOCK_STR = RAMDUMP_PREFIX_STR + "BLOCK#"
 RAMDUMP_END_STR = RAMDUMP_PREFIX_STR + "END#"
 RAMDUMP_ERROR_STR = RAMDUMP_PREFIX_STR + "ERROR CANNOT DUMP#"
 
@@ -37,6 +38,8 @@ def save_file(infile_path, outfile, line_number=0):
     inner_line_num = 0
     write_crc32 = 0
     log_crc32 = 0
+    write_block_crc32 = 0
+    log_block_crc32 = 0
 
     infile = open(infile_path, "r")
 
@@ -59,6 +62,17 @@ def save_file(infile_path, outfile, line_number=0):
             # Found "BEGIN#" - beginning of log
             has_begin = True
             go_parse_line = True
+            continue
+
+        if RAMDUMP_BLOCK_STR in line:
+            pattern = r"#CD:BLOCK#(\d+)#0x([\dA-Fa-f]+)"
+            match = re.search(pattern, line)
+            block_number = int(match.group(1))
+            crc32_str = match.group(2)
+            log_block_crc32 = int(crc32_str, 16)
+            if(log_block_crc32 != write_block_crc32):
+                print(f"ERROR:block {block_number} cal crc32 {write_block_crc32:8x} log crc32 {log_block_crc32:8x}")
+            write_block_crc32 = 0
             continue
 
         if RAMDUMP_CRC32_STR in line:
@@ -95,6 +109,7 @@ def save_file(infile_path, outfile, line_number=0):
         try:
             binary_data = binascii.unhexlify(hex_str)
             write_crc32 = zlib.crc32(binary_data, write_crc32) & 0xffffffff
+            write_block_crc32 = zlib.crc32(binary_data, write_block_crc32) & 0xffffffff
             outfile.write(binary_data)
             bytes_written += len(binary_data)
         except binascii.Error as e:
@@ -110,8 +125,9 @@ def save_file(infile_path, outfile, line_number=0):
         print(f"ERROR: log has error at line {line_number}.")
         return 0, line_number
     else:
-        print(f"Bytes written {bytes_written} {line_number}")
-        print(f"log crc32 {log_crc32:x} file crc32 {write_crc32:x}")
+        print(f"Bytes written {bytes_written} parse line:{line_number}")
+        if(log_crc32 != write_crc32):
+            print(f"ERROR:cal crc32 {write_crc32:8x} log crc32 {log_crc32:8x}")
     return bytes_written, line_number
 
 def main():
@@ -129,7 +145,7 @@ def main():
 
             save_len, line_number = save_file(infile_path, outfile, line_number)
             if save_len > 0:
-                print(f"parse file linenum {line_number}")
+                #print(f"parse file linenum {line_number}")
                 save_backup_len, line_number = save_file(infile_path, outfile_backup, line_number)
                 if save_backup_len == save_len:
                     print("ramdump serial log convert ok!")

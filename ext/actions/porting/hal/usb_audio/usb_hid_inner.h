@@ -32,6 +32,7 @@
  * Report descriptor for keys, button and so on
  */
 static const u8_t hid_report_desc[] = {
+#ifndef CONFIG_HID_BASIC_FUNCTIONS
 	/*
 	 * Report ID: 1
 	 */
@@ -332,7 +333,26 @@ static const u8_t hid_report_desc[] = {
 	0x95, 0x01, /* Report Count (0x01) */
 	0x91, 0x03, /* Output (Const,Variable,Absolute) */
 	0xc0, /* END_COLLECTION */
-
+#else
+	0x05, 0x0c, /* USAGE_PAGE (Consumer) */
+	0x09, 0x01, /* USAGE (Consumer Control) */
+	0xa1, 0x01, /* COLLECTION (Application) */
+	0x15, 0x00, /* Logical Minimum (0x00) */
+	0x25, 0x01, /* Logical Maximum (0x01) */
+	0x09, 0xe9, /* USAGE (Volume Up) */
+	0x09, 0xea, /* USAGE (Volume Down) */
+	0x09, 0xe2, /* USAGE (Mute) */
+	0x09, 0xcd, /* USAGE (Play/Pause) */
+	0x09, 0xb5, /* USAGE (Scan Next Track) */
+	0x09, 0xb6, /* USAGE (Scan Previous Track) */
+	0x75, 0x01, /* Report Size (0x01) */
+	0x95, 0x06, /* Report Count (0x06) */
+	0x81, 0x42, /* Input() */
+	0x75, 0x01,	/* Report Size (0x01) */
+	0x95, 0x02, /* Report Count (0x02) */
+	0x81, 0x01, /* Input() */
+	0xc0,	/* END_COLLECTION */
+#endif
 };
 
 /*

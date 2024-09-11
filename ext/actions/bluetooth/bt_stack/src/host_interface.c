@@ -554,6 +554,21 @@ int hostif_bt_conn_disconnect_by_handle(uint16_t handle, uint8_t reason)
 #endif
 }
 
+int hostif_bt_gatt_over_br_disconnect(struct bt_conn *conn)
+{
+#ifdef CONFIG_BT_BREDR
+		int prio, ret;
+
+		prio = hostif_set_negative_prio();
+		ret = bt_gatt_over_br_disconnect(conn);
+		hostif_revert_prio(prio);
+
+		return ret;
+#else
+		return -EIO;
+#endif
+}
+
 struct bt_conn *hostif_bt_conn_create_br(const bt_addr_t *peer,
 				  const struct bt_br_conn_param *param)
 {

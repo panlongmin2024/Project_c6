@@ -1806,7 +1806,7 @@ static void lemusic_player_reset()
 void lemusic_input_event_proc(struct app_msg *msg)
 {
 	struct lemusic_app_t *lemusic = lemusic_get_app();
-	struct audio_track_t * track = NULL;
+	int status;
 
 	switch (msg->cmd) {
 	case MSG_BT_PLAY_PAUSE_RESUME:
@@ -1880,37 +1880,16 @@ void lemusic_input_event_proc(struct app_msg *msg)
 			lemusic_switch_auracast();
 		}
 		break;
-	case MSG_MUTE_PLAYER:
-		track = audio_system_get_track();
-
-		if (NULL != track && lemusic->slave.playback_player_run) {
-			if (!lemusic->mute_player) {
-				media_player_fade_out(lemusic->slave.playback_player, 60);
-
-				/** reserve time to fade out*/
-				os_sleep(audio_policy_get_bis_link_delay_ms() + 80);
-				audio_track_mute(track, 1);
-				lemusic->mute_player = 1;
-			}
-		}else {
-			lemusic->mute_player = 1;
+	case MSG_PAUSE_PLAYER:
+		status = bt_manager_media_get_status();
+		if(status == BT_STATUS_PLAYING){
+			bt_manager_media_pause();
 		}
 		break;
-	case MSG_UNMUTE_PLAYER:
-		track = audio_system_get_track();
-
-		if (NULL != track && lemusic->slave.playback_player_run) {
-			if (lemusic->mute_player) {
-#ifdef CONFIG_EXTERNAL_DSP_DELAY
-				media_player_fade_in(lemusic->slave.playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
-#else
-				media_player_fade_in(lemusic->slave.playback_player, 200);
-#endif
-				audio_track_mute(track, 0);
-				lemusic->mute_player = 0;
-			}
-		}else {
-			lemusic->mute_player = 0;
+	case MSG_RESUME_PLAYER:
+		status = bt_manager_media_get_status();
+		if(status == BT_STATUS_PAUSED){
+			bt_manager_media_play();
 		}
 		break;
 	case MSG_PLAYER_RESET:

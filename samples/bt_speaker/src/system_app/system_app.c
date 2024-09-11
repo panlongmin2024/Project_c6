@@ -132,10 +132,6 @@ static void system_app_do_poweroff(int result)
 		return;
 	}
 
-#ifdef CONFIG_DATA_ANALY
-	data_analy_exit();
-#endif
-
 	system_power_off();
 
 
@@ -397,6 +393,8 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 						selfapp_notify_lasting_stereo_status();
 					}else if(SELFAPP_CMD_LEAUDIO_STATUS_UPDATE == msg.cmd) {
 						selfapp_report_leaudio_status();
+					}else if(SELFAPP_CMD_THREAD_TIMER_START == msg.cmd){
+						selfapp_thread_timer_start(msg.value);
 					}
 				break;
 #endif

@@ -483,19 +483,24 @@ static int bmr_handle_sink_disable(struct bt_broadcast_report *rep)
    ret = bmr_delete_broad_dev(rep->handle);
    if ((bmr->use_past)&&(!ret)) {
       bmr_past_subscribe_restore();
+	  if (rep->reason == 0x08) {
+	     broadcast_tws_vnd_request_past_info();
+	  }
    }
-	return 0;
+   SYS_LOG_INF("reason: %x \n",rep->reason);
+   return 0;
 }
 
 static int bmr_handle_sink_release(struct bt_broadcast_report *rep)
 {
 	struct bmr_app_t *bmr = bmr_get_app();
     struct bt_broadcast_chan *chan;
+	int ret; 
     chan = find_broad_chan(rep->handle,rep->id);
 
 	if(NULL == chan) {
 		SYS_LOG_WRN("No chan 0x%x, %d", rep->handle, rep->id);
-		return -1;
+		//return -1;
 	}
 
 	bmr_stop_playback();
@@ -521,7 +526,14 @@ static int bmr_handle_sink_release(struct bt_broadcast_report *rep)
    }
    bmr->num_of_broad_chan = 0;
 #endif
-    bmr_delete_broad_dev(rep->handle);
+    ret = bmr_delete_broad_dev(rep->handle);
+    if ((bmr->use_past)&&(!ret)) {
+      bmr_past_subscribe_restore();
+	  if (rep->reason == 0x08) {
+	     broadcast_tws_vnd_request_past_info();
+	  }
+    }
+    SYS_LOG_INF("reason: %x \n",rep->reason);
 	return 0;
 }
 

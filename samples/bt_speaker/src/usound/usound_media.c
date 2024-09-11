@@ -83,7 +83,11 @@ void usound_playback_start(void)
 		return;
 
 #ifdef CONFIG_PLAYTTS
-	tts_manager_wait_finished(false);
+	if (tts_manager_is_playing()) {
+		SYS_LOG_INF("abort ttsplaying");
+		usound->need_resume_play = 1;
+		return ;
+	}
 #endif
 
 	if (usound->playback_player) {
@@ -109,8 +113,8 @@ void usound_playback_start(void)
 	init_param.support_tws = 0;
 	init_param.dumpable = 1;
 	init_param.channels = CONFIG_USB_AUDIO_DOWNLOAD_CHANNEL_NUM;
-	init_param.sample_rate = CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD / 1000;
-	init_param.sample_bits = (CONFIG_USB_AUDIO_RESOLUTION == 24) ? 32 : 16;
+	init_param.sample_rate = (uint8_t)(USB_AudioSinkSampleRateGet() / 1000);
+	init_param.sample_bits = 32;  // usb-audio driver gives 32bit data
 	init_param.event_notify_handle = usound_media_palyer_event_notify;
 
 #if CONFIG_USOUND_BROADCAST_SUPPROT

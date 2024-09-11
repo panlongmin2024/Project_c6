@@ -270,7 +270,7 @@ int init_key_based_pairing(uint8_t* packet, int packet_length)
 		
 		// Decrypt the first 16-bytes of the packet.
 		crypto_provider->decrypt(key, packet);
-
+/*
         if (!bluetooth_provider->is_pairing()) {
             // If we are not in pairing mode, exit immediately because anti-spoofing
             // key pairing should only be done in pairing mode.
@@ -279,7 +279,7 @@ int init_key_based_pairing(uint8_t* packet, int packet_length)
                 goto keybase_pair_exit;
             }
         }
-
+*/
 		// Verify that it matches the headset's public or BLE address.
 		uint8_t ble_address[MAC_ADDRESS_LENGTH];
 		uint8_t public_address[MAC_ADDRESS_LENGTH];
@@ -316,6 +316,11 @@ int init_key_based_pairing(uint8_t* packet, int packet_length)
 		bt_manager_enter_pair_mode();
 	}
 */
+    if(packet_length == AES_BLOCK_SIZE + ECDH_PUBLIC_KEY_SIZE){
+        if(!bluetooth_provider->is_pairing()){
+            bt_manager_enter_pair_mode();
+        }
+    }
 
 	print_hex_comm("based pairing:",packet,16);
 	// Packet now contains the decoded information, so use it as needed.
@@ -815,7 +820,7 @@ void personalized_name_update(uint8_t *name,uint8_t size)
     uint8_t len = 0;
     u8_t name_buffer[PERSONALIZED_NAME_SIZE];
 
-    if (!bluetooth_provider)
+    if (!bluetooth_provider || !name)
         return;
 
     memset(name_buffer,0,PERSONALIZED_NAME_SIZE);
@@ -823,8 +828,11 @@ void personalized_name_update(uint8_t *name,uint8_t size)
     if(size >= PERSONALIZED_NAME_SIZE){
         len = PERSONALIZED_NAME_SIZE - 1;
     }
-
+    else{
+        len = size;
+    }
     memcpy(name_buffer,name,len);
+
     bluetooth_provider->update_personalized_name(name_buffer,PERSONALIZED_NAME_SIZE,false);
 }
 

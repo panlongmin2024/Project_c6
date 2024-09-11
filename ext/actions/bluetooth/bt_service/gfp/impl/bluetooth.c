@@ -126,7 +126,7 @@ void update_personalized_name(uint8_t * name,uint8_t length, bool additional)
             property_set(CFG_BT_NAME, tmp_name, BT_NAME_LEN);
             property_set(CFG_BLE_NAME, tmp_name, BT_NAME_LEN);
             property_set(CFG_BT_LOCAL_NAME, tmp_name, BT_NAME_LEN);
-            btif_br_update_devie_name();
+            bt_manager_gfp_personalized_name_update(true);
         }
     }
 #endif

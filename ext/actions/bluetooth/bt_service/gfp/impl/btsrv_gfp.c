@@ -36,7 +36,11 @@ struct btsrv_gfp_context_info *btsrv_gfp;
 void gfp_routine_start(void)
 {
 	if (btsrv_gfp) {
-        thread_timer_start(&btsrv_gfp->running_timer, GFP_ROUTINE_INTERVAL, GFP_ROUTINE_INTERVAL);    
+        if(!btsrv_gfp->gfp_running_timer_init){
+            thread_timer_init(&(btsrv_gfp->running_timer), gfp_running_timer_handler, NULL);
+            btsrv_gfp->gfp_running_timer_init = 1;
+        }
+        thread_timer_start(&btsrv_gfp->running_timer, GFP_ROUTINE_INTERVAL, GFP_ROUTINE_INTERVAL);
 	}
 }
 

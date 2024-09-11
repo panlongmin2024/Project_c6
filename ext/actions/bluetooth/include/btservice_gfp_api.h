@@ -29,12 +29,14 @@ struct btsrv_gfp_context_info {
     uint8_t gfp_spp_chl;
     uint8_t ble_stream_opened :1;
     uint8_t gfp_spp_connected :1;
+    uint8_t gfp_running_timer_init :1;
 };
 
 typedef int (*btsrv_gfp_pairing_request_callback)(uint8_t* , uint32_t);
 typedef void (*btsrv_gfp_auth_timeout_start)(uint32_t);
 typedef void (*btsrv_gfp_auth_timeout_stop)(void);
 
+void gfp_running_timer_handler(struct thread_timer *timer, void* pdata);
 void gfp_ble_stream_init(void);
 void gfp_spp_stream_init(void);
 

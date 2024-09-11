@@ -153,4 +153,6 @@ u8_t selfapp_get_bat_power(void);
 
 int selfapp_report_leaudio_status(void);
 
+void selfapp_thread_timer_start(int value);
+
 #endif

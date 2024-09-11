@@ -105,8 +105,10 @@ int system_app_log_transfer(int log_type, int (*traverse_cb)(uint8_t *data, uint
 {
 	SYS_LOG_INF("log type %d\n", log_type);
 
+#ifdef CONFIG_ACT_EVENT
 	if(log_type == LOG_TYPE_EVENT)
 		return act_event_syslog_transfer(log_type, traverse_cb);
+#endif
 
 #ifdef CONFIG_DEBUG_RAMDUMP
 	if(log_type == LOG_TYPE_RAMDUMP)

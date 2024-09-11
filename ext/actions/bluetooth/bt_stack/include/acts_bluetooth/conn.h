@@ -522,6 +522,16 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
  */
 int bt_conn_disconnect_by_handle(uint16_t handle, uint8_t reason);
 
+/** @brief Disconnect gatt over br channel.
+*
+*  Disconnect gatt over br l2cap channel.
+*
+*  @param conn Connection to disconnect.
+*
+*  @return Zero on success or (negative) error code on failure.
+*/
+int bt_gatt_over_br_disconnect(struct bt_conn *conn);
+
 enum {
 	/** Convenience value when no options are specified. */
 	BT_CONN_LE_OPT_NONE = 0,
@@ -780,6 +790,8 @@ bt_security_t bt_conn_get_security(struct bt_conn *conn);
  *  @return Encryption key size.
  */
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
+
+int bt_conn_start_link_security(struct bt_conn *conn);
 
 enum bt_security_err {
 	/** Security procedure successful. */

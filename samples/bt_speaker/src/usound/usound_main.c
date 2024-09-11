@@ -187,15 +187,15 @@ static void usound_usb_audio_event_callback(u8_t info_type, int pstore_info)
 		break;
 	}
 
-	case UMIC_SYNC_HOST_VOL_TYPE: {  // 14
+	case UMIC_SYNC_HOST_VOL_TYPE: {  // 15
 		audio_system_set_microphone_volume(AUDIO_STREAM_USOUND, pstore_info);
 		break;
 	}
-	case UMIC_SYNC_HOST_MUTE: {    // 15
+	case UMIC_SYNC_HOST_MUTE: {    // 16
 		audio_system_mute_microphone(1);
 		break;
 	}
-	case UMIC_SYNC_HOST_UNMUTE: {  // 16
+	case UMIC_SYNC_HOST_UNMUTE: {  // 17
 		audio_system_mute_microphone(0);
 		break;
 	}
@@ -224,6 +224,11 @@ static void usound_usb_audio_event_callback(u8_t info_type, int pstore_info)
 		msg.cmd = MSG_USOUND_MIC_CLOSE;
 		send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 		break;
+	}
+	case USOUND_SAMPLERATE_CHANGE: {  //14
+		usound_restart_player_trigger();
+		break;
+
 	}
 	default:
 		break;

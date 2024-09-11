@@ -212,7 +212,6 @@ static int bt_manager_tws_discover_check_device(void *param, int param_size)
 {
 	struct btsrv_discover_result *result = param;
 	uint8_t pre_mac[3];
-	uint8_t name[31];
 	btmgr_base_config_t * cfg_base =  bt_manager_get_base_config();
 	btmgr_tws_pair_cfg_t * cfg_tws =  bt_manager_get_tws_pair_config();
     uint8_t match_len = cfg_tws->match_name_length;
@@ -234,13 +233,10 @@ static int bt_manager_tws_discover_check_device(void *param, int param_size)
 	}
 
     if(match_mode == TWS_MATCH_MODE_NAME){
-        memset(name, 0, sizeof(name));
-        memcpy(name,cfg_base->bt_device_name,30);
-
         if(match_len > result->len){
             match_len = result->len;
         }
-        if (memcmp(result->name, name, match_len)) {
+        if (memcmp(result->name, cfg_base->bt_device_name, match_len)) {
             return 0;
         }
         else{

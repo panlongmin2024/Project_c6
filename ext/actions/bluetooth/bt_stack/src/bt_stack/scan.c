@@ -1478,12 +1478,27 @@ void bt_hci_le_past_received(struct net_buf *buf)
 
 	struct bt_le_per_adv_sync_synced_info sync_info;
 	struct bt_le_per_adv_sync_cb *listener;
-	struct bt_le_per_adv_sync *per_adv_sync;
+	struct bt_le_per_adv_sync *per_adv_sync = NULL;
 	bt_addr_le_t id_addr;
 
+	BT_ERR("PAST receive with status 0x%02X", evt->status);
 	if (evt->status) {
 		/* No sync created, don't notify app */
-		BT_DBG("PAST receive failed with status 0x%02X", evt->status);
+		BT_ERR("PAST receive failed with status 0x%02X", evt->status);
+        if (evt->status == BT_HCI_ERR_CONN_FAIL_TO_ESTAB) {
+
+	       /* Terminate the PA sync and notify app */
+	       struct bt_le_per_adv_sync_term_info tmp_term_info = { 0 };
+
+           tmp_term_info.reason = evt->status;
+           tmp_term_info.conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle));
+
+		   	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
+		        if (listener->term) {
+			        listener->term(per_adv_sync, &tmp_term_info);
+		        }
+	        }
+		}
 		return;
 	}
 

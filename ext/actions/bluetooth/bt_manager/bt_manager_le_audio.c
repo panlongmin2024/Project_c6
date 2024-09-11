@@ -739,10 +739,11 @@ static void bt_manager_le_audio_callback(btsrv_audio_event_e event,
 	}
 
 #ifdef CONFIG_BT_LEA_PTS_TEST
-	if (bt_pts_is_enabled()) {
+	if (bt_manager_config_lea_pts_test()) {
 		bt_manger_lea_event_pts_process(event, data, size);
 	}
 #endif
+
 }
 
 int bt_manager_le_audio_exit(void)

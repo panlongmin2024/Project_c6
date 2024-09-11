@@ -87,19 +87,35 @@ bool bt_manager_config_support_a2dp_aac(void)
 bool bt_manager_config_support_a2dp_ldac(void)
 {
 #ifdef CONFIG_BT_A2DP_LDAC
-	return true;
+	if (bt_manager_config_pts_test()) {
+		return false;
+	} else {
+		return true;
+	}
 #else
 	return false;
 #endif
+
 }
 
 bool bt_manager_config_pts_test(void)
 {
 #ifdef  CONFIG_BT_PTS_TEST
-	return true;
-#else
-	return false;
+	if (bt_pts_is_enabled()) {
+		return true;
+	}
 #endif
+	return false;
+}
+
+bool bt_manager_config_lea_pts_test(void)
+{
+#ifdef  CONFIG_BT_LEA_PTS_TEST
+	if (bt_manager_config_pts_test()) {
+		return true;
+	}
+#endif
+	return false;
 }
 
 uint16_t bt_manager_config_volume_sync_delay_ms(void)

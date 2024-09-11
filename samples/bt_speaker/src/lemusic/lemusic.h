@@ -199,7 +199,6 @@ struct lemusic_app_t {
 #endif
 	uint32_t tts_playing : 1;
 	uint32_t playing : 1;
-	uint32_t mute_player:1;
 
 	struct lemusic_slave_device slave;
 

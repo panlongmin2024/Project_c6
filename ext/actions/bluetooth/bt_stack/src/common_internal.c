@@ -147,7 +147,9 @@ struct bt_conn acl_le_adv_conn __IN_BT_SECTION;
 struct bt_conn sco_conns[CONFIG_BT_MAX_BR_CONN] __IN_BT_BSS_SECTION;
 
 /* hfp, Wait todo: Can use union to manager  hfp_hf_connection and hfp_ag_connection, for reduce memory */
-struct bt_hfp_hf hfp_hf_connection[CONFIG_BT_MAX_BR_CONN] __IN_BT_SECTION;
+//struct bt_hfp_hf hfp_hf_connection[CONFIG_BT_MAX_BR_CONN] __IN_BT_SECTION;
+struct bt_hfp_hf hfp_hf_connection[CONFIG_BT_MAX_BR_CONN] __IN_BT_HFP_SECTION;
+
 struct bt_hfp_ag hfp_ag_connection[CONFIG_BT_MAX_BR_CONN] __IN_BT_SECTION;
 
 /* a2dp */

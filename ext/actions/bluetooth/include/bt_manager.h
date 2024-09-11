@@ -1149,13 +1149,21 @@ int bt_manager_br_connect(bd_address_t *bd);
 int bt_manager_br_disconnect(bd_address_t *bd);
 
 /**
- * @brief disconnect to all connected bluetooth device
+ * @brief disconnect to all br connected device
  *
- * This routine disconnect to all connected bluetooth device.
+ * This routine disconnect to all br connected device.
  *
  */
 void bt_manager_disconnect_all_device(void);
 void bt_manager_disconnect_all_device_power_off(void);
+/**
+ * @brief disconnect to all br connected phone device
+ *
+ * This routine disconnect to all br connected phone device.
+ *
+ */
+void bt_manager_br_disconnect_all_phone_device(void);
+
 /**
  * @brief bt manager lock stream pool
  *
@@ -1410,15 +1418,16 @@ int bt_manager_bt_read_rssi(uint16_t handle);
 int bt_manager_bt_read_link_quality(uint16_t handle);
 
 /* pts test */
-#ifdef CONFIG_BT_PTS_TEST
-uint8_t bt_pts_is_enabled(void);
 #ifdef CONFIG_BT_LEA_PTS_TEST
-int bt_manager_pts_test_start(void);
-uint8_t pts_test_is_adv_test_enable(void);
 int pts_le_audio_init(void);
 void pts_le_clear_keys(void);
 #endif /*CONFIG_BT_LEA_PTS_TEST*/
+#ifdef CONFIG_BT_PTS_TEST
+void bt_manager_pts_test_init(void);
+void bt_manager_pts_test_deinit(void);
 #endif /*CONFIG_BT_PTS_TEST*/
+bool bt_manager_config_pts_test(void);
+bool bt_manager_config_lea_pts_test(void);
 
 typedef int (*tws_config_expect_role_cb_t)(void);
 /**
@@ -1629,8 +1638,18 @@ uint32_t bt_manager_get_bt_name_crc_value(void);
 void bt_manager_set_aesccm_mode(uint8_t mode);
 
 /**
- * @} end defgroup bt_manager_apis
+ * @brief
+ *
+ *  update selfapp name
+ *
  */
+void bt_manager_app_name_update(void);
+
+/**
+ * end defgroup bt_manager_apis
+ */
+
+void bt_manager_gfp_personalized_name_update(bool valid);
 
 int bt_manager_sync_volume_before_playing(void);
 

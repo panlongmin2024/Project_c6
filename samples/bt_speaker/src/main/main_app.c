@@ -103,6 +103,20 @@ static struct dvfs_notifier bt_dvsf_notifier = {
 };
 #endif
 
+static void main_freq_init(void)
+{
+#ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
+	soc_dvfs_unset_level(SOC_DVFS_LEVEL_ALL_PERFORMANCE, "init");
+
+#if (defined(CONFIG_DSP_IP_VENDOR_MUSIC_EFFECT_LIB) || defined(CONFIG_DSP_IP_VENDOR_VOICE_EFFECT_LIB))
+	soc_dvfs_set_level(SOC_DVFS_LEVEL_CSB_PERFORMANCE, "init");
+#else
+	//Enter S2 and set the system clock to 60M
+	soc_dvfs_set_level(SOC_DVFS_LEVEL_IDLE, "init");
+#endif
+
+#endif
+}
 static void main_app_init(void)
 {
 	main_app_view_init();
@@ -119,9 +133,20 @@ static void main_app_init(void)
 #endif
 	}
 #endif
+	main_freq_init();
 }
 extern bool run_mode_is_demo(void);
 extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
+void main_app_exit_desktop(void)
+{
+
+	SYS_LOG_INF("exit desktop\n");
+	desktop_manager_exit();
+#ifdef CONFIG_DATA_ANALY
+	data_analy_exit();
+#endif
+
+}
 void main_msg_proc(void *parama1, void *parama2, void *parama3)
 {
 	struct app_msg msg = { 0 };
@@ -182,11 +207,11 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 				{
 					k_sleep(1000);
 					logic_mcu_ls8a10023t_otg_mobile_det();
-					
+					pd_srv_sync_exit(0);
+					sys_event_notify(SYS_EVENT_POWER_OFF);
 				}
 			}
-			pd_srv_sync_exit(0);
-			sys_event_notify(SYS_EVENT_POWER_OFF);
+
 			break;
 
 		case MSG_KEY_INPUT_ATS:
@@ -223,8 +248,7 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 		//	break;
 
 			case MSG_EXIT_APP:
-				SYS_LOG_INF("exit desktop\n");
-				desktop_manager_exit();
+				main_app_exit_desktop();
 				exit = 1;
 				//app_manager_exit_app((char *)msg.ptr, true);
 				break;

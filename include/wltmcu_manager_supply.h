@@ -47,6 +47,7 @@ typedef enum
     CHARGING_APP_NORMAL = 0,
     CHARGING_APP_EXIT,
     CHARGING_APP_INIT,
+    CHARGING_APP_TTS_DONE,
     CHARGING_APP_OK,
 } wlt_charge_app_state_t;
 

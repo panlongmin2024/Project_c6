@@ -88,7 +88,7 @@ void system_library_version_dump(void)
 	libota_version_dump();
 #endif
 
-	printk("Build time: %s, %s\n", __DATE__, __TIME__);
+	printk("Build time: %s\n", SDK_BUILD_TIME);
 	printk("Revision: %s\n\n", REVISION_INFO);
 }
 

@@ -301,7 +301,7 @@ uint8_t gfp_ble_key_pairing(void)
     }
 }
 
-static void gfp_running_timer_handler(struct thread_timer *timer, void* pdata)
+void gfp_running_timer_handler(struct thread_timer *timer, void* pdata)
 {
 	if (btsrv_gfp->gfp_ble_stream && btsrv_gfp->ble_stream_opened) {
 		gfp_rx_process();
@@ -351,7 +351,8 @@ void gfp_ble_stream_init(void)
 	btsrv_gfp_timeout_start_cb(gfp_auth_timeout_start);
 	btsrv_gfp_timeout_stop_cb(gfp_auth_timeout_stop);
 
-    thread_timer_init(&(btsrv_gfp->running_timer), gfp_running_timer_handler, NULL);
+    btsrv_gfp->gfp_running_timer_init = 0;
+//    thread_timer_init(&(btsrv_gfp->running_timer), gfp_running_timer_handler, NULL);
 	
 }
 

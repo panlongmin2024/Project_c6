@@ -329,13 +329,13 @@ void broadcast_tws_vnd_send_resp_eqinfo(u8_t send)
 #ifdef CONFIG_BT_SELF_APP
 	{
 		u8_t scope = 0;
-		s8_t eqband[5][2];  //refer to customeq_param_nti_t
+		s8_t eqband[5][2];  //refer to customeq_c1_param_nti_t
 
 		extern u8_t selfapp_config_get_eq_id(void);
-		extern int selfapp_config_get_customer_eq(u8_t *scope, u8_t *bands);
+		extern int selfapp_config_get_customer_eq_c1(u8_t *scope, u8_t *bands);
 
 		eqcmdbuf[4] = selfapp_config_get_eq_id();
-		selfapp_config_get_customer_eq(&scope, (u8_t *)eqband);
+		selfapp_config_get_customer_eq_c1(&scope, (u8_t *)eqband);
 		//print_buffer(eqband, 1, 10, 16, 0x12345678);
 
 		#define EQScopeLimit(x)   ( ((x) < -2) ? -2 : ((x) > 2) ? 2 : (x) )
@@ -543,6 +543,7 @@ void broadcast_tws_vnd_send_ack(uint8_t ack_cmdid,uint8_t StatusCode)
 void broadcast_tws_vnd_request_past_info(){
 	uint8_t cmd[3] = { 0 };
 	uint16_t temp_acl_handle = 0;
+	int ret;
 
 	temp_acl_handle = bt_manager_audio_get_letws_handle();
 
@@ -555,8 +556,9 @@ void broadcast_tws_vnd_request_past_info(){
 	cmd[0] = COMMAND_IDENTIFIER;
     cmd[1] = COMMAND_REQ_PASTINFO;
 	cmd[2] = 0x00;
-	SYS_LOG_INF("");
-   	bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, sizeof(cmd));
+
+   	ret = bt_manager_audio_le_vnd_send(temp_acl_handle,cmd, sizeof(cmd));
+	SYS_LOG_INF("%d",ret);
 }
 
 void broadcast_tws_vnd_send_sys_event(uint8_t event){

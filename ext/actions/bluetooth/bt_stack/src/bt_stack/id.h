@@ -10,9 +10,10 @@
 
 static inline bool bt_id_rpa_is_new(void)
 {
-	#if defined(CONFIG_BT_RPA_ADDR_CONSTANT)
-	return false;
-	#endif
+#if defined(CONFIG_BT_RPA_ADDR_CONSTANT)
+    return false;
+#endif
+
 #if defined(CONFIG_BT_PRIVACY)
 	uint32_t remaining_ms = __ticks_to_ms(
 		k_delayed_work_remaining_get(&bt_dev.rpa_update));

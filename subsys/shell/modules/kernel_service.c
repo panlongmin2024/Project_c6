@@ -96,6 +96,8 @@ static int shell_cmd_stack(int argc, char *argv[])
 
 extern const char *task_evt2str(int num);
 
+uint32_t mem_is_ram_data(u32_t addr);
+
 static int shell_cmd_stacks_usage(int argc, char *argv[])
 {
 #ifdef CONFIG_THREAD_MONITOR
@@ -108,12 +110,24 @@ static int shell_cmd_stacks_usage(int argc, char *argv[])
 
 	thread_list   = (struct k_thread *)SYS_THREAD_MONITOR_HEAD;
 	while (thread_list != NULL) {
+
+		if(!mem_is_ram_data((uint32_t)thread_list)){
+			break;
+		}
 #ifdef CONFIG_ENABLE_TRACE_EVTTOSTR
 		printk("%p %s %d", thread_list, task_evt2str(k_thread_priority_get(thread_list)), k_thread_priority_get(thread_list));
 #else
 		printk("%p %d", thread_list, k_thread_priority_get(thread_list));
 #endif
-		 stack_analyze(NULL, (const char *)thread_list->stack_info.start,
+		if(!mem_is_ram_data(thread_list->stack_info.start)){
+			break;
+		}
+
+		if(!mem_is_ram_data(thread_list->stack_info.start + thread_list->stack_info.size)){
+			break;
+		}
+
+		stack_analyze(NULL, (const char *)thread_list->stack_info.start,
 			 thread_list->stack_info.size);
 
 		thread_list = (struct k_thread *)SYS_THREAD_MONITOR_NEXT(thread_list);
@@ -1007,6 +1021,17 @@ static int shell_cmd_ramdump(int argc, char *argv[])
 }
 #endif
 
+#if defined(CONFIG_DISABLE_IRQ_STAT)
+void sys_irq_stat_dump(void);
+static int shell_cmd_irq_stat_dump(int argc, char *argv[])
+{
+	sys_irq_stat_dump();
+	return 0;
+}
+
+#endif
+
+
 
 const struct shell_cmd kernel_commands[] = {
 	{ "version", shell_cmd_version, "show kernel version" },
@@ -1114,6 +1139,10 @@ const struct shell_cmd kernel_commands[] = {
 #if defined(CONFIG_SYS_SOC_UUID)
 	{ "sign", shell_cmd_sign, "sign msg"},
 #endif
+#if defined(CONFIG_DISABLE_IRQ_STAT)
+	{ "irqdump", shell_cmd_irq_stat_dump, "irq stat dump"},
+#endif
+
 	{ NULL, NULL, NULL }
 };
 

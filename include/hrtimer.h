@@ -49,6 +49,7 @@ struct hrtimer
 	u64_t expiry_time;
 	hrtimer_expiry_t expiry_fn;
 	void *expiry_fn_arg;
+	sys_dlist_t node_fn;
 };
 
 /**

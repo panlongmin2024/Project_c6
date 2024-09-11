@@ -490,6 +490,7 @@ int broadcast_get_bis_link_delay_ext(struct bt_broadcast_qos *qos, uint8_t iso_i
 int broadcast_get_tws_sync_offset(struct bt_broadcast_qos *qos);
 int broadcast_get_source_param(uint16_t kbps, uint8_t audio_chan,uint16_t iso_interval, struct broadcast_param_t *broadcast_param);
 int8_t broadcast_get_sq_mode();
+int8_t broadcast_set_sq_mode(int8_t sq_mode);
 
 #ifdef ENABLE_PADV_APP
 int padv_tx_init(u32_t handle, u8_t stream_type);

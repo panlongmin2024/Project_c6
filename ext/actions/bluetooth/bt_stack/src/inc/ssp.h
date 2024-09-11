@@ -12,4 +12,6 @@ int bt_ssp_auth_passkey_confirm(struct bt_conn *conn);
 int bt_ssp_auth_cancel(struct bt_conn *conn);
 int bt_ssp_auth_pairing_confirm(struct bt_conn *conn);
 void bt_ssp_set_bondable(bool enable);
+int bt_ssp_link_encrypt(struct bt_conn *conn);
+
 

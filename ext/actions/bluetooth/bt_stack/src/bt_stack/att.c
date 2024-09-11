@@ -3163,6 +3163,30 @@ int bt_gatt_over_br_init(void)
 	return err;
 }
 
+int bt_gatt_over_br_disconnect(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan;
+	int err = -ENOTCONN;
+
+	if (!conn) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+		(bt_internal_support_gatt_over_br() == 1) &&
+		(conn->type == BT_CONN_TYPE_BR)) {
+		chan = bt_l2cap_br_lookup_rx_psm(conn, 0x1f);
+		if (!chan) {
+			BT_ERR("Unable to find ATT channel");
+			return -EINVAL;
+		}
+
+		err = bt_l2cap_chan_disconnect(chan);
+	}
+
+	return err;
+}
+
 #if defined(CONFIG_BT_EATT)
 int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels)
 {

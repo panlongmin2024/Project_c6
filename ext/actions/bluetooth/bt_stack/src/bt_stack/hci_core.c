@@ -2847,6 +2847,15 @@ static void hci_encrypt_change(struct net_buf *buf)
 	}
 
 	if (status) {
+        if(status == BT_HCI_ERR_LL_PROC_COLLISION){
+            conn->security_collision++;
+            if(conn->security_collision < 3){
+                bt_conn_start_link_security(conn);
+                bt_conn_unref(conn);
+                return;
+            }
+        }
+
 		bt_conn_security_changed(conn, status,
 					 bt_security_err_get(status));
 		bt_conn_unref(conn);

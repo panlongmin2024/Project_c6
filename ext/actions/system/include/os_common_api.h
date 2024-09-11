@@ -1056,7 +1056,7 @@ int os_is_free_msg_enough(void);
 #define MSG_RECV_TIME_STAT_STOP(cmd, type, value) \
 		uint32_t msg_recv_stat_time_end = os_uptime_get_32();\
         if(((msg_recv_stat_time_end - msg_recv_stat_time_start) > CONFIG_MSG_RECV_TIME_LATENCY_MS)){\
-			printk("\n\n[msg_err] thread %d recv msg(cmd %x type %x value %x) %d ms larger than %d ms\n\n", os_thread_priority_get(os_current_get()), cmd, type, value, \
+			printk("\n\n[msg_err] thread %d msg(type %d cmd %d value 0x%x) %d ms larger than %d ms\n\n", os_thread_priority_get(os_current_get()), type, cmd, value, \
 					(msg_recv_stat_time_end - msg_recv_stat_time_start), CONFIG_MSG_RECV_TIME_LATENCY_MS);\
 			\
 		}

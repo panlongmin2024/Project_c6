@@ -20,6 +20,13 @@ if OTA
 		default n
 		help
 			Enable this option to support legracy OTA app.
+
+	config OTA_IMAGE_CHECK_MODE
+		int "OTA image check mode"
+		default 0
+		depends on OTA_UPGRADE
+		help
+			This option set ota image check mode.
 endif
 
 

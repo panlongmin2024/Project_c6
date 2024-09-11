@@ -69,7 +69,7 @@ void poweron_playing_clear(void)
 {
 	product_info.product_play_sec = 0;
 	product_info.product_pwr_on_sec = 0;
-	nvram_config_set_factory(CFG_PRODUCT_INFO, &product_info, sizeof(product_info_t));
+	nvram_config_set(CFG_PRODUCT_INFO, &product_info, sizeof(product_info_t));
 }
 
 
@@ -864,7 +864,7 @@ int data_analy_init(data_analy_init_param_t* init_param)
 	analy_upload_data_p = &g_data_analy.data.upload;
 	nvram_config_get(CFG_DATA_ANALY_DATA, analy_upload_data_p, sizeof(data_analytics_upload_t));
 
-	ret = nvram_config_get_factory(CFG_PRODUCT_INFO, &product_info, sizeof(product_info_t));
+	ret = nvram_config_get(CFG_PRODUCT_INFO, &product_info, sizeof(product_info_t));
 
 	if(g_data_analy.power_on){
 		analy_upload_data_p->power_on_times ++;
@@ -897,7 +897,7 @@ int data_analy_exit(void)
 
 	ret = nvram_config_set(CFG_DATA_ANALY_DATA, analy_upload_data_p, sizeof(data_analytics_upload_t));
 	ret = nvram_config_set(CFG_DATA_ANALY_PLAY, analy_play_p, sizeof(play_analytics_t));
-	ret = nvram_config_set_factory(CFG_PRODUCT_INFO, &product_info, sizeof(product_info_t));
+	ret = nvram_config_set(CFG_PRODUCT_INFO, &product_info, sizeof(product_info_t));
 
 	thread_timer_stop(&g_data_analy.play_time_thread_timer);
 

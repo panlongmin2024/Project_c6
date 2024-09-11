@@ -143,8 +143,9 @@ void thread_timer_start(struct thread_timer *ttimer, s32_t duration, s32_t perio
 	}
 
 	if(ttimer->tid && ttimer->tid != _current){
-		printk("thread timer init %d call %d--%p %p %p\n", k_thread_priority_get(ttimer->tid), \
-			k_thread_priority_get(_current), ttimer->tid, _current, ttimer);
+		printk("ERROR:thread timer(0x%p, 0x%p) start invalid (%d->%d)\n", ttimer, ttimer->expiry_fn, k_thread_priority_get(ttimer->tid), \
+			k_thread_priority_get(_current));
+		panic(NULL);
 	}
 
 #ifndef THREAD_TIMER_ROM_CODE
@@ -189,6 +190,12 @@ void thread_timer_start_prio(struct thread_timer *ttimer, s32_t duration, s32_t 
 		return;
 	}
 
+	if(ttimer->tid && ttimer->tid != tid){
+		printk("ERROR:thread timer(0x%p, 0x%p) start invalid (%d->%d)\n", ttimer, ttimer->expiry_fn, k_thread_priority_get(ttimer->tid), \
+			k_thread_priority_get(tid));
+		panic(NULL);
+	}
+
 //	thread_list = thread_timer_search_thread(priority);
 	thread_list = tid;
 
@@ -215,6 +222,12 @@ void thread_timer_stop(struct thread_timer *ttimer)
 
 	if(!ttimer){
 		return;
+	}
+
+	if(ttimer->tid && ttimer->tid != _current){
+		printk("ERROR:thread timer(0x%p, 0x%p) stop invalid (%d->%d)\n", ttimer, ttimer->expiry_fn, k_thread_priority_get(ttimer->tid), \
+			k_thread_priority_get(_current));
+		panic(NULL);
 	}
 
 	TT_DEBUG("timer %p: stop\n", ttimer);

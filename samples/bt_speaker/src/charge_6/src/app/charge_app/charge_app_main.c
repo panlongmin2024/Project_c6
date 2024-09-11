@@ -41,6 +41,7 @@ static int charge_app_force_power_off = 0;
 static struct charge_app_t *p_charge_app_app;
 extern bool run_mode_is_normal(void);
 static struct thread_timer reset_timer;
+static struct thread_timer check_bt_timer;
 static u8_t power_off_no_tts;
 extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
 
@@ -138,9 +139,8 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED); 
 			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL); */
 
-			hotplug_charger_init();	
-			charge_app_state = CHARGING_APP_OK;
-			pd_set_app_mode_state(CHARGING_APP_MODE);
+			//hotplug_charger_init();	
+			charge_app_state = CHARGING_APP_TTS_DONE;
 			if(charge_app_force_power_off == 1){
 				pd_srv_sync_exit(0);		
 				sys_pm_poweroff();
@@ -148,7 +148,7 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 		}
 		#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
 		if(memcmp(tts_id,"c_err.mp3",sizeof("c_err.mp3")) == 0){
-			charge_app_state = CHARGING_APP_OK;
+			charge_app_state = CHARGING_APP_TTS_DONE;
 			main_system_tts_set_play_warning_tone_flag(false);
 		}
 		#endif
@@ -215,6 +215,18 @@ static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 		charge_system_tts_event_nodify("poweroff.mp3",TTS_EVENT_STOP_PLAY);
 	}
 	#endif
+}
+static void charge_app_check_bt_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
+{
+	if((btif_br_get_connected_device_num() == 0) && (charge_app_state == CHARGING_APP_TTS_DONE)){
+		charge_app_state = CHARGING_APP_OK;
+		thread_timer_stop(&check_bt_timer);
+		hotplug_charger_init();	
+	}else if((os_uptime_get_32() - p_charge_app_app->tts_start_time) > 15000){
+		printk("charge_app_check_bt_timer time out \n");
+		charge_app_state = CHARGING_APP_OK;
+				pd_srv_sync_exit(0);		
+	}
 }
 static int _charge_app_init(void *p1, void *p2, void *p3)
 {
@@ -286,9 +298,11 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 			power_off_no_tts = 1;
 	}
 	p_charge_app_app->tts_start_time = os_uptime_get_32();
+	thread_timer_init(&check_bt_timer, charge_app_check_bt_timer, NULL);
+	thread_timer_start(&check_bt_timer,200,200);
 	//tts_manager_lock();
 	//sys_standby_time_set(5,5);
-	sys_wake_lock(WAKELOCK_WAKE_UP);
+	sys_wake_lock(WAKELOCK_CHARGE_MODE);
 	SYS_LOG_INF("init finished\n");
 
 	return ret;
@@ -339,7 +353,7 @@ static int _charge_app_exit(void)
 
 	app_manager_thread_exit(APP_ID_CHARGE_APP_NAME);
 	input_manager_unlock();
-	sys_wake_unlock(WAKELOCK_WAKE_UP);
+	sys_wake_unlock(WAKELOCK_CHARGE_MODE);
 	charge_app_state = CHARGING_APP_NORMAL; 
 	soc_dvfs_unset_level(SOC_DVFS_LEVEL_HIGH_PERFORMANCE, "power_on");
 	//sys_standby_time_set(CONFIG_AUTO_STANDBY_TIME_SEC,CONFIG_AUTO_POWEDOWN_TIME_SEC);

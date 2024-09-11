@@ -62,6 +62,10 @@
 static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 {
 	if(!msg->reserve){
+#ifdef CONFIG_TASK_WDT
+		task_wdt_exit();
+#endif
+
 #ifdef CONFIG_BT_MANAGER
 		bt_manager_deinit();
 #endif
@@ -71,11 +75,6 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 #ifdef CONFIG_PROPERTY
 		property_flush(NULL);
 #endif
-
-#ifdef CONFIG_TASK_WDT
-		task_wdt_exit();
-#endif
-
 		system_deinit();
 
 #ifdef CONFIG_AUDIO
@@ -135,6 +134,11 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 	// 	}
 	}else{
 		int reason = msg->value;
+
+#ifdef CONFIG_TASK_WDT
+		task_wdt_exit();
+#endif
+
 #ifdef CONFIG_TTS_MANAGER
 		tts_manager_lock();
 #endif
@@ -147,10 +151,6 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 
 #ifdef CONFIG_PROPERTY
 		property_flush(NULL);
-#endif
-
-#ifdef CONFIG_TASK_WDT
-		task_wdt_exit();
 #endif
 		system_deinit();
 
@@ -167,6 +167,18 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 	}
 }
 
+static void main_app_notify_system_exited(struct app_msg *recv_msg, int result, void *reply)
+{
+	struct app_msg msg = {0};
+
+	msg.type = MSG_EXIT_APP;
+	msg.value = recv_msg->value;
+	msg.reserve = recv_msg->reserve;
+	msg.callback = _system_power_callback;
+	send_async_msg(CONFIG_SYS_APP_NAME, &msg);
+
+}
+
 static void system_exit_front_app(int reboot_type,int reboot_reason)
 {
 	struct app_msg msg = {0};
@@ -174,8 +186,8 @@ static void system_exit_front_app(int reboot_type,int reboot_reason)
 	msg.type = MSG_EXIT_APP;
 	msg.value = reboot_reason;
 	msg.reserve = reboot_type;
-	msg.callback = _system_power_callback;
-	send_async_msg("main", &msg);
+	msg.callback = main_app_notify_system_exited;
+	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 
 }
 

@@ -148,11 +148,4 @@ config OTA_APP_AUTO_SWITCH
 	help
 	  This option enables automatically ota app switching.
 
-config OTA_IMAGE_CHECK_MODE
-	int "OTA image check mode"
-	default 0
-	depends on OTA_UPGRADE
-	help
-	  This option set ota image check mode.
-
 endif

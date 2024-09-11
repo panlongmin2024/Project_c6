@@ -131,12 +131,12 @@ config USB_HID_DEVICE_PID
 	help
 	  USB hid device product ID, can be configured by vendor.
 
-config HID_REPORT_DESC_SIZE
-	int
-	prompt "USB HID device hid report descriptor size."
-	default 64
+config HID_BASIC_FUNCTIONS
+	bool
+	prompt "Whether to enable the basic HID function"
+	default n
 	help
-	  USB HID device hid report descriptor size.
+	  Whether to enable the basic HID function.
 
 config USB_SELF_DEFINED_REPORT
 	bool

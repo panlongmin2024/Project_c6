@@ -22,6 +22,8 @@ extern "C" {
 #define BUILD_ASSERT(x)
 #endif
 
+#define __IN_BT_HFP_SECTION   __in_section_unique(bthost_hfp_bss)
+
 #ifndef __IN_BT_SECTION
 #define __IN_BT_STACK_SECTION __in_section_unique(bthost_bss)
 #else

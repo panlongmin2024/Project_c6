@@ -69,15 +69,25 @@ static int _usb_hid_tx(const u8_t *buf, u16_t len)
 
 static int _usb_hid_tx_command(u8_t hid_cmd)
 {
+#ifndef CONFIG_HID_BASIC_FUNCTIONS
 	u8_t data[2], ret;
+#else
+	u8_t data[1], ret;
+#endif
 
 	memset(data, 0, sizeof(data));
+#ifndef CONFIG_HID_BASIC_FUNCTIONS
 	data[0] = REPORT_ID_6;
 	data[1] = hid_cmd;
+#else
+	data[0] = hid_cmd;
+#endif
 	ret = _usb_hid_tx(data, sizeof(data));
 	if (ret == 0) {
 		memset(data, 0, sizeof(data));
+	#ifndef CONFIG_HID_BASIC_FUNCTIONS
 		data[0] = REPORT_ID_6;
+	#endif
 		ret = _usb_hid_tx(data, sizeof(data));
 		SYS_LOG_DBG("test_ret: %d\n", ret);
 	}

@@ -34,6 +34,7 @@
 #define CFG_BT_PRE_NAME             "BT_PRE_NAME"
 #define CFG_BT_LOCAL_NAME            "LNAME"
 #define CFG_BT_BROADCAST_NAME        "BNAME"
+#define CFG_APP_NAME                "APP_NAME"
 #define CFG_BT_ID                   "BT_ID"
 #define CFG_BT_IRK                  "BT_IRK"
 #define CFG_BT_KEYS                 "BT_KEYS"

@@ -238,6 +238,7 @@ struct bt_conn {
 	uint16_t snoop_a2dp_media_rx_cid;	/* For BT_CONN_TYPE_BR_SNOOP conn, receive a2dp media data */
 	uint8_t snoop_switch_lock : 1;		/* For snoop switch lock */
 	uint8_t le_switch_connected : 1;	/* For le switch create connected */
+    uint8_t security_collision : 2;
 	uint8_t debug_tx_pending;
 	sys_slist_t	switch_rx_pending;		/* Conn rx buf pending in snoop switch */
 	/* Actions add end */

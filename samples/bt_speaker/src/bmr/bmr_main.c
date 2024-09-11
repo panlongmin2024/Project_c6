@@ -97,7 +97,9 @@ int bmr_sink_init(void)
 #if FILTER_BROADCAST_ID
 	bt_manager_broadcast_filter_broadcast_id(broadcast_get_broadcast_id());
 #endif
-
+    
+	bt_manager_broadcast_filter_rssi(-80);
+  
 	bt_manager_broadcast_sink_register_ext_rx_cb(bmr_vnd_ext_rx);
 
 	if (get_pawr_enable())

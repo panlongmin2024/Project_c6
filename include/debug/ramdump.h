@@ -86,7 +86,7 @@ extern int ramdump_transfer(char *print_buf, int print_sz, int (*traverse_cb)(ui
 /**
  * @brief print ramdump data.
  *
- * This routine print ramdump data from flash.
+ * This routine print ramdump data from flash, cannot be called when player playing
  *
  * @param N/A
  *

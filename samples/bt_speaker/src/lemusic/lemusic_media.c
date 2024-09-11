@@ -463,17 +463,12 @@ int lemusic_start_playback(void)
 			media_player_audio_track_trigger_callback,audio_system_get_track());
 	}
 
-	if (lemusic_get_app()->mute_player) {
-		if(audio_system_get_track()){
-			audio_track_mute(audio_system_get_track(), 1);
-		}
-	}else{
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
-		media_player_fade_in(slave->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
+	media_player_fade_in(slave->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
 #else
-		media_player_fade_in(slave->playback_player, 200);
+	media_player_fade_in(slave->playback_player, 200);
 #endif
-	}
+
 	media_player_play(slave->playback_player);
 	/*
 	 * NOTE: sleep for resample page miss, capture/playback are

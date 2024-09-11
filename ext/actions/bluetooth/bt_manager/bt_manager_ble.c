@@ -195,11 +195,9 @@ static void param_update_work_callback(struct k_work *work)
 	}
 #endif
 
-#ifdef CONFIG_BT_LEA_PTS_TEST
-	if (bt_pts_is_enabled()) {
+	if (bt_manager_config_lea_pts_test()) {
 		return;
 	}
-#endif
 
 	if (ble_dev->ble_conn) {
 		struct bt_le_conn_param param;
@@ -1070,5 +1068,11 @@ void bt_manager_check_per_adv_synced(void)
 	        printk("err: %d", err);
         }
 	}
+}
+
+void bt_manager_gfp_personalized_name_update(bool valid)
+{
+    struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
+    bt_manager->personalized_name_update = valid;
 }
 

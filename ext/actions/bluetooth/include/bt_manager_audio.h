@@ -965,6 +965,8 @@ void bt_manager_audio_dump_info(void);
 int bt_manager_broadcast_past_subscribe(uint16_t handle);
 int bt_manager_broadcast_past_unsubscribe(uint16_t handle);
 
+int bt_manager_broadcast_pa_set_info_transfer(uint32_t handle);
+
 uint16_t bt_manager_audio_get_letws_handle(void);
 /*
  * Specific APIs for LE Audio
@@ -1045,6 +1047,8 @@ int bt_manager_audio_takeover_flag(void);
 int bt_manager_audio_current_stream(void);
 
 int bt_manager_audio_get_leaudio_dev_num();
+
+int bt_manager_audio_disconnect_all_phone_dev();
 
 int bt_manager_is_idle_status();
 

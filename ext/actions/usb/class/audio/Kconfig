@@ -347,20 +347,19 @@ config USB_AUDIO_DEVICE_SOURCE_SAM_FREQ_UPLOAD
 	help
 	  USB Audio source sampling frequency (unit: Hz).
 
+config USB_SINK_UAC_MODE
+	int
+	prompt "USB multi-sample rate multi-depth combination selection"
+	default 0
+	range 0 3
+	help
+	  - 0 Multi-sample rate switching is not supported. The selected configuration depends on kconfig
 
-config USB_AUDIO_DEVICE_SINK_FIRST_BIT_DEPTH
-	  int
-	  prompt "The byte size of the sampling bit for each sample of the first configuration"
-	  default 24
-	  help
-		The byte size of the sampling bit for each sample of the first configuration.
-  
-config USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH
-	  int
-	  prompt "The byte size of the sampling bit for each sample of the second configuration"
-	  default 16
-	  help
-		The byte size of the sampling bit for each sample of the second configuration.
+	  - 1 Supports 48k 16bit and 48k 24bit
+
+	  - 2 Supports 44.1k 16bit and 44.1k 24bit
+
+	  - 3 Supports 44.1k 16bit, 44.1k 24bit, 48k 16bit, and 48k 24bit
 
 config USB_AUDIO_DEVICE_SINK_SAMPLE_FREQ_TYPE
 	int

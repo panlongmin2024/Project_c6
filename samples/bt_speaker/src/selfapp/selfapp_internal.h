@@ -57,6 +57,7 @@ enum DeviceInfo_Role_e {
 #define SELF_SENDBUF_SIZE  (0x100)
 #define SELF_RECVBUF_SIZE  (0x100)
 #define SELF_PACKET_MAX    (0x100)
+#define SELF_EXTERNAL_SENDBUF_SIZE (0x100)
 #define SELF_NVRAM_STA     "SELFSTA"
 #define SELF_NVRAM_STASZ   "SELFSTASZ"
 
@@ -107,6 +108,7 @@ enum EQ_Category_Id_e {
 	EQCATEGORY_PRESERVED_11,
 
 	EQCATEGORY_CUSTOM_1 = 0xc1,
+	EQCATEGORY_CUSTOM_2 = 0xc2,
 };
 
 #define	EQCATEGORY_DEFAULT EQCATEGORY_SIGNATURE
@@ -119,21 +121,23 @@ enum PresetEQ_Band_Type_e {
 	IIRFilter_HighPass,
 };
 
-enum CustomEQ_Band_Type_e {
-	Custom_Band_1 = 0x01,	// Bass
-	Custom_Band_2,		// Mid
-	Custom_Band_3,		// Treble
-	Custom_Band_4,
-	Custom_Band_5,
+enum CustomEQ_c1_Band_Type_e {
+	Custom_c1_Band_1 = 0x01,	// Bass
+	Custom_c1_Band_2,		// Mid
+	Custom_c1_Band_3,		// Treble
+	Custom_c1_Band_4,
+	Custom_c1_Band_5,
+	Custom_c1_Band_6,
+	Custom_c1_Band_7,
 };
 
-enum CustomEQ_Level_Scope_e {
-	Custom_Scope_n1p1 = 0x01,	//[-1, 1]
-	Custom_Scope_n2p2 = 0x02,	//[-2, 2]
+enum CustomEQ_c1_Level_Scope_e {
+	Custom_c1_Scope_n1p1 = 0x01,	//[-1, 1]
+	Custom_c1_Scope_n2p2 = 0x02,	//[-2, 2]
 
-	Custom_Scope_n6p6 = 0x06,	//[-6, 6]
+	Custom_c1_Scope_n6p6 = 0x06,	//[-6, 6]
 };
-#define DEFAULT_SCOPE  (Custom_Scope_n6p6 )
+#define DEFAULT_SCOPE  (Custom_c1_Scope_n6p6 )
 
 typedef struct {
 	void *otadfu;
@@ -149,15 +153,18 @@ typedef struct {
 	u8_t connect_type;	// BT_Connect_Type_e
 	u8_t stream_opened;
 	u8_t stream_handle_suspend;
-	u8_t mute_player:1;
+	u8_t pause_player:1;
 	struct thread_timer timer;
 #ifdef CONFIG_LOGSRV_SELF_APP
 	p_logsrv_callback_t log_cb;
 #endif
 	struct AURACAST_GROUP creat_group;
-	u32_t time_out;
-	struct thread_timer mute_timer;
+	u32_t creat_group_time_out;
+	u32_t indication_time_out;
+	struct thread_timer creat_group_timer;
+	struct thread_timer indication_timer;
 	selfapp_device_info_t secondary_device;
+	u32_t sendbuf_tid;
 } selfapp_context_t;
 
 extern selfapp_context_t *self_get_context(void);
@@ -204,7 +211,7 @@ extern int ledpkg_deinit(void);
 
 //cmd EQ handler
 u8_t get_active_eq(void);
-int spkeq_RetNTIEQ(u8_t * buf);
+int spkeq_RetNTIEQ(u8_t * buf, u8_t custom_type);
 int spkeq_SetNTIEQ(u8_t * param, u16_t plen);
 u8_t selfapp_eq_get_id_by_index(u8_t index);
 const u8_t* selfapp_eq_get_default_data(void);
@@ -240,7 +247,12 @@ void selfapp_eq_cmd_update(u8_t id, const u8_t* data, u16_t len);
 int selfapp_eq_cmd_switch_eq(u8_t id, u8_t pre_id, const u8_t *data, u8_t len);
 void selfapp_set_user_bat_cap(u8_t bat);
 void selfapp_report_secondary_device_info(void);
-void self_mute_handler(struct thread_timer *ttimer,
+
+void self_creat_group_handler(struct thread_timer *ttimer,
 				   void *expiry_fn_arg);
+
+void selfapp_cmd_thread_timer_start(struct thread_timer *cur_timer);
+
+int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen);
 
 #endif

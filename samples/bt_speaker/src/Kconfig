@@ -67,7 +67,6 @@ config C_TEST_MUTE_PA
     bool
     prompt "enable test PA mute"
     default n
-
 config AUARCAST_FILTER_POLICY_H
     bool
     prompt "auarcast filter policy H"

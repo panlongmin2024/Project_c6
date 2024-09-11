@@ -172,6 +172,10 @@ enum Command_e {
 	CMD_SetPlayerInfo = 0xA7,
 	CMD_ReqPlayerInfo = 0xA8,
 
+	CMD_ReqAuracast_SQ_Status = 0xAE,
+	CMD_SetAuracast_SQ_Status = 0xAF,	//0-off, 1-on
+	CMD_RetAuracast_SQ_Status = 0xB0,
+	
 	CMD_UNSUPPORTED = 0xEE,
 };
 // - - -

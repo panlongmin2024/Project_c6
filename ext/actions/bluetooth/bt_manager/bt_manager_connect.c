@@ -757,15 +757,26 @@ void bt_manager_disconnect_all_device(void)
 	}
 }
 
-void bt_manager_disconnect_all_device_power_off(void)
+void bt_manager_br_disconnect_all_phone_device(void)
 {
 	int time_out = 0;
 
-	btif_br_disconnect_device(BTSRV_DISCONNECT_ALL_MODE);
+	btif_br_disconnect_device(BTSRV_DISCONNECT_PHONE_MODE);
 
-	while (btif_br_get_connected_device_num() && time_out++ < 200) {
+	while (btif_br_get_connected_phone_num() && time_out++ < 500) {
 		os_sleep(10);
 	}
+}
+
+void bt_manager_disconnect_all_device_power_off(void)
+{
+	//int time_out = 0;
+
+	btif_br_disconnect_device(BTSRV_DISCONNECT_ALL_MODE);
+
+/* 	while (btif_br_get_connected_device_num() && time_out++ < 200) {
+		os_sleep(10);
+	} */
 }
 
 

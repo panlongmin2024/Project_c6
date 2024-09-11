@@ -179,12 +179,12 @@ int system_btmgr_config_update_2nd(void)
 
     /* check TWS pair match name length (not include suffix name) */
     {
-	      uint8_t bt_name[32];
-		  int len;
-		  memset(bt_name, 0, 32);
-	      len = property_get(CFG_BT_NAME, bt_name, 31);
-		  if (len)
-		  {
+		uint8_t bt_name[CONFIG_MAX_BT_NAME_LEN + 1];
+		int len;
+		memset(bt_name, 0, sizeof(bt_name));
+		len = property_get(CFG_BT_NAME, bt_name, CONFIG_MAX_BT_NAME_LEN);
+		if (len)
+		{
             len = strlen(bt_name);
             tws_pair_config->match_name_length = len;
 		  }

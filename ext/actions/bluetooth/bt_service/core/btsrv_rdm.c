@@ -116,13 +116,15 @@ struct rdm_device {
 	uint16_t vendor_id;
 	uint16_t product_id;
 
-	uint8_t device_name[CONFIG_MAX_BT_NAME_LEN + 1];
+	uint8_t *device_name;
 
 	struct btsrv_rdm_avrcp_pass_info avrcp_pass_info;
 	/* Sniff manager info */
 	struct rdm_sniff_info sniff;
 
     uint8_t dev_class[3];
+
+	uint32_t profile_disconnect_timestamp;
 };
 
 struct btsrv_rdm_avrcp_cb {
@@ -148,6 +150,24 @@ static struct btsrv_rdm_priv *p_rdm;
 static struct btsrv_rdm_priv btsrv_rdm;
 
 int btsrv_rdm_hid_actived(struct bt_conn *base_conn, uint8_t actived);
+
+static void btsrv_rdm_dev_free(struct rdm_device *dev)
+{
+	if (!dev) {
+		SYS_LOG_ERR("param error");
+		return;
+	}
+
+	if(dev->avrcp_connecting_pending || dev->avrcp_playing_pending){
+		//TODO:use os_xx instead
+		k_delayed_work_cancel_sync(&dev->avrcp_status_pending_delay_work,K_FOREVER);
+    }
+	k_delayed_work_cancel_sync(&dev->avrcp_set_absolute_volume_delay_work,K_FOREVER);
+	if(dev->device_name){
+		mem_free(dev->device_name);
+	}
+	mem_free(dev);
+}
 
 static struct rdm_device *btsrv_rdm_find_dev_by_addr(bd_address_t *addr)
 {
@@ -710,11 +730,7 @@ int btsrv_rdm_remove_dev(uint8_t *mac)
 	hostif_bt_conn_unref(dev->base_conn);
 	sys_slist_find_and_remove(&p_rdm->dev_list, &dev->node);
 
-	if(dev->avrcp_connecting_pending || dev->avrcp_playing_pending){
-		//TODO:use os_xx instead
-		k_delayed_work_cancel_sync(&dev->avrcp_status_pending_delay_work,K_FOREVER);
-    }
-	mem_free(dev);
+	btsrv_rdm_dev_free(dev);
 
 	hostif_bt_addr_to_str((const bt_addr_t *)mac, addr_str, BT_ADDR_STR_LEN);
 	SYS_LOG_INF("remove_dev %s\n", addr_str);
@@ -2386,7 +2402,16 @@ void btsrv_rdm_set_dev_name(struct bt_conn *base_conn, uint8_t *name)
 		SYS_LOG_WRN("not connected??\n");
 		return;
 	}
-
+	if(dev->device_name){
+		mem_free(dev->device_name);
+		dev->device_name = NULL;
+	}
+	dev->device_name = mem_malloc(strlen(name) + 1);
+	if (!dev->device_name) {
+		SYS_LOG_ERR("malloc failed!!\n");
+		return;
+	}
+	memset(dev->device_name,0,strlen(name) + 1);
 	memcpy(dev->device_name, name, strlen(name));
 }
 
@@ -2466,6 +2491,34 @@ bool btsrv_rdm_is_wait_to_diconnect(struct bt_conn *base_conn)
 	return dev->wait_to_disconnect ? true : false;
 }
 
+
+void btsrv_rdm_set_profile_disconnect_timestamp(struct bt_conn *base_conn, uint32_t timestamp)
+{
+	struct rdm_device *dev;
+
+	dev = btsrv_rdm_find_dev_by_conn(base_conn);
+	if (dev == NULL) {
+		SYS_LOG_WRN("not connected??\n");
+		return;
+	}
+
+	dev->profile_disconnect_timestamp = timestamp;
+}
+
+uint32_t btsrv_rdm_get_profile_disconnect_timestamp(struct bt_conn *base_conn)
+{
+	struct rdm_device *dev;
+
+	dev = btsrv_rdm_find_dev_by_conn(base_conn);
+	if (dev == NULL) {
+		SYS_LOG_WRN("not connected??\n");
+		return 0;
+	}
+
+	return dev->profile_disconnect_timestamp;
+}
+
+
 void btsrv_rdm_set_switch_sbc_state(struct bt_conn *base_conn, uint8_t state)
 {
 	struct rdm_device *dev;
@@ -2515,7 +2568,13 @@ int btsrv_rdm_sync_base_info(struct bt_conn *base_conn, void *local_info, void *
 		info->security_changed = dev->security_changed;
 		info->controler_role = dev->controler_role;
 		info->sniff_mode = dev->sniff.sniff_mode;
-		memcpy(info->device_name, dev->device_name, strlen(dev->device_name));
+		if(dev->device_name){
+			int name_len = MIN(sizeof(info->device_name) - 1, strlen(dev->device_name));
+			if(strlen(dev->device_name) > sizeof(info->device_name) - 1){
+				SYS_LOG_WRN("buffer overflow\n");
+			}
+			memcpy(info->device_name, dev->device_name, name_len);
+		}
 	}
 
 	if (remote_info) {
@@ -2523,6 +2582,16 @@ int btsrv_rdm_sync_base_info(struct bt_conn *base_conn, void *local_info, void *
 		dev->security_changed = info->security_changed;
 		dev->controler_role = info->controler_role;
 		dev->sniff.sniff_mode = info->sniff_mode;
+		if(dev->device_name){
+			mem_free(dev->device_name);
+			dev->device_name = NULL;
+		}
+		dev->device_name = mem_malloc(strlen(info->device_name) + 1);
+		if (!dev->device_name) {
+			SYS_LOG_ERR("malloc failed!!\n");
+			return -ENOMEM;
+		}
+		memset(dev->device_name,0,strlen(info->device_name) + 1);
 		memcpy(dev->device_name, info->device_name, strlen(info->device_name));
 	}
 
@@ -2828,7 +2897,7 @@ void btsrv_rdm_deinit(void)
 		dev = __RMT_DEV(node);
 
 		if (dev->connected == 1) {
-			mem_free(dev);
+			btsrv_rdm_dev_free(dev);
 			break;
 		}
 	}

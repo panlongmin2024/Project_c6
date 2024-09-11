@@ -7,7 +7,7 @@
 #ifdef CONFIG_PLAYTTS
 #include <tts_manager.h>
 #endif
-
+#include "broadcast.h"
 #include <media_player.h>
 #include <fw_version.h>
 #ifdef CONFIG_DATA_ANALY
@@ -45,6 +45,7 @@ u8_t cmdgroup_special(u8_t CmdID, u8_t * Payload, u16_t PayloadLen, int *result)
 #endif
 	case CMD_NTI_EQ_Set:
 	case CMD_NTI_EQ_Req:
+	case APICMD_ReqStandaloneMode:
 	case CMD_ReqBatteryStatus:
 	case CMD_SetAuracastGroup:
 	case CMD_ReqAuracastGroup:
@@ -59,6 +60,8 @@ u8_t cmdgroup_special(u8_t CmdID, u8_t * Payload, u16_t PayloadLen, int *result)
 	case APICMD_ReqBassVolume:
 	case APICMD_SetBassVolume:
 	case APICMD_ReqWaterOverHeating:
+	case CMD_ReqAuracast_SQ_Status:
+	case CMD_SetAuracast_SQ_Status:
 		{
 			ret =
 			    cmdgroup_speaker_settings(CmdID, Payload,
@@ -213,7 +216,6 @@ static int devinfo_set_forward_token(u8_t id, u8_t *value, u16_t *token_len)
 	return ret;
 }
 
-static int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen);
 static int devinfo_set_handle_token(u8_t id, u8_t *value, u16_t *token_len)
 {
 	u16_t paylen = 0;
@@ -324,7 +326,7 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 		memset(name, 0, SELF_BTNAME_LEN + 1);
 		if(!device_id){
 #ifdef CONFIG_PROPERTY
-			property_get(CFG_BT_NAME, name, SELF_BTNAME_LEN);
+			property_get(CFG_APP_NAME, name, SELF_BTNAME_LEN);
 #endif
 		}else{
 			if(selfctx->secondary_device.validate && strlen(selfctx->secondary_device.bt_name)){
@@ -457,7 +459,7 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 			selfapp_get_mac(mac);
 		}
 
-		selfapp_log_inf("MAC=%02X%02X%02X-%02X%02X%02X\n", 
+		selfapp_log_inf("MAC=%02X%02X%02X-%02X%02X%02X\n",
 			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
 		size += selfapp_pack_header(buf, DEVCMD_RetDevInfo, 1+1+6);
@@ -789,6 +791,26 @@ static int skp_req_player_info(u8_t * Payload, u16_t PayloadLen)
 	return ret;
 }
 
+static int spk_req_standby_mode(u8_t * Payload, u16_t PayloadLen)
+{
+	u8_t buf[8];
+	int ret = -1;
+	u16_t len = 0;
+	u8_t standby_mode = 0;
+
+#ifdef CONFIG_FLIP7_SUNITEC
+	extern bool flip7_is_standby_mode(void);
+	if (flip7_is_standby_mode()) {
+		standby_mode = 1;
+	}
+#endif
+	selfapp_log_inf("standby mode: %d\n", standby_mode);
+	len = selfapp_pack_cmd_with_int(buf, APICMD_RetStandaloneMode, standby_mode, 1);
+	ret = self_send_data(buf, len);
+
+	return ret;
+}
+
 static int spk_req_battery_status(u8_t * Payload, u16_t PayloadLen)
 {
 	selfapp_context_t *selfctx = self_get_context();
@@ -868,18 +890,39 @@ static int spk_req_battery_status(u8_t * Payload, u16_t PayloadLen)
 	return ret;
 }
 
-void self_mute_handler(struct thread_timer *ttimer,
+static int spk_req_auracast_sq_mode(void)
+{
+	u8_t *buf = self_get_sendbuf();
+	int ret = -1;
+	u16_t len = 0;
+	u8_t sq_mode = 0;
+
+	if (buf == NULL) {
+		return ret;
+	}
+
+	sq_mode = broadcast_get_sq_mode();
+
+	selfapp_log_inf("%d", sq_mode);
+	len =
+	    selfapp_pack_cmd_with_int(buf, CMD_RetAuracast_SQ_Status, sq_mode,
+				 1);
+	ret = self_send_data(buf, len);
+
+	return ret;
+}
+
+void self_creat_group_handler(struct thread_timer *ttimer,
 				   void *expiry_fn_arg){
 	selfapp_context_t *selfctx = self_get_context();
 	if (NULL == selfctx) {
 		return;
 	}
 	selfapp_log_inf("time out");
-	selfapp_mute_player(0);
 	memset(&selfctx->creat_group,0,sizeof(selfctx->creat_group));
 }
 
-static int spk_set_auracast_group(u8_t * Payload, u16_t PayloadLen)
+int spk_set_auracast_group(u8_t * Payload, u16_t PayloadLen)
 {
 	selfapp_context_t *selfctx = self_get_context();
 	u8_t *buf = self_get_sendbuf();
@@ -995,8 +1038,8 @@ static int spk_set_auracast_group(u8_t * Payload, u16_t PayloadLen)
 				selfapp_log_wrn("Wrong val length.");
 				break;
 			}
-			selfctx->time_out = Payload[i + 2];
-			selfapp_log_inf("time out %d.",selfctx->time_out);
+			selfctx->creat_group_time_out = Payload[i + 2];
+			selfapp_log_inf("time out %d.",selfctx->creat_group_time_out);
 			i += 3;
 			break;
 		default:
@@ -1027,14 +1070,9 @@ static int spk_set_auracast_group(u8_t * Payload, u16_t PayloadLen)
 				selfapp_log_inf("creat group 0x%x", group.id);
 				selfapp_switch_lasting_stereo_mode(1);
 				ret = 0;
-				if(!selfctx->time_out)
-					selfctx->time_out = 20;
-				if (thread_timer_is_running(&selfctx->mute_timer)){
-					thread_timer_stop(&selfctx->mute_timer);
-				}
-
-				thread_timer_init(&selfctx->mute_timer, self_mute_handler,NULL);
-				thread_timer_start(&selfctx->mute_timer, (selfctx->time_out + 1) * 1000, 0);
+				if(!selfctx->creat_group_time_out)
+					selfctx->creat_group_time_out = 20;
+				selfapp_cmd_thread_timer_start(&selfctx->creat_group_timer);
 			}else{
 				selfapp_log_inf("set group param %s %d", group.name,group.ch);
 				selfapp_config_set_ac_group(&group);
@@ -1065,19 +1103,15 @@ static int spk_set_auracast_group(u8_t * Payload, u16_t PayloadLen)
 	return ret;
 }
 
-static int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen)
+int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen)
 {
 	selfapp_context_t *selfctx = self_get_context();
-	u8_t *buf = self_get_sendbuf();
+	u8_t buf[100];
 	int ret = -1;
 	u16_t len = 0;
 	u16_t hdr_len = selfapp_get_header_len(CMD_RetAuracastGroup);
 	u8_t *data = buf;
 	struct AURACAST_GROUP group;
-
-	if (buf == NULL) {
-		return ret;
-	}
 
 	if (NULL == selfctx) {
 		return ret;
@@ -1087,8 +1121,7 @@ static int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen)
 	len = 0;
 	data += hdr_len;
 
-	// Group Action
-	data[len++] = 0x01;
+	data[len++] = AGIK_GroupAction;
 	data[len++] = 0x01;
 	if (0 == group.ch) {
 		data[len++] = 0x02;	//destroy group
@@ -1096,31 +1129,24 @@ static int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen)
 		data[len++] = 0x01;	//create group
 	}
 
-	// Group Type
-	data[len++] = 0x02;
+	data[len++] = AGIK_GroupType;
 	data[len++] = 0x01;
 	data[len++] = 0x01;
 
-	// Group role
-	if(group.role){
-		data[len++] = 0x03;
-		data[len++] = 0x01;
-		data[len++] = group.role;
-	}
+	data[len++] = AGIK_Role;
+	data[len++] = 0x01;
+	data[len++] = group.role;
 
-	// Stereo Channel
+	data[len++] = AGIK_StereoChannel;
+	data[len++] = 0x01;
 	if(!selfapp_get_lasting_stereo_mode() && group.role){
-		data[len++] = 0x04;
-		data[len++] = 0x01;
 		data[len++] = 0;
 	}else{
-		data[len++] = 0x04;
-		data[len++] = 0x01;
 		data[len++] = group.ch;
 	}
 
 	// stereo Group ID
-	data[len++] = 0x05;
+	data[len++] = AGIK_StereoGroupId;
 	data[len++] = 0x04;
 	data[len++] = (group.id >> 24 & 0xFF);
 	data[len++] = (group.id >> 16 & 0xFF);
@@ -1129,14 +1155,15 @@ static int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen)
 
 #ifdef CONFIG_BT_LETWS
 	// stereo Group name
-	data[len++] = 0x06;
+	data[len++] = AGIK_StereoGroupName;
 	data[len++] = strlen(group.name);
 	memcpy(&data[len],group.name,strlen(group.name));
 	len += strlen(group.name);
 #endif
+
 	// mac address
 	if(group.role){
-		data[len++] = 0x07;
+		data[len++] = AGIK_PartnerMac;
 		data[len++] = 6;
 		for (uint8_t i  = 0; i < 6; i++) {
 			data[len + i] = group.addr[5-i];
@@ -1150,7 +1177,7 @@ static int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen)
 	return ret;
 }
 
-static int spk_set_feedback_tone(u8_t *payload, u16_t payload_len)
+int spk_set_feedback_tone(u8_t *payload, u16_t payload_len)
 {
 	selfapp_context_t *selfctx = self_get_context();
 	u8_t *buf = self_get_sendbuf();
@@ -1174,7 +1201,7 @@ static int spk_set_feedback_tone(u8_t *payload, u16_t payload_len)
 	return ret;
 }
 
-static int spk_req_feedback_tone_status(u8_t * Payload, u16_t PayloadLen)
+int spk_req_feedback_tone_status(u8_t * Payload, u16_t PayloadLen)
 {
 	u8_t *buf = self_get_sendbuf();
 	int ret = -1;
@@ -1229,6 +1256,7 @@ static int spk_req_sn(u8_t * Payload, u16_t PayloadLen)
 }
 
 void lea_status_update_cb(int err){
+	selfapp_log_inf("ret %d\n", err);
 	selfapp_send_msg(MSG_SELFAPP_APP_EVENT, SELFAPP_CMD_LEAUDIO_STATUS_UPDATE, 0, 0);
 }
 
@@ -1301,8 +1329,11 @@ int cmdgroup_speaker_settings(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 		if (CmdID == CMD_NTI_EQ_Set) {
 			spkeq_SetNTIEQ(Payload, PayloadLen);
 		}
-		sendlen = spkeq_RetNTIEQ(buf);
+		sendlen = spkeq_RetNTIEQ(buf, EQCATEGORY_CUSTOM_2);
 		ret = self_send_data(buf, sendlen);
+		break;
+	case APICMD_ReqStandaloneMode:
+		ret = spk_req_standby_mode(Payload, PayloadLen);
 		break;
 	case CMD_ReqBatteryStatus:
 		ret = spk_req_battery_status(Payload, PayloadLen);
@@ -1335,6 +1366,15 @@ int cmdgroup_speaker_settings(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 	case CMD_SetPlayerInfo:
 		selfapp_log_wrn("Not implement cmd 0x%x\n", CmdID);
 		break;
+	case CMD_SetAuracast_SQ_Status:
+		if (Payload[0] == 1) {
+			broadcast_set_sq_mode(true);
+		} else {
+			broadcast_set_sq_mode(false);
+		}
+	case CMD_ReqAuracast_SQ_Status:
+		ret = spk_req_auracast_sq_mode();
+		break;
 	default:
 		selfapp_log_wrn("Not implement cmd 0x%x\n", CmdID);
 		sendlen = selfapp_pack_unsupported(buf, CmdID);
@@ -1353,8 +1393,10 @@ int selfapp_cmd_handler(u8_t * buf, u16_t len)
 	u8_t *Payload = NULL;
 
 #ifdef SELFAPP_DEBUG
-	selfapp_log_inf("RX: %2x %2x", buf[0], buf[1]);
-	selfapp_log_dump(buf, len > 64 ? 64 : len);
+	if (buf[1] != DFUCMD_SetDfuData) {
+		selfapp_log_inf("RX: %02x %02x %02x", buf[0], buf[1], buf[2]);
+		//selfapp_log_dump(buf, len > 64 ? 64 : len);
+	}
 #endif
 
 	if (self_get_sendbuf() == NULL) {
@@ -1428,20 +1470,25 @@ int selfapp_cmd_handler(u8_t * buf, u16_t len)
 
 void selfapp_notify_role(void)
 {
-	u8_t *buf;
+	u8_t buf[8];
 	int len;
 	u8_t role;
-
-	buf = self_get_sendbuf();
-	if (buf == NULL) {
-		selfapp_log_wrn("no send buff.");
-		return;
-	}
 
 	role = selfapp_get_role();
 	selfapp_log_inf("role=%d", role);
 	len = selfapp_pack_cmd_with_int(buf, DEVCMD_RetRoleInfo, role, 1);
 	self_send_data(buf, len);
+}
+
+void selfapp_notify_lasting_stereo_status2(void)
+{
+	u8_t buf[16];
+	u16_t sendlen = 0;
+
+	sendlen = devinfo_pack_token(buf, TokenID_lasting_Stereo_Connected,0);
+	if (sendlen > 0) {
+		self_send_data(buf, sendlen);
+	}
 }
 
 void selfapp_notify_lasting_stereo_status(void)
@@ -1461,35 +1508,22 @@ void selfapp_notify_lasting_stereo_status(void)
 		}
 
 		memset(&selfctx->creat_group,0,sizeof(selfctx->creat_group));
-		selfapp_mute_player(0);
-		if (thread_timer_is_running(&selfctx->mute_timer)){
-			thread_timer_stop(&selfctx->mute_timer);
+		selfapp_resume_player();
+		if (thread_timer_is_running(&selfctx->creat_group_timer)){
+			thread_timer_stop(&selfctx->creat_group_timer);
 		}
 #endif
 	}
-	u8_t *buf = self_get_sendbuf();
-	u16_t sendlen = 0;
 
-	if (buf == NULL) {
-		return;
-	}
-
-	sendlen = devinfo_pack_token(buf, TokenID_lasting_Stereo_Connected,0);
-	if (sendlen > 0) {
-		self_send_data(buf, sendlen);
-	}
+	selfapp_notify_lasting_stereo_status2();
 	spk_ret_auracast_group(NULL,0);
 }
 
 int selfapp_report_bat(void)
 {
-	u8_t *buf = self_get_sendbuf();
+	u8_t buf[8];
 	u16_t sendlen = 0;
 	int ret = -1;
-
-	if (buf == NULL) {
-		return ret;
-	}
 
 	sendlen = devinfo_pack_token(buf, TokenID_BatteryStatus, 0);
 	if (sendlen > 0) {
@@ -1501,7 +1535,7 @@ int selfapp_report_bat(void)
 
 int selfapp_update_bat_for_secondary_device(u8_t value){
 	selfapp_context_t *selfctx = self_get_context();
-	u8_t *buf = self_get_sendbuf();
+	u8_t buf[8];
 	u16_t sendlen = 0;
 	int ret = -1;
 
@@ -1521,12 +1555,9 @@ int selfapp_update_bat_for_secondary_device(u8_t value){
 
 void selfapp_report_secondary_device_info(void)
 {
-	u8_t *buf = self_get_sendbuf();
+	u8_t buf[32];
 	u16_t sendlen = 0;
 
-	if (buf == NULL) {
-		return;
-	}
 	selfapp_log_inf("");
 
 	u8_t token_array[] = {
@@ -1547,13 +1578,9 @@ void selfapp_report_secondary_device_info(void)
 
 int selfapp_report_leaudio_status(void)
 {
-	u8_t *buf = self_get_sendbuf();
+	u8_t buf[8];
 	u16_t sendlen = 0;
 	int ret = -1;
-
-	if (buf == NULL) {
-		return ret;
-	}
 
 	int status = selfapp_get_leaudio_status();
 	selfapp_log_inf("leaudio status=%d", status);

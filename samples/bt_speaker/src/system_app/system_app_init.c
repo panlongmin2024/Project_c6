@@ -353,8 +353,8 @@ void system_app_init(void)
 		else{
 			SYS_LOG_INF("[%d];  REBOOT_REASON_REBOOT_AND_POWERON", __LINE__);
 		}
-		pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
-	}
+		  pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
+		}
 #endif	
 #else
 	reboot_type = g_reboot_type;
@@ -648,9 +648,7 @@ void system_app_init(void)
 #endif
 
 #ifdef CONFIG_BT_ADV_MANAGER
-#ifdef CONFIG_BT_LEA_PTS_TEST
-	if (!bt_pts_is_enabled())
-#endif
+	if (!bt_manager_config_lea_pts_test())
 	{
 		sys_ble_advertise_init();
 	}
@@ -673,7 +671,7 @@ extern int tool_init(void);
 
 }
 
-static void main_freq_init(void)
+/* static void main_freq_init(void)
 {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
 	soc_dvfs_unset_level(SOC_DVFS_LEVEL_ALL_PERFORMANCE, "init");
@@ -687,7 +685,7 @@ static void main_freq_init(void)
 
 #endif
 }
-
+ */
 #ifdef CONFIG_BT_LEATWS
 extern int sys_ble_leatws_adv_register(void);
 extern int sys_ble_leatws_adv_unregister(void);
@@ -695,7 +693,7 @@ extern int sys_ble_leatws_adv_unregister(void);
 
 void system_app_init_bte_ready(void)
 {
-	main_freq_init();
+	//main_freq_init();
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE	
 	if(REBOOT_REASON_OTA_FINISHED & g_reboot_reason){
@@ -733,7 +731,7 @@ void system_app_init_bte_ready(void)
 #endif
 
 #ifdef CONFIG_BT_LEA_PTS_TEST
-	if (bt_pts_is_enabled()) {
+	if (bt_manager_config_lea_pts_test()) {
 		pts_le_audio_init();
 	} else
 #endif /*CONFIG_BT_LEA_PTS_TEST*/
@@ -759,7 +757,7 @@ void system_app_init_bte_ready(void)
 
 	msg.type = MSG_BT_ENGINE_READY;
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
-}
+	}
 
 
 void ctrl_dump_all_info(void);
@@ -770,22 +768,35 @@ static void crash_dump_version_info(void)
 	system_library_version_dump();
 	fw_version_dump_current();
 	ctrl_dump_all_info();
-	ctrl_mem_dump_info_all();
 }
 
-CRASH_DUMP_REGISTER(dump_version_info, 1) =
+CRASH_DUMP_REGISTER(dump_version_info, 12) =
 {
     .dump = crash_dump_version_info,
 };
+
+static void crash_dump_ctrl_mem_info(void)
+{
+	ctrl_mem_dump_info_all();
+}
+
+CRASH_DUMP_REGISTER(dump_ctrl_mem_info, 40) =
+{
+    .dump = crash_dump_ctrl_mem_info,
+};
+
 
 #ifdef CONFIG_DEBUG_RAMDUMP
 
 #include <debug/ramdump.h>
 #include <ota_upgrade.h>
-
+#include <soc.h>
 static void crash_dump_ramdump(void)
 {
 	if(!ota_upgrade_is_ota_running()){
+
+		dsp_do_wait();
+
 		if(ramdump_check() != 0){
 			printk("start ramdump...\n");
 			ramdump_save();
@@ -820,7 +831,7 @@ CRASH_DUMP_REGISTER(ramdump_register, 10) =
     .dump = crash_dump_ramdump,
 };
 
-CRASH_DUMP_REGISTER(ramdump_print_register, 99) =
+CRASH_DUMP_REGISTER(ramdump_print_register, 11) =
 {
     .dump = crash_dump_ramdump_print,
 };
@@ -833,7 +844,7 @@ CRASH_DUMP_REGISTER(ramdump_print_register, 99) =
 #if defined(CONFIG_IRQ_STAT)
 void dump_irqstat(void);
 
-CRASH_DUMP_REGISTER(dump_irqstat_info, 11) =
+CRASH_DUMP_REGISTER(dump_irqstat_info, 20) =
 {
     .dump = dump_irqstat,
 };
@@ -842,7 +853,7 @@ CRASH_DUMP_REGISTER(dump_irqstat_info, 11) =
 #if defined(CONFIG_THREAD_STACK_INFO)
 void kernel_dump_all_thread_stack_usage(void);
 
-CRASH_DUMP_REGISTER(dump_stacks_analyze, 12) =
+CRASH_DUMP_REGISTER(dump_stacks_analyze, 30) =
 {
     .dump = kernel_dump_all_thread_stack_usage,
 };

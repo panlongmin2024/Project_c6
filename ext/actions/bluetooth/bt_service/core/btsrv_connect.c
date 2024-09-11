@@ -24,11 +24,11 @@
 #define AUTOCONN_TWS_DELAY_MASK			        (1000)	/* 2000ms */
 #define AUTOCONN_TWS_WAIT_ROLE                  (3000)  /* 3000ms */
 #define AUTOCONN_TWS_SEARCH_MODE_TIMEOUT       (3000)  /* 3000ms */
-#define MONITOR_A2DP_TIMES                        (16)    /* 8000ms */
-#define MONITOR_A2DP_NOSECURITY_TIMES            (12)   /* 6000ms */
-#define MONITOR_AVRCP_TIMES                       (12)   /* 6000ms */
-#define MONITOR_AVRCP_CONNECT_INTERVAL          (6)    /* 3000ms */
-#define MONITOR_PRIFILE_INTERVEL	                (500)  /* 500ms */
+#define MONITOR_A2DP_TIMES                        (40)    /* 8000ms */
+#define MONITOR_A2DP_NOSECURITY_TIMES            (20)   /* 4000ms */
+#define MONITOR_AVRCP_TIMES                       (30)   /* 6000ms */
+#define MONITOR_AVRCP_CONNECT_INTERVAL          (15)    /* 3000ms */
+#define MONITOR_PRIFILE_INTERVEL	                (200)  /* 500ms */
 
 #define BT_SUPERVISION_TIMEOUT					(8000)		/* 8000*0.625ms = 5000ms */
 
@@ -150,7 +150,7 @@ static const btsrv_event_strmap_t btsrv_link_event_map[] =
     {BTSRV_LINK_MAP_DISCONNECTED,           STRINGIFY(BTSRV_LINK_MAP_DISCONNECTED)},
     {BTSRV_LINK_TWS_CONNECTED,              STRINGIFY(BTSRV_LINK_TWS_CONNECTED)},
     {BTSRV_LINK_TWS_CONNECTED_TIMEOUT,      STRINGIFY(BTSRV_LINK_TWS_CONNECTED_TIMEOUT)},
-	{BTSRV_LINK_KEY_MISS,      				STRINGIFY(BTSRV_LINK_KEY_MISS)},
+	{BTSRV_LINK_FORCE_STOP,      			STRINGIFY(BTSRV_LINK_FORCE_STOP)},
 };
 
 
@@ -631,8 +631,6 @@ void btsrv_connect_auto_connection_stop_device(bd_address_t *addr)
 		return;
 	}
 
-	btsrv_proc_link_change(addr->val, BTSRV_LINK_KEY_MISS);
-
     for (i = 0; i < BTSRV_SAVE_AUTOCONN_NUM; i++){
         if(p_connect->auto_conn[i].addr_valid){
             if(!memcmp(&p_connect->auto_conn[i].addr,addr,sizeof(bd_address_t))){
@@ -649,6 +647,7 @@ void btsrv_connect_auto_connection_stop_device(bd_address_t *addr)
                         btsrv_tws_cancal_auto_connect();
                     }
                 }
+				btsrv_proc_link_change(addr->val, BTSRV_LINK_FORCE_STOP);
                 memset(&p_connect->auto_conn[i], 0, sizeof(struct auto_conn_t));
                 break;
             }
@@ -974,9 +973,8 @@ static void btsrv_update_autoconn_state(uint8_t *addr, uint8_t event)
 		}
 		break;
 
-	case BTSRV_LINK_KEY_MISS:
     case BTSRV_LINK_TWS_CONNECTED:
-
+	case BTSRV_LINK_FORCE_STOP:
         /* TWS device reconnect complete */
         p_connect->auto_conn[index].state = AUTOCONN_STATE_END;
         
@@ -1593,17 +1591,20 @@ static void btsrv_monitor_timer_handler(struct thread_timer *ttimer, void *expir
 						continue;
 					}
 				}
-			} else {
+			}
+			else {
 				/* Just find hongmi2A not do a2dp connect when connect from phone.
 				 * if need add this active connect ???
 				 */
-				if (p_connect->monitor_conn[i].a2dp_times) {
-					p_connect->monitor_conn[i].a2dp_times--;
-					if (p_connect->monitor_conn[i].a2dp_times == 0) {
-						SYS_LOG_INF("Phone not do a2dp connect");
-						btsrv_a2dp_connect(conn, BT_A2DP_CH_SINK);
-					}
-				}
+                if(!btsrv_rdm_is_a2dp_signal_connected(conn)){
+                    if (p_connect->monitor_conn[i].a2dp_times) {
+                        p_connect->monitor_conn[i].a2dp_times--;
+                        if (p_connect->monitor_conn[i].a2dp_times == 0) {
+                            SYS_LOG_INF("Phone not do a2dp connect");
+                            btsrv_a2dp_connect(conn, BT_A2DP_CH_SINK);
+                        }
+                    }
+                }
 			}
 
 			stop_timer = 0;
@@ -1666,7 +1667,7 @@ static void btsrv_add_monitor(struct bt_conn *conn)
         p_connect->monitor_conn[index].avrcp_times = MONITOR_AVRCP_TIMES;
     }
     else{
-        p_connect->monitor_conn[index].avrcp_times = MONITOR_AVRCP_CONNECT_INTERVAL + 3;
+        p_connect->monitor_conn[index].avrcp_times = MONITOR_AVRCP_CONNECT_INTERVAL + 6;
     }
 
 	btsrv_connect_monitor_profile_start(MONITOR_PRIFILE_INTERVEL, MONITOR_PRIFILE_INTERVEL);
@@ -1697,6 +1698,7 @@ static void btsrv_update_monitor(uint8_t *addr, uint8_t type)
 		p_connect->monitor_conn[index].valid = 0;
 		break;
 	case BTSRV_LINK_A2DP_CONNECTED:
+	case BTSRV_LINK_A2DP_SINGAL_CONNECTED:
 		p_connect->monitor_conn[index].a2dp_times = MONITOR_A2DP_TIMES;
 	    break;
     case BTSRV_LINK_HFP_DISCONNECTED:
@@ -1746,7 +1748,7 @@ void btsrv_proc_link_change(uint8_t *mac, uint8_t type)
 	case BTSRV_LINK_BASE_GET_NAME:
 	case BTSRV_LINK_BASE_CONNECTED_TIMEOUT:
 	case BTSRV_LINK_TWS_CONNECTED:
-	case BTSRV_LINK_KEY_MISS:
+	case BTSRV_LINK_FORCE_STOP:
 		btsrv_update_autoconn_state(mac, type);
 		break;
 
@@ -1777,12 +1779,13 @@ void btsrv_proc_link_change(uint8_t *mac, uint8_t type)
 		break;
 
 	case BTSRV_LINK_HFP_CONNECTED:
+	case BTSRV_LINK_A2DP_SINGAL_CONNECTED:
 	case BTSRV_LINK_A2DP_CONNECTED:
 	case BTSRV_LINK_AVRCP_CONNECTED:
 	case BTSRV_LINK_HID_CONNECTED:
 		btsrv_update_autoconn_state(mac, type);
 		btsrv_update_monitor(mac, type);
-        if (scan_update) {
+        if(scan_update) {
             btsrv_scan_update_mode(true);
         }
 		need_update = 1;
@@ -1829,6 +1832,7 @@ void btsrv_notify_link_event(struct bt_conn *base_conn, uint8_t event, uint8_t p
 	case BT_LINK_EV_ACL_CONNECTED:
 		connreq_info = btsrv_get_connreq_info((bt_addr_t *)GET_CONN_BT_ADDR(base_conn));
 		cb_param.param = connreq_info ? 1: 0;
+		cb_param.key_miss = connreq_info ? connreq_info->key_miss : 0;
 		break;
 	default:
 		break;
@@ -1907,11 +1911,13 @@ static void btsrv_connect_security_changed(struct bt_conn *base_conn)
 static void btsrv_connect_req_changed(void *info)
 {
 	struct bt_conn *base_conn;
-	struct btsrv_addr_name mac_addr_info;
+	struct btsrv_addr_name *mac_addr_info = (struct btsrv_addr_name *)info;
+
+	if(!mac_addr_info){
+		return;
+	}
 	
-	memcpy(&mac_addr_info, info, sizeof(mac_addr_info));
-	
-	base_conn = btsrv_rdm_find_conn_by_addr(&mac_addr_info.mac);
+	base_conn = btsrv_rdm_find_conn_by_addr(&mac_addr_info->mac);
 	if (base_conn == NULL) {
 		SYS_LOG_ERR("Can't find conn for addr");
 		return;
@@ -1928,7 +1934,7 @@ static void btsrv_connect_req_changed(void *info)
     }
 
 	if (btsrv_rdm_get_tws_role(base_conn) == BTSRV_TWS_NONE) {
-		if(bt_store_check_linkkey((bt_addr_t *)&mac_addr_info.mac) == 0){
+		if(bt_store_check_linkkey((bt_addr_t *)&mac_addr_info->mac) == 0){
 		    btsrv_add_monitor(base_conn);
 		}
 	}
@@ -2065,7 +2071,10 @@ static int btsrv_connect_a2dp_connected(struct bt_conn *base_conn)
 
 static int btsrv_connect_a2dp_singnaling_connected(struct bt_conn *base_conn)
 {
+    bd_address_t *addr = (bd_address_t *)GET_CONN_BT_ADDR(base_conn);
+
     btsrv_notify_link_event(base_conn, BT_LINK_EV_A2DP_SINGALING_CONNECTED, 0);
+    btsrv_proc_link_change(addr->val, BTSRV_LINK_A2DP_SINGAL_CONNECTED);
     btsrv_rdm_set_a2dp_signal_connected(base_conn,true);
 
     return 0;
@@ -2332,13 +2341,15 @@ static bool btsrv_check_connectable(uint8_t role)
 static void btsrv_get_name_finish(void *info, uint8_t role)
 {
 	struct bt_conn *conn;
-	struct btsrv_addr_name mac_addr_info;
+	struct btsrv_addr_name *mac_addr_info = (struct btsrv_addr_name *)info;
 
-	memcpy(&mac_addr_info, info, sizeof(mac_addr_info));
+	if (!mac_addr_info) {
+		return;
+	}
 
-	conn = btsrv_rdm_find_conn_by_addr(&mac_addr_info.mac);
+	conn = btsrv_rdm_find_conn_by_addr(&mac_addr_info->mac);
 	if (conn == NULL) {
-		SYS_LOG_ERR("Can't find conn for addr");
+		SYS_LOG_ERR("Can't find conn for addr\n");
 		return;
 	}
 
@@ -2348,9 +2359,9 @@ static void btsrv_get_name_finish(void *info, uint8_t role)
 		return;
 	}
 
-	btsrv_rdm_set_dev_name(conn, mac_addr_info.name);
+	btsrv_rdm_set_dev_name(conn, mac_addr_info->name);
 	btsrv_notify_link_event(conn, BT_LINK_EV_GET_NAME, role);
-	btsrv_proc_link_change(mac_addr_info.mac.val, BTSRV_LINK_BASE_GET_NAME);
+	btsrv_proc_link_change(mac_addr_info->mac.val, BTSRV_LINK_BASE_GET_NAME);
 	if (role != BTSRV_TWS_NONE) {
 		btsrv_event_notify(MSG_BTSRV_TWS, MSG_BTSRV_GET_NAME_FINISH, conn);
 	} else {

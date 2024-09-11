@@ -295,7 +295,7 @@ int ui_message_send_async(u32_t view_id, u32_t msg_id, u32_t msg_data)
 	}
 
     if(!os_is_free_msg_enough()){
-		SYS_LOG_INF("drop ui msg ... %d", msg_pool_get_free_msg_num());
+		SYS_LOG_INF("drop ui msg ... %d\n", msg_pool_get_free_msg_num());
         return -ENOMEM;
     }
 

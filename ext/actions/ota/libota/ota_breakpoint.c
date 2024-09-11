@@ -85,9 +85,11 @@ int ota_breakpoint_load(struct ota_breakpoint *bp)
 {
 	int rlen;
 
+	memset((void*)bp, 0, sizeof(struct ota_breakpoint));
+
 	rlen = nvram_config_get("OTA_BP", bp, sizeof(struct ota_breakpoint));
-	if (rlen != sizeof(struct ota_breakpoint)) {
-		SYS_LOG_INF("cannot found OTA_BP");
+	if (rlen <= 0 || rlen > sizeof(struct ota_breakpoint)) {
+		SYS_LOG_WRN("Wrong OTA_BP %d", rlen);
 		return -1;
 	}
 

@@ -672,6 +672,29 @@ static int pts_reboot(int argc, char *argv[])
 	return 0;
 }
 
+void bt_manager_pts_test_init(void)
+{
+	if (bt_manager_config_pts_test()) {
+		btif_bt_set_pts_config(true);
+	}
+
+	if (bt_manager_config_lea_pts_test()) {
+#ifdef CONFIG_BT_LEA_PTS_TEST
+		bt_manager_le_pts_test_start();
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
+	}
+
+}
+
+void bt_manager_pts_test_deinit(void)
+{
+	if (bt_manager_config_lea_pts_test()) {
+#ifdef CONFIG_BT_LEA_PTS_TEST
+		bt_manager_le_pts_test_stop();
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
+	}
+}
+
 static const struct shell_cmd pts_test_commands[] = {
 	{ "reboot", pts_reboot, "pts reboot"},
 	{ "config", pts_config, "pts config on/off"},

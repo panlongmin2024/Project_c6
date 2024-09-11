@@ -1873,10 +1873,6 @@ int pd_manager_get_sink_status_flag(void)
     
 }
 
-extern void external_dsp_ats3615_deinit(void);
-
-
-
 
 
 int pd_manager_deinit(int value)
@@ -1899,7 +1895,7 @@ int pd_manager_deinit(int value)
     pd_manager_send_cmd_code(PD_SUPPLY_PROP_POWERDOWN, value);
 
   
-   // bt_mcu_send_pw_cmd_powerdown();
+    bt_mcu_send_pw_cmd_powerdown();
 
     return 0;
 }

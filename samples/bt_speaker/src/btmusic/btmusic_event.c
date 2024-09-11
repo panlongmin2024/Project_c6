@@ -16,11 +16,10 @@
 #include "selfapp_api.h"
 #endif
 #include <audio_track.h>
-
+#include <wltmcu_manager_supply.h>
 #ifdef CONFIG_ACT_EVENT
 #include <app_act_event_id.h>
 #include <logging/log_core.h>
-#include <wltmcu_manager_supply.h>
 LOG_MODULE_DECLARE(main, CONFIG_ACT_EVENT_APP_COMPILE_LEVEL);
 #endif
 
@@ -114,12 +113,14 @@ static int btmusic_handle_start(struct bt_audio_report *rep)
 				}
 				return -EINVAL;
 			}else{
-				if(!btmusic->broadcast_source_enabled){
+				if(btmusic->broadcast_source_exit){
+					SYS_LOG_INF("broadcast exiting\n");
+					return -EINVAL;
+				}else if(!btmusic->broadcast_source_enabled){
 					bt_manager_broadcast_source_enable(btmusic->chan->handle);
 				}
 			}
 		}
-
 #endif
 
 		if(btmusic->tts_playing || btmusic->user_pause){
@@ -254,8 +255,8 @@ static void btmusic_handle_playback_status(struct bt_media_play_status *status)
 		if(bt_manager_media_get_status() == BT_STATUS_PAUSED){
 			SYS_LOG_INF("pause\n");
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
-			if (btmusic->media_state)
-				media_player_fade_out(btmusic->playback_player, 200);
+			if (btmusic->media_state && btmusic->ios_dev)
+				media_player_fade_out(btmusic->playback_player, 290);
 #endif
 			if (thread_timer_is_running(&btmusic->user_pause_timer)){
 				thread_timer_stop(&btmusic->user_pause_timer);
@@ -273,8 +274,8 @@ static void btmusic_handle_playback_status(struct bt_media_play_status *status)
 	} else if (status->status == BT_STATUS_PLAYING) {
 		SYS_LOG_INF("play\n");
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
-		if (!btmusic->media_state)
-			media_player_fade_in(btmusic->playback_player, 200);
+		if (!btmusic->media_state && btmusic->ios_dev)
+			media_player_fade_in(btmusic->playback_player, 290);
 #endif
 		btmusic->media_state = 1;
 		if(btmusic->playing){
@@ -394,6 +395,11 @@ static int btmusic_bms_handle_source_enable(struct bt_broadcast_report *rep)
 	SYS_EVENT_INF(EVENT_BTMUSIC_BIS_SOURCE_ENABLE,btmusic->chan->handle,btmusic->chan->id);
 	btmusic->broadcast_source_enabled = 1;
 
+#if ENABLE_PADV_APP
+	padv_tx_init(btmusic->chan->handle, AUDIO_STREAM_SOUNDBAR);
+	btmusic->padv_tx_enable = 1;
+#endif
+
 	if(btmusic->tts_playing || btmusic->user_pause){
 		SYS_LOG_INF("tts playing or user_pause\n");
 		return -4;
@@ -409,11 +415,6 @@ static int btmusic_bms_handle_source_enable(struct bt_broadcast_report *rep)
 
 	bt_manager_audio_sink_stream_set(&btmusic->sink_chan,
 					 btmusic->sink_stream);
-
-#if ENABLE_PADV_APP
-	padv_tx_init(btmusic->chan->handle, AUDIO_STREAM_SOUNDBAR);
-	btmusic->padv_tx_enable = 1;
-#endif
 	return 0;
 }
 
@@ -443,6 +444,8 @@ static int btmusic_bms_handle_source_disable(struct bt_broadcast_report *rep)
 			}
 			if(!btmusic->num_of_broad_chan){
 				btmusic->broadcast_source_enabled = 0;
+				btmusic->broadcast_source_exit = 0;
+				btmusic->broadcast_id = 0;
 				SYS_LOG_INF("\n");
 			}
 		}else{
@@ -463,10 +466,15 @@ static int btmusic_bms_handle_source_release(struct bt_broadcast_report *rep)
 
 	btmusic->chan = NULL;
 	btmusic->broadcast_source_enabled = 0;
+	btmusic->broadcast_source_exit = 0;
 	btmusic->num_of_broad_chan = 0;
+	btmusic->broadcast_id = 0;
 	memset(btmusic->broad_chan,0,sizeof(btmusic->broad_chan));
 	SYS_LOG_INF("\n");
 	SYS_EVENT_INF(EVENT_BTMUSIC_BIS_SOURCE_RELEASE);
+	if(btmusic_get_auracast_mode() && btmusic->playing){
+		thread_timer_start(&btmusic->broadcast_start_timer, 0, 0);
+	}
 
 	return 0;
 }
@@ -804,17 +812,19 @@ static void btmusic_player_reset(void)
 
 	//start
 	if(btmusic_get_auracast_mode()){
-		if (!btmusic->playback_player_run && btmusic->chan) {
-			btmusic_init_playback();
-			btmusic_start_playback();
-		}
-		if (btmusic->broadcast_source_enabled) {
-			if (!btmusic->capture_player_run) {
-				btmusic_bms_init_capture();
-				btmusic_bms_start_capture();
+		if(!btmusic->broadcast_source_exit){
+			if (!btmusic->playback_player_run && btmusic->chan) {
+				btmusic_init_playback();
+				btmusic_start_playback();
+			}
+			if (btmusic->broadcast_source_enabled) {
+				if (!btmusic->capture_player_run) {
+					btmusic_bms_init_capture();
+					btmusic_bms_start_capture();
 
-				bt_manager_audio_sink_stream_set(&btmusic->sink_chan,
-								btmusic->sink_stream);
+					bt_manager_audio_sink_stream_set(&btmusic->sink_chan,
+									btmusic->sink_stream);
+				}
 			}
 		}
 	}else{
@@ -857,8 +867,7 @@ static void btmusic_switch_auracast()
 
 		sys_event_notify(SYS_EVENT_PLAY_ENTER_AURACAST_TTS);
 		if(btmusic->playing){
-			//bis maybe in releasing
-			if(!btmusic->chan){
+			if(!btmusic->broadcast_source_exit){
 				if (btmusic->playback_player_run) {
 					btmusic_stop_playback();
 					btmusic_exit_playback();
@@ -910,17 +919,19 @@ void btmusic_user_pause_handler(struct thread_timer *ttimer,
 	}
 
 	if(btmusic_get_auracast_mode()){
-		if (!btmusic->playback_player_run && btmusic->chan) {
-			btmusic_init_playback();
-			btmusic_start_playback();
-		}
-		if (btmusic->broadcast_source_enabled) {
-			if (!btmusic->capture_player_run) {
-				btmusic_bms_init_capture();
-				btmusic_bms_start_capture();
+		if(!btmusic->broadcast_source_exit){
+			if (!btmusic->playback_player_run && btmusic->chan) {
+				btmusic_init_playback();
+				btmusic_start_playback();
+			}
+			if (btmusic->broadcast_source_enabled) {
+				if (!btmusic->capture_player_run) {
+					btmusic_bms_init_capture();
+					btmusic_bms_start_capture();
 
-				bt_manager_audio_sink_stream_set(&btmusic->sink_chan,
-								btmusic->sink_stream);
+					bt_manager_audio_sink_stream_set(&btmusic->sink_chan,
+									btmusic->sink_stream);
+				}
 			}
 		}
 	}else{
@@ -933,7 +944,6 @@ void btmusic_input_event_proc(struct app_msg *msg)
 	struct btmusic_app_t *btmusic =
 	    (struct btmusic_app_t *)btmusic_get_app();
 	int status;
-	struct audio_track_t * track = NULL;
     extern uint8_t ReadODM(void);
 	static bool pd_volt_flag = 0;	
 
@@ -1034,20 +1044,6 @@ void btmusic_input_event_proc(struct app_msg *msg)
 		else
 		{
 			btmusic_switch_auracast();
-
-			// extern void hm_ext_pa_stop(void);
-			// extern void hm_ext_pa_start(void);
-
-			// static bool pa_flag=0;
-
-			// pa_flag ^= 1;
-			// if(pa_flag)
-			// {
-			// 	hm_ext_pa_stop();
-			// }else{
-			// 	hm_ext_pa_start();
-			// }
-
 		}
 		break;
 
@@ -1076,37 +1072,16 @@ void btmusic_input_event_proc(struct app_msg *msg)
 			btmusic_switch_auracast();
 		}
 		break;
-	case MSG_MUTE_PLAYER:
-		track = audio_system_get_track();
-
-		if (NULL != track && btmusic->playback_player_run) {
-			if (!btmusic->mute_player) {
-				media_player_fade_out(btmusic->playback_player, 60);
-
-				/** reserve time to fade out*/
-				os_sleep(audio_policy_get_bis_link_delay_ms() + 80);
-				audio_track_mute(track, 1);
-				btmusic->mute_player = 1;
-			}
-		}else {
-			btmusic->mute_player = 1;
+	case MSG_PAUSE_PLAYER:
+		status = bt_manager_media_get_status();
+		if(status == BT_STATUS_PLAYING){
+			bt_manager_media_pause();
 		}
 		break;
-	case MSG_UNMUTE_PLAYER:
-		track = audio_system_get_track();
-
-		if (NULL != track && btmusic->playback_player_run) {
-			if (btmusic->mute_player) {
-#ifdef CONFIG_EXTERNAL_DSP_DELAY
-				media_player_fade_in(btmusic->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
-#else
-				media_player_fade_in(btmusic->playback_player, 200);
-#endif
-				audio_track_mute(track, 0);
-				btmusic->mute_player = 0;
-			}
-		}else {
-			btmusic->mute_player = 0;
+	case MSG_RESUME_PLAYER:
+		status = bt_manager_media_get_status();
+		if(status == BT_STATUS_PAUSED){
+			bt_manager_media_play();
 		}
 		break;
 	case MSG_PLAYER_RESET:
@@ -1154,17 +1129,19 @@ void btmusic_tts_event_proc(struct app_msg *msg)
 			return;
 		}
 		if (btmusic_get_auracast_mode()){
-			if (!btmusic->playback_player_run && btmusic->chan) {
-				btmusic_init_playback();
-				btmusic_start_playback();
-			}
-			if(btmusic->broadcast_source_enabled){
-				if (!btmusic->capture_player_run) {
-					btmusic_bms_init_capture();
-					btmusic_bms_start_capture();
+			if(!btmusic->broadcast_source_exit){
+				if (!btmusic->playback_player_run && btmusic->chan) {
+					btmusic_init_playback();
+					btmusic_start_playback();
+				}
+				if(btmusic->broadcast_source_enabled){
+					if (!btmusic->capture_player_run) {
+						btmusic_bms_init_capture();
+						btmusic_bms_start_capture();
 
-					bt_manager_audio_sink_stream_set(&btmusic->sink_chan,
-									 btmusic->sink_stream);
+						bt_manager_audio_sink_stream_set(&btmusic->sink_chan,
+										 btmusic->sink_stream);
+					}
 				}
 			}
 		}else{
@@ -1190,6 +1167,9 @@ void btmusic_tws_event_proc(struct app_msg *msg)
 				}
 				thread_timer_start(&btmusic->broadcast_start_timer, 0, 0);
 				btmusic->wait_for_past_req = 0;
+			} else {
+				SYS_LOG_INF("pa_set_info_transfer:%d \n",btmusic->broadcast_id);
+				bt_manager_broadcast_pa_set_info_transfer(btmusic->broadcast_id);
 			}
 			break;
 		}

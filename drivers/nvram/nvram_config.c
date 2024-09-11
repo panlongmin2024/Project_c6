@@ -1314,11 +1314,17 @@ static int region_scan(struct region_info *region)
 
 int nvram_config_set_factory(const char *name, const void *data, int len)
 {
+	int ret;
+
+	k_sem_take(&nvram_lock, K_FOREVER);
 #ifdef CONFIG_NVRAM_STORAGE_FACTORY_RW_REGION
-	return region_set(&factory_rw_nvram_region, name ,data, len);
+	ret = region_set(&factory_rw_nvram_region, name ,data, len);
 #else
-	return region_set(&factory_nvram_region, name ,data, len);
+	ret = region_set(&factory_nvram_region, name ,data, len);
 #endif
+	k_sem_give(&nvram_lock);
+
+	return ret;
 }
 
 int nvram_config_set_factory_no_use_rw_region(const char *name, const void *data, int len)
@@ -1341,17 +1347,20 @@ int nvram_config_set(const char *name, const void *data, int len)
 
 int nvram_config_get_factory(const char *name, void *data, int max_len)
 {
-
-
-#ifdef CONFIG_NVRAM_STORAGE_FACTORY_RW_REGION
 	int ret;
+
+	k_sem_take(&nvram_lock, K_FOREVER);
+#ifdef CONFIG_NVRAM_STORAGE_FACTORY_RW_REGION
 	ret = region_get(&factory_rw_nvram_region, name, data, max_len);
-	if (ret >= 0)
+	if (ret >= 0) {
+		k_sem_give(&nvram_lock);
 		return ret;
+	}
 #endif
+	ret = region_get(&factory_nvram_region, name, data, max_len);
+	k_sem_give(&nvram_lock);
 
-	return region_get(&factory_nvram_region, name, data, max_len);
-
+	return ret;
 }
 
 int nvram_config_get(const char *name, void *data, int max_len)

@@ -383,9 +383,11 @@ void bt_hci_ecc_init(void)
 #if	HCI_ECC_DYNAMIC_THREAD
 static void hci_ecc_finish_work(struct k_work *work)
 {
-	bt_free(ecc_thread_stack);
-	ecc_thread_stack = NULL;
-
+	if(ecc_thread_stack){
+		bt_free(ecc_thread_stack);
+		ecc_thread_stack = NULL;
+	}
+	
 	atomic_clear_bit(flags, PENDING_EXIT);
 }
 
@@ -419,7 +421,7 @@ static int ecc_start_thread(void)
 	atomic_set_bit(flags, PENDING_EXIT);
 	k_thread_create((struct k_thread *)ecc_thread_stack, (k_thread_stack_t)&ecc_thread_stack[sizeof(struct k_thread)],
 			(ECC_STACK_SIZE - sizeof(struct k_thread)), ecc_thread,
-			NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+			NULL, NULL, NULL, K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
 
 	return 0;
 }

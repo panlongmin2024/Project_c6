@@ -24,9 +24,14 @@
 #include <sys_event.h>
 #include <app_manager.h>
 
-/*bt_manager_get_pair_config()->pair_mode_duration_sec = 180s?*/
+/*bt_manager_get_pair_config()->pair_mode_duration_sec = 180s*/
 #define PAIRING_DURATION_MS         ((bt_manager_get_pair_config()->pair_mode_duration_sec) * (1000))
-#define RECONNECTING_DURATION_MS    ((3) * (1000))//BT_RECONNECT_PHONE_TIMEOUT
+#define DIR_ADV_DURATION_MS         ((3) * (1000))
+/*BT_RECONNECT_PHONE_TIMEOUT=50s*/
+#define LEA_RECONNECT_PHONE_TIMEOUT ((BT_RECONNECT_PHONE_TIMEOUT) * (1000))
+
+#define ADDR_VAL(addr)              (addr)->a.val[0],(addr)->a.val[1],(addr)->a.val[2],\
+                                     (addr)->a.val[3],(addr)->a.val[4],(addr)->a.val[5]
 
 typedef int (* lea_policy_state_event_handle_func)(btmgr_lea_policy_event_e event, void *param, uint8_t len);
 
@@ -49,7 +54,7 @@ typedef struct {
 	lea_policy_state_event_handle_func *funcs;
 	bt_addr_le_t last_lea_dev_info;
 	struct thread_timer lea_policy_timer;
-} btmgr_dev_access_policy_t;
+} btmgr_lea_policy_t;
 
 typedef struct {
 	uint32_t event;
@@ -62,7 +67,7 @@ static int lea_policy_state_pairing_handler(btmgr_lea_policy_event_e event, void
 static int lea_policy_state_reconnecting_handler(btmgr_lea_policy_event_e event, void *param, uint8_t len);
 static int lea_policy_state_connected_handler(btmgr_lea_policy_event_e event, void *param, uint8_t len);
 
-static btmgr_dev_access_policy_t btmgr_lea_policy_ctx = {0};
+static btmgr_lea_policy_t btmgr_lea_policy_ctx = {0};
 static lea_policy_state_event_handle_func lea_policy_state_event_handler[LEA_POLICY_STATE_MAX_NUM] =
 {
 	lea_policy_state_waiting_handler,
@@ -70,6 +75,121 @@ static lea_policy_state_event_handle_func lea_policy_state_event_handler[LEA_POL
 	lea_policy_state_reconnecting_handler,
 	lea_policy_state_connected_handler,
 };
+
+struct lea_policy_phone_addr {
+	bt_addr_le_t addr;
+	sys_snode_t node;
+};
+
+/* list of lea phone for reconnection  */
+static sys_slist_t lea_policy_phone_addr_list = {NULL, NULL};
+static struct thread_timer lea_phone_reconnect_timer;
+
+static void phone_reconnect_timeout_handler(struct thread_timer *ttimer, void *arg)
+{
+	struct lea_policy_phone_addr *addr_node;
+
+	if (sys_slist_is_empty(&lea_policy_phone_addr_list)) {
+		return;
+	}
+
+	os_sched_lock();
+	SYS_SLIST_FOR_EACH_CONTAINER(&lea_policy_phone_addr_list, addr_node, node) {
+		SYS_LOG_INF("recon_addr del:%x%x%x%x%x%x\n",ADDR_VAL(&addr_node->addr));
+
+		sys_slist_find_and_remove(&lea_policy_phone_addr_list,&addr_node->node);
+		mem_free(addr_node);
+	}
+	os_sched_unlock();
+}
+
+static void lea_policy_add_reconnect_phone(void *param)
+{
+	struct lea_policy_phone_addr *addr_node;
+	uint8_t reason = 0;
+	bt_addr_le_t *addr = NULL;
+
+	if (!param) {
+		return;
+	}
+
+	reason = ((uint8_t *)param)[0];
+	if (reason != 0x08) {
+		return;
+	}
+
+	if (thread_timer_is_running(&lea_phone_reconnect_timer)) {
+		thread_timer_stop(&lea_phone_reconnect_timer);
+	}
+
+	addr = (bt_addr_le_t *)(&((uint8_t *)param)[1]);
+
+	addr_node = mem_malloc(sizeof(struct lea_policy_phone_addr));
+	if (!addr_node) {
+		SYS_LOG_ERR("no mem\n");
+		return;
+	}
+
+	bt_addr_le_copy(&addr_node->addr, (const bt_addr_le_t *)addr);
+
+	os_sched_lock();
+	sys_slist_append(&lea_policy_phone_addr_list, &addr_node->node);
+	os_sched_unlock();
+
+	thread_timer_init(&lea_phone_reconnect_timer, phone_reconnect_timeout_handler, NULL);
+	thread_timer_start(&lea_phone_reconnect_timer, LEA_RECONNECT_PHONE_TIMEOUT, 0);
+	SYS_LOG_INF("recon_addr add:%x%x%x%x%x%x\n",ADDR_VAL(addr));
+}
+
+static void lea_policy_delete_reconnect_phone(void *param)
+{
+	struct lea_policy_phone_addr *addr_node;
+	bt_addr_le_t *addr = NULL;
+
+	if (!param) {
+		SYS_LOG_ERR("no addr\n");
+		return;
+	}
+
+	if (sys_slist_is_empty(&lea_policy_phone_addr_list)) {
+		return;
+	}
+
+	addr = (bt_addr_le_t *)param;
+
+	os_sched_lock();
+	SYS_SLIST_FOR_EACH_CONTAINER(&lea_policy_phone_addr_list, addr_node, node) {
+		if (!bt_addr_le_cmp(&addr_node->addr, addr)) {
+			sys_slist_find_and_remove(&lea_policy_phone_addr_list,&addr_node->node);
+			mem_free(addr_node);
+			SYS_LOG_INF("recon_addr del:%x%x%x%x%x%x\n",ADDR_VAL(addr));
+		}
+	}
+	os_sched_unlock();
+}
+
+bool bt_manager_lea_is_reconnected_dev(uint8_t *addr_val)
+{
+	struct lea_policy_phone_addr *addr_node;
+
+	if (!addr_val) {
+		SYS_LOG_ERR("no addr_val\n");
+		return false;
+	}
+
+	if (sys_slist_is_empty(&lea_policy_phone_addr_list)) {
+		return false;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&lea_policy_phone_addr_list, addr_node, node) {
+		if (!memcmp(addr_val,addr_node->addr.a.val, 6)) {
+			SYS_LOG_INF("recon_addr:%x%x%x%x%x%x\n",ADDR_VAL(&addr_node->addr));
+			return true;
+		}
+	}
+
+	return false;
+}
 
 static void timeout_handler (
 					struct thread_timer *ttimer,
@@ -177,7 +297,7 @@ static int lea_policy_state_waiting_handler(btmgr_lea_policy_event_e event, void
 			else {
 				/* reconnect last device */
 				bt_manager_halt_ble();
-				lea_policy_timer_start(RECONNECTING_DURATION_MS);
+				lea_policy_timer_start(DIR_ADV_DURATION_MS);
 
 				btmgr_lea_policy_ctx.lea_policy_state = LEA_POLICY_STATE_RECONNECTING;
 
@@ -368,7 +488,7 @@ static int lea_policy_state_reconnecting_handler(btmgr_lea_policy_event_e event,
 			} else {
 				/* reconnect last device */
 				bt_manager_halt_ble();
-				lea_policy_timer_start(RECONNECTING_DURATION_MS);
+				lea_policy_timer_start(DIR_ADV_DURATION_MS);
 
 				btmgr_lea_policy_ctx.lea_policy_state = LEA_POLICY_STATE_RECONNECTING;
 				bt_manager_resume_ble();
@@ -437,7 +557,7 @@ static int lea_policy_state_connected_handler(btmgr_lea_policy_event_e event, vo
 					btmgr_lea_policy_ctx.lea_policy_state = LEA_POLICY_STATE_WAITING;
 				} else {
 					/* reconnect last device */
-					lea_policy_timer_start(RECONNECTING_DURATION_MS);
+					lea_policy_timer_start(DIR_ADV_DURATION_MS);
 					btmgr_lea_policy_ctx.lea_policy_state = LEA_POLICY_STATE_RECONNECTING;
 				}
 				bt_manager_resume_ble();
@@ -600,21 +720,10 @@ struct bt_le_adv_param * bt_manager_lea_policy_get_adv_param(uint8_t adv_type, s
 		char addr_str[BT_ADDR_LE_STR_LEN];
 		bt_addr_le_to_str(param->peer, addr_str, sizeof(addr_str));
 		SYS_LOG_INF("addr:%s\n", addr_str);
+
 	}
 
 	return param;
-}
-
-bool bt_manager_lea_is_reconnected_dev(uint8_t *addr)
-{
-	if (btmgr_lea_policy_ctx.lea_policy_state == LEA_POLICY_STATE_RECONNECTING
-		&& addr
-		&& !memcmp(addr, btmgr_lea_policy_ctx.last_lea_dev_info.a.val, 6)) {
-		SYS_LOG_INF("reconnect dev\n");
-		return true;
-	}
-
-	return false;
 }
 
 void bt_manager_lea_clear_paired_list(void)
@@ -661,6 +770,12 @@ static void bt_manager_lea_policy_event_cb(void *event_param)
 		}
 
 		default:
+		{
+			if (LEA_POLICY_EVENT_CONNECT == ptr->event) {
+				lea_policy_delete_reconnect_phone(ptr->param);
+			} else if (LEA_POLICY_EVENT_DISCONNECT == ptr->event) {
+				lea_policy_add_reconnect_phone(ptr->param);
+			}
 			if (btmgr_lea_policy_ctx.funcs && !btmgr_lea_policy_ctx.btoff) {
 				btmgr_lea_policy_ctx.funcs[btmgr_lea_policy_ctx.lea_policy_state]
 					(
@@ -669,7 +784,10 @@ static void bt_manager_lea_policy_event_cb(void *event_param)
 						ptr->len
 					);
 			}
+
 			break;
+		}
+
 	}
 
 	if (btmgr_lea_policy_ctx.max_dev_num == 1

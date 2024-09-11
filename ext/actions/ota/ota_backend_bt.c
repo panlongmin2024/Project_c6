@@ -675,10 +675,11 @@ int process_command(struct svc_prot_context *ctx, uint32_t *processed_cmd)
 				SYS_LOG_ERR("cmd_handler %p, err: %d", cmd_handler, err);
 				return err;
 			}
+			break;
 		}
 	}
 
-	if (i > ARRAY_SIZE(svc_cmds)) {
+	if (i >= ARRAY_SIZE(svc_cmds)) {
 		SYS_LOG_ERR("invalid cmd: %d", head.cmd);
 		return -1;
 	}

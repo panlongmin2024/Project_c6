@@ -234,6 +234,7 @@ void leatws_set_audio_channel(uint32_t audio_channel);
 void bt_manager_le_audio_get_sirk(uint8_t *p_sirk);
 
 uint16_t *bt_manager_config_get_device_id(void);
+
 #endif
 
 /**

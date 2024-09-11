@@ -376,13 +376,13 @@ flush_exception:
 	debug_data_rate(buf, read_len);
 #endif
 
+exit:
 #ifdef CONFIG_PLAYTTS
 #ifdef CONFIG_PLAY_MERGE_TTS
 	tts_merge_manager_request_more_data(buf, read_len);
 #endif
 #endif
 
-exit:
 #ifdef CONFIG_AUDIO_TRACK_LESS_DATA_FADE
 #if FADE_OUT_TIME_MS == 0
 	if (audio_track->fade_handle && reload_mode) {

@@ -293,6 +293,7 @@ enum sync_info_type {
 	USOUND_SYNC_DEVICE_VOL_DEC,
 	USOUND_UPLOAD_STREAM_START,
 	USOUND_UPLOAD_STREAM_STOP,
+	USOUND_SAMPLERATE_CHANGE,
 	UMIC_SYNC_HOST_VOL_TYPE,
 	UMIC_SYNC_HOST_MUTE,
 	UMIC_SYNC_HOST_UNMUTE,
@@ -652,6 +653,29 @@ struct uac1_status_word {
 #define USB_ENDPOINT_SYNC_SYNC		(3 << 2)
 #define USB_CLASS_AUDIO	0x01
 
+/* Define a combination of a single bit depth and sample rate */
+typedef struct
+{
+    uint8_t ucBitDepth;    		/* Bit depth */
+    uint32_t ulSampleRate; 		/* Sampling frequency */
+} S_AudioSinkFormat;
+
+#define UAC_MODE_UNSUPPORTED          	0  		/* Unsupported multi-sample rate switching, selected configuration depends on kconfig */
+#define UAC_MODE_48K_16BIT_24BIT      	1  		/* Supports 48kHz 16-bit and 48kHz 24-bit */
+#define UAC_MODE_44_1K_16BIT_24BIT    	2  		/* Supports 44.1kHz 16-bit and 44.1kHz 24-bit */
+#define UAC_MODE_ALL_SUPPORTED        	3  		/* Supports 44.1kHz 16-bit, 44.1kHz 24-bit, 48kHz 16-bit, and 48kHz 24-bit */
+
+#define UAC_48K_SAM_FREQ				48000	/* Define the sampling frequency for downloading audio at 48 kHz */
+#define UAC_44_1K_SAM_FREQ				44100	/* Define the sampling frequency for downloading audio at 44.1 kHz */
+
+#define UAC_16BIT_DEPTH					16		/* Define the sampling frequency for downloading audio at 48 kHz */
+#define UAC_24BIT_DEPTH					24		/* Define the sampling frequency for downloading audio at 44.1 kHz */
+
+/**
+ * Callback function for audio device (start/stop).
+ */
+typedef void (*usb_sample_rate_change)(uint8_t info_type);
+
 /**
  * Callback function for PM (suspend/resume).
  */
@@ -702,6 +726,9 @@ void usb_audio_device_register_inter_out_ep_cb(usb_ep_callback cb);
 void usb_audio_device_sink_register_volume_sync_cb(usb_audio_volume_sync cb);
 void usb_audio_device_source_register_volume_sync_cb(usb_audio_volume_sync cb);
 
+/* register the callback for sampling rate changes of multi-sample rate and multi-depth devices */
+void usb_audio_device_sink_sample_rate_change_cb(usb_sample_rate_change cb);
+
 /* set current volume before device enumeration, USB audio sink support
  * the volume control of the main channel and left/right channels, but
  * USB Microphone only support the volume control of main channel.
@@ -750,6 +777,16 @@ uint8_t USB_AudioSinkBitDepthGet(void);
  * This function is used to update the bit depth value in the current audio receiver format configuration.
  */
 void USB_AudioSinkBitDepthSet(uint8_t ucUpdBitDepth);
+/**
+ * This function returns the sample rate in the current audio receiver format configuration.
+ */
+uint32_t USB_AudioSinkSampleRateGet(void);
+
+/**
+ * This function is used to update the sampling rate in the current audio receiver format configuration.
+ */
+void USB_AudioSinkSampleRateSet(uint32_t uwUpdSampleRate);
+
 #ifdef __cplusplus
 }
 #endif

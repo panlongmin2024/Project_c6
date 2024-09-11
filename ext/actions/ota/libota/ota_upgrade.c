@@ -148,7 +148,7 @@ static int ota_partition_erase_part(struct ota_upgrade_info *ota,
 	memcpy(part_name, part->name, 8);
 	part_name[8] = '\0';
 
-	SYS_LOG_INF("part %s: offset 0x%x size 0x%x, start_offset 0x%x",
+	SYS_LOG_INF("part %s: (0x%x, 0x%x, 0x%x)",
 		part_name, part->offset, part->size, start_offset);
 
 	align_addr = ROUND_DOWN(part->offset + start_offset, OTA_ERASE_ALIGN_SIZE);
@@ -405,12 +405,19 @@ static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 
 		ota_update_temp_partition_flag(ota, file);
 
+		//校验时间较长，降低优先级给应用层做UI
+		int prio = 0;
+		prio = k_thread_priority_get(k_current_get());
+		k_thread_priority_set(k_current_get(), 12);
+
 		ota->temp_image_offset = file->offset;
 		if(ota_use_secure_boot(ota)) {
 			crc_calc = ota_secure_data_verify(ota, file);
 		}else{
 			crc_calc = ota_storage_image_check(ota->storage, file->offset, ota->data_buf, ota->data_buf_size);
 		}
+
+		k_thread_priority_set(k_current_get(), prio);
 
 		if(crc_calc != 0){
 			//erase temp image
@@ -1336,13 +1343,11 @@ static int ota_is_need_upgrade(struct ota_upgrade_info *ota)
 	struct ota_backend *backend;
 	int backend_type;
 
-	printk("\n");
-
 #ifdef CONFIG_OTA_FILE_PATCH
 	const struct fw_version *patch_old_ver;
 	patch_old_ver = &ota->manifest.old_fw_ver;
 	if (patch_old_ver->magic != 0) {
-		printk("*** firmware version patchota ***\n");
+		SYS_LOG_INF("\npatch_old_ver");
 		fw_version_dump(patch_old_ver);
 	}
 #endif
@@ -1350,10 +1355,10 @@ static int ota_is_need_upgrade(struct ota_upgrade_info *ota)
 	img_ver = &ota->manifest.fw_ver;
 	cur_ver = fw_version_get_current();
 
-	printk("*** firmware version current ***\n");
+	SYS_LOG_INF("cur_ver");
 	fw_version_dump(cur_ver);
 
-	printk("*** firmware version to be upgraded ***\n");
+	SYS_LOG_INF("img_ver");
 	fw_version_dump(img_ver);
 
 	backend = ota_image_get_backend(ota->img);
@@ -1362,14 +1367,13 @@ static int ota_is_need_upgrade(struct ota_upgrade_info *ota)
 	if (backend_type != OTA_BACKEND_TYPE_TEMP_PART &&
 	    bp->backend_type != OTA_BACKEND_TYPE_UNKNOWN &&
 	    bp->backend_type != backend_type) {
-		printk("OTA Rejected: backendtype chagned(%d->%d), need erase old firmware\n",
-			bp->backend_type, ota_backend_get_type(backend));
+		SYS_LOG_WRN("backend_type (%d->%d)", bp->backend_type, backend_type);
 		return -1;
 	}
 
 	if (strcmp(cur_ver->board_name, img_ver->board_name)) {
 		/* skip */
-		printk("OTA Rejected: unmatched board name\n");
+		SYS_LOG_WRN("unmatched board name\n");
 		return -1;
 	}
 
@@ -1377,13 +1381,13 @@ static int ota_is_need_upgrade(struct ota_upgrade_info *ota)
 	if (ota_is_patch_fw(ota)) {
 		/* validate ota patch firmware version */
 		if (cur_ver->version_code != patch_old_ver->version_code) {
-			printk("OTA Rejected: patchota version unmatched, curr=0x%x, patch=0x%x\n",
+			SYS_LOG_WRN("version unmatched (0x%x -> 0x%x)\n",
 				cur_ver->version_code, ota->manifest.old_fw_ver.version_code);
 			return -1;
 		}
 
 		if (ota_use_no_version_control(ota)) {
-			printk("OTA Rejected: patchota must enable version control\n");
+			SYS_LOG_WRN("no version control\n");
 			return -1;
 		}
 	}
@@ -1396,7 +1400,8 @@ static int ota_is_need_upgrade(struct ota_upgrade_info *ota)
 	     bp->new_version != img_ver->version_code)\
 	     	|| (bp->data_checksum != 0 && (bp->data_checksum != ota_image_get_checksum(ota->img)))) {
 			/* FIXME: has new version fw, need erase partition */
-			printk("OTA Rejected: newer version firmware should clean breakpoint\n");
+			SYS_LOG_WRN("new version exists(0x%x -> 0x%x)\n",
+				bp->new_version, img_ver->version_code);
 			return 2;
 		}
 	}
@@ -1404,7 +1409,8 @@ static int ota_is_need_upgrade(struct ota_upgrade_info *ota)
 	if (!ota_use_no_version_control(ota)) {
 		if (cur_ver->version_code >= img_ver->version_code) {
 			/* skip */
-			printk("OTA Rejected: same or older version\n");
+			SYS_LOG_WRN("version unmatched (0x%x -> 0x%x)\n",
+				cur_ver->version_code, img_ver->version_code);
 			return 0;
 		}
 	}

@@ -225,7 +225,7 @@ int external_dsp_ats3615_load(int effect)
 
 		retry_cnt ++;
 
-		k_busy_wait(10*1000);//10ms
+		k_sleep(10);//10ms
 
 		SYS_LOG_WRN("read chip version fail, retry cnt:%d\n", retry_cnt);
 
@@ -234,8 +234,7 @@ int external_dsp_ats3615_load(int effect)
 			SYS_LOG_ERR("read chip version fail, break\n");
 	
 			extern_dsp_3615_io_enable(0);
-			k_busy_wait(100*1000);//10ms
-			k_sleep(20);
+			k_sleep(200);
 			extern_dsp_3615_io_enable(1);
 			if(retry_cnt > 20){
 				ret = -2;
@@ -262,7 +261,7 @@ int external_dsp_ats3615_load(int effect)
 	MASTER_Write_ATS3615_Reg(ATS3615_SPISLV_SEED, 0); // Unstall DSP
 	MASTER_Write_ATS3615_Reg(ATS3615_DSP_VCT_ADDR, 0x40000780);
 	MASTER_Write_ATS3615_Reg(ATS3615_MRCR0, (1 << ATS3615_MRCR0_DSP_RESET)); // take DSP out of reset
-	k_busy_wait(20*1000);//20ms
+	k_sleep(20);//20ms
 	dolphin_comm_init();
 #else //actions demo
 

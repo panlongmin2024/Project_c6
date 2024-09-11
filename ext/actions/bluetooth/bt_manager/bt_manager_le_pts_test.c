@@ -189,11 +189,6 @@ static void pts_disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-uint8_t pts_test_is_adv_test_enable(void)
-{
-	return btif_pts_get_adv_state();
-}
-
 static int pts_ext_rx(uint32_t handle, const uint8_t *buf, uint16_t len)
 {
 	SYS_LOG_INF("rx pts ext,hdl: 0x%x,len:%d\n", handle, len);
@@ -2778,7 +2773,7 @@ int bt_manager_input_passkey(int argc, char* argv[])
 }
 
 
-int bt_manager_pts_test_start(void)
+int bt_manager_le_pts_test_start(void)
 {
 	s_ctx.conn_cbs.connected = pts_connected;
 	s_ctx.conn_cbs.disconnected = pts_disconnected;
@@ -2789,7 +2784,7 @@ int bt_manager_pts_test_start(void)
 	return btif_pts_start(&bt_manager_pts_cb);
 }
 
-int bt_manager_pts_test_stop(void)
+int bt_manager_le_pts_test_stop(void)
 {
 	hostif_bt_conn_cb_unregister(&s_ctx.conn_cbs);
 	return btif_pts_stop();

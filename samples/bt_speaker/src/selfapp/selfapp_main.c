@@ -42,6 +42,11 @@ u8_t *self_get_sendbuf(void)
 	}
 
 	if (selfctx->sendbuf) {
+
+		if (selfctx->sendbuf_tid && selfctx->sendbuf_tid != (uint32_t)k_current_get()){
+			printk("ERROR:sendbuf tid err %x expected %x\n", (uint32_t)k_current_get(), selfctx->sendbuf_tid);
+			panic(NULL);
+		}
 		return selfctx->sendbuf;
 	} else {
 		return NULL;
@@ -64,8 +69,10 @@ int self_send_data(u8_t * buf, u16_t len)
 	stream_write(stream_hdl, buf, len);
 
 #ifdef SELFAPP_DEBUG
-	selfapp_log_inf("TX: %2x %2x", buf[0], buf[1]);
-	selfapp_log_dump(buf, len);
+	if (buf[1] != 0x45) {
+		selfapp_log_inf("TX: %2x %2x", buf[0], buf[1]);
+		selfapp_log_dump(buf, len);
+	}
 #endif
 	return 0;
 }
@@ -80,6 +87,8 @@ int selfapp_handler_by_stream(void *handle)
 	u8_t *Payload = NULL, *buf = NULL;
 	void *stream_handle = NULL;
 	u8_t tmp_buf[10];
+
+	selfctx->sendbuf_tid = (uint32_t)k_current_get();
 
 	if (selfctx == NULL || selfctx->recvbuf == NULL) {
 		selfapp_log_inf("not init %p\n", handle);
@@ -247,6 +256,8 @@ static int selfapp_connect_init(void)
 
 	selfctx->connect_type = CONCTYPE_BR_EDR;
 
+	selfctx->sendbuf_tid = (uint32_t)k_current_get();
+
 	os_sched_unlock();
 
 #ifdef SPEC_LED_PATTERN_CONTROL
@@ -304,8 +315,8 @@ static int selfapp_connect_deinit(void)
 		selfctx->stream_opened = 0;
 	}
 
-	if(selfctx->mute_player){
-		selfapp_mute_player(0);
+	if(selfctx->pause_player){
+		selfctx->pause_player = 0;
 	}
 	return 0;
 }
@@ -527,8 +538,11 @@ int selfapp_deinit(void)
 		selfapp_routine_start_stop(0);
 		selfapp_connect_deinit();
 		self_set_context(NULL);
-		if (thread_timer_is_running(&selfctx->mute_timer)){
-			thread_timer_stop(&selfctx->mute_timer);
+		if (thread_timer_is_running(&selfctx->creat_group_timer)){
+			thread_timer_stop(&selfctx->creat_group_timer);
+		}
+		if (thread_timer_is_running(&selfctx->indication_timer)){
+			thread_timer_stop(&selfctx->indication_timer);
 		}
 		mem_free(selfctx);
 		selfapp_log_inf("deinited\n");

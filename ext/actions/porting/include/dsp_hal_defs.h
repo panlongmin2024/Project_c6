@@ -349,7 +349,7 @@ struct dspfunc_fade_params {
 	uint16_t less_fill_zero : 1;
 	uint16_t reserved_samples: 10;
 	uint16_t fadein_fill_zero : 1;
-	uint16_t reserved : 1;
+	uint16_t sync : 1;          // for master/slave
 	uint16_t aout_fade_time;     //millisecond
 	uint32_t *fade_state;
 } __packed;

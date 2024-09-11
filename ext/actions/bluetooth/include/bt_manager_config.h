@@ -28,7 +28,7 @@ typedef enum
 
 typedef struct 
 {
-    unsigned char   bt_device_name[30];  // 蓝牙设备名称
+    unsigned char   bt_device_name[CONFIG_MAX_BT_NAME_LEN + 1];  // 蓝牙设备名称
     unsigned char   bt_address[6];                               // 蓝牙地址
     unsigned char   use_random_bt_address;                       // 使用随机蓝牙地址, 通过 MIC 采样噪声生成低 3 字节蓝牙地址
     unsigned int    bt_device_class;                             // 蓝牙设备类型

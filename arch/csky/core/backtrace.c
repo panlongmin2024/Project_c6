@@ -57,6 +57,38 @@ static void sh_dump_mem(const char *msg, uint32_t mem_addr, int len)
 	printk("\n\n");
 }
 
+static uint32_t check_mem_is_valid(u32_t addr)
+{
+	if(addr >= CONFIG_SRAM_BASE_ADDRESS && addr <= (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024))){
+		return true;
+	}else if(addr >= 0x30000 && addr <= 0x40000){
+		//hardware memory
+		return true;
+	}else if(addr >= 0x68000000 && addr <= (0x68008000)){
+		return true;
+	}
+#ifdef CONFIG_SOC_MAPPING_PSRAM_FOR_OS
+	else if(addr >= CONFIG_SOC_MAPPING_PSRAM_ADDR && addr <= (CONFIG_SOC_MAPPING_PSRAM_ADDR + CONFIG_SOC_MAPPING_PSRAM_SIZE)){
+		return true;
+	}
+#endif
+	else{
+		return false;
+	}
+}
+
+uint32_t mem_is_ram_data(uint32_t addr)
+{
+	if(!check_mem_is_valid(addr)){
+		printk("\n mem addr 0x%x is invalid\n", addr);
+		return false;
+	}
+
+	return true;
+
+}
+
+
 static uint32_t _check_sp_end_addr(uint32_t sp_cur)
 {
 	struct k_thread *thread_list;
@@ -67,12 +99,22 @@ static uint32_t _check_sp_end_addr(uint32_t sp_cur)
 	}
 
 	thread_list = ((struct k_thread *)(_kernel.threads));
+
+	if(!mem_is_ram_data((uint32_t)thread_list)){
+		return sp_cur;
+	}
+
 	while (thread_list != NULL) {
 		if (sp_cur >= thread_list->stack_info.start && sp_cur <= (thread_list->stack_info.start + thread_list->stack_info.size)) {
 			break;
 		}
 
 		thread_list = (struct k_thread *)(thread_list->next_thread);
+
+		if(!mem_is_ram_data((uint32_t)thread_list)){
+			thread_list = NULL;
+			break;
+		}
 	}
 
 	if (!thread_list) {
@@ -90,7 +132,7 @@ static void sh_backtrace_print_elx(uint32_t addr, uint32_t sp, uint32_t bak_lr, 
 	uint32_t pc = 0;
 	uint32_t stk_end = _check_sp_end_addr(sp);
 
-	if(sp > stk_end){
+	if(sp > stk_end || !check_mem_is_valid(sp) || !check_mem_is_valid(stk_end)){
 		printk("stack overflow sp<%08x> end<%08x>\n", sp, stk_end);
 		return;
 	}
@@ -283,6 +325,9 @@ void show_all_threads_stack(void)
 
 	thread = (struct k_thread *)(_kernel.threads);
 	while (thread != NULL) {
+		if(!mem_is_ram_data((uint32_t)thread)){
+			break;
+		}
 		show_thread_stack(thread);
 		thread = (struct k_thread *)thread->next_thread;
 	}

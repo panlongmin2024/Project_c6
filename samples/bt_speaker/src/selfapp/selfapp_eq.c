@@ -34,14 +34,14 @@ typedef struct __attribute__((packed)) {
 typedef struct {
 	u8_t type;		// Band type
 	s8_t level;		// Band scope level
-} customeq_band_t;
+} customeq_c1_band_t;
 
 typedef struct __attribute__((packed)) {
 	u8_t category;
 	u8_t level_scope;	// CustomEQ_Level_Scope_e
 	u8_t band_count;
-	customeq_band_t bands[0];
-} customeq_param_nti_t;
+	customeq_c1_band_t bands[0];
+} customeq_c1_param_nti_t;
 
 static const u8_t eq_signature_data[EQ_DATA_SIZE] = 
 {
@@ -54,31 +54,53 @@ static const u8_t eq_signature_data[EQ_DATA_SIZE] =
 0x0b, 0xd9, 0xd7, 0xf4
 };
 
-int spkeq_RetNTIEQ(u8_t * buf)
+int spkeq_RetNTIEQ(u8_t * buf, u8_t custom_type)
 {
 	u8_t active_id, size;
 	u16_t hdrlen = 0, eqlen = 0;
-	customeq_param_nti_t *ntieq_ctm = NULL;
+	u8_t *para_buffer = NULL;
 
-	size = sizeof(customeq_param_nti_t) +
-	    BAND_COUNT_MAX * sizeof(customeq_band_t);
-	ntieq_ctm = mem_malloc(size);
-	if (ntieq_ctm == NULL) {
-		return 0;
+	if (custom_type == EQCATEGORY_CUSTOM_1) {
+		size = sizeof(customeq_c1_param_nti_t) +
+			BAND_COUNT_MAX * sizeof(customeq_c1_band_t);
+	} else {
+		size = EQ_DATA_SIZE;
 	}
 
-	ntieq_ctm->category = EQCATEGORY_CUSTOM_1;	// fixedly need Custom category, not the actived
-	selfapp_config_get_customer_eq(&ntieq_ctm->level_scope, (u8_t*)ntieq_ctm->bands);
-	ntieq_ctm->band_count = BAND_COUNT_MAX;
+	para_buffer = mem_malloc(size);
+	if (para_buffer == NULL) {
+		selfapp_log_inf("malloc err len %d\n", size);
+		return 0;
+	}
 
 	hdrlen = selfapp_get_header_len(CMD_NTI_EQ_Ret);
 
 	active_id = selfapp_config_get_eq_id();
 	eqlen += selfapp_pack_int(buf + hdrlen, active_id, 1);	// Firstly  pack actived category
-	eqlen += selfapp_pack_bytes(buf + hdrlen + eqlen, (u8_t *) ntieq_ctm, size);	// Secondly pack Custom category
+
+	if (custom_type == EQCATEGORY_CUSTOM_1) {
+		customeq_c1_param_nti_t *ntieq_ctm = (customeq_c1_param_nti_t *)para_buffer;
+		ntieq_ctm->category = EQCATEGORY_CUSTOM_1;	// fixedly need Custom category, not the actived
+		selfapp_config_get_customer_eq_c1(&ntieq_ctm->level_scope, (u8_t*)ntieq_ctm->bands);
+		ntieq_ctm->band_count = BAND_COUNT_MAX;
+
+		eqlen += selfapp_pack_bytes(buf + hdrlen + eqlen, (u8_t *) ntieq_ctm, size);	// Secondly pack Custom category
+	} else {
+		u16_t ctm_c2_Len = 0;
+		preseteq_param_nti_t *ntieq_ctm_c2 = (preseteq_param_nti_t *)para_buffer;
+		selfapp_config_get_customer_eq_c2(para_buffer, size);
+		ntieq_ctm_c2->category = EQCATEGORY_CUSTOM_2;
+		if (ntieq_ctm_c2->band_count == 0 || ntieq_ctm_c2->band_count > BAND_COUNT_MAX) {
+			ntieq_ctm_c2->band_count = BAND_COUNT_MAX;
+		}
+		ctm_c2_Len = sizeof(preseteq_param_nti_t) + ntieq_ctm_c2->band_count * sizeof(preseteq_band_t);
+		
+		eqlen += selfapp_pack_bytes(buf + hdrlen + eqlen, para_buffer, ctm_c2_Len);	// Secondly pack Custom category
+	}
+
 	eqlen += selfapp_pack_header(buf, CMD_NTI_EQ_Ret, eqlen);
 
-	mem_free(ntieq_ctm);
+	mem_free(para_buffer);
 	return eqlen;
 }
 
@@ -94,10 +116,15 @@ int spkeq_SetNTIEQ(u8_t * param, u16_t plen)
 
 	// save CustomEQ parameters
 	if (active_id == EQCATEGORY_CUSTOM_1) {
-		customeq_param_nti_t *ntieq_ctm = (customeq_param_nti_t *)&(param[1]);
-		selfapp_log_inf("custom 0x%x_%d_%d\n", ntieq_ctm->category,
+		customeq_c1_param_nti_t *ntieq_ctm = (customeq_c1_param_nti_t *)&(param[1]);
+		selfapp_log_inf("custom_c1 0x%x_%d_%d\n", ntieq_ctm->category,
 				ntieq_ctm->level_scope, ntieq_ctm->band_count);
-		selfapp_config_set_customer_eq(active_id, ntieq_ctm->band_count, ntieq_ctm->level_scope, (u8_t *)ntieq_ctm->bands);
+		selfapp_config_set_customer_eq_c1(active_id, ntieq_ctm->band_count, ntieq_ctm->level_scope, (u8_t *)ntieq_ctm->bands);
+	} else if (active_id == EQCATEGORY_CUSTOM_2) {
+		preseteq_param_nti_t *eq_c2_ctm = (preseteq_param_nti_t *)&(param[1]);
+		selfapp_log_inf("custom_c2 0x%x_%d_%d\n", eq_c2_ctm->category,
+				eq_c2_ctm->band_count, eq_c2_ctm->sample_rate);
+		selfapp_config_set_customer_eq_c2(active_id, param+1, plen-1);
 	}
 
 	if (selfapp_lasting_stereo_is_primary_role()) {
@@ -219,7 +246,7 @@ int ext_dsp_set_eq_by_app(u8_t id, u8_t pre_id, const u8_t *data, u8_t len)
 	};
 
 	if (id == EQCATEGORY_CUSTOM_1) {
-		customeq_param_nti_t * customeq = (customeq_param_nti_t *)data;
+		customeq_c1_param_nti_t * customeq = (customeq_c1_param_nti_t *)data;
 		bands_count = customeq->band_count;
 		if (bands_count > MAX_APP_EQ_BANDS) {
 			SYS_LOG_ERR(" bands_count = %d > %d ", bands_count, MAX_APP_EQ_BANDS);

@@ -380,6 +380,51 @@ u32_t _arch_irq_get_irq_count(void)
 static u32_t disable_irq_timer;
 static u8_t irq_stat_msg_on = 1;
 
+#define IRQ_STAT_MAX_ITEM	10
+struct irq_stat_dat {
+	const void *caller_addr;   
+	u32_t irq_dis_usec;  /* irq disable time use */
+};
+
+static struct irq_stat_dat  irq_stat_msg_dat[IRQ_STAT_MAX_ITEM];
+static u8_t irq_stat_cur_num = 0;
+
+void sys_irq_stat_dump(void)
+{
+	u8_t i;
+	struct irq_stat_dat *pf;
+	printk("irq_stat:larger than %us, num=%d\n", CONFIG_DISABLE_IRQ_US, irq_stat_cur_num);
+	for(i = 0; i < irq_stat_cur_num; i++){
+		pf = &irq_stat_msg_dat[i];
+		printk("%d. %p disalbed irq %d us\n", i, pf->caller_addr, pf->irq_dis_usec);
+	}
+}
+
+static void  sys_irq_stat_handle(u32_t use_us, const void *caller_addr)
+{
+	u8_t i;
+	struct irq_stat_dat *pf;
+	for(i = 0; i < irq_stat_cur_num; i++){
+		if(irq_stat_msg_dat[i].caller_addr == caller_addr){
+			pf = &irq_stat_msg_dat[i];
+			if(pf->irq_dis_usec < use_us)
+				pf->irq_dis_usec = use_us;	
+			return;
+		}
+	}
+	if(irq_stat_cur_num < IRQ_STAT_MAX_ITEM){
+		pf = &irq_stat_msg_dat[irq_stat_cur_num];
+		pf->caller_addr = caller_addr;
+		pf->irq_dis_usec = use_us;
+		irq_stat_cur_num++;
+	}else{
+		/*统计超过 IRQ_STAT_MAX_ITEM，直接打印*/
+		printk("\n\n!!! %p disalbed irq %d us larger than %d us\n\n", caller_addr, use_us, CONFIG_DISABLE_IRQ_US);
+		sys_irq_stat_dump();
+	}
+}
+
+
 void sys_irq_stat_msg_ctl(bool enable)
 {
 	irq_stat_msg_on = enable;
@@ -429,13 +474,19 @@ void _arch_irq_unlock(unsigned int flags)
         disable_irq_us = SYS_CLOCK_HW_CYCLES_TO_NS(k_cycle_get_32() - disable_irq_timer) / 1000;
 
         if(irq_stat_msg_on && (disable_irq_us > CONFIG_DISABLE_IRQ_US)){
-        	printk("\n\n!!! 0x%p disalbed irq %d.%d ms larger than %d us\n\n", __builtin_return_address(0),
+			#if 0
+        	printk("\n\n!!! %p disalbed irq %d.%d ms larger than %d us\n\n", __builtin_return_address(0),
         			disable_irq_us / 1000, disable_irq_us % 1000, CONFIG_DISABLE_IRQ_US);
         	dump_stack();
+			#else
+			sys_irq_stat_handle(disable_irq_us, __builtin_return_address(0));
+			#endif
         }
     }
     __arch_irq_unlock(flags);
 }
+
+
 
 #endif
 

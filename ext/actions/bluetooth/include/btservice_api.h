@@ -245,6 +245,7 @@ struct bt_link_cb_param {
 	uint8_t link_event;
 	uint8_t is_tws:1;
 	uint8_t new_dev:1;
+	uint8_t key_miss:1;
 	uint8_t param;
 	uint16_t hdl;
 	bd_address_t *addr;
@@ -2570,6 +2571,9 @@ int btif_broadcast_source_set_retransmit(struct bt_broadcast_chan *chan,uint8_t 
 
 int btif_broadcast_past_subscribe(uint16_t handle);
 int btif_broadcast_past_unsubscribe(uint16_t handle);
+
+int btif_broadcast_pa_set_info_transfer(uint32_t handle);
+
 /*
  * LE Audio -- Broadcast end
  */

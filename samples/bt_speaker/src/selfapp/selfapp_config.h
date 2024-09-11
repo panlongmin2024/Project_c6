@@ -27,9 +27,11 @@ u16_t selfapp_config_get_one_touch_music_button(void);
 #endif
 void selfapp_config_set_eq(u8_t eqid, const u8_t* data, u16_t len);
 u8_t selfapp_config_get_eq_id(void);
-int selfapp_config_get_customer_eq(u8_t *scope, u8_t *bands);
+int selfapp_config_get_customer_eq_c1(u8_t *scope, u8_t *bands);
+int selfapp_config_get_customer_eq_c2(u8_t *buf, u16_t len);
 u8_t* selfapp_config_get_eq_data(void);
-void selfapp_config_set_customer_eq(u8_t eqid, u8_t count, u8_t scope, u8_t* bands);
+void selfapp_config_set_customer_eq_c1(u8_t eqid, u8_t count, u8_t scope, u8_t* bands);
+void selfapp_config_set_customer_eq_c2(u8_t eqid, u8_t* data, uint16_t len);
 void selfapp_config_init(void);
 void self_stamem_save(u8_t confirmed);
 

@@ -455,7 +455,6 @@ static ssize_t stream_ble_rx_set_notifyind_ex(struct bt_conn *conn, uint8_t conn
 	SYS_LOG_INF("conn: %p, attr:%p, enable:%d", conn, attr, value);
 
 	info = (struct sppble_info_t *)stream->data;
-	info->notify_ind_enable = (uint8_t)value;
 
     if(conn_type_index > BT_CONN_TYPE_BR){
         conn_type_index = 3;
@@ -465,6 +464,14 @@ static ssize_t stream_ble_rx_set_notifyind_ex(struct bt_conn *conn, uint8_t conn
 
 	if (stream && stream->data) {
 		if (value) {
+			//alredy connected gatt_over_br, disconnect last
+			if ((info->connect_type == GATT_OVER_BR_CONNECT_TYPE) &&
+				(conn_type == BT_CONN_TYPE_BR) && (info->conn != conn)) {
+				SYS_LOG_INF("gatt_over_br already connected, reject second");
+				hostif_bt_gatt_over_br_disconnect(conn);
+				return sizeof(uint16_t);
+			}
+
 			if ((info->connect_type == NONE_CONNECT_TYPE) ||
 				(info->connect_type == BLE_CONNECT_TYPE)  ||
 			    (info->connect_type == GATT_OVER_BR_CONNECT_TYPE)) {
@@ -476,6 +483,7 @@ static ssize_t stream_ble_rx_set_notifyind_ex(struct bt_conn *conn, uint8_t conn
 				}
 				info->connect_type = connect_type;
 				info->conn = conn;
+				info->notify_ind_enable = 1;
 				if (conn_info_add(&(info->conn_info), conn, connect_type) >= 0) {
 					if (info->connect_cb) {
 						info->connect_cb(true, info->connect_type, (void *)conn);
@@ -488,6 +496,7 @@ static ssize_t stream_ble_rx_set_notifyind_ex(struct bt_conn *conn, uint8_t conn
 		}else {
 			if ((info->connect_type == BLE_CONNECT_TYPE) ||
 				(info->connect_type == GATT_OVER_BR_CONNECT_TYPE)) {
+				info->notify_ind_enable = 0;
 				if (conn_info_find_and_del(&(info->conn_info), conn) >= 0) {
 					if (conn_info_count(&(info->conn_info)) == 0) {
 						info->connect_type = NONE_CONNECT_TYPE;

@@ -23,7 +23,9 @@
 static bool bat_user_set = false;
 static u8_t bat_percents = 100;
 static u8_t model_id = BOX_DEFAULT_MODEL_ID;
-#define MUTE_PLAYER_TIMEOUT	120
+
+void self_indication_handler(struct thread_timer *ttimer,
+				   void *expiry_fn_arg);
 
 static u8_t selfapp_get_bat_cap(void)
 {
@@ -69,13 +71,12 @@ u8_t selfapp_get_bat_power(void)
 
 /*
 	Bit 2-4 = Battery (
-	BATT_CRITICAL: 0,
-	BATT_LOW: 001,
-	BATT_LEVEL0: 010,
-	BATT_LEVEL1: 011,
-	BATT_LEVEL2: 100,
-	BATT_LEVEL3: 101,
-	BATT_LEVEL4: 110
+	BATT_CRITICAL: 0,  -> 0%
+	BATT_LOW: 001,	   -> 10%
+	BATT_LEVEL0: 010,  -> 30%
+	BATT_LEVEL1: 011,  -> 50%
+	BATT_LEVEL2: 100,  -> 70%
+	BATT_LEVEL3: 101,  -> 100%
 	)
 */
 u8_t selfapp_get_bat_level(void)
@@ -89,15 +90,72 @@ u8_t selfapp_get_bat_level(void)
 		cap = 100;
 	}
 
-	level = cap/15;
-	if(level > 6) {
-		level = 6;
+	if (cap > 75) {
+		level = 5;
+	} else if (cap > 60) {
+		level = 4;
+	} else if (cap > 45) {
+		level = 3;
+	} else if (cap > 15) {
+		level = 2;
+	} else if (cap > 5) {
+		level = 1;
+	} else {
+		level = 0;
 	}
 
 	return level;
 }
 
+void selfapp_cmd_thread_timer_start(struct thread_timer *cur_timer)
+{
+	selfapp_send_msg(MSG_SELFAPP_APP_EVENT, SELFAPP_CMD_THREAD_TIMER_START, 0, (uint32_t)cur_timer);
+}
+
+void selfapp_thread_timer_start(int value)
+{
+	struct thread_timer *cur_timer = (struct thread_timer *)value;
+	selfapp_context_t *selfctx = self_get_context();
+
+	if(cur_timer == &selfctx->indication_timer){
 #ifdef SPEC_REMOTE_CONTROL
+		if (thread_timer_is_running(&selfctx->indication_timer)){
+			thread_timer_stop(&selfctx->indication_timer);
+		}
+
+		thread_timer_init(&selfctx->indication_timer, self_indication_handler,NULL);
+		thread_timer_start(&selfctx->indication_timer, 200, 200);
+		selfctx->indication_time_out = 0;
+#endif
+	}else if(cur_timer == &selfctx->creat_group_timer){
+		if (thread_timer_is_running(&selfctx->creat_group_timer)){
+			thread_timer_stop(&selfctx->creat_group_timer);
+		}
+
+		thread_timer_init(&selfctx->creat_group_timer, self_creat_group_handler,NULL);
+		thread_timer_start(&selfctx->creat_group_timer, (selfctx->creat_group_time_out + 1) * 1000, 0);
+	}
+}
+
+#ifdef SPEC_REMOTE_CONTROL
+void self_indication_handler(struct thread_timer *ttimer,
+				   void *expiry_fn_arg){
+	selfapp_context_t *selfctx = self_get_context();
+	if (NULL == selfctx) {
+		return;
+	}
+	selfctx->indication_time_out++;
+	if(selfctx->indication_time_out > 10){
+		selfapp_log_inf("time out");
+		thread_timer_stop(&selfctx->indication_timer);
+		selfctx->indication_time_out = 0;
+	}else if(BT_STATUS_PAUSED == bt_manager_media_get_status()){
+		sys_event_notify_single(SYS_EVENT_STEREO_GROUP_INDICATION_NO_FILTER);
+		thread_timer_stop(&selfctx->indication_timer);
+	}
+}
+
+
 int selfapp_set_indication(u8_t dev_idx)
 {
 	int ret = -1;
@@ -107,15 +165,18 @@ int selfapp_set_indication(u8_t dev_idx)
 	}
 
 	if (dev_idx == 0) {
-		if(!selfapp_get_lasting_stereo_mode()){
-			selfapp_mute_player(1);
-			if (thread_timer_is_running(&selfctx->mute_timer)){
-				thread_timer_stop(&selfctx->mute_timer);
-			}
-			thread_timer_init(&selfctx->mute_timer, self_mute_handler,NULL);
-			thread_timer_start(&selfctx->mute_timer, MUTE_PLAYER_TIMEOUT * 1000, 0);
+		if(!selfapp_get_lasting_stereo_mode() &&
+			!thread_timer_is_running(&selfctx->creat_group_timer) &&
+			BT_STATUS_PLAYING == bt_manager_media_get_status()){
+			selfapp_pause_player();
 		}
-		sys_event_notify_single(SYS_EVENT_STEREO_GROUP_INDICATION);
+		if(selfapp_get_lasting_stereo_mode()){
+			sys_event_notify_single(SYS_EVENT_STEREO_GROUP_INDICATION);
+		}else if(selfctx->pause_player){
+			selfapp_cmd_thread_timer_start(&selfctx->indication_timer);
+		}else{
+			sys_event_notify_single(SYS_EVENT_STEREO_GROUP_INDICATION);
+		}
 		ret = 0;
 	} else if (dev_idx == 1) {
 #ifdef CONFIG_BT_LETWS
@@ -309,22 +370,29 @@ u32_t selfapp_get_group_id(void)
 	return group.id;
 }
 
-static u16_t selfapp_get_src_dev_name_crc(void)
+static int selfapp_get_src_dev_name_crc(u16_t *p_name_crc)
 {
 	uint16_t crc;
 	char *name = NULL;
+
+	if (!p_name_crc) {
+		SYS_LOG_ERR("param invaild");
+		return -1;
+	}
 
 	name = bt_manager_audio_get_last_connected_dev_name();
 	if (NULL != name) {
 		crc = self_crc16(0, name, strlen(name));
 		//selfapp_log_dbg("name: %s, 0x%x\n", name, crc);
-		return crc;
+		*p_name_crc = crc;
+		return 0;
 	}
 
-	return 0;
+	*p_name_crc = 0;
+	return -1;
 }
 
-static u16_t selfapp_get_addr_crc(void)
+static int selfapp_get_addr_crc(u16_t *p_addr_crc)
 {
 #define MAC_STR_LEN (12+1)
 	int ret;
@@ -332,18 +400,26 @@ static u16_t selfapp_get_addr_crc(void)
 	uint8_t mac[MAC_STR_LEN];  // only 6bytes used
 	uint8_t mac_str[MAC_STR_LEN];
 
+	if (!p_addr_crc) {
+		SYS_LOG_ERR("param invaild");
+		return -1;
+	}
+
 	memset(mac_str, 0, MAC_STR_LEN);
 
 #ifdef CONFIG_PROPERTY
 	ret = property_get(CFG_BT_MAC, mac_str, (MAC_STR_LEN - 1));
 #endif
-	if (ret < (MAC_STR_LEN - 1))
-		return 0;
+	if (ret < (MAC_STR_LEN - 1)) {
+		*p_addr_crc = 0;
+		return -1;
+	}
 
 	str_to_hex(mac, mac_str, 12);
 	crc = self_crc16(0, mac, 6);
+	*p_addr_crc = crc;
 
-	return crc;
+	return 0;
 }
 
 void selfapp_set_model_id(u8_t mid)
@@ -360,6 +436,7 @@ u8_t selfapp_get_model_id(void)
 u8_t selfapp_get_manufacturer_data(u8_t * buf)
 {
 	u8_t i = 0;
+	int ret = -1;
 	u16_t crc_name, crc_addr;
 	u8_t role, ch, bat;
 
@@ -367,8 +444,13 @@ u8_t selfapp_get_manufacturer_data(u8_t * buf)
 		return 0;
 	}
 
-	crc_name = selfapp_get_src_dev_name_crc();
-	crc_addr = selfapp_get_addr_crc();
+	ret = selfapp_get_src_dev_name_crc(&crc_name);
+	if (ret >= 0) {
+		selfapp_get_addr_crc(&crc_addr);
+	}else {
+		crc_name = 0;
+		crc_addr = 0;
+	}
 
 	//VID
 	buf[i++] = (CONFIG_BT_COMPANY_ID & 0xFF);
@@ -451,13 +533,13 @@ void selfapp_switch_lasting_stereo_mode(int enable)
 			memcpy(addr.a.val,selfctx->creat_group.addr,6);
 #ifdef CONFIG_BT_LETWS
 			bt_mamager_set_remote_ble_addr(&addr);
-			bt_manager_letws_start_pair_search(BTSRV_TWS_MASTER,selfctx->time_out);
+			bt_manager_letws_start_pair_search(BTSRV_TWS_MASTER,selfctx->creat_group_time_out);
 #endif
 		}else if(selfctx->creat_group.role == 0x2){
 			memcpy(addr.a.val,selfctx->creat_group.addr,6);
 #ifdef CONFIG_BT_LETWS
 			bt_mamager_set_remote_ble_addr(&addr);
-			bt_manager_letws_start_pair_search(BTSRV_TWS_SLAVE,selfctx->time_out);
+			bt_manager_letws_start_pair_search(BTSRV_TWS_SLAVE,selfctx->creat_group_time_out);
 #endif
 		}
 	}else{
@@ -502,22 +584,34 @@ void selfapp_set_lasting_stereo_group_info_to_slave(struct AURACAST_GROUP *group
 	broadcast_tws_vnd_set_dev_info(&info);
 }
 
-void selfapp_mute_player(u8_t mute)
+void selfapp_pause_player()
 {
-	selfapp_log_inf("mute %d\n", mute);
 	selfapp_context_t *selfctx = self_get_context();
 
 	if (NULL == selfctx) {
 		return;
 	}
-	selfctx->mute_player = mute;
+	selfctx->pause_player = 1;
 	struct app_msg msg = { 0 };
 
 	msg.type = MSG_INPUT_EVENT;
-	if(mute)
-		msg.cmd = MSG_MUTE_PLAYER;
-	else
-		msg.cmd = MSG_UNMUTE_PLAYER;
+	msg.cmd = MSG_PAUSE_PLAYER;
+	msg.value = 0;
+	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
+}
+
+void selfapp_resume_player()
+{
+	selfapp_context_t *selfctx = self_get_context();
+
+	if (NULL == selfctx || !selfctx->pause_player) {
+		return;
+	}
+	selfctx->pause_player = 0;
+	struct app_msg msg = { 0 };
+
+	msg.type = MSG_INPUT_EVENT;
+	msg.cmd = MSG_RESUME_PLAYER;
 	msg.value = 0;
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }

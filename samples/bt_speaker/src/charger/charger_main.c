@@ -39,6 +39,8 @@
 #include <data_analy.h>
 #endif
 
+
+#include "pd_manager.h"
 #include "charger.h"
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 #include <run_mode/run_mode.h>
@@ -201,6 +203,21 @@ int charger_mode_check(void)
 					SYS_LOG_INF("%d MSG_POWER_KEY\n",__LINE__);
 				}
 				break;
+
+			case MSG_PD_EVENT:
+				if(msg.value == PD_EVENT_OTG_MOBILE_POWER_OFF)
+				{
+
+					terminaltion = true;
+					k_sleep(1000);
+					logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
+
+					//extern int pd_manager_deinit(void);
+					pd_srv_sync_exit(1);	
+					sys_pm_poweroff();
+
+				}
+				break;	
 
 			// case MSG_PD_BAT_SINK_FULL:	
 			//case MSG_PD_OTG_MOBILE_EVENT:

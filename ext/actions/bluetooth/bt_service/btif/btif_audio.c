@@ -1068,6 +1068,12 @@ int btif_broadcast_source_set_retransmit(struct bt_broadcast_chan *chan,uint8_t 
 	return btsrv_broadcast_source_set_retransmit(chan,number);
 }
 
+int btif_broadcast_pa_set_info_transfer(uint32_t handle)
+{
+    return btsrv_event_notify_value_ext(MSG_BTSRV_AUDIO,MSG_BTSRV_AUDIO_BROADCAST,
+                    handle,BTSRV_BROADCAST_PA_SET_INFO_TRANSFER);
+}
+
 int btif_broadcast_past_subscribe(uint16_t handle)
 {
     return btsrv_event_notify_value_ext(MSG_BTSRV_AUDIO,MSG_BTSRV_AUDIO_BROADCAST,

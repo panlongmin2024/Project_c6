@@ -1441,6 +1441,13 @@ struct bt_le_per_adv_sync_term_info {
 
 	/** Cause of periodic advertising termination */
 	uint8_t reason;
+	/**
+	 * @brief Peer that transferred the periodic advertising sync
+	 *
+	 * Will always be 0 when the sync is locally created.
+	 *
+	 */
+	struct bt_conn *conn;	
 };
 
 struct bt_le_per_adv_sync_recv_info {

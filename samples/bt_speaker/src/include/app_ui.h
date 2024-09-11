@@ -36,6 +36,7 @@ enum SELFAPP_COMMANDS {
 	SELFAPP_CMD_ROLE_UPDATE,
 	SELFAPP_CMD_LASTING_STEREO_MODE_UPDATE,
 	SELFAPP_CMD_LEAUDIO_STATUS_UPDATE,
+	SELFAPP_CMD_THREAD_TIMER_START,
 };
 
 
@@ -61,8 +62,8 @@ enum APP_INPUT_MESSAGE_CMD{
 	MSG_ENTER_DEMO,
 	MSG_FACTORY_DEFAULT,
 	MSG_DEMO_SWITCH,
-	MSG_MUTE_PLAYER,
-	MSG_UNMUTE_PLAYER,
+	MSG_PAUSE_PLAYER,
+	MSG_RESUME_PLAYER,
 	MSG_PLAYER_RESET,
 
 	MSG_TRACE_MODE_SWITCH,
@@ -199,8 +200,8 @@ enum APP_UI_EVENT_ID {
 	UI_EVENT_MCU_FW_UPDATED,
 
 	UI_EVENT_FACTORY_AND_REBOOT,
-
 	UI_EVENT_STEREO_GROUP_INDICATION,
+	UI_EVENT_STEREO_GROUP_INDICATION_NO_FILTER,
 	UI_EVENT_OTA_REQ_START
 };
 
@@ -208,10 +209,9 @@ enum APP_UI_EVENT_ID {
 enum TWS_APP_EVENT_ID
 {
     /***************************************************************************************
-	 * 下面消息是TWS短消息，通过  TWS_SHORT_MSG_EVENT发送.
+	 * 下面消息是TWS短消息，通过  TWS_SHORT_MSG_EVENT发�?
 	 *
-	 * 例如：
-	 * bt_manager_tws_send_message(TWS_SHORT_MSG_EVENT, TWS_APP_EVENT_KEY_TONE_PLAY, NULL, 0)
+	 * 例如�?	 * bt_manager_tws_send_message(TWS_SHORT_MSG_EVENT, TWS_APP_EVENT_KEY_TONE_PLAY, NULL, 0)
      *
      **************************************************************************************/
     TWS_EVENT_SYSTEM_KEY_CTRL = TWS_EVENT_APP_MSG_BEGIN_ID,      // 系统控制
@@ -219,55 +219,39 @@ enum TWS_APP_EVENT_ID
     TWS_EVENT_BT_CALL_KEY_CTRL,       // 蓝牙通话控制
 	TWS_EVENT_KEY_CTRL_COMPLETE,	  // 按键控制完成
 
-    TWS_EVENT_KEY_TONE_PLAY,          // 播放按键音
-
+    TWS_EVENT_KEY_TONE_PLAY,          // 播放按键�?
 	TWS_EVENT_POWER_OFF,			  // 关机
 
-	TWS_EVENT_IN_CHARGER_BOX_STATE,   // 是否在充电盒中状态
-
-	TWS_EVENT_REMOTE_KEY_PROC_BEGIN,  // 对端按键处理开始
-	TWS_EVENT_REMOTE_KEY_PROC_END,	  // 对端按键处理结束
+	TWS_EVENT_IN_CHARGER_BOX_STATE,   // 是否在充电盒中状�?
+	TWS_EVENT_REMOTE_KEY_PROC_BEGIN,  // 对端按键处理开�?	TWS_EVENT_REMOTE_KEY_PROC_END,	  // 对端按键处理结束
 	TWS_EVENT_AVDTP_FILTER, 		  // AVDTP 数据过滤
-	TWS_EVENT_BT_CALL_START_RING,	  // 开始来电响铃
-	TWS_EVENT_BT_CALL_RING_NUM_BEGIN, // 开始播放来电号码
-	TWS_EVENT_BT_CALL_RING_NUM_END,   // 结束播放来电号码
+	TWS_EVENT_BT_CALL_START_RING,	  // 开始来电响�?	TWS_EVENT_BT_CALL_RING_NUM_BEGIN, // 开始播放来电号�?	TWS_EVENT_BT_CALL_RING_NUM_END,   // 结束播放来电号码
 
     TWS_EVENT_DIAL_PHONE_NO,          // 拨打指定电话号码
     TWS_EVENT_WAIT_DIAL,              // 等待拨打电话
-    TWS_EVENT_WAIT_VOICE_ASSIST,      // 等待启动 Siri 等语音助手
-
+    TWS_EVENT_WAIT_VOICE_ASSIST,      // 等待启动 Siri 等语音助�?
     TWS_EVENT_SET_VOICE_LANG,         // 设置语音语言
-    TWS_EVENT_SYNC_LOW_LATENCY_MODE,  // 同步低延迟模式
-    TWS_EVENT_BT_MUSIC_PLAYER_ERR,    // 蓝牙音乐播放器错误
-    TWS_EVENT_OTA_CMD,                // TWS OTA命令
-    TWS_EVENT_SYNC_PRIVMA_STATUS,     // 同步SPP/BLE协议连接状态
-    TWS_EVENT_SYNC_CHG_BOX_STATUS,    // 同步充电盒状态
-
+    TWS_EVENT_SYNC_LOW_LATENCY_MODE,  // 同步低延迟模�?    TWS_EVENT_BT_MUSIC_PLAYER_ERR,    // 蓝牙音乐播放器错�?    TWS_EVENT_OTA_CMD,                // TWS OTA命令
+    TWS_EVENT_SYNC_PRIVMA_STATUS,     // 同步SPP/BLE协议连接状�?    TWS_EVENT_SYNC_CHG_BOX_STATUS,    // 同步充电盒状�?
     TWS_EVENT_SYNC_BT_MUSIC_DAE,      // 同步蓝牙音乐音效
-    TWS_EVENT_SYNC_TRANSPARENCY_MODE, // 同步通透模式状态
-
-    TWS_EVENT_AVDTP_UNFILTER_AFTER_BT_CALL,  // 蓝牙通话结束后取消 AVDTP 数据过滤
+    TWS_EVENT_SYNC_TRANSPARENCY_MODE, // 同步通透模式状�?
+    TWS_EVENT_AVDTP_UNFILTER_AFTER_BT_CALL,  // 蓝牙通话结束后取�?AVDTP 数据过滤
 
     TWS_EVENT_BT_CALL_PRE_RING,       // 准备来电响铃
-	TWS_EVENT_SYNC_STATUS_INFO, 	  //同步应用状态信息
+	TWS_EVENT_SYNC_STATUS_INFO, 	  //同步应用状态信�?
 
-
-    TWS_EVENT_AP_RECORD_STATUS,          //录音状态
-
+    TWS_EVENT_AP_RECORD_STATUS,          //录音状�?
     TWS_EVENT_BT_MUSIC_START,          //音乐起始播放时间
     TWS_EVENT_BT_CALL_STOP,           //通话停止播放时间
 	TWS_EVENT_BT_BMR_KEY_CTRL,        //BMR 按键控制
     /***************************************************************************************
-	 * 下面消息是TWS短消息，通过  TWS_LONG_MSG_EVENT发送.
+	 * 下面消息是TWS短消息，通过  TWS_LONG_MSG_EVENT发�?
 	 *
-	 * 例如：
-	 * bt_manager_tws_send_message(TWS_LONG_MSG_EVENT, TWS_EVENT_TWS_OTA, data, len)
+	 * 例如�?	 * bt_manager_tws_send_message(TWS_LONG_MSG_EVENT, TWS_EVENT_TWS_OTA, data, len)
      *
      **************************************************************************************/
-    /* 长数据事件消息
-     */
-    TWS_EVENT_TWS_OTA = TWS_EVENT_APP_LONG_MSG_BEGIN_ID,  // TWS OTA大数据传输
-
+    /* 长数据事件消�?     */
+    TWS_EVENT_TWS_OTA = TWS_EVENT_APP_LONG_MSG_BEGIN_ID,  // TWS OTA大数据传�?
     TWS_EVENT_APOTA_SYNC,  // 类recovery ota接口数据传输
 
 	TWS_EVENT_SPP_TEST,  // SPP TEST

@@ -64,7 +64,7 @@ config BTSRV_STACKSIZE
 	default 1536
 
 config CONSOLE_SHELL_STACKSIZE
-	default 1024
+	default 1536
 
 config ISR_STACK_SIZE
 	default 2048
@@ -153,9 +153,6 @@ config HID_INTERRUPT_IN_EP_ADDR
 
 config HID_INTERRUPT_OUT_EP_ADDR
 	default 0x03
-
-config HID_REPORT_DESC_SIZE
-	default 317
 
 config USB_AUDIO_CONTROL_UNIT
 	default y

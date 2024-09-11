@@ -18,8 +18,8 @@ typedef struct {
 	u8_t feedback_tone:1;	// 1 enable, 0 disable
 	u8_t reserved_bits:7;	// 1 enable, 0 disable
 	u8_t eq_id;
-	u8_t eq_scope;
-	u8_t eq_bands[2*BAND_COUNT_MAX];
+	u8_t eq_scope_c1;
+	u8_t eq_bands_c1[2*BAND_COUNT_MAX];
 	u8_t eq_data[EQ_DATA_SIZE];
 
 	u8_t mfb_status;	// MFB_Status_e, 0x00 play/pause, 0x01 voice trigger
@@ -38,6 +38,7 @@ typedef struct {
 #ifdef SPEC_ONE_TOUCH_MUSIC_BUTTON
 	u16_t one_touch; //one touch music button
 #endif
+	u8_t eq_data_c2[EQ_DATA_SIZE];
 } self_stamem_t;
 
 static self_stamem_t selfapp_config; // nvram saved
@@ -280,7 +281,7 @@ u8_t* selfapp_config_get_eq_data(void)
 	return selfsta->eq_data;
 }
 
-void selfapp_config_set_customer_eq(u8_t eqid, u8_t count, u8_t scope, u8_t* bands)
+void selfapp_config_set_customer_eq_c1(u8_t eqid, u8_t count, u8_t scope, u8_t* bands)
 {
 	self_stamem_t *selfsta = self_get_stamem();
 
@@ -293,13 +294,30 @@ void selfapp_config_set_customer_eq(u8_t eqid, u8_t count, u8_t scope, u8_t* ban
 		return;
 	}
 
-	selfsta->eq_scope = scope;
+	selfsta->eq_scope_c1 = scope;
 	selfsta->eq_id = eqid;
-	memcpy(selfsta->eq_bands, bands, BAND_COUNT_MAX*2);
+	memcpy(selfsta->eq_bands_c1, bands, BAND_COUNT_MAX*2);
 	self_stamem_save(0);
 }
 
-int selfapp_config_get_customer_eq(u8_t *scope, u8_t *bands)
+void selfapp_config_set_customer_eq_c2(u8_t eqid, u8_t* data, uint16_t len)
+{
+	self_stamem_t *selfsta = self_get_stamem();
+
+	if (NULL == selfsta) {
+		return;
+	}
+
+	selfsta->eq_id = eqid;
+	if(len <= EQ_DATA_SIZE) {
+		memcpy(selfsta->eq_data_c2, data, len);
+	} else {
+		selfapp_log_wrn("wrong len %d\n", len);
+	}
+	self_stamem_save(0);
+}
+
+int selfapp_config_get_customer_eq_c1(u8_t *scope, u8_t *bands)
 {
 	self_stamem_t *selfsta = self_get_stamem();
 
@@ -307,8 +325,25 @@ int selfapp_config_get_customer_eq(u8_t *scope, u8_t *bands)
 		return -1;
 	}
 
-	*scope = selfsta->eq_scope;
-	memcpy(bands, selfsta->eq_bands, BAND_COUNT_MAX * 2);
+	*scope = selfsta->eq_scope_c1;
+	memcpy(bands, selfsta->eq_bands_c1, BAND_COUNT_MAX * 2);
+
+	return 0;
+}
+
+int selfapp_config_get_customer_eq_c2(u8_t *buf, u16_t len)
+{
+	self_stamem_t *selfsta = self_get_stamem();
+
+	if (NULL == selfsta) {
+		return -1;
+	}
+
+	if(len <= EQ_DATA_SIZE) {
+		memcpy(buf, selfsta->eq_data_c2, len);
+	} else {
+		selfapp_log_wrn("wrong len %d\n", len);
+	}
 
 	return 0;
 }
@@ -333,12 +368,12 @@ void selfapp_config_reset(void)
 #endif
 
 	selfsta->eq_id = EQCATEGORY_DEFAULT;
-	selfsta->eq_scope = DEFAULT_SCOPE;
+	selfsta->eq_scope_c1 = DEFAULT_SCOPE;
 	memcpy(selfsta->eq_data, selfapp_eq_get_default_data(), EQ_DATA_SIZE);
 
 	for (int idx = 0; idx < BAND_COUNT_MAX; idx++) {
-		selfsta->eq_bands[idx*2] = (Custom_Band_1 + idx);
-		selfsta->eq_bands[idx*2 + 1] = 0;
+		selfsta->eq_bands_c1[idx*2] = (Custom_c1_Band_1 + idx);
+		selfsta->eq_bands_c1[idx*2 + 1] = 0;
 	}
 
 #ifdef SPEC_REMOTE_CONTROL

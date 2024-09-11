@@ -1020,6 +1020,14 @@ static int start_security(struct bt_conn *conn)
 	return -EINVAL;
 }
 
+int bt_conn_start_link_security(struct bt_conn *conn)
+{
+    if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR){
+        return bt_ssp_link_encrypt(conn);
+    }
+    return -EINVAL;
+}
+
 int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 {
 	int err;

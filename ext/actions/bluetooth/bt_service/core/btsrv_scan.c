@@ -392,9 +392,11 @@ static void btsrv_scan_check_state(void)
 	{
 		ext_connectable = 0;
 	}
+#if 0
 	else if (btsrv_connect_is_pending()) {
 	    ext_connectable = 0;
 	}
+#endif
 	else if (dev_role == BTSRV_TWS_SLAVE) {
 		ext_connectable = 0;
 	}
@@ -412,7 +414,7 @@ static void btsrv_scan_check_state(void)
 	}
     else if(pair_state & BT_PAIR_STATUS_RECONNECT){
         if((btsrv_autoconn_is_phone_first_reconnect()== true)){
-            ext_connectable = 0;
+			ext_connectable = 0;
         }
         else
         {

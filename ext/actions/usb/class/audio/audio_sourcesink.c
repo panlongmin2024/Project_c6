@@ -71,6 +71,8 @@ static usb_audio_start audio_sink_start_cb;
 static usb_audio_start audio_source_start_cb;
 static usb_audio_pm audio_device_pm_cb;
 
+static usb_sample_rate_change audio_sink_sam_change_cb;
+	
 static usb_audio_volume_sync audio_sink_vol_ctrl_cb;
 static usb_audio_volume_sync audio_source_vol_ctrl_cb;
 
@@ -104,16 +106,18 @@ static void usb_audio_status_cb(enum usb_dc_status_code status, u8_t *param)
 			} else {
 				audio_download_streaming_enabled = true;
 
-				/* 24bit */
-				if(alt_setting == 1)
-				{
-					USB_AudioSinkBitDepthSet(CONFIG_USB_AUDIO_DEVICE_SINK_SECOND_BIT_DEPTH);
-				}
-				/* 16bit */
-				else
-				{
-					USB_AudioSinkBitDepthSet(CONFIG_USB_AUDIO_DEVICE_SINK_FIRST_BIT_DEPTH);
-				}
+				#if CONFIG_USB_SINK_UAC_MODE > UAC_MODE_UNSUPPORTED
+					/* 16bit */
+					if(alt_setting == 1)
+					{
+						USB_AudioSinkBitDepthSet(UAC_16BIT_DEPTH);
+					}
+					/* 24bit */
+					else
+					{
+						USB_AudioSinkBitDepthSet(UAC_24BIT_DEPTH);
+					}
+				#endif
 			}
 
 			if (audio_sink_start_cb) {
@@ -234,6 +238,10 @@ static inline int usb_audio_handle_set_sample_rate(struct usb_setup_packet *setu
 		SYS_LOG_DBG("buf[1]: 0x%02x", buf[1]);
 		SYS_LOG_DBG("buf[2]: 0x%02x", buf[2]);
 		g_cur_sample_rate = (buf[2] << 16) | (buf[1] << 8) | buf[0];
+		
+		USB_AudioSinkSampleRateSet(g_cur_sample_rate);			/* Update the current sampling rate */
+		audio_sink_sam_change_cb(USOUND_SAMPLERATE_CHANGE);		/* Trigger system audio switching sampling rate */
+		
 		SYS_LOG_DBG("g_cur_sample_rate:%d ", g_cur_sample_rate);
 		return 0;
 	default:
@@ -251,9 +259,9 @@ static inline int usb_audio_handle_get_sample_rate(struct usb_setup_packet *setu
 	case UAC_GET_MIN:
 	case UAC_GET_MAX:
 	case UAC_GET_RES:
-		buf[0] = (u8_t)CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD;
-		buf[1] = (u8_t)(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD >> 8);
-		buf[2] = (u8_t)(CONFIG_USB_AUDIO_DEVICE_SINK_SAM_FREQ_DOWNLOAD >> 16);
+		buf[0] = (u8_t)USB_AudioSinkSampleRateGet();
+		buf[1] = (u8_t)(USB_AudioSinkSampleRateGet() >> 8);
+		buf[2] = (u8_t)(USB_AudioSinkSampleRateGet() >> 16);
 		*len = 3;
 		return 0;
 	default:
@@ -798,6 +806,11 @@ void usb_audio_device_source_register_volume_sync_cb(usb_audio_volume_sync cb)
 void usb_audio_device_sink_register_volume_sync_cb(usb_audio_volume_sync cb)
 {
 	audio_sink_vol_ctrl_cb = cb;
+}
+
+void usb_audio_device_sink_sample_rate_change_cb(usb_sample_rate_change cb)
+{
+	audio_sink_sam_change_cb = cb;
 }
 
 int usb_audio_device_ep_write(const u8_t *data, u32_t data_len, u32_t *bytes_ret)

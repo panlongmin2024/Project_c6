@@ -184,7 +184,7 @@ typedef struct bt_mgr_dev_info {
 	uint16_t halt_phone:1;
 	uint16_t dev_role:1;
 	uint16_t a2dp_singnaling_connected:1;
-	uint16_t new_connected:1;
+	uint16_t deemed_disconnected:1;
 
     uint8_t  a2dp_codec_type;
     uint8_t  a2dp_sample_khz;
@@ -227,7 +227,6 @@ typedef struct bt_mgr_dev_info {
 	os_delayed_work profile_disconnected_delay_work;
 
 	uint32_t a2dp_connect_time;
-	uint8_t notified_tts;
 
 }bt_mgr_dev_info_t;
 
@@ -248,6 +247,8 @@ typedef struct bt_manager_context_t {
 	uint16_t enter_pair_mode_state_update:1;
 	uint16_t bt_temp_comp_stage:2;
 	uint16_t auto_reconnect_timeout:1;
+	uint16_t update_local_name:1;
+	uint16_t personalized_name_update:1;
 	int16_t  bt_comp_last_temp;
 	uint8_t bt_state;
 	uint8_t pair_mode_state;
@@ -436,9 +437,14 @@ void bt_manager_check_per_adv_synced(void);
 
 int bt_manager_disconnect_inactive_audio_conn(void);
 
+#ifdef CONFIG_BT_PTS_TEST
+uint8_t bt_pts_is_enabled(void);
 #ifdef CONFIG_BT_LEA_PTS_TEST
+int bt_manager_le_pts_test_start(void);
+int bt_manager_le_pts_test_stop(void);
 void bt_manger_lea_event_pts_process(btsrv_audio_event_e event, void *data, int size);
 void pts_le_audio_service_disable(void);
-#endif
+#endif /*CONFIG_BT_LEA_PTS_TEST*/
+#endif /*CONFIG_BT_PTS_TEST*/
 
 #endif

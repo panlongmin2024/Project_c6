@@ -21,6 +21,8 @@
 #define CHECK_WAIT_AVRCP_PAUSE_INTERVAL		(1000)	/* 1000ms */
 #define CHECK_WAIT_A2DP_CONNECTED_INTERVAL  (3000)	/* 3000ms */
 
+#define CHECK_WAIT_PROFILE_DISCONNECTED_INTERVAL	(500)   /* 500ms */
+
 #define WAKE_LOCK_TIMER_INTERVAL			(1000)	/* 1s */
 #define WAKE_LOCK_IDLE_TIMEOUT				(1000*10)	/* 10s */
 
@@ -86,24 +88,39 @@ static void _btsrv_adapter_connected_remote_name_cb(bt_addr_t *addr, uint8_t *na
 {
 	uint8_t role = BTSRV_TWS_NONE;
 	char addr_str[BT_ADDR_STR_LEN];
-	struct btsrv_addr_name info;
+	struct btsrv_addr_name *info = NULL;
 	uint32_t name_len;
 
 	hostif_bt_addr_to_str(addr, addr_str, BT_ADDR_STR_LEN);
-	role = btsrv_adapter_tws_check_role(addr, name);
-	SYS_LOG_INF("%s %s %d", name, addr_str, role);
+	info = mem_malloc(sizeof(struct btsrv_addr_name));
+	if (info == NULL) {
+		SYS_LOG_ERR("malloc failed!!\n");
+		return;
+	}
 
-	memset(&info, 0, sizeof(info));
-	memcpy(info.mac.val, addr->val, sizeof(bd_address_t));
-	name_len = MIN(CONFIG_MAX_BT_NAME_LEN, strlen(name));
-	memcpy(info.name, name, name_len);
-	btsrv_event_notify_malloc(MSG_BTSRV_CONNECT, MSG_BTSRV_GET_NAME_FINISH, (uint8_t *)&info, sizeof(info), role);
+	memset(info, 0, sizeof(struct btsrv_addr_name));
+	memcpy(info->mac.val, addr->val, sizeof(bd_address_t));
+	//max len is 248
+	if(name[247]){
+		name_len = MIN(CONFIG_MAX_REMOTE_BT_NAME_LEN, 248);
+	}else{
+		name_len = MIN(CONFIG_MAX_REMOTE_BT_NAME_LEN, strlen(name));
+	}
+	memcpy(info->name, name, name_len);
+
+	role = btsrv_adapter_tws_check_role(addr, info->name);
+	SYS_LOG_INF("%s %d %d %s \n", addr_str, role, strlen(info->name), info->name);
+	btsrv_event_notify_malloc(MSG_BTSRV_CONNECT, MSG_BTSRV_GET_NAME_FINISH, (uint8_t *)info, sizeof(*info), role);
 
 	if (role == BTSRV_TWS_NONE){
 		struct conn_req_info* connreq_info = btsrv_get_connreq_info(addr);
 		if (connreq_info){
-			btsrv_event_notify_malloc(MSG_BTSRV_CONNECT, MSG_BTSRV_CONNREQ_ADD_MONITOR, (uint8_t *)&info, sizeof(info), role);
+			btsrv_event_notify_malloc(MSG_BTSRV_CONNECT, MSG_BTSRV_CONNREQ_ADD_MONITOR, (uint8_t *)info, sizeof(*info), role);
 		}
+	}
+
+	if(info){
+		mem_free(info);
 	}
 
 }
@@ -213,6 +230,7 @@ static bool _btsrv_adapter_remote_linkkey_miss_cb(struct bt_conn *conn,bt_addr_t
 
 	hostif_bt_addr_to_str((const bt_addr_t *)peer, addr, BT_ADDR_STR_LEN);
 	SYS_LOG_INF("addr:%s st:%d\n", addr,btsrv_info->pair_status);
+	struct conn_req_info* connreq_info = btsrv_get_connreq_info((bt_addr_t *)GET_CONN_BT_ADDR(conn));
 
 	btsrv_event_notify_malloc(MSG_BTSRV_CONNECT, MSG_BTSRV_REMOTE_LINKKEY_MISS, 
 							(uint8_t*)peer, sizeof(bd_address_t), 0);
@@ -221,7 +239,9 @@ static bool _btsrv_adapter_remote_linkkey_miss_cb(struct bt_conn *conn,bt_addr_t
 	param.link_event = BT_LINK_EV_KEY_MISS;
 	param.hdl = hostif_bt_conn_get_handle(conn);
 	param.addr = (bd_address_t *)peer;
-	param.new_dev = 1;
+	if(connreq_info){
+		connreq_info->key_miss = 1;
+	}
 
 	if (btsrv_adapter_callback(BTSRV_LINK_EVENT, &param)) {
 		return false;
@@ -262,7 +282,7 @@ static void _btsrv_adapter_security_changed_cb(struct bt_conn *conn, bt_security
 	}
 
 	hostif_bt_addr_to_str((const bt_addr_t *)GET_CONN_BT_ADDR(conn), addr, BT_ADDR_STR_LEN);
-	SYS_LOG_INF("security_cb %s %d", addr, level);
+	SYS_LOG_INF("addr:%s l:%d e:%d", addr, level, err);
 	btsrv_event_notify(MSG_BTSRV_CONNECT, MSG_BTSRV_SECURITY_CHANGED, conn);
 }
 
@@ -334,7 +354,7 @@ static void btsrv_adapter_start_wait_avrcp_pause_timer(void)
 	}
 
 	SYS_LOG_INF("");
-	thread_timer_start(&btsrv_info->wait_disconnect_timer, CHECK_WAIT_AVRCP_PAUSE_INTERVAL, 0);
+	thread_timer_start(&btsrv_info->wait_disconnect_timer, CHECK_WAIT_AVRCP_PAUSE_INTERVAL, CHECK_WAIT_DISCONNECT_INTERVAL);
 }
 
 static void btsrv_adapter_start_wait_a2dp_connected_timer(void)
@@ -344,7 +364,7 @@ static void btsrv_adapter_start_wait_a2dp_connected_timer(void)
 	}
 
 	SYS_LOG_INF("");
-	thread_timer_start(&btsrv_info->wait_disconnect_timer, CHECK_WAIT_A2DP_CONNECTED_INTERVAL, 0);
+	thread_timer_start(&btsrv_info->wait_disconnect_timer, CHECK_WAIT_A2DP_CONNECTED_INTERVAL, CHECK_WAIT_DISCONNECT_INTERVAL);
 }
 
 static void btsrv_adapter_start_wait_disconnect_timer(void)
@@ -367,12 +387,47 @@ static void connected_dev_cb_check_wait_disconnect(struct bt_conn *base_conn, ui
 {
 	int err;
 	int *wait_diconnect_cnt = cb_param;
+	uint8_t need_disconnect_prifile = 0;
+	uint32_t profile_disconnect_timestamp = 0;
 
 	if (btsrv_rdm_is_wait_to_diconnect(base_conn)) {
 		if (btsrv_sniff_in_sniff_mode(base_conn) == false) {
-			err = btsrv_adapter_do_conn_disconnect(base_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-			if (!err) {
-				btsrv_rdm_set_wait_to_diconnect(base_conn, false);
+
+			if (btsrv_rdm_is_a2dp_signal_connected(base_conn) ||
+				btsrv_rdm_is_a2dp_connected(base_conn) ||
+				btsrv_rdm_is_avrcp_connected(base_conn)) {
+				need_disconnect_prifile = 1;
+			}
+
+			if ((need_disconnect_prifile) &&
+				(btsrv_rdm_get_profile_disconnect_timestamp(base_conn) == 0)) {
+
+				SYS_LOG_DBG("%p, %d", base_conn, os_uptime_get_32());
+				btsrv_a2dp_disconnect(base_conn);
+				btsrv_avrcp_disconnect(base_conn);
+				btsrv_rdm_set_profile_disconnect_timestamp(base_conn, os_uptime_get_32());
+			}
+
+			profile_disconnect_timestamp = btsrv_rdm_get_profile_disconnect_timestamp(base_conn);
+
+			SYS_LOG_INF("%p, %d, %d, %d, %d", base_conn, os_uptime_get_32(), !btsrv_rdm_is_a2dp_signal_connected(base_conn),
+						!btsrv_rdm_is_a2dp_connected(base_conn), os_uptime_get_32() - profile_disconnect_timestamp);
+
+			/* profile isn't connected,
+			 * profile disconnected.
+			 * profile disconnect timeout.
+			 */
+			if ((!need_disconnect_prifile) ||
+				(!btsrv_rdm_is_a2dp_signal_connected(base_conn) && !btsrv_rdm_is_a2dp_connected(base_conn)) ||
+				((os_uptime_get_32() -profile_disconnect_timestamp) >= CHECK_WAIT_PROFILE_DISCONNECTED_INTERVAL)) {
+
+				btsrv_rdm_set_profile_disconnect_timestamp(base_conn, 0);
+				err = btsrv_adapter_do_conn_disconnect(base_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+				if (!err) {
+					btsrv_rdm_set_wait_to_diconnect(base_conn, false);
+				}
+			}else {
+				(*wait_diconnect_cnt)++;
 			}
 		} else {
 			hostif_bt_conn_check_exit_sniff(base_conn);
@@ -425,7 +480,7 @@ static void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len
     /* Data in struct bt_hci_rp_read_rssi */
     handle = data[1] | (data[2] << 8);
     rssi = data[3];
-	SYS_LOG_INF("------> rssi %d\n",rssi);
+
     conn = btsrv_rdm_find_conn_by_hdl(handle);
     if(conn){
         btsrv_rdm_set_dev_rssi(conn,rssi);
@@ -894,7 +949,8 @@ int btsrv_adapter_disconnect(struct bt_conn *conn)
 	uint16_t hdl;
 
 	if (btsrv_rdm_get_tws_role(conn) == BTSRV_TWS_NONE) {
-        if(btsrv_rdm_get_avrcp_state(conn) && btsrv_rdm_is_a2dp_stream_open(conn)){
+
+		if(btsrv_rdm_get_avrcp_state(conn) && btsrv_rdm_is_a2dp_stream_open(conn)){
             hdl = hostif_bt_conn_get_handle(conn);
             btif_avrcp_send_command_by_hdl(hdl,BTSRV_AVRCP_CMD_PAUSE);
             btsrv_rdm_set_wait_to_diconnect(conn, true);
@@ -911,13 +967,8 @@ int btsrv_adapter_disconnect(struct bt_conn *conn)
     }
 
 	hostif_bt_conn_check_exit_sniff(conn);
-
-	if (btsrv_sniff_in_sniff_mode(conn)) {
-		btsrv_rdm_set_wait_to_diconnect(conn, true);
-		btsrv_adapter_start_wait_disconnect_timer();
-	} else {
-		err = btsrv_adapter_do_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	}
+	btsrv_rdm_set_wait_to_diconnect(conn, true);
+	btsrv_adapter_start_wait_disconnect_timer();
 
 	return err;
 }

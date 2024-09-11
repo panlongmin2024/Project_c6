@@ -110,7 +110,7 @@ MEMORY
 	/* DSP, 32K+128K */
 	ram_dsp1              (wx) : ORIGIN = 0x00042400, LENGTH = 0x9600
 #ifdef CONFIG_SOC_SERIES_ANDESC_P2
-	ram_bt                (wx) : ORIGIN = 0x0004E000, LENGTH = 0x10C00
+	ram_bt                (wx) : ORIGIN = 0x0004DC00, LENGTH = 0x11000
 	ram_bt_bss            (wx) : ORIGIN = 0x0005ec00, LENGTH = 0x1400
 #else
 	ram_bt                (wx) : ORIGIN = 0x00048000, LENGTH = 96k
@@ -552,6 +552,7 @@ SECTIONS
 		 */
 	. = ALIGN(16);
 	KEEP(*(.MBOX_MSGS_BSS*))
+	KEEP(*(.MEDIA_CODEC_STACK_RAM*))
 	__bss_end = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
@@ -638,11 +639,11 @@ SECTIONS
     SECTION_DATA_PROLOGUE(_ASRC_BSS_SECTION_NAME,(NOLOAD),)
     {
     	KEEP(*(.AUDIO_TRACK_RELOAD_RAM*))
-        KEEP(*(.MEDIA_CODEC_STACK_RAM*))
         KEEP(*(.BT_TWS_OBSERVER_BSS*))
         KEEP(*(.LIBMEDIA_BSS*))
         KEEP(*(.ASQT_TOOL_STUB_BUF*))
 		KEEP(*(SORT_BY_NAME(".stacknoinit.*")))
+		KEEP(*(.bthost_hfp_bss*))
     } GROUP_LINK_IN(ram_asrc_buf)
 
     SECTION_DATA_PROLOGUE(_FILESELECTOR_BSS_SECTION_NAME,(NOLOAD),)

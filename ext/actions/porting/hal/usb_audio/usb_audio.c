@@ -85,6 +85,7 @@ static int usb_audio_tx_dummy(void)
 			MAX_UPLOAD_PACKET, &wrote);
 }
 #endif
+
 /**
  * @brief: Gets the bit depth of the current audio receiver.
  *
@@ -111,6 +112,34 @@ uint8_t USB_AudioSinkBitDepthGet(void)
 void USB_AudioSinkBitDepthSet(uint8_t ucUpdBitDepth)
 {
 	g_stAudioSinkFormat.ucBitDepth = ucUpdBitDepth;
+}
+
+/**
+ * @brief: Gets the sampling rate of the current audio receiver.
+ *
+ * @note: This function returns the sample rate in the current audio receiver format configuration.
+ *
+ * @param: void
+ *
+ * @return: The sampling rate of the current configuration
+ */
+uint32_t USB_AudioSinkSampleRateGet(void)
+{
+	return g_stAudioSinkFormat.ulSampleRate;
+}
+
+/**
+ * @brief: Set the audio sampling rate.
+ *
+ * @note: This function is used to update the sampling rate in the current audio receiver format configuration.
+ *
+ * @param: Updated the configuration sampling rate
+ *
+ * @return: void
+ */
+void USB_AudioSinkSampleRateSet(uint32_t uwUpdSampleRate)
+{
+	g_stAudioSinkFormat.ulSampleRate = uwUpdSampleRate;
 }
 
 static void _usb_audio_stream_state_notify(u8_t stream_event)
@@ -361,6 +390,17 @@ static void _usb_audio_sink_vol_changed_notify(u8_t info_type, int chan_num, int
 	}
 }
 
+static void _usb_audio_sink_sample_change_notify(u8_t info_type)
+{
+	if (!usb_audio) {
+		return;
+	}
+
+	usb_audio->call_back_type = info_type;
+	os_work_submit(&usb_audio->call_back_work);
+	return;
+}
+
 #ifdef CONFIG_SUPPORT_USB_AUDIO_SOURCE
 static void _usb_audio_source_vol_changed_notify(u8_t info_type, int chan_num, int *pstore_info)
 {
@@ -450,8 +490,9 @@ int usb_audio_init(usb_audio_event_callback cb)
 		return -ENOMEM;
 	}
 
-	usb_audio->download_buf = mem_malloc(MAX_DOWNLOAD_PACKET * 4 / 3);
-	
+	/* The uac has a maximum depth of 24 bits */
+	usb_audio->download_buf = mem_malloc(MAX_DOWNLOAD_PACKET * 2);
+
 	if (!usb_audio->download_buf) {
 		mem_free(usb_audio->usb_audio_play_load);
 		mem_free(usb_audio);
@@ -480,6 +521,7 @@ int usb_audio_init(usb_audio_event_callback cb)
 	usb_audio_device_sink_register_start_cb(_usb_audio_sink_start_stop);
 	usb_audio_device_register_inter_out_ep_cb(_usb_audio_out_ep_complete);
 	usb_audio_device_sink_register_volume_sync_cb(_usb_audio_sink_vol_changed_notify);
+	usb_audio_device_sink_sample_rate_change_cb(_usb_audio_sink_sample_change_notify);
 	usb_audio_register_call_status_cb(_usb_audio_call_status_cb);
 	usb_audio_device_sink_set_cur_vol(MAIN_CH, audio_cur_dat);
 	usb_audio_device_sink_set_cur_vol(CHANNEL_1, audio_cur_dat);

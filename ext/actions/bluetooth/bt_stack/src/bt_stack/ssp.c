@@ -820,7 +820,7 @@ void hci_evt_user_passkey_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-static void link_encr(const uint16_t handle)
+static int link_encr(const uint16_t handle)
 {
 	struct bt_hci_cp_set_conn_encrypt *encr;
 	struct net_buf *buf;
@@ -830,16 +830,25 @@ static void link_encr(const uint16_t handle)
 	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CONN_ENCRYPT, sizeof(*encr));
 	if (!buf) {
 		BT_ERR("Out of command buffers");
-		return;
+		return -ENOBUFS;
 	}
 
 	encr = net_buf_add(buf, sizeof(*encr));
 	encr->handle = sys_cpu_to_le16(handle);
 	encr->encrypt = 0x01;
 
-	bt_hci_cmd_send_sync(BT_HCI_OP_SET_CONN_ENCRYPT, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CONN_ENCRYPT, buf, NULL);
 }
 
+int bt_ssp_link_encrypt(struct bt_conn *conn)
+{
+    if (!conn){
+        BT_ERR("Can't find conn\n");
+        return -EINVAL;
+    }
+    return link_encr(conn->handle);
+}
+ 
 void hci_evt_auth_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_auth_complete *evt = (void *)buf->data;

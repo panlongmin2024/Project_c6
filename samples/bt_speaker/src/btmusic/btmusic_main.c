@@ -118,6 +118,11 @@ int btmusic_bms_source_init(void)
 	if (thread_timer_is_running(&p_btmusic_app->broadcast_start_timer))
 		thread_timer_stop(&p_btmusic_app->broadcast_start_timer);
 
+	if(p_btmusic_app->broadcast_id){
+		SYS_LOG_WRN("already exist\n");
+		return -EINVAL;
+	}
+
 #ifdef CONFIG_PROPERTY
 	ret = property_get(CFG_BT_LOCAL_NAME, local_name, sizeof(local_name) - 1);
 	if (ret <= 0) {
@@ -240,7 +245,7 @@ int btmusic_bms_source_init(void)
 
 	ret = bt_manager_broadcast_source_create(&param);
 	if (ret < 0) {
-		SYS_LOG_ERR("failed");
+		SYS_LOG_ERR("failed %d\n",ret);
 		thread_timer_start(&p_btmusic_app->broadcast_start_timer, 300, 0);
 		return ret;
 	}
@@ -270,8 +275,12 @@ int btmusic_bms_source_exit(void)
 		return 0;
 	if (thread_timer_is_running(&p_btmusic_app->broadcast_start_timer))
 		thread_timer_stop(&p_btmusic_app->broadcast_start_timer);
-	bt_manager_broadcast_source_disable(p_btmusic_app->broadcast_id);
-	bt_manager_broadcast_source_release(p_btmusic_app->broadcast_id);
+	if(!p_btmusic_app->broadcast_source_exit && p_btmusic_app->broadcast_id){
+		SYS_LOG_INF("\n");
+		bt_manager_broadcast_source_disable(p_btmusic_app->broadcast_id);
+		bt_manager_broadcast_source_release(p_btmusic_app->broadcast_id);
+		p_btmusic_app->broadcast_source_exit = 1;
+	}
 
 #if 1
     bt_manager_pawr_adv_stop();

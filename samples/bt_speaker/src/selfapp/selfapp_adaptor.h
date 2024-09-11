@@ -16,7 +16,8 @@ u8_t selfapp_get_model_id(void);
 void selfapp_switch_lasting_stereo_mode(int enable);
 void selfapp_set_lasting_stereo_group_info_to_slave(struct AURACAST_GROUP *group);
 u8_t selfapp_get_lasting_stereo_role(void);
-void selfapp_mute_player(u8_t mute);
+void selfapp_pause_player();
+void selfapp_resume_player();
 void selfapp_reset_player(void);
 u8_t selfapp_get_leaudio_status(void);
 

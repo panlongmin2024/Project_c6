@@ -272,7 +272,7 @@ static void _tts_manager_stop_timer_handle(struct thread_timer *ttimer, void *ex
 
 static void _tts_manager_trigger_stop_tts(struct tts_manager_ctx_t *tts_ctx)
 {
-	thread_timer_start_prio(&tts_ctx->stop_timer, OS_MSEC(40), 0, app_manager_get_apptid(CONFIG_SYS_APP_NAME));
+	thread_timer_start_prio(&tts_ctx->stop_timer, 0, 0, app_manager_get_apptid(CONFIG_SYS_APP_NAME));
 }
 
 #else

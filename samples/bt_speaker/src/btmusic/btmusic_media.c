@@ -24,7 +24,7 @@
 
 void btmusic_event_notify(u32_t event, void *data, u32_t len, void *user_data)
 {
-	if (event == PLAYBACK_EVENT_DATA_INDICATE) {
+	if (event == PLAYBACK_EVENT_DATA_INDICATE || event == PLAYBACK_EVENT_STOP_ERROR) {
 		btmusic_player_reset_trigger();
 	}
 }
@@ -195,9 +195,9 @@ int btmusic_init_playback()
 		init_param.bind_to_capture = 1;
 
     if (btmusic->broadcast_duration == BT_FRAME_DURATION_7_5MS) {
-		audio_policy_set_nav_frame_size_us(7500);		
+		audio_policy_set_nav_frame_size_us(7500);
 	} else {
-		audio_policy_set_nav_frame_size_us(10000);	
+		audio_policy_set_nav_frame_size_us(10000);
 	}
 		audio_policy_set_bis_link_delay_ms(broadcast_get_bis_link_delay(btmusic->qos));
 
@@ -320,17 +320,12 @@ int btmusic_start_playback(void)
 			media_player_audio_track_trigger_callback,audio_system_get_track());
 	}
 
-	if (btmusic->mute_player) {
-		if(audio_system_get_track()){
-			audio_track_mute(audio_system_get_track(), 1);
-		}
-	}else{
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
-		media_player_fade_in(btmusic->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
+	media_player_fade_in(btmusic->playback_player, 150 + CONFIG_EXTERNAL_DSP_DELAY / 1000);
 #else
-		media_player_fade_in(btmusic->playback_player, 200);
+	media_player_fade_in(btmusic->playback_player, 200);
 #endif
-	}
+
 	media_player_play(btmusic->playback_player);
 
 	btmusic->playback_player_run = 1;
@@ -368,7 +363,7 @@ int btmusic_stop_playback(void)
 
 	SYS_LOG_INF("%p\n", btmusic->playback_player);
 
-	media_player_fade_out(btmusic->playback_player, 60);
+	media_player_sync_fade_out(btmusic->playback_player, 60);
 
 	/** reserve time to fade out*/
 	os_sleep(audio_policy_get_bis_link_delay_ms() + 80);

@@ -119,7 +119,8 @@ enum {
 	BTSRV_LINK_MAP_DISCONNECTED,
     BTSRV_LINK_TWS_CONNECTED,
     BTSRV_LINK_TWS_CONNECTED_TIMEOUT,
-	BTSRV_LINK_KEY_MISS,
+    BTSRV_LINK_A2DP_SINGAL_CONNECTED,
+	BTSRV_LINK_FORCE_STOP,
 };
 
 enum {
@@ -161,7 +162,7 @@ struct btsrv_info_t {
 
 struct btsrv_addr_name {
 	bd_address_t mac;
-	uint8_t name[CONFIG_MAX_BT_NAME_LEN + 1];
+	uint8_t name[CONFIG_MAX_REMOTE_BT_NAME_LEN + 1];
 };
 
 struct btsrv_mode_change_param {
@@ -270,6 +271,7 @@ struct conn_req_info {
 	uint8_t addr_valid:1;
 	/** bluetooth device tws role */
 	uint8_t tws_role:3;
+	uint8_t key_miss:1;
 	uint8_t dev_class[3];
 };
 
@@ -582,6 +584,11 @@ void btsrv_rdm_set_dev_link_quality(struct bt_conn *base_conn,int8_t quality);
 int btsrv_rdm_get_dev_link_quality(struct bt_conn *base_conn);
 void btsrv_rdm_set_dev_class(struct bt_conn *base_conn,uint8_t *cod);
 void btsrv_rdm_update_autoreconn_info(struct bt_conn *base_conn);
+
+
+void btsrv_rdm_set_profile_disconnect_timestamp(struct bt_conn *base_conn, uint32_t timestamp);
+uint32_t btsrv_rdm_get_profile_disconnect_timestamp(struct bt_conn *base_conn);
+
 
 int btsrv_rdm_init(void);
 void btsrv_rdm_deinit(void);
@@ -1150,6 +1157,7 @@ enum {
 
 	BTSRV_BROADCAST_PAST_SUBSCRIBE,
 	BTSRV_BROADCAST_PAST_UNSUBSCRIBE,
+	BTSRV_BROADCAST_PA_SET_INFO_TRANSFER,
 
 	BTSRV_BROADCAST_STREAM_SET_TWS_SYNC_CB_OFFSET,
 	BTSRV_BROADCAST_STREAM_SET_MEDIA_DELAY,

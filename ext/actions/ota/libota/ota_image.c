@@ -167,7 +167,7 @@ int ota_image_get_file_offset(struct ota_image *img, const char *filename)
 
 int ota_image_ioctl(struct ota_image *img, int cmd, unsigned int param)
 {
-	SYS_LOG_DBG("cmd 0x%x param 0x%x", cmd, param);
+	SYS_LOG_INF("cmd 0x%x param 0x%x", cmd, param);
 
 	return ota_backend_ioctl(img->backend, cmd, param);
 }

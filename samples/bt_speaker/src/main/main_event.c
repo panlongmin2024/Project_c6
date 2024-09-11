@@ -98,6 +98,10 @@ static void main_input_enter_pairing_mode(void)
 			app_msg.cmd = MSG_AURACAST_EXIT;
 			desktop_manager_proc_app_msg(&app_msg);
 		} */
+		if(3 == system_app_get_auracast_mode()
+			|| 4 == system_app_get_auracast_mode()){
+			bt_manager_audio_disconnect_all_phone_dev();
+		}
 		bt_manager_event_notify(BT_MSG_AURACAST_EXIT, NULL, 0);
 #endif
 
@@ -113,7 +117,7 @@ static void main_input_enter_pairing_mode(void)
 
 void main_input_event_handle(struct app_msg *msg)
 {
-	SYS_LOG_INF("cmd %d value 0x%x\n", msg->cmd,msg->value);
+	SYS_LOG_INF("cmd %d\n", msg->cmd);
 	switch (msg->cmd) {
 	case MSG_KEY_POWER_OFF:
 		sys_event_notify(SYS_EVENT_POWER_OFF);

@@ -561,6 +561,11 @@ static inline int media_player_fade_out(media_player_t *handle, int fade_time_ms
 	return media_player_set_parameter(handle, MEDIA_EFFECT_EXT_FADEOUT, (void *)fade_time_ms, 0);
 }
 
+static inline int media_player_sync_fade_out(media_player_t *handle, int fade_time_ms)
+{
+	return media_player_set_parameter(handle, MEDIA_EFFECT_EXT_SYNC_FADEOUT, (void *)fade_time_ms, 0);
+}
+
 /**
  * @brief dump data for media player
  *

@@ -1495,6 +1495,11 @@ static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
+	/* If re-pair, need to remove resolving list first. */
+	if (keys->state & BT_KEYS_ID_ADDED) {
+		bt_id_del(keys);
+	}
+
 	memcpy(keys->irk.val, req->irk, sizeof(keys->irk.val));
 
 	/* resolve LE address if matching RPA is connected */

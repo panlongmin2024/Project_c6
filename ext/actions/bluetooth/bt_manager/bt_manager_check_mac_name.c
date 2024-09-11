@@ -40,7 +40,7 @@
 #endif
 
 #define MAC_STR_LEN		(12+1)	/* 12(len) + 1(NULL) */
-#define BT_NAME_LEN		(32+1)	/* 32(len) + 1(NULL) */
+#define BT_NAME_LEN		(CONFIG_MAX_BT_NAME_LEN+1)	/* 32(len) + 1(NULL) */
 #define BT_PRE_NAME_LEN	(20+1)	/* 10(len) + 1(NULL) */
 
 
@@ -123,13 +123,11 @@ static uint32_t mic_gen_rand(void)
 
 static void bt_manager_bt_name(uint8_t *mac_str)
 {
-//#ifdef CONFIG_PROPERTY
 	uint8_t bt_name[BT_NAME_LEN];
 	uint8_t len = 0;
 	uint8_t *cfg_name = CFG_BT_NAME;
 	int ret;
 
-#if 1
 	btmgr_base_config_t *cfg_base = bt_manager_get_base_config();
 
 	memset(bt_name, 0, BT_NAME_LEN);
@@ -151,10 +149,24 @@ static void bt_manager_bt_name(uint8_t *mac_str)
 	}
 	SYS_LOG_INF("%s: %s", cfg_name, bt_name);
 
+#ifdef CONFIG_BT_SELF_APP
+    uint8_t app_name[BT_NAME_LEN];
+    cfg_name = CFG_APP_NAME;
+    memset(app_name, 0, BT_NAME_LEN);
+    ret = property_get(cfg_name, app_name, (BT_NAME_LEN-1));
+
+    if(memcmp(app_name,bt_name,BT_NAME_LEN) != 0){
+        len = strlen(bt_name);
+        memcpy(app_name,bt_name, len);
+        property_set(cfg_name, bt_name, len);
+    }
+    SYS_LOG_INF("%s: %s %d",cfg_name,app_name,len);
+#endif
+
 	cfg_name = CFG_BLE_NAME;
 	memset(bt_name, 0, BT_NAME_LEN);
 	ret = property_get(cfg_name, bt_name, (BT_NAME_LEN-1));
-		SYS_LOG_INF("%s: %s: %d", cfg_name, bt_name,ret);
+	SYS_LOG_INF("%s: %s: %d", cfg_name, bt_name,ret);
 	if (ret < 0) {
 	    len = strlen(cfg_base->bt_device_name);
 		if (len > 0) {
@@ -167,34 +179,7 @@ static void bt_manager_bt_name(uint8_t *mac_str)
 		}
 	}
 	SYS_LOG_INF("%s: %s", cfg_name, bt_name);
-#else
-    uint8_t bt_pre_name[BT_PRE_NAME_LEN];
 
-try_ble_name:
-	memset(bt_name, 0, BT_NAME_LEN);
-	ret = property_get(cfg_name, bt_name, (BT_NAME_LEN-1));
-	if (ret < 0) {
-		SYS_LOG_WRN("ret: %d", ret);
-
-		memset(bt_pre_name, 0, BT_PRE_NAME_LEN);
-		ret = property_get(CFG_BT_PRE_NAME, bt_pre_name, (BT_PRE_NAME_LEN-1));
-		if (ret > 0) {
-			len = strlen(bt_pre_name);
-			memcpy(bt_name, bt_pre_name, len);
-		}
-		memcpy(&bt_name[len], mac_str, strlen(mac_str));
-		len += strlen(mac_str);
-
-		property_set_factory(cfg_name, bt_name, len);
-	}
-
-	SYS_LOG_INF("%s: %s", cfg_name, bt_name);
-
-	if (cfg_name == (uint8_t *)CFG_BT_NAME) {
-		cfg_name = CFG_BLE_NAME;
-		goto try_ble_name;
-	}
-#endif
 }
 
 uint32_t bt_manager_get_bt_name_crc_value(void)
@@ -215,6 +200,7 @@ uint32_t bt_manager_get_bt_name_crc_value(void)
 int bt_manager_bt_name_update(uint8_t *name, uint8_t len)
 {
  	uint8_t bt_name[BT_NAME_LEN];
+	struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
 
 	if (!name || 0 == len) {
 		return -1;
@@ -230,22 +216,49 @@ int bt_manager_bt_name_update(uint8_t *name, uint8_t len)
 	property_set(CFG_BT_NAME, bt_name, BT_NAME_LEN);
 	property_set(CFG_BLE_NAME, bt_name, BT_NAME_LEN);
 	property_set(CFG_BT_LOCAL_NAME, bt_name, BT_NAME_LEN);
-	//property_set(CFG_BT_BROADCAST_NAME, bt_name, BT_NAME_LEN);
+	property_set(CFG_APP_NAME, bt_name, BT_NAME_LEN);
 #endif
 
 	//to do ble name??
-
-	btif_br_update_devie_name();
+    if(bt_manager && bt_manager->connected_phone_num){
+        bt_manager->update_local_name = 1;
+    }
+    else{
+        btif_br_update_devie_name();
+    }
 
 #ifdef CONFIG_GFP_PROFILE
 	extern void personalized_name_update(uint8_t * name, uint8_t size);
 	personalized_name_update(bt_name, BT_NAME_LEN);
+	bt_manager->personalized_name_update = 0;
 #endif
 
 #ifdef CONFIG_PROPERTY
 	//property_flush(NULL);
 #endif
 	return 0;
+}
+
+void bt_manager_app_name_update(void)
+{
+#ifdef CONFIG_BT_SELF_APP
+    uint8_t bt_name[BT_NAME_LEN];
+    uint8_t len = 0;
+    uint8_t *cfg_name = CFG_BT_NAME;
+    int ret;
+
+    memset(bt_name, 0, BT_NAME_LEN);
+    ret = property_get(cfg_name, bt_name, (BT_NAME_LEN-1));
+    if (ret < 0) {
+        return;
+    }
+    else{
+        cfg_name = CFG_APP_NAME;
+        len = strlen(bt_name);
+        property_set(cfg_name, bt_name, len);
+        SYS_LOG_INF("%s: %s", cfg_name, bt_name);
+    }
+#endif
 }
 
 int bt_manager_bt_name_update_fatcory_reset(uint8_t *name, uint8_t len)

@@ -33,6 +33,10 @@
 LOG_MODULE_REGISTER(bt_mgr_audio, CONFIG_ACT_EVENT_APP_COMPILE_LEVEL);
 #endif
 
+#ifdef CONFIG_BT_HFP_HF
+int bt_manager_hfp_sync_vol_to_remote_by_addr(uint16_t hdl, uint32_t call_vol);
+#endif
+
 /* slave app */
 #define BT_AUDIO_APP_UNKNOWN     0
 #define BT_AUDIO_APP_BR_CALL     1
@@ -274,7 +278,7 @@ struct bt_audio_conn {
 
 	/* timeline owner channel */
 	struct bt_audio_channel * tl_owner_chan;
-	uint8_t dev_name[CONFIG_MAX_BT_NAME_LEN + 1];
+	uint8_t * dev_name;
 	uint32_t ascs_connect_time;
 
 	sys_snode_t node;
@@ -844,7 +848,8 @@ static struct bt_audio_conn *find_active_slave(void)
 
 	if ((bt_audio.device_num > 1) && (bt_audio.inactive_slave)) {
 		SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.conn_list, audio_conn, node) {
-			if ((audio_conn->role == BT_ROLE_SLAVE) && (audio_conn != bt_audio.inactive_slave)) {
+			if ((audio_conn->role == BT_ROLE_SLAVE) && (audio_conn != bt_audio.inactive_slave)
+				&& audio_conn->is_phone_dev) {
 				active_conn = audio_conn;
 			}
 		}
@@ -855,7 +860,7 @@ static struct bt_audio_conn *find_active_slave(void)
 		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.conn_list, audio_conn, node) {
-			if (audio_conn->role == BT_ROLE_SLAVE) {
+			if (audio_conn->role == BT_ROLE_SLAVE && audio_conn->is_phone_dev) {
 				active_conn = audio_conn;
 			}
 		}
@@ -1064,6 +1069,7 @@ uint32_t bt_manager_audio_get_active_channel_iso_interval(void)
 
 int bt_manager_disconnect_inactive_audio_conn(void)
 {
+	bt_mgr_dev_info_t* a2dp_dev = NULL;
 	struct bt_audio_conn *audio_conn = NULL;
 	struct bt_audio_conn *active_conn = NULL;
 
@@ -1073,6 +1079,17 @@ int bt_manager_disconnect_inactive_audio_conn(void)
 		return 0;
 
 	os_sched_lock();
+
+	//Check if there are device being disconnected
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.conn_list, audio_conn, node) {\
+		if (audio_conn->role == BT_ROLE_SLAVE) {
+			a2dp_dev = bt_mgr_find_dev_info_by_hdl(audio_conn->handle);
+			SYS_LOG_INF("%x, %x", audio_conn->handle, a2dp_dev->deemed_disconnected);
+			if ((a2dp_dev) && (a2dp_dev->deemed_disconnected)) {
+				goto done;
+			}
+		}
+	}
 
 	if (bt_audio.inactive_slave) {
 		bt_manager_audio_conn_disconnect(bt_audio.inactive_slave->handle);
@@ -1566,12 +1583,14 @@ int new_audio_conn(uint16_t handle)
 	memcpy(&audio_conn->addr, dev_addr, sizeof(bd_address_t));
 	memset(addr, 0, 13);
 	hex_to_str(addr, (char*)&audio_conn->addr, 6);
-	if(type == BT_TYPE_BR && info){
-		if(strlen(info->name) > CONFIG_MAX_BT_NAME_LEN){
-			SYS_LOG_WRN("exceed max length %d\n",strlen(info->name));
+	if(type == BT_TYPE_BR && info && info->name){
+		audio_conn->dev_name = mem_malloc(strlen(info->name) + 1);
+		if (!audio_conn->dev_name) {
+			SYS_LOG_ERR("malloc failed!!\n");
+		}else{
+			memset(audio_conn->dev_name,0,strlen(info->name) + 1);
+			memcpy(audio_conn->dev_name,info->name,strlen(info->name));
 		}
-		int name_len = MIN(CONFIG_MAX_BT_NAME_LEN, strlen(info->name));
-		memcpy(audio_conn->dev_name,info->name,name_len);
 	}
 
 	os_sched_lock();
@@ -1698,6 +1717,9 @@ int delete_audio_conn(uint16_t handle, uint8_t reason)
 		mem_free(audio_conn->endps);
 	}
 
+	if (audio_conn->dev_name) {
+		mem_free(audio_conn->dev_name);
+	}
 	/* NOTICE: need to free media/vol/mic if any */
 
 	/* call list */
@@ -1811,13 +1833,19 @@ static void bt_get_remote_lea_name_cb(uint16_t handle, uint8_t err, const void *
 		SYS_LOG_ERR("not found %d\n",err);
 		return;
 	}
-	if(length > CONFIG_MAX_BT_NAME_LEN){
+	if(length > CONFIG_MAX_REMOTE_BT_NAME_LEN){
 		SYS_LOG_WRN("exceed max length %d\n",length);
 	}
-	SYS_LOG_INF("lea name %s\n",(char*)data);
-	int name_len = MIN(CONFIG_MAX_BT_NAME_LEN, length);
-	memset(audio_conn->dev_name,0,sizeof(audio_conn->dev_name));
-	memcpy(audio_conn->dev_name,data,name_len);
+
+	int name_len = MIN(CONFIG_MAX_REMOTE_BT_NAME_LEN, length);
+	audio_conn->dev_name = mem_malloc(name_len + 1);
+	if (!audio_conn->dev_name) {
+		SYS_LOG_ERR("malloc failed!!\n");
+	}else{
+		memset(audio_conn->dev_name,0,name_len + 1);
+		memcpy(audio_conn->dev_name,data,name_len);
+	}
+	SYS_LOG_INF("lea name %d\n",strlen(audio_conn->dev_name));
 }
 
 int ascs_connceted(uint16_t handle)
@@ -2158,6 +2186,29 @@ int bt_manager_audio_get_leaudio_dev_num()
 	os_sched_unlock();
 	
 	return num;
+}
+
+int bt_manager_audio_disconnect_all_phone_dev()
+{
+	struct bt_audio_conn *audio_conn = NULL;
+
+	bt_manager_br_disconnect_all_phone_device();
+
+	os_sched_lock();
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.conn_list, audio_conn, node) {
+		if (audio_conn->is_lea){
+			bt_manager_audio_conn_disconnect(audio_conn->handle);
+		}
+	}
+	os_sched_unlock();
+
+	int timeout = 0;
+	while (bt_manager_audio_get_leaudio_dev_num() > 0 && timeout++ < 100)
+	{
+		os_sleep(10);
+	}
+
+	return 0;
 }
 
 uint8_t bt_manager_audio_sync_remote_active_app(uint8_t active_app, bd_address_t* active_dev_addr, bd_address_t* interrupt_dev_addr)
@@ -3575,7 +3626,6 @@ static bool bt_manager_unpair_lea_conn(void)
 static int lea_on_process(void)
 {
 	int ret = 0;
-	SYS_LOG_INF("state:%d\n",bt_audio.lea_connection_enable);
 
 	bt_audio.lea_connection_enable = LEA_ON;
 
@@ -3591,6 +3641,8 @@ static int lea_on_process(void)
 
 	property_set_int(CFG_LEA_ONOFF_STATUS, 1);
 
+	SYS_LOG_INF("state:%d, ret %d\n",bt_audio.lea_connection_enable, ret);
+
 	if (bt_audio.complete_cb) {
 		bt_audio.complete_cb(ret);
 	}
@@ -3600,7 +3652,6 @@ static int lea_on_process(void)
 static int lea_off_process(void)
 {
 	int ret = 0;
-	SYS_LOG_INF("state:%d\n",bt_audio.lea_connection_enable);
 
 	bt_audio.lea_connection_enable = LEA_OFF;
 
@@ -3619,6 +3670,8 @@ static int lea_off_process(void)
 	hostif_bt_write_class(bt_manager_config_bt_class());
 
 	property_set_int(CFG_LEA_ONOFF_STATUS, 0);
+
+	SYS_LOG_INF("state:%d, ret %d\n",bt_audio.lea_connection_enable, ret);
 
 	if (bt_audio.complete_cb) {
 		bt_audio.complete_cb(ret);
@@ -4532,12 +4585,14 @@ int bt_manager_media_playpause(void)
             else{
                 bt_manager_media_play();
             }
-        }
-        else {
-            bt_manager_media_play();
+        } else {
+			if (!dev_info->a2dp_stream_started) {
+				bt_manager_media_play();
+			}
         }
 
-		SYS_LOG_INF("hdl: 0x%x play_status: 0x%x\n",dev_info->hdl, dev_info->avrcp_ext_status);
+		SYS_LOG_INF("hdl: 0x%x play_status: 0x%x a2dp_stream_started 0x%x \n",
+					dev_info->hdl, dev_info->avrcp_ext_status, dev_info->a2dp_stream_started);
 	} else if (audio_conn->type == BT_TYPE_LE
 				&& audio_conn->media_state == BT_STATUS_INACTIVE) {
 		if (audio_conn->cis_connected) {
@@ -4757,7 +4812,9 @@ int bt_manager_media_get_status(void)
 		SYS_LOG_INF("hdl: 0x%x play_status: 0x%x\n",dev_info->hdl, dev_info->avrcp_ext_status);
 		if (dev_info->avrcp_ext_status & BT_MANAGER_AVRCP_EXT_STATUS_PLAYING) {
 			return BT_STATUS_PLAYING;
-		}else {
+		} else if (dev_info->a2dp_stream_started) {
+			return BT_STATUS_PLAYING;
+		} else {
 			return BT_STATUS_PAUSED;
 		}
 	} else if (audio_conn->type == BT_TYPE_LE
@@ -5592,7 +5649,7 @@ int bt_manager_volume_set(uint8_t value,int type)
 	} else if (audio_conn->type == BT_TYPE_BR) {
 		if (audio_conn->call_state != BT_STATUS_HFP_NONE) {
 #ifdef CONFIG_BT_HFP_HF
-			if(type == BT_VOLUME_TYPE_BR_CALL
+			if(type == BT_VOLUME_TYPE_BR_CALL)
 				bt_manager_hfp_sync_vol_to_remote_by_addr(audio_conn->handle, value);
 #endif
 		} else {
@@ -6757,6 +6814,11 @@ int bt_manager_broadcast_scan_stop(void)
 	return btif_broadcast_scan_stop();
 }
 
+int bt_manager_broadcast_pa_set_info_transfer(uint32_t handle)
+{
+	return btif_broadcast_pa_set_info_transfer(handle);
+}
+
 int bt_manager_broadcast_past_subscribe(uint16_t handle)
 {
 	return btif_broadcast_past_subscribe(handle);
@@ -7040,7 +7102,7 @@ static int broadcast_sink_release(void *data, int size)
 	if ((!ret) && bt_manager->per_synced_count) {
 	   bt_manager->per_synced_count--;
 	}
-	SYS_LOG_INF("pa_sync_cnt:%d",bt_manager->per_synced_count);
+	SYS_LOG_INF("pa_sync_cnt:%d,reason:%d",bt_manager->per_synced_count,rep->reason);
     SYS_EVENT_INF(EVENT_BTMGR_BROAD_SINK_RELEASE,0,ret);
 	return bt_manager_event_notify(BT_BROADCAST_SINK_RELEASE, data, size);
 }
@@ -7343,7 +7405,7 @@ char *bt_manager_audio_get_last_connected_dev_name(void)
 
 	os_sched_lock();
 	SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.conn_list, p_audio_conn, node) {
-		if(p_audio_conn->is_phone_dev && strlen(p_audio_conn->dev_name)){
+		if(p_audio_conn->is_phone_dev && p_audio_conn->dev_name){
 			if(p_audio_conn->type == BT_TYPE_LE){
 				if(p_audio_conn->ascs_connect_time > connect_time){
 					connect_time = p_audio_conn->ascs_connect_time;

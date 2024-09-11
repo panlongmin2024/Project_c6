@@ -216,12 +216,8 @@ u8_t otadfu_get_state(void)
 #ifdef CONFIG_OTA_SELF_APP
 static int dfureport_state(u8_t state)
 {
-	u8_t *buf = self_get_sendbuf();
+	u8_t buf[8];
 	u16_t sendlen = 0;
-
-	if (buf == NULL) {
-		return -1;
-	}
 
 	sendlen +=
 	    selfapp_pack_cmd_with_int(buf, DFUCMD_NotifyDfuStatusChange,
@@ -235,12 +231,8 @@ static int dfureport_state(u8_t state)
 
 static int dfureport_image_state(u8_t state)
 {
-	u8_t *buf = self_get_sendbuf();
+	u8_t buf[8];
 	u16_t sendlen = 0;
-
-	if (buf == NULL) {
-		return -1;
-	}
 
 	sendlen +=
 	    selfapp_pack_cmd_with_int(buf, DFUCMD_RetImageCRCChecked,
@@ -258,12 +250,9 @@ static void dfureport_state_error()
 
 static int dfureport_state_sequence(u8_t state, u8_t sequence)
 {
-	u8_t *buf = self_get_sendbuf();
+	u8_t buf[8];
 	u16_t sendlen = 0;
 	dfuack_data_t dataack;
-	if (buf == NULL) {
-		return -1;
-	}
 
 	dataack.state = state;
 	dataack.seqidx = sequence;
@@ -371,7 +360,7 @@ static int dfu_prepare(dfu_start_t * param)
 
 static int dfureport_start(otadfu_handle_t * otadfu, u32_t offset)
 {
-	u8_t *buf = self_get_sendbuf();
+	u8_t buf[16];
 	u16_t sendlen = 0;
 	dfuack_start_t startack;
 	if (buf == NULL) {
@@ -848,11 +837,13 @@ static void _selfapp_ota_app_cmd_thread(void *p1, void *p2, void *p3)
 			 */
 			selfapp_handler_by_stream(NULL);
 		}else{
+			//ios cannot send this command in downloading state, app may be abnormal
+#if 0
 			if(otadfu->state == DFUSTA_DOWNLOADING){
 				SYS_LOG_ERR("wait cmd timeout!");
 				//dfureport_state(otadfu->state);
 			}
-
+#endif
 			printk("wait cmd timeout %d\n", otadfu->thread_need_terminated);
 		}
 	}
@@ -885,6 +876,7 @@ static void ota_app_cmd_thread_start(otadfu_handle_t *otadfu)
 
 static void ota_app_cmd_thread_stop(otadfu_handle_t *otadfu)
 {
+	uint32_t cur_time;
 	void *streamhdl = self_get_streamhdl();
 	if (streamhdl) {
 		sppble_stream_set_rxdata_callback(streamhdl, NULL);
@@ -894,10 +886,15 @@ static void ota_app_cmd_thread_stop(otadfu_handle_t *otadfu)
 
 	os_mutex_unlock(&otadfu_mutex);
 
+	cur_time = k_uptime_get_32();
 	while(otadfu->app_cmd_thread && !otadfu->thread_terminated){
 		os_sem_give(&otadfu->read_sem);
-		os_sleep(1000);
-		printk("wait ota app cmd thread exit\n");
+		os_sleep(10);
+
+		if((k_uptime_get_32() - cur_time) > 1000){
+			cur_time = k_uptime_get_32();
+			printk("wait ota app cmd thread exit\n");
+		}
 	}
 
 	os_mutex_lock(&otadfu_mutex, OS_FOREVER);
@@ -1192,6 +1189,11 @@ static void otadfu_callback(int event)
                 break;
             }
         }
+
+		//when flag send complete has set, we must delay 700ms for app
+		os_sleep(700);
+
+		dfureport_image_state(0x0);
     } else if(event == OTA_INIT_FINISHED) {
 		otadfu_set_state(DFUSTA_READY);
 		dfureport_state(otadfu->state);
@@ -1379,12 +1381,9 @@ int otadfu_AppTriggerUpgrade(void)
 
     otadfu_handle_t* otadfu = otadfu_get_handle();
 
-	//dfureport_image_state(0x0);
-
     if(otadfu){
         otadfu->flag_send_complete = true;
     }
-
 
 	os_mutex_unlock(&otadfu_mutex);
 

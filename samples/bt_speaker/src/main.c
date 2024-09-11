@@ -40,6 +40,7 @@ static void main_is_enter_att(void)
         enter_att_flag = true;	
         return;
     }	
+
 	check_adfu_gpio_key();
 	printk("\n %s , exit ---",__func__);
 }
@@ -49,10 +50,12 @@ extern void ats_wlt_enter(void);
 extern bool ats_wlt_get_enter_state(void);
 extern int ats_wlt_check_adfu(void);
 #endif
-
-/* plm checkout whether need enter nonsingle mode */
-bool ats_test_checkout_enter_non_single_mode(void)
+static void main_pre_init(void)
 {
+	struct app_msg msg;
+	int terminaltion = false;
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+#ifdef CONFIG_ACTIONS_IMG_LOAD
 	char buf[2]={0};
 	int ret = property_get(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE,buf, 1);
 	printf("------> ret %d nosignal_flag %d\n",ret,buf[0]);
@@ -65,17 +68,6 @@ bool ats_test_checkout_enter_non_single_mode(void)
 		}
 		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
 		mcu_ui_power_hold_fn();
-		return true;
-	}
-	return false;
-}
-static void main_pre_init(void)
-{
-	struct app_msg msg;
-	int terminaltion = false;
-#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-#ifdef CONFIG_ACTIONS_IMG_LOAD
-	if(ats_test_checkout_enter_non_single_mode()){
 		extern int run_test_image(void);
 		run_test_image();
 	}
