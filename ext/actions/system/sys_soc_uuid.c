@@ -79,7 +79,9 @@ struct thread_timer uuid_verify_timer;
 static void timeout_poweroff(struct thread_timer *timer, void* pdata)
 {
 	printk("----> %s %d\n",__func__,__LINE__);
-	pd_manager_deinit(1);
+	//pd_manager_deinit(1);
+	int bt_mcu_send_pw_cmd_powerdown(void);
+	bt_mcu_send_pw_cmd_powerdown();
 	sys_pm_poweroff();
 }
 static void enter_verify_fail_func(void)
