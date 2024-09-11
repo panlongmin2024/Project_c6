@@ -425,7 +425,7 @@ static void btsrv_read_rssi_event_cb(uint8_t status, uint8_t *data, uint16_t len
     /* Data in struct bt_hci_rp_read_rssi */
     handle = data[1] | (data[2] << 8);
     rssi = data[3];
-
+	SYS_LOG_INF("------> rssi %d\n",rssi);
     conn = btsrv_rdm_find_conn_by_hdl(handle);
     if(conn){
         btsrv_rdm_set_dev_rssi(conn,rssi);
