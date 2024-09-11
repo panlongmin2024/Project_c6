@@ -40,8 +40,8 @@
 	((u64_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (ns) / NSEC_PER_SEC + 1)
 
 static const u32_t delays_fast[] = {
-	[T_LOW] = NS_TO_SYS_CLOCK_HW_CYCLES(2000),
-	[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(2100),
+	[T_LOW] = NS_TO_SYS_CLOCK_HW_CYCLES(1300),			//2000   120 hz change to 180hz
+	[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(1400),			//2100	
 };
 
 static const u32_t delays_standard[] = {

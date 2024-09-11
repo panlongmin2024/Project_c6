@@ -356,6 +356,7 @@ typedef enum{
 typedef enum{
 
     PA_EVENT_AW_20V5_CTL = 1,
+    
 
 }pd_sync_event;
 	
@@ -384,7 +385,7 @@ typedef enum{
 #define BAT_LED_STATE_MASK(STATE)    ((STATE >> 16) & 0XFF)
 void mcu_ui_set_led_enable_state(int state);
 extern void pd_srv_sync_init(void);
-extern int pd_srv_sync_exit(void);
+extern int pd_srv_sync_exit(int value);
 extern int pd_srv_sync_send_msg(int event, int value);
 extern int pd_srv_event_notify(int event ,int value);
 

@@ -191,7 +191,8 @@ static void aw_dsp_writes(unsigned int dsp_madd_reg, unsigned int dsp_mdat_reg,
         else
             tmp_len = AW_MAX_RAM_WRITE_BYTE_SIZE;
         i2c_write_bytes(I2C_ADDR, dsp_mdat_reg, (unsigned char *)&data[i], tmp_len);
-        k_sleep(1);
+        // k_sleep(1);
+        k_busy_wait(100);
     }
 #else
     /* i2c write */
@@ -2597,7 +2598,8 @@ static void aw_reg_update(const struct reg_tab *tab, unsigned int array_cnt)
 			continue;
 		}
         i2c_write_reg(tab[i].addr, tab[i].data);
-        k_sleep(1);
+        // k_sleep(1);
+        k_busy_wait(100);
     }
 }
 
@@ -2712,7 +2714,7 @@ void aw85xxx_init()
     amp_aw85xxx_enable_flag = 1;
     printk("[%s,%d] ----end !!!\n", __FUNCTION__, __LINE__);
 
-    amp_aw85xxx_read_buf();
+  //  amp_aw85xxx_read_buf();
 
 _exit:
     os_mutex_unlock(amp_aw85xxx_mutex_ptr);

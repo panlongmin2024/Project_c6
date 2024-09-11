@@ -34,6 +34,7 @@
 #include "main_app.h"
 #include "app_defines.h"
 #include "app_common.h"
+#include "pd_manager.h"
 
 #ifdef CONFIG_BT_LEATWS
 #include "system_le_audio.h"
@@ -163,16 +164,30 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 			break;
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-		case MSG_PD_OTG_MOBILE_EVENT:
+		// case MSG_PD_OTG_MOBILE_EVENT:
 
-			SYS_LOG_INF("Demo: msg.value:0x%X, %d\n", msg.value, run_mode_is_demo());
-			if(run_mode_is_demo())
+		// 	SYS_LOG_INF("Demo: msg.value:0x%X, %d\n", msg.value, run_mode_is_demo());
+		// 	if(run_mode_is_demo())
+		// 	{
+		// 		k_sleep(1000);
+		// 		logic_mcu_ls8a10023t_otg_mobile_det();
+		// 		sys_event_notify(SYS_EVENT_POWER_OFF);
+		// 	}
+		// 	break;	
+
+		case MSG_PD_EVENT:
+			if(msg.value == PD_EVENT_OTG_MOBILE_POWER_OFF)
 			{
-				k_sleep(1000);
-				logic_mcu_ls8a10023t_otg_mobile_det();
-				sys_event_notify(SYS_EVENT_POWER_OFF);
+				if(run_mode_is_demo())
+				{
+					k_sleep(1000);
+					logic_mcu_ls8a10023t_otg_mobile_det();
+					
+				}
 			}
-			break;	
+			pd_srv_sync_exit(0);
+			sys_event_notify(SYS_EVENT_POWER_OFF);
+			break;
 
 		case MSG_KEY_INPUT_ATS:
 		     SYS_LOG_INF("ATS: msg.value:0x%X\n", msg.value);

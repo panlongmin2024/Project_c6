@@ -58,7 +58,7 @@ extern int pd_manager_test_get_sink_charge_current(u8_t *sink_charge_step);
 extern u32_t fw_version_get_sw_code(void);
 extern u8_t fw_version_get_hw_code(void);
 extern int mcu_ui_get_logic_version(void);
-extern int bt_mcu_send_pw_cmd_powerdown(void);
+// extern int bt_mcu_send_pw_cmd_powerdown(void);
 extern void sys_event_notify(uint32_t event);
 extern int charge_app_enter_cmd(void);
 // 

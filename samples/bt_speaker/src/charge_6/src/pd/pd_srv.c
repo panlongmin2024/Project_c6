@@ -57,7 +57,7 @@ void pd_srv_sync_init(void)
 	printk("pd_srv_sync_end\n");
 }
 
-int pd_srv_sync_exit(void)
+int pd_srv_sync_exit(int value)
 {
 	struct app_msg msg = {0};
 	os_sem return_notify;
@@ -69,7 +69,7 @@ int pd_srv_sync_exit(void)
 #endif	
 	os_sem_init(&return_notify, 0, 1);
 	msg.type = MSG_PD_SRV_EXIT;
-	msg.value = 0;
+	msg.value = value;
 	msg.callback = pd_srv_sync_init_callback;
 	msg.sync_sem = &return_notify;
 
@@ -150,8 +150,7 @@ void batt_led_manager_set_display(int led_status)
 	   	{
 	    	/// printk("batt_led_manager_set_display led_status = %d\n",led_status);
 			 if(pd_manager_get_poweron_filte_battery_led() == WLT_FILTER_DISCHARGE_POWERON
-			 	||
-power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
+			 	|| power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
 	    	 {
 	    	    printk("batt_led_manager_set_display led_status = %d\n",led_status);
 	    	   //led_status = BATT_LED_NORMAL_OFF;
@@ -215,7 +214,6 @@ void pd_srv_sync_msg_process(struct app_msg *msg)
 		case PA_EVENT_AW_20V5_CTL:
 			io_expend_aw9523b_ctl_20v5_set(msg->value);
 		break;
-
 
 		default:
 		break;
@@ -290,7 +288,7 @@ void pd_service_main_loop(void * parama1, void * parama2, void * parama3)
 					pd_srv_charger_init();
 					break;
 				case MSG_PD_SRV_EXIT:
-					pd_manager_deinit(0);
+					pd_manager_deinit(msg.value);
 					break;
 
 				case MSG_PD_SRV_EVENT:

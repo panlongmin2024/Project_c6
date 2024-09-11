@@ -76,7 +76,7 @@ typedef struct {
 	u8_t bit7 : 1;			// water0_leak
 } ls8a10049t_reg_7c_t;
 
-static ls8a10049t_reg_7b_t reg_7b = { 0 };
+static ls8a10049t_reg_7b_t reg_7b = { 0 };				// 0xA6
 static ls8a10049t_reg_7c_t reg_7c = { 0 };
 
 enum {
@@ -1270,18 +1270,27 @@ static void logic_mcu_warnning_and_dc_status_detect(struct logic_mcu_ls8a10049t_
 {
 	uint8_t mcu_water_flag = 0;
 	mcu_manager_charge_event_para_t para;
+	static int last_dc_status = 0;
+
 	if(logic_mcu_ls8a10049t_get_int_event()){
 
 		if(logic_mcu_ls8a10049t_is_int_event(LS8A10049T_INT_EVENT_DC_BIT)){	
 			//int usb_cable_in = _ls8a10049t_check_usb_cable_in_status(dev);
 			int usb_cable_in = dc_power_in_status_read();
+
+			if(last_dc_status != usb_cable_in)
+			{
+				last_dc_status = usb_cable_in;
+				SYS_LOG_INF("DC IN/OUT: %d\n", last_dc_status);
+			}
+
 			if (usb_cable_in) {
 				//SYS_LOG_INF("DC IN\n");
 				para.mcu_event_val = MCU_INT_CMD_DC_IN;
 
 			}
 			else{
-				SYS_LOG_INF("DC OUT\n");
+				// SYS_LOG_INF("DC OUT\n");
 				para.mcu_event_val = MCU_INT_CMD_DC_OUT;
 			}
 

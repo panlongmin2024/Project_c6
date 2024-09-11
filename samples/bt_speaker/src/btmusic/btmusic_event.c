@@ -597,6 +597,20 @@ void btmusic_bt_event_proc(struct app_msg *msg)
 	}
 	SYS_LOG_INF("bt event %d\n", msg->cmd);
 	switch (msg->cmd) {
+
+#ifdef CONFIG_C_TEST_MUTE_PA
+extern void wlt_pa_media_unmute(u8_t tts_flag, u8_t meda_flag);
+extern void wlt_pa_media_mute(u8_t tts_mute_flag, u8_t meda_mute_flag);
+	case BT_MEDIA_PLAY:
+		wlt_pa_media_unmute(0,1);
+		break;
+
+	case BT_MEDIA_STOP:
+	case BT_MEDIA_PAUSE:
+		wlt_pa_media_mute(0,1);
+		break;	
+#endif
+
 	case BT_CONNECTED:
 		btmusic_view_show_connected();
 		break;
@@ -1020,6 +1034,20 @@ void btmusic_input_event_proc(struct app_msg *msg)
 		else
 		{
 			btmusic_switch_auracast();
+
+			// extern void hm_ext_pa_stop(void);
+			// extern void hm_ext_pa_start(void);
+
+			// static bool pa_flag=0;
+
+			// pa_flag ^= 1;
+			// if(pa_flag)
+			// {
+			// 	hm_ext_pa_stop();
+			// }else{
+			// 	hm_ext_pa_start();
+			// }
+
 		}
 		break;
 

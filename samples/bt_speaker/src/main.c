@@ -77,7 +77,7 @@ static void main_pre_init(void)
 #ifdef CONFIG_ACTIONS_IMG_LOAD
 	if(ats_test_checkout_enter_non_single_mode()){
 		extern int run_test_image(void);
-		run_test_image();		
+		run_test_image();
 	}
 #endif
 	enter_att_flag = false;

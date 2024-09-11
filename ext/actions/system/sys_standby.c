@@ -503,7 +503,7 @@ static int _sys_standby_process_normal(void)
 	ret |= dc_power_in_status_read();	 
 	if((refresh_flag != ret))
 	 {	
-		refresh_flag = sys_pm_get_power_5v_status();
+		refresh_flag = ret;
 		sys_wakelocks_free_time_reset();
 		SYS_LOG_INF("refresh_flag: %d", refresh_flag);
 	}

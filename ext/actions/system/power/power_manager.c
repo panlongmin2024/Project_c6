@@ -35,6 +35,8 @@
 
 #include "wltmcu_manager_supply.h"
 #include <board.h>
+#include "pd_manager.h"
+
 
 #define DEFAULT_BOOTPOWER_LEVEL		3100000
 #define DEFAULT_NOPOWER_LEVEL	    3400000
@@ -87,6 +89,8 @@ struct power_manager_info {
 
 extern uint8_t get_power_first_factory_reset_flag(void);
 extern void set_power_first_factory_reset_flag(uint8_t value);
+extern u8_t pd_manager_send_notify(u8_t event);
+
 struct power_manager_info *power_manager = NULL;
 uint8_t power_first_get_cap_flag = 0;
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
@@ -182,6 +186,9 @@ void power_manager_status_notify(void)
 	msg.cmd = 0;
 	send_async_msg(CONFIG_SYS_APP_NAME, &msg);
 }
+
+
+
 
 void power_supply_report(bat_charge_event_t event, bat_charge_event_para_t *para)
 {
@@ -445,9 +452,12 @@ int power_manager_sync_slave_battery_state(void)
 						printk("[%s/%d], POWER_SUPPLY_STATUS_CHARGING !!!\n\n",__func__,__LINE__);
 					   pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);	
 					}
-					else
+					else if((temp_status == POWER_SUPPLY_STATUS_EXT_CHARGING))
 					{
-						 //pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_CAHARGING);
+						printk("[%s/%d], POWER_SUPPLY_STATUS_EXT_CHARGING !!!\n\n",__func__,__LINE__);
+						pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_EXT_CAHARGE);
+					}else{
+						printk("[%s/%d], POWER_SUPPLY_STATUS_UNKOWN STATUS !!!\n\n",__func__,__LINE__);
 					}
 					
 
@@ -557,7 +567,8 @@ static int _power_manager_work_handle(void)
 	}
 	else */if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_POWER_LEVEL){
 		SYS_LOG_INF("%d temp too high", power_manager->current_temperature);
-		sys_event_notify(SYS_EVENT_POWER_OFF);
+		// sys_event_notify(SYS_EVENT_POWER_OFF);
+		pd_manager_send_notify(PD_EVENT_POWER_OFF);
 		return 0;
 	}//DEFUALT_HIAHTEMP_POWER_LEVEL
 	else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0){
@@ -576,7 +587,8 @@ static int _power_manager_work_handle(void)
 	}
 	else if(power_manager->current_temperature < DEFUALT_LOWTEMP_POWER_LEVEL){
 		SYS_LOG_INF("%d temp too low", power_manager->current_temperature);
-		sys_event_notify(SYS_EVENT_POWER_OFF);
+		// sys_event_notify(SYS_EVENT_POWER_OFF);
+		pd_manager_send_notify(PD_EVENT_POWER_OFF);
 		return 0;
 	}
 	else
@@ -636,7 +648,10 @@ static int _power_manager_work_handle(void)
 			printk("\n %s,%d,last_cap:%d,current_cap:%d\n",__func__,__LINE__,power_manager->last_cap,power_manager->current_cap);
 			return 0;
 		}
-		power_manager->current_cap = power_manager_get_battery_capacity();
+
+		power_manager->report_timestamp = 0;
+
+		// power_manager->current_cap = power_manager_get_battery_capacity();
 
 		// if(run_mode_is_demo() && (pd_get_app_mode_state() != CHARGING_APP_MODE))
 		// {
@@ -692,30 +707,48 @@ static int _power_manager_work_handle(void)
 			power_manager->report_timestamp = os_uptime_get_32();
 		}
 
-
+		SYS_LOG_INF("%d current_cap:%d \n", __LINE__, power_manager->current_cap);
 		
-		if((os_uptime_get_32() - power_manager->report_timestamp) >= (DEFAULT_POWER_OFF_PERIODS/2))
+		if((os_uptime_get_32() - power_manager->report_timestamp) >= (DEFAULT_POWER_OFF_PERIODS))
 		{
 _POWER_OFF_:			
-			SYS_LOG_INF("%d %d too low", power_manager->current_cap, power_manager->current_vol);
+			SYS_LOG_INF("%d %d too low \n", power_manager->current_cap, power_manager->current_vol);
+			power_manager->report_last_cap_timestamp = 0;
 			power_manager->report_timestamp = 0;
 
 			// if((pd_get_app_mode_state() == CHARGING_APP_MODE && power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE)
 			// 	|| (pd_get_app_mode_state() != CHARGING_APP_MODE && bt_manager_a2dp_get_status() == BT_STATUS_PLAYING)){
+			// if((pd_get_app_mode_state() == CHARGING_APP_MODE) && run_mode_is_demo() 
+			// 		&& (power_manager->current_cap == DEFAULT_NOPOWER_CAP_LEVEL))
+			// {
+			// 	SYS_LOG_INF("[%d] Stop charging in Demo mode, but not shut down \n", __LINE__);
+			// 	return 0;
+			// }	
+			// else if((pd_get_app_mode_state() == CHARGING_APP_MODE) && (power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE))
+			// {
 
-			if((pd_get_app_mode_state() == CHARGING_APP_MODE) && (power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE))
+			// 	printk("\n %s,charge mode do not charge  \n",__func__);
+			// 	pd_manager_deinit(0);
+			// 	sys_pm_poweroff(); 
+			// } 
+
+			if(pd_get_app_mode_state() == CHARGING_APP_MODE)
 			{
-
-				printk("\n %s,charge mode do not charge  \n",__func__);
-				pd_manager_deinit(0);
-				sys_pm_poweroff(); 
-			} 
+				if(power_manager_get_dc5v_status())
+				{
+					SYS_LOG_INF("[%d] charge mode: vbus volt high waiting temp down \n", __LINE__);	
+				}else{
+					SYS_LOG_INF("[%d] charge mode do not charge  \n", __LINE__);
+					pd_manager_send_notify(PD_EVENT_LOW_BATTERY);
+				}
+			}
 			else
 			{		
-			   if(pd_manager_get_poweron_filte_battery_led() != WLT_FILTER_STANDBY_POWEROFF)
-				 {
-				  sys_event_notify(SYS_EVENT_BATTERY_TOO_LOW);
-			   	 }
+			   if((pd_manager_get_poweron_filte_battery_led() != WLT_FILTER_STANDBY_POWEROFF)
+			   		|| run_mode_is_demo())
+				{
+				  	sys_event_notify(SYS_EVENT_BATTERY_TOO_LOW);
+			   	}
 			}
 		}
 		return 0;
@@ -798,7 +831,7 @@ int power_manager_init(void)
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 extern bool pd_manager_check_mobile(void);
-extern int pd_manager_deinit(int value);	
+extern int pd_srv_sync_exit(int value);	
 extern void battery_remaincap_low_poweroff(void);
 extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
 
@@ -836,7 +869,7 @@ int power_manager_early_init(void)
 			k_sleep(1000);		
 			logic_mcu_ls8a10023t_otg_mobile_det();
 			//extern int pd_manager_deinit(void);
-			pd_manager_deinit(1);
+			pd_srv_sync_exit(1);
 			sys_pm_poweroff();
 		}
 	}

@@ -19,6 +19,8 @@ int ats_usb_cdc_acm_cmd_response_at_data(struct device *dev, u8_t *cmd, int cmd_
 
 void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
 
+void enter_ats(void);
+
 int ats_init(void);
 bool ats_is_enable(void);
 void ats_set_enable(bool en);

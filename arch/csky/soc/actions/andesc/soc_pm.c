@@ -296,6 +296,9 @@ void sys_pm_set_wakeup_src(uint8_t mode)
 /*
 **  系统关机
 */
+
+extern int bt_mcu_send_pw_cmd_powerdown(void);
+
 void sys_pm_poweroff(void)
 {
 	uint32_t key;
@@ -351,8 +354,15 @@ void sys_pm_poweroff(void)
 		if (wake_pd) {
 			printk("poweroff: wake_pd 0x%x, need reboot!\n", wake_pd);
 			sys_pm_reboot(0);
+		}else
+		{
+	
+			// bt_mcu_send_pw_cmd_powerdown();
 		}
+
+		
 	}
+
 
 	/* never return... */
 }

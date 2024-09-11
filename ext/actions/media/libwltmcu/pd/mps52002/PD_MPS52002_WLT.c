@@ -61,7 +61,7 @@
  * @}
  */
 
-#define mps_pd_current_version 0x49
+#define mps_pd_current_version 0x50
 #define I2C_DEV_ADDR        0x48                    //TODO
 
 // #define INDIA_APP_TEST			0x01

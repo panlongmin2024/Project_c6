@@ -46,6 +46,8 @@
 #include "power_manager.h"
 #include <mcu_manager_supply.h>
 #include "run_mode/run_mode.h"
+#include "pd_manager.h"
+
 /*
  * Copyright (c) 2017 Intel Corporation
  *
@@ -82,7 +84,7 @@
 
 #define PD_BUS_POWER_9V_VOLT                        8500
 
-int bt_mcu_send_pw_cmd_powerdown(void);
+
 int pd_manager_send_cmd_code(uint8_t type, int code);
 int pd_manager_deinit(int value);
 uint8_t ReadODM(void);
@@ -90,6 +92,10 @@ bool pd_get_sink_charging_state(void);
 bool pd_set_source_refrest(void);
 static os_mutex pd_iic_data_lock;
 static PD_CIRCLES_QUEUE_TYPE pd_circles_queue; 
+
+#ifdef CONFIG_C_TEST_MUTE_PA
+void wlt_pa_media_stop_process(void);
+#endif
 
 uint8_t pd_get_app_mode_state(void);
 // static int battery_temperature=200;
@@ -99,7 +105,7 @@ extern void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event
 
 static uint8_t test_id = 1;
 static int battery_cap= 25;
-static int battery_temperature=250;
+static int battery_temperature=450;
 
 void set_battery_cap(bool flag)
 {
@@ -359,7 +365,7 @@ static void battery_iic_init(void)
 
 #define PD_RUN_TIME_PERIOD              100
 #define PD_CHARGE_TEN_MINITE_COUNT      6000                // 10 minites
-#define MAX_SOURCE_CHANGE_TIME          23                  // 2.3 seconds
+#define MAX_SOURCE_CHANGE_TIME          18                  // 2.3 seconds
 
 
 #define MAX_POWER_KEY_DEBOUNCE_TIME     25
@@ -446,13 +452,35 @@ static void pd_manger_poweron_filte_battery_led_handle(void)
     }
 }
 #endif
+
+
+u8_t pd_manager_send_notify(u8_t event)
+{
+
+	//notify system poweroff
+
+	struct app_msg msg = {0};
+	msg.type = MSG_PD_EVENT;
+	msg.cmd = 0;
+    msg.value = event;
+	send_async_msg(APP_ID_MAIN, &msg);
+
+    return 0;
+}
+
+
 static void bt_warning_poweroff_handle_fn(void)
 {
     //bt_mcu_send_pw_cmd_powerdown();
     // pd_bq25798_adc_off();
     // pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);
-    sys_event_notify(SYS_EVENT_POWER_OFF);    
+
+    // sys_event_notify(SYS_EVENT_POWER_OFF);   
+    pd_manager_send_notify(PD_EVENT_WATER_WARNNING_STOP);
+
 }
+
+
 
 static  void battery_power_supply_enable(void)
 {
@@ -510,6 +538,7 @@ int bt_mcu_send_pw_cmd_standby(void)
 
 int bt_mcu_send_pw_cmd_powerdown(void)
 {
+    k_sleep(120);
     return bt_mcu_send_cmd_code(MCU_INT_TYPE_POWER_KEY, MCU_INT_CMD_POWEROFF);
 }
 
@@ -801,6 +830,8 @@ void pd_manager_battery_low_check_otg(bool force_flag)
     if(wlt_pd_manager == NULL)
         return;
 
+    // SYS_LOG_INF("%d \n", __LINE__);
+
     if(wlt_pd_manager->bt_app_mode == BTMODE_APP_MODE)
     {
         if((!wlt_pd_manager->pd_sink_status_flag) || force_flag)
@@ -833,10 +864,9 @@ void pd_manager_battery_low_check_otg(bool force_flag)
                         if(sys_check_standby_state())
                         {
                             SYS_LOG_INF("[%d] source volt < 15, power down! \n", __LINE__);
-                            pd_manager_deinit(0);
-                            sys_pm_poweroff();               
-
-
+                          //  pd_manager_deinit(0);
+                          //  sys_pm_poweroff();     
+                            pd_manager_send_notify(PD_EVENT_SOURCE_LOW_BATTERY);          
                         }
                         else{
                             
@@ -864,8 +894,9 @@ void pd_manager_battery_low_check_otg(bool force_flag)
         if(power_manager_get_battery_capacity() <= BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1)
         {
             SYS_LOG_INF("[%d] battery cap < 15, power down! \n", __LINE__);
-            pd_manager_deinit(0);
-            sys_pm_poweroff();       
+            // pd_manager_deinit(0);
+            // sys_pm_poweroff();  
+            pd_manager_send_notify(PD_EVENT_SOURCE_LOW_BATTERY);        
         }
     }
 
@@ -1042,6 +1073,13 @@ bool pd_manager_get_source_change_state(void)
     // }else{
     //     return 0;
     // }
+}
+
+
+bool pd_manager_clear_source_change_debounce(void)
+{
+    wlt_pd_manager->source_change_debunce_count = 0x00;
+    return 0;
 }
 
 void pd_manager_over_temp_protect(void)
@@ -1335,7 +1373,7 @@ bool pd_get_sink_full_state(void)
 
 void pd_supply_report(pd_manager_charge_event_t event, pd_manager_charge_event_para_t *para)
 {
-    struct app_msg msg = {0};
+   // struct app_msg msg = {0};
 
 
     if (wlt_pd_manager == NULL) {
@@ -1391,11 +1429,10 @@ void pd_supply_report(pd_manager_charge_event_t event, pd_manager_charge_event_p
                     }else if((wlt_pd_manager->bt_app_mode == CHARGING_APP_MODE) || sys_check_standby_state())
                     {
                         printk("%s:%d source current < 80ma, power down! \n", __func__, __LINE__);
-                        pd_manager_deinit(0);
-    #ifdef OTG_PHONE_POWER_NEED_SHUTDOWN                    
-                        mcu_ui_set_real_shutdown_dut(true);
-    #endif                    
-                        sys_pm_poweroff();       
+                        // pd_manager_deinit(0);                 
+                        // sys_pm_poweroff();  
+
+                        pd_manager_send_notify(PD_EVENT_SOURCE_LOW_BATTERY);        
                     }
 
                 }
@@ -1443,12 +1480,9 @@ void pd_supply_report(pd_manager_charge_event_t event, pd_manager_charge_event_p
             break;
 
         case PD_EVENT_OTG_MOBILE_DET:
-                
-            msg.type = MSG_PD_OTG_MOBILE_EVENT;
-            msg.cmd = 6;
-            msg.value = 0;
-            send_async_msg(APP_ID_MAIN, &msg);
-                
+                               
+            pd_manager_send_notify(PD_EVENT_OTG_MOBILE_POWER_OFF);     // MSG_PD_OTG_MOBILE_EVENT
+
             break;    
 
         default:
@@ -1547,6 +1581,9 @@ static void pd_manager_time_hander(struct thread_timer *ttimer, void *expiry_fn_
     //pd_manger_poweron_filte_battery_led_handle();
     pd_managet_typec_high_temp_protect();
  
+ #ifdef CONFIG_C_TEST_MUTE_PA
+    wlt_pa_media_stop_process();
+ #endif   
 
 #ifdef OTG_PHONE_POWER_NEED_SHUTDOWN
     pa_manager_otg_phone_power_handle();
@@ -1733,9 +1770,9 @@ void pd_manager_init(bool flag)
     const struct pd_manager_supply_driver_api *api= NULL;
     pd_iic_queue_init(&pd_circles_queue);
     battery_iic_init();
-
-if(!ReadODM())
-
+    wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME;
+    
+    if(!ReadODM())
     {
         pd_ti65992_init();   
         wlt_pd_manager->dev = wlt_device_get_pd_ti65992();
@@ -1747,7 +1784,7 @@ if(!ReadODM())
         mcu_dev = wlt_device_get_mcu_mspm0l();
         mcu_api = mcu_dev->driver_api;
         mcu_api->register_mcu_notify(mcu_dev, mcu_supply_report);
-        wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME;
+        // wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME;
         wlt_pd_manager->otg_off_flag = true;
     }
     //#elif CONFIG_C_LOGIC_MCU_LS8A10049T
@@ -1765,7 +1802,7 @@ if(!ReadODM())
         wlt_pd_manager->dev = wlt_device_get_pd_mps52002();
         api = wlt_pd_manager->dev->driver_api;
         api->register_pd_notify(wlt_pd_manager->dev, pd_supply_report);
-        wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME;
+        // wlt_pd_manager->source_change_debunce_count = MAX_SOURCE_CHANGE_TIME;
         k_sleep(50);
 		// pd_manager_send_cmd_code(PD_SUPPLY_PROP_SOURCE_CURRENT_1000MA, 0);
     }
@@ -1828,6 +1865,7 @@ int pd_manager_get_sink_status_flag(void)
 {
     if(wlt_pd_manager == NULL)
     {
+        SYS_LOG_INF("[%d]; fail!!! \n", __LINE__);
         return 0 ;
     }
 
@@ -1837,6 +1875,10 @@ int pd_manager_get_sink_status_flag(void)
 
 extern void external_dsp_ats3615_deinit(void);
 
+
+
+
+
 int pd_manager_deinit(int value)
 {
 
@@ -1844,22 +1886,25 @@ int pd_manager_deinit(int value)
 
     if(wlt_pd_manager == NULL)
     {
-        return 0;
+        SYS_LOG_INF("[%d]; fail!!! \n", __LINE__);
+        return -1;
     }
 
     wlt_pd_manager->source_change_debunce_count = 0x00;
 
     thread_timer_stop(&wlt_pd_manager->timer);
     pd_manager_send_cmd_code(PD_SUPPLY_PROP_STANDBY, 0);                // stop pd timer;
-    k_sleep(50);
-
+    k_sleep(5);
     pd_manager_v_sys_g1_g2(PD_V_BUS_G1_G2_DEINIT);
     pd_manager_send_cmd_code(PD_SUPPLY_PROP_POWERDOWN, value);
-    k_sleep(120);
-    bt_mcu_send_pw_cmd_powerdown();
+
+  
+   // bt_mcu_send_pw_cmd_powerdown();
 
     return 0;
 }
+
+
 
 void  sys_3v3_power_on(void)
 {
@@ -1968,12 +2013,61 @@ int pd_manager_test_get_sink_charge_current(u8_t *sink_charge_step)
 }
 
 
+#ifdef CONFIG_C_TEST_MUTE_PA
+
+static u8_t wlt_tts_play_flag = 0x00;
+static u8_t wlt_tts_meda_flag = 0x00;
+static u8_t wlt_tts_stop_count = 0x00;
+
+extern void hm_ext_pa_start(void);
+extern void hm_ext_pa_stop(void);
+
+void wlt_pa_media_unmute(u8_t tts_flag, u8_t meda_flag)
+{
+
+    SYS_LOG_INF("tts_flag:%d,meda_flag:%d \n",tts_flag, meda_flag);
+
+    if(tts_flag)
+    {
+        wlt_tts_play_flag = tts_flag;
+    }else if(meda_flag){
+        wlt_tts_meda_flag = meda_flag;
+    }
+    wlt_tts_stop_count = 0x00;
+    hm_ext_pa_start();
+    
+}
+
+void wlt_pa_media_mute(u8_t tts_mute_flag, u8_t meda_mute_flag)
+{
+    SYS_LOG_INF("tts_mute_flag:%d,meda_mute_flag:%d \n",tts_mute_flag, meda_mute_flag);
+    if(tts_mute_flag)
+    {
+        wlt_tts_play_flag = 0x00;
+    }else if(meda_mute_flag){
+        wlt_tts_meda_flag = 0x00;
+    }
+
+    if(!(wlt_tts_play_flag || wlt_tts_meda_flag))
+    {
+        wlt_tts_stop_count = 0x02;
+    }
+    
+}
 
 
+void wlt_pa_media_stop_process(void)
+{
+    if(wlt_tts_stop_count >= 0x00)
+    {
+        if(--wlt_tts_stop_count == 0x00)
+        {
+            hm_ext_pa_stop();   
+        }
+    }
+}
 
-
-
-
+#endif
 
 
 

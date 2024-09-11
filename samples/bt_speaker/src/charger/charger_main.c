@@ -164,7 +164,7 @@ int charger_mode_check(void)
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 							//extern int pd_manager_deinit(void);
-								pd_manager_deinit(0);
+								pd_srv_sync_exit(0);
 #endif							
 								sys_pm_poweroff();
 							}
@@ -176,6 +176,14 @@ int charger_mode_check(void)
 				break;
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE		
+
+			case MSG_LOW_POWER:
+				terminaltion = true;
+				
+				//extern int pd_manager_deinit(void);
+				pd_srv_sync_exit(0);						
+				sys_pm_poweroff();
+				break;
 
 			case MSG_EXIT_APP:
 				if(power_manager_get_battery_capacity() > DEFAULT_NOPOWER_CAP_LEVEL)
@@ -195,28 +203,20 @@ int charger_mode_check(void)
 				break;
 
 			// case MSG_PD_BAT_SINK_FULL:	
-			case MSG_PD_OTG_MOBILE_EVENT:
-				terminaltion = true;
-				if(msg.type == MSG_PD_OTG_MOBILE_EVENT)
-				{
-					SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
-				}else{
-					SYS_LOG_INF("%d MSG_PD_BAT_SINK_FULL\n",__LINE__);
-				}
-				
-				// struct device *logic_mcu_ls8a10023t_dev = device_get_binding(CONFIG_LOGIC_MCU_LS8A10023T_DEV_NAME);
-				// if (logic_mcu_ls8a10023t_dev)
-				// {
-				k_sleep(1000);
-				logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
+			//case MSG_PD_OTG_MOBILE_EVENT:
+				// terminaltion = true;
+
+
+				// k_sleep(1000);
+				// logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
 			
-//				}
-				//extern int pd_manager_deinit(void);
-				pd_manager_deinit(1);
+
+				// //extern int pd_manager_deinit(void);
+				// pd_srv_sync_exit(1);
 						
-				sys_pm_poweroff();
+				// sys_pm_poweroff();
 				
-				break;	
+				// break;	
 #endif					
 
 			default:

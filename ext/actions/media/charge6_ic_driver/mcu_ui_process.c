@@ -994,6 +994,7 @@ extern bool bt_mcu_get_bt_wake_up_flag(void);
 extern void pd_manager_set_poweron_filte_battery_led(uint8_t flag);
 extern int bt_mcu_send_pw_cmd_poweron(void);
 extern int pd_manager_get_sink_status_flag(void);
+extern bool pd_manager_clear_source_change_debounce(void);
 
 int check_battery_low_cap_level5()
 {
@@ -1113,6 +1114,7 @@ static void mcu_power_key_deal_fn(mcu_manager_charge_event_para_t *para)
                 battery_remaincap_low_poweroff();
                 k_sleep(250);
                 pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
+                pd_manager_clear_source_change_debounce();
             }
                 
         }
@@ -1720,13 +1722,20 @@ void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t
 {
 
     //uint8 result=0;
+    static mcu_charge_event_t last_event = 0x00;
+    static uint32_t    last_event_val = 0x00;
     
     if (!wlt_pd_manager_is_init()) {
 		return;
 	}
 
-    SYS_LOG_INF("[%d] event=%d, para = %d app_mode =%d \n", __LINE__, event, para->pd_event_val,pd_get_app_mode_state());
-
+    if((last_event != event) || (last_event_val != para->pd_event_val))
+    {
+        last_event = event;
+        last_event_val =  para->pd_event_val;
+        SYS_LOG_INF("[%d] event=%d, para = %d app_mode =%d \n", __LINE__, event, para->pd_event_val,pd_get_app_mode_state());
+    }
+    
     switch(event)
     {
 

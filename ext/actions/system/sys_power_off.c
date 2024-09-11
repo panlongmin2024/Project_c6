@@ -116,7 +116,7 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 		printk("[%s,%d] logic_mcu_ls8a10023t end\n", __FUNCTION__, __LINE__);
 		#endif
 		printk("[%s,%d] send pd deinit message!\n", __FUNCTION__, __LINE__);
-		pd_srv_sync_exit();
+		pd_srv_sync_exit(0);
 		while(1);
 		#endif
 		sys_pm_poweroff();

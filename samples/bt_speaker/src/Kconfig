@@ -58,10 +58,16 @@ config SPI_SWITCH_BY_GPIO
 	prompt "Switch SPI on/off"
 	default n
 
-  config C_TEST_BATT_MACRO
+config C_TEST_BATT_MACRO
     bool
     prompt "enable test battery"
     default n
+
+config C_TEST_MUTE_PA
+    bool
+    prompt "enable test PA mute"
+    default n
+
 config AUARCAST_FILTER_POLICY_H
     bool
     prompt "auarcast filter policy H"

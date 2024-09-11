@@ -307,6 +307,11 @@ static void _tts_manager_trigger_stop_tts(struct tts_manager_ctx_t *tts_ctx)
 
 #endif
 
+#ifdef CONFIG_C_TEST_MUTE_PA
+extern void wlt_pa_media_unmute(u8_t tts_flag, u8_t meda_flag);
+extern void wlt_pa_media_mute(u8_t tts_mute_flag, u8_t meda_mute_flag);
+#endif
+
 static void _tts_manager_play_event_notify(uint32_t event, void *data, uint32_t len, void *user_data)
 {
 	struct tts_manager_ctx_t *tts_ctx = _tts_get_ctx();
@@ -323,7 +328,18 @@ static void _tts_manager_play_event_notify(uint32_t event, void *data, uint32_t 
 		}
 	#endif
 		_tts_manager_trigger_stop_tts(tts_ctx);
+
+	#ifdef CONFIG_C_TEST_MUTE_PA	
+		wlt_pa_media_mute(1,0);
+	#endif	
 		break;
+
+	case PLAYBACK_EVENT_OPEN:
+	#ifdef CONFIG_C_TEST_MUTE_PA
+		wlt_pa_media_unmute(1,0);
+	#endif	
+		break;
+
 	case PARSER_EVENT_STOP_COMPLETE:
 	#if 0
 		if(tts_ctx->dvfs_set) {

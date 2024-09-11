@@ -417,7 +417,7 @@ int amp_tas5828m_pa_stop()
 	buf[0] = 0x0a;
 	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x03 , buf, 1);
 
-	// k_sleep(2);
+	k_sleep(2);
 
 exit:	
 	os_mutex_unlock(amp_tas5828m_mutex_ptr);

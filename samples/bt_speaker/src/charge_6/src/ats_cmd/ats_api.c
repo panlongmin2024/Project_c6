@@ -70,6 +70,12 @@ int ats_usb_cdc_acm_cmd_response(struct device *dev, uint8_t *buf, int size)
 	return 0;
 }
 
+void enter_ats(void)
+{
+     ats_init();
+     ats_usb_cdc_acm_init();
+}
+
 int ats_init(void)
 {
     int ret = 0;

@@ -201,7 +201,7 @@ static void main_system_check_adfu_timer(struct thread_timer *ttimer, void *expi
 	}
 
 	if((os_uptime_get_32() - adfu_wait_time)>1200000){
-		pd_srv_sync_exit();
+		pd_srv_sync_exit(0);
 	}
 
 	if(fairst == 0){
@@ -534,14 +534,16 @@ void system_app_init(void)
 #endif
 #endif
 
-				SYS_LOG_INF("[%d], demo_mode:%d, battery_capacity:%d \n\n", __LINE__, run_mode_is_demo(), power_manager_get_battery_capacity());
+				SYS_LOG_INF("[%d], demo_mode:%d, battery_capacity:%d; temp:%d \n\n", __LINE__, run_mode_is_demo(), power_manager_get_battery_capacity(),
+					power_manager_get_battery_temperature());
 
 				if((!run_mode_is_demo())||(check_is_wait_adfu())){
 					system_notify_enter_charger_mode();
 					system_ready();
 					system_wait_exit_charger_mode();
 				}
-				else if(run_mode_is_demo() && (power_manager_get_battery_capacity() < DEFAULT_NOPOWER_CAP_LEVEL))
+				else if((run_mode_is_demo() && (power_manager_get_battery_capacity() < DEFAULT_NOPOWER_CAP_LEVEL)) ||	\
+					(run_mode_is_demo() && (power_manager_get_battery_capacity() == DEFAULT_NOPOWER_CAP_LEVEL) && (power_manager_get_battery_temperature()>=44)))
 				{
 					system_notify_enter_charger_mode();
 					system_ready();

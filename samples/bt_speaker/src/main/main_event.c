@@ -76,6 +76,8 @@ void gfp_ble_mgr_clear_sleep_time(void);
 extern int ext_dsp_set_bypass(int bypass);
 extern int dsp_bypass_enable;
 extern bool pd_manager_check_mobile(void);
+extern void enter_ats(void);
+
 #endif			
 static void main_input_enter_pairing_mode(void)
 {
@@ -341,6 +343,7 @@ void main_input_event_handle(struct app_msg *msg)
 	}
 		break;
 	case MSG_ENTER_ATS:
+		enter_ats();
 		SYS_LOG_INF("enter ATS\n");
 		break;
 	case MSG_DSP_EFFECT_SWITCH:
