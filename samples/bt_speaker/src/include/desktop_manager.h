@@ -80,6 +80,7 @@ void desktop_manager_enter(void);
 void desktop_manager_exit(void);
 int desktop_manager_lock(void);
 int desktop_manager_unlock(void);
+int desktop_manager_lock_charge_app(void);
 
 #define DESKTOP_PLUGIN_DEFINE(id, plugin_enter, plugin_exit, plugin_proc_msg, plugin_status, param1,param2,param3)  \
 	const desktop_plugin_t __desktop_plugin_name_##id  \

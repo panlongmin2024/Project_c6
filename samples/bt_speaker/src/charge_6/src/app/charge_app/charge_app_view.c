@@ -1,7 +1,6 @@
 #include "app/charge_app/charge_app.h"
 #include "ui_manager.h"
 #include <input_manager.h>
-#include <ui_manager.h>
 #ifdef CONFIG_LED_MANAGER
 #include <led_manager.h>
 #endif

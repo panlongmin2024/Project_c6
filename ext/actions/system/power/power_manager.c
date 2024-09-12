@@ -36,7 +36,7 @@
 #include "wltmcu_manager_supply.h"
 #include <board.h>
 #include "pd_manager.h"
-
+#include <msg_manager.h>
 
 #define DEFAULT_BOOTPOWER_LEVEL		3100000
 #define DEFAULT_NOPOWER_LEVEL	    3400000
@@ -444,8 +444,11 @@ int power_manager_sync_slave_battery_state(void)
 					   }
 					   else
 					   {
+					     if(!run_mode_is_demo())
+					     {
 					      printk("[%s/%d], bt mode, display 10s !!!\n\n",__func__,__LINE__);
                           pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
+					     }
 					   }
 					}
 					else if(temp_status == POWER_SUPPLY_STATUS_CHARGING){
@@ -866,11 +869,16 @@ int power_manager_early_init(void)
 		if(pd_manager_check_mobile())
 		{
 			SYS_LOG_INF("%d MSG_PD_OTG_MOBILE_EVENT\n",__LINE__);
-			k_sleep(1000);		
-			logic_mcu_ls8a10023t_otg_mobile_det();
+//			k_sleep(1000);
+	//		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));		
+			//logic_mcu_ls8a10023t_otg_mobile_det();
 			//extern int pd_manager_deinit(void);
-			pd_srv_sync_exit(1);
-			sys_pm_poweroff();
+			//pd_srv_sync_exit(1);
+			//sys_pm_poweroff();
+			// struct app_msg msg = {0};
+        	// msg.type = MSG_PD_EVENT;
+			// msg.value = PD_EVENT_OTG_MOBILE_POWER_OFF;
+        	// send_async_msg("main", &msg);
 		}
 	}
 	

@@ -334,8 +334,8 @@ int ui_manager_dispatch_key_event(u32_t key_event)
 	if(key_val != KEY_F1){
 		/* need reset led time at key_down or short! */
 		if(key_val == KEY_PAUSE_AND_RESUME){
-			/*!!!PLAY按键因为判断双击，long_down消息特别慢*/
-			if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_LONG_DOWN||key_type==KEY_TYPE_SHORT_LONG_UP){
+			if(key_type==KEY_TYPE_SHORT_UP||key_type==KEY_TYPE_LONG_DOWN||key_type==KEY_TYPE_SHORT_LONG_UP
+				||key_type==KEY_TYPE_DOUBLE_CLICK||key_type == KEY_TYPE_TRIPLE_CLICK){
 				printk("------> playkey light up battery led!");
 				pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);
 			}		

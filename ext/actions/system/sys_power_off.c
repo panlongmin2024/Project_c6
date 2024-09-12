@@ -59,8 +59,12 @@
 #include <debug/task_wdt.h>
 #endif
 
+extern void hm_ext_pa_deinit(void);
+extern void external_dsp_ats3615_deinit(void);
+extern int bt_mcu_send_pw_cmd_powerdown(void);
 static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 {
+
 	if(!msg->reserve){
 #ifdef CONFIG_TASK_WDT
 		task_wdt_exit();
@@ -77,6 +81,10 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 #endif
 		system_deinit();
 
+		k_sleep(100);//wait DSP output complete
+		hm_ext_pa_deinit();
+		external_dsp_ats3615_deinit();
+
 #ifdef CONFIG_AUDIO
 		hal_aout_close_pa(true);
 #endif
@@ -85,7 +93,7 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 	if (get_property_factory_reset_flag())
 	{
 		SYS_LOG_INF("property_clear_user_info\n");
-		property_factory_reset();
+		//property_factory_reset();
 	}
 #endif
 
@@ -116,22 +124,13 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 		#endif
 		printk("[%s,%d] send pd deinit message!\n", __FUNCTION__, __LINE__);
 		pd_srv_sync_exit(0);
-		while(1);
+		bt_mcu_send_pw_cmd_powerdown();
+		k_sleep(5*1000);
+		//不会走到下面
+		sys_pm_reboot(REBOOT_TYPE_NORMAL | REBOOT_REASON_NORMAL);
 		#endif
 		sys_pm_poweroff();
 	} 
-	// else {
-	// 	#ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-	// 	sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_NORMAL);
-	// 	#else
-	// 	//bt_ui_charging_warning_handle(BT_LED_STATUS_OFF);
-	// 	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,REBOOT_LED_STATUS);
-	// 	k_sleep(200);
-	// 	sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_USER_ENTER_CHARGE);
-	// 	// extern int charge_app_enter_cmd(void);
-	// 	// charge_app_enter_cmd();
-	// 	#endif
-	// 	}
 	}else{
 		int reason = msg->value;
 
@@ -154,6 +153,10 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 #endif
 		system_deinit();
 
+		k_sleep(100);//wait DSP output complete
+		hm_ext_pa_deinit();
+		external_dsp_ats3615_deinit();
+		
 #ifdef CONFIG_OTA_UNLOAD
 		printk("reboot reason %d\n", reason);
 		if(reason == REBOOT_REASON_OTA_FINISHED){

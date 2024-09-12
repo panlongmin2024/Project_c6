@@ -262,16 +262,6 @@ static void system_sys_event_proc(struct app_msg *msg)
 		return;
 	} 
 
-#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-	if (SYS_EVENT_POWER_OFF == msg->cmd){
-		extern int charge_app_get_state(void);
-		if(charge_app_get_state() > 1){
-			system_exit_front_app();
-			return ;
-		}
-	}
-#endif
-
 	sys_event_process(msg->cmd);
 
 	if (SYS_EVENT_POWER_OFF == msg->cmd) {
@@ -284,13 +274,15 @@ static void system_sys_event_proc(struct app_msg *msg)
 		if(!system_get_poweroff()){
 			system_set_poweroff(true);
 			if(run_mode_is_demo()){
+			    led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
 				pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
 				pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+				pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
 				pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));
 			}
 			else{
-				led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
-				pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
+				//led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
+				//pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);//PWROFF pwr&bat off 500ms
 				pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(0xFF));		
 			}
 		}
@@ -331,10 +323,7 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 					break;
 
 				case MSG_REBOOT:
-					SYS_EVENT_INF(EVENT_SYSTEM_REBOOT, msg.cmd);
-					#ifdef CONFIG_DATA_ANALY
-					data_analy_exit();
-					#endif				
+					SYS_EVENT_INF(EVENT_SYSTEM_REBOOT, msg.cmd);			
 					system_power_reboot(msg.cmd);
 					break;
 
@@ -417,12 +406,6 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 				//	power_manager_battery_display_handle(1, POWER_MANAGER_BATTER_10_SECOUND);
 					#endif
 				}
-				break;
-
-				case MSG_EXIT_DATA_ANALY:
-					#ifdef CONFIG_DATA_ANALY
-					data_analy_exit();
-					#endif
 				break;
 
 				default:

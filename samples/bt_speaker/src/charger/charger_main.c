@@ -62,6 +62,7 @@
 extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
 extern bool dc_power_in_status_read(void);
 extern void battery_remaincap_low_poweroff(void);
+extern int bt_mcu_send_pw_cmd_powerdown(void);
 #endif
 
 #if 0
@@ -165,8 +166,13 @@ int charger_mode_check(void)
 								terminaltion = true;
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-							//extern int pd_manager_deinit(void);
+								data_analy_exit();
 								pd_srv_sync_exit(0);
+								bt_mcu_send_pw_cmd_powerdown();
+								k_sleep(5*1000);
+								//不会走到下面
+								sys_pm_reboot(REBOOT_TYPE_NORMAL | REBOOT_REASON_NORMAL);
+								
 #endif							
 								sys_pm_poweroff();
 							}
@@ -180,11 +186,11 @@ int charger_mode_check(void)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE		
 
 			case MSG_LOW_POWER:
-				terminaltion = true;
-				
-				//extern int pd_manager_deinit(void);
+				terminaltion = true;				
+/* 				//extern int pd_manager_deinit(void);
 				pd_srv_sync_exit(0);						
-				sys_pm_poweroff();
+				sys_pm_poweroff(); */
+				SYS_LOG_INF("not use msg\n");
 				break;
 
 			case MSG_EXIT_APP:
@@ -205,15 +211,20 @@ int charger_mode_check(void)
 				break;
 
 			case MSG_PD_EVENT:
+				SYS_LOG_INF("MSG_PD_EVENT: msg.value:0x%X\n", msg.value);
 				if(msg.value == PD_EVENT_OTG_MOBILE_POWER_OFF)
 				{
 
 					terminaltion = true;
+					data_analy_exit();
 					k_sleep(1000);
 					logic_mcu_ls8a10023t_otg_mobile_det();							// charge trigrering mode of logic ic to rising edge 
-
 					//extern int pd_manager_deinit(void);
-					pd_srv_sync_exit(1);	
+					pd_srv_sync_exit(1);
+					bt_mcu_send_pw_cmd_powerdown();
+					k_sleep(5*1000);
+					//不会走到下面
+					sys_pm_reboot(REBOOT_TYPE_NORMAL | REBOOT_REASON_NORMAL);	
 					sys_pm_poweroff();
 
 				}

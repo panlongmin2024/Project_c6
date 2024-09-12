@@ -61,12 +61,7 @@ int pd_srv_sync_exit(int value)
 {
 	struct app_msg msg = {0};
 	os_sem return_notify;
-
-#ifdef CONFIG_DATA_ANALY
-	msg.type = MSG_EXIT_DATA_ANALY;
-	msg.cmd = 0;
-	send_async_msg(CONFIG_SYS_APP_NAME, &msg);
-#endif	
+		
 	os_sem_init(&return_notify, 0, 1);
 	msg.type = MSG_PD_SRV_EXIT;
 	msg.value = value;
@@ -80,10 +75,7 @@ int pd_srv_sync_exit(int value)
 	if (os_sem_take(&return_notify, OS_SECONDS(10)) != 0) {
 		return -1;
 	}
-	
-	k_sleep(5*1000);
-	//to do if no power dowm
-	return -1;
+	return 0;
 }
 
 int pd_srv_event_notify(int event ,int value)

@@ -40,7 +40,8 @@ typedef struct{
 	int last_plugin_id;
 	uint8_t plugin_num;
 	uint8_t start:1;
-	uint8_t locked : 1;
+	uint8_t locked;
+	uint8_t charge_locked;
 	uint32_t plugin_bits;
 	desktop_plugin_t* cur_plugin;
 }desktop_manager_ctx_t;
@@ -347,6 +348,12 @@ int desktop_manager_app_switch(struct app_msg *msg)
 	case DESKTOP_SWITCH_CURR:
 		new_plugin_id = msg->value;
 		int app = desktop_manager_get_plugin_id();
+		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+		if((ctx->charge_locked) && (new_plugin_id == DESKTOP_PLUGIN_ID_CHARGER)){
+			SYS_LOG_INF("charge app lock waiting power dowm\n");
+			break;
+		}
+		#endif
 		if(desktop_manager_add(new_plugin_id)){
 			SYS_LOG_INF("add plugin failed %d\n", new_plugin_id);
 			SYS_EVENT_INF(EVENT_DESKTOP_APP_SWITCH, msg->cmd,msg->value,-1);
@@ -497,6 +504,21 @@ int desktop_manager_unlock(void)
 	os_mutex_unlock(&desktop_manager_mutex);
 	return 0;
 
+}
+
+int desktop_manager_lock_charge_app(void)
+{
+	desktop_manager_ctx_t *ctx = _desktop_manager_get_ctx();
+	os_mutex_lock(&desktop_manager_mutex, OS_FOREVER);
+	if(!ctx->start){
+		os_mutex_unlock(&desktop_manager_mutex);
+		return -EINVAL;
+	}
+
+	ctx->charge_locked++;
+
+	os_mutex_unlock(&desktop_manager_mutex);
+	return 0;
 }
 
 

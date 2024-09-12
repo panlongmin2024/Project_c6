@@ -207,9 +207,17 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 				{
 					k_sleep(1000);
 					logic_mcu_ls8a10023t_otg_mobile_det();
-					pd_srv_sync_exit(0);
 					sys_event_notify(SYS_EVENT_POWER_OFF);
 				}
+			}else{
+				extern void charge_app_set_wait_power_dowm(void);
+				charge_app_set_wait_power_dowm();
+				desktop_manager_lock_charge_app();
+				if((msg.value != PD_EVENT_LOW_BATTERY) || (desktop_manager_get_plugin_id() == DESKTOP_PLUGIN_ID_CHARGER))
+					sys_event_notify(SYS_EVENT_AUTO_POWER_OFF);
+				else 
+					sys_event_notify(SYS_EVENT_POWER_OFF);
+
 			}
 
 			break;

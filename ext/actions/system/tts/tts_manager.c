@@ -1024,7 +1024,7 @@ int tts_manager_process_ui_event(int ui_event)
 #endif
 
 	if( 0 == tts_manager_find_tts(ui_event, &mode, &tts_file_name)){
-#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+#if 0
 		if((tts_ctx->filter_enable && !(mode & TTS_CANNOT_BE_FILTERED))&& (bt_manager_a2dp_get_status_check_avrcp_status() != BT_STATUS_PAUSED)){
 #else
 		if(tts_ctx->filter_enable && !(mode & TTS_CANNOT_BE_FILTERED)){

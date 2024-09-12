@@ -19,7 +19,7 @@
 #include <mem_manager.h>
 #include <thread_timer.h>
 #include <gpio.h>
-#include <sys_event.h>
+#include <pd_manager.h>
 
 #define UUID_STR_DATA_LEN       (32)
 #define UUID_MSG_SIGNATURE_LEN  (256)
@@ -76,15 +76,15 @@ static const unsigned int g_pubkey[]   = {
 };
 
 struct thread_timer uuid_verify_timer;
+extern u8_t pd_manager_send_notify(u8_t event);
+
 /* verify fail delay xs poweroff */
 static void timeout_poweroff(struct thread_timer *timer, void* pdata)
 {
 	printk("----> %s %d\n",__func__,__LINE__);
-	//pd_manager_deinit(1);
-	//int bt_mcu_send_pw_cmd_powerdown(void);
-	//bt_mcu_send_pw_cmd_powerdown();
+//	pd_manager_deinit(0);
 	//sys_pm_poweroff();
-	sys_event_notify(SYS_EVENT_POWER_OFF);
+	pd_manager_send_notify(PD_EVENT_POWER_OFF);
 }
 static void enter_verify_fail_func(void)
 {

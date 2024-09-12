@@ -288,7 +288,7 @@ void main_input_event_handle(struct app_msg *msg)
 		}	*/	
 /*  		if (dc_power_in_status_read() 
 		|| (sys_pm_get_power_5v_status() == 2)){  */
-		//从充电模式关�?		
+		//从充电模式关�?		
 		if(1){
 			u8_t name[33];
 			int ret;
@@ -419,6 +419,8 @@ void main_input_event_handle(struct app_msg *msg)
 	}
 }
 
+extern int logic_mcu_ls8a10023t_otg_mobile_det(void);
+
 void main_hotplug_event_handle(struct app_msg *msg)
 {
 	SYS_LOG_INF("type %d, %d\n", msg->cmd, msg->value);
@@ -468,6 +470,8 @@ void main_hotplug_event_handle(struct app_msg *msg)
 		{
 			if(run_mode_is_demo() && pd_manager_check_mobile())
 			{
+				k_sleep(1000);
+				logic_mcu_ls8a10023t_otg_mobile_det();
 				sys_event_notify(SYS_EVENT_POWER_OFF);
 			}
 		}

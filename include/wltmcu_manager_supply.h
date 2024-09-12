@@ -49,6 +49,7 @@ typedef enum
     CHARGING_APP_INIT,
     CHARGING_APP_TTS_DONE,
     CHARGING_APP_OK,
+    CHARGING_APP_POWER_DOWM,
 } wlt_charge_app_state_t;
 
 enum pd_manager_supply_property {
