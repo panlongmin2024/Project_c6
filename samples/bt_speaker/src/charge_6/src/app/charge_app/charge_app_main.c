@@ -71,6 +71,7 @@ int charge_app_get_state(void)
 void charge_app_set_wait_power_dowm(void)
 {
 	charge_app_state = CHARGING_APP_POWER_DOWM;
+	printk("------>set charge_app_state CHARGING_APP_POWER_DOWM");
 }
 
 int charge_app_enter_cmd(void)
@@ -136,10 +137,12 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 #endif			
 			hm_ext_pa_deinit();		
 			external_dsp_ats3615_deinit();
+			printk("------>set charge_app_state CHARGING_APP_TTS_DONE");
 			charge_app_state = CHARGING_APP_TTS_DONE;
 		}
 		#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
 		if(memcmp(tts_id,"c_err.mp3",sizeof("c_err.mp3")) == 0){
+			printk("------>set charge_app_state CHARGING_APP_TTS_DONE");
 			charge_app_state = CHARGING_APP_TTS_DONE;
 			main_system_tts_set_play_warning_tone_flag(false);
 		}
@@ -200,6 +203,7 @@ static void charge_app_check_bt_timer(struct thread_timer *ttimer, void *expiry_
 {
 	if(((btif_br_get_connected_device_num() == 0) && (charge_app_state == CHARGING_APP_TTS_DONE)) || \
 	((os_uptime_get_32() - p_charge_app_app->tts_start_time) > 10000)){
+		printk("------>set charge_app_state CHARGING_APP_OK");
 		charge_app_state = CHARGING_APP_OK;
 		thread_timer_stop(&check_bt_timer);
 		hotplug_charger_init();	
@@ -215,6 +219,7 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 		return -ENOMEM;
 	}
 	hotplug_charger_deinit();
+	printk("------>set charge_app_state CHARGING_APP_INIT");
 	charge_app_state = CHARGING_APP_INIT;
 	desktop_manager_lock();
 	input_manager_lock();
@@ -341,6 +346,7 @@ static int _charge_app_exit(void)
 		app_manager_thread_exit(APP_ID_CHARGE_APP_NAME);
 		input_manager_unlock();
 		sys_wake_unlock(WAKELOCK_CHARGE_MODE);
+		printk("------>set charge_app_state CHARGING_APP_NORMAL");
 		charge_app_state = CHARGING_APP_NORMAL; 
 		soc_dvfs_unset_level(SOC_DVFS_LEVEL_HIGH_PERFORMANCE, "power_on");
 		//sys_standby_time_set(CONFIG_AUTO_STANDBY_TIME_SEC,CONFIG_AUTO_POWEDOWN_TIME_SEC);
