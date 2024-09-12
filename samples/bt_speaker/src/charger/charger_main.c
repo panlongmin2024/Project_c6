@@ -141,6 +141,7 @@ int charger_mode_check(void)
 	
 	while (!terminaltion) {
 		if (receive_msg(&msg, thread_timer_next_timeout())) {
+			SYS_LOG_INF("type %d, cmd %d, value 0x%x\n", msg.type, msg.cmd, msg.value);
 			switch (msg.type) {
 			case MSG_KEY_INPUT:
 
