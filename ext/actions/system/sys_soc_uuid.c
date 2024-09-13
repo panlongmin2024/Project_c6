@@ -84,7 +84,7 @@ static void timeout_poweroff(struct thread_timer *timer, void* pdata)
 	printk("----> %s %d\n",__func__,__LINE__);
 //	pd_manager_deinit(0);
 	//sys_pm_poweroff();
-	pd_manager_send_notify(PD_EVENT_POWER_OFF);
+	//pd_manager_send_notify(PD_EVENT_POWER_OFF);
 }
 static void enter_verify_fail_func(void)
 {
@@ -93,7 +93,7 @@ static void enter_verify_fail_func(void)
 		thread_timer_stop(&uuid_verify_timer);
 	}	
 	thread_timer_init(&uuid_verify_timer, timeout_poweroff, NULL);
-	thread_timer_start(&uuid_verify_timer, TIMEOUT_UUID_VERIFY_FAIL_POWEROFF, 0);
+	thread_timer_start(&uuid_verify_timer, TIMEOUT_UUID_VERIFY_FAIL_POWEROFF, TIMEOUT_UUID_VERIFY_FAIL_POWEROFF);
 
 }
 static void enter_verify_ok_func(void)

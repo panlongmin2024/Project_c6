@@ -2570,13 +2570,12 @@ static void pd_mps52002_wlt_set_property(struct device *dev,enum pd_manager_supp
 			// pd_mps52002->pd_65992_unload_flag = true;
 			// thread_timer_stop(&pd_mps52002->timer);
 			MPS_PB2_LOW(0);
-			k_sleep(10);
-			// if(!val->intval)
-			{
-				pd_mps52002_pd_otg_on(true); 	
-			}
 
-			k_sleep(10);
+			// if(!val->intval)
+			// {
+			// 	pd_mps52002_pd_otg_on(true); 	
+			// }
+
 			MPS_ONOFF_BGATE(0);  
 			k_sleep(10);
 			mps_set_power_down();

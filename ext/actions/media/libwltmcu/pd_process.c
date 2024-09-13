@@ -418,6 +418,8 @@ static bool bt_wake_up_flag = 0;
 static uint8_t poweron_filte_battery_led_flag = WLT_FILTER_NOTHING;
 static u16_t power_key_debounce_count = 0x00;
 
+static bool exit_standby_after_send_msg_flag = 0;
+
 
 extern bool media_player_is_working(void);
 extern bool  wlt_led_timer_init(void);
@@ -427,6 +429,18 @@ void pd_manager_set_poweron_filte_battery_led(uint8_t flag)
 {
     poweron_filte_battery_led_flag = flag;
     SYS_LOG_INF("[%d],flag =%d\n", __LINE__, flag);
+}
+
+void set_exit_standby_after_send_msg_flag(bool flag)
+{
+    exit_standby_after_send_msg_flag = flag;
+    SYS_LOG_INF("[%d],flag =%d\n", __LINE__, flag);
+}
+
+bool get_exit_standby_after_send_msg_flag(void)
+{
+    SYS_LOG_INF("[%d],flag =%d\n", __LINE__, exit_standby_after_send_msg_flag);
+    return exit_standby_after_send_msg_flag;
 }
 
 uint8_t pd_manager_get_poweron_filte_battery_led(void)
@@ -458,8 +472,14 @@ u8_t pd_manager_send_notify(u8_t event)
 {
 
 	//notify system poweroff
-
+	if(sys_check_standby_state())
+	{
+      set_exit_standby_after_send_msg_flag(true);
+	}
 	struct app_msg msg = {0};
+
+    SYS_LOG_INF("event:%d \n", event);
+
 	msg.type = MSG_PD_EVENT;
 	msg.cmd = 0;
     msg.value = event;
