@@ -314,6 +314,7 @@ static int _sys_standby_enter_s1(void)
 	SYS_LOG_INF("Enter S1");
 	return 0;
 }
+extern bool get_exit_standby_after_send_msg_flag(void);
 
 static int _sys_standby_exit_s1(void)
 {
@@ -339,7 +340,7 @@ static int _sys_standby_exit_s1(void)
 #ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	led_manager_wake_up();
 #else
-	if(dc_power_in_status_read()){
+	if(dc_power_in_status_read()&&(!get_exit_standby_after_send_msg_flag())){
 		/* 1106 remove this led ,start*/
 		if(system_get_power_run_mode() == 0)	
 			led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);
@@ -847,7 +848,7 @@ static int _sys_standby_process_s2_hm(void)
 	task_wdt_feed_all();
 
 	/**have sys wake lock*/
-	if (_sys_standby_wakeup_from_s2()) {
+	if (_sys_standby_wakeup_from_s2()||get_exit_standby_after_send_msg_flag()) {
 		_sys_standby_exit_s2();
 		sys_wake_lock(WAKELOCK_WAKE_UP);
 		_sys_standby_exit_s1();
@@ -935,7 +936,7 @@ int sys_standby_init(void)
 		SYS_LOG_WRN("too small, used default");
 		standby_context->auto_standby_time = STANDBY_MIN_TIME_SEC * 1000;
 	} else {
-		standby_context->auto_standby_time = CONFIG_AUTO_STANDBY_TIME_SEC * 1000;
+		standby_context->auto_standby_time = 58 * 1000;
 	}
 #else
 	standby_context->auto_standby_time = OS_FOREVER;
@@ -943,7 +944,7 @@ int sys_standby_init(void)
 
 #ifdef CONFIG_AUTO_POWEDOWN_TIME_SEC
 	if (_sys_standby_is_auto_powerdown()) {
-		standby_context->auto_powerdown_time = CONFIG_AUTO_POWEDOWN_TIME_SEC * 1000;
+		standby_context->auto_powerdown_time = 60 * 1000;
 	} else {
 		SYS_LOG_WRN("Disable auto powerdown\n");
 		standby_context->auto_powerdown_time = OS_FOREVER;

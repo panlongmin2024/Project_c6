@@ -329,7 +329,7 @@ static int main_app_view_proc(u8_t view_id, u8_t msg_id, u32_t ui_event)
 		break;
 	case MSG_VIEW_DELETE:
 #ifdef CONFIG_PLAYTTS
-		tts_manager_wait_finished(true);
+		//tts_manager_wait_finished(true);
 #endif
 		break;
 	default:

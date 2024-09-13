@@ -138,6 +138,9 @@ int charger_mode_check(void)
 	input_manager_unlock();
 	
     pd_set_app_mode_state(CHARGING_APP_MODE);
+
+
+	SYS_LOG_INF("type: %d; value:%d \n", msg.type, msg.value);
 	
 	while (!terminaltion) {
 		if (receive_msg(&msg, thread_timer_next_timeout())) {

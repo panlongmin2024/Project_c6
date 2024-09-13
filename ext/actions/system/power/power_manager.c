@@ -654,27 +654,6 @@ static int _power_manager_work_handle(void)
 
 		power_manager->report_timestamp = 0;
 
-		// power_manager->current_cap = power_manager_get_battery_capacity();
-
-		// if(run_mode_is_demo() && (pd_get_app_mode_state() != CHARGING_APP_MODE))
-		// {
-
-		// 	static u8_t demo_low_cap_debounce = 0x00;
-			
-
-		// 	SYS_LOG_INF("[%d] cur_cap:%d, charging state:%d; demo mode\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
-		// 	if((power_manager->current_cap<=100) && (pd_get_sink_charging_state()))
-		// 	{
-		// 		if(demo_low_cap_debounce++ >= 50)
-		// 		{
-		// 			demo_low_cap_debounce = 0x00;
-		// 			SYS_LOG_INF("[%d] current_cap:%d, charging state:%d; too low power off\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
-		// 			goto _POWER_OFF_;
-		// 		}
-		// 	}else{
-		// 		demo_low_cap_debounce = 0x00;
-		// 	}
-		// }
 
 		if(power_manager->last_cap != power_manager->current_cap)
 		{
@@ -719,21 +698,6 @@ _POWER_OFF_:
 			power_manager->report_last_cap_timestamp = 0;
 			power_manager->report_timestamp = 0;
 
-			// if((pd_get_app_mode_state() == CHARGING_APP_MODE && power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE)
-			// 	|| (pd_get_app_mode_state() != CHARGING_APP_MODE && bt_manager_a2dp_get_status() == BT_STATUS_PLAYING)){
-			// if((pd_get_app_mode_state() == CHARGING_APP_MODE) && run_mode_is_demo() 
-			// 		&& (power_manager->current_cap == DEFAULT_NOPOWER_CAP_LEVEL))
-			// {
-			// 	SYS_LOG_INF("[%d] Stop charging in Demo mode, but not shut down \n", __LINE__);
-			// 	return 0;
-			// }	
-			// else if((pd_get_app_mode_state() == CHARGING_APP_MODE) && (power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE))
-			// {
-
-			// 	printk("\n %s,charge mode do not charge  \n",__func__);
-			// 	pd_manager_deinit(0);
-			// 	sys_pm_poweroff(); 
-			// } 
 
 			if(pd_get_app_mode_state() == CHARGING_APP_MODE)
 			{
@@ -741,14 +705,14 @@ _POWER_OFF_:
 				{
 					SYS_LOG_INF("[%d] charge mode: vbus volt high waiting temp down \n", __LINE__);	
 				}else{
-					SYS_LOG_INF("[%d] charge mode do not charge  \n", __LINE__);
+					SYS_LOG_INF("[%d] charge mode but not charging  \n", __LINE__);
 					pd_manager_send_notify(PD_EVENT_LOW_BATTERY);
 				}
 			}
 			else
 			{		
-			   if((pd_manager_get_poweron_filte_battery_led() != WLT_FILTER_STANDBY_POWEROFF)
-			   		|| run_mode_is_demo())
+			 //  if((pd_manager_get_poweron_filte_battery_led() != WLT_FILTER_STANDBY_POWEROFF)
+			 //  		|| run_mode_is_demo())
 				{
 				  	sys_event_notify(SYS_EVENT_BATTERY_TOO_LOW);
 			   	}
