@@ -376,7 +376,7 @@ static void battery_led_timer_fn(struct thread_timer *ttimer, void *expiry_fn_ar
 {
 	 printk("ZTH DEBUD: %s:%d\n", __func__, __LINE__);
    //  thread_timer_stop(&battery_led_timer);
-     battery_discharge_remaincap_low_5();//死机
+     battery_discharge_remaincap_low_5();//姝绘満
 }
 #endif     
 extern uint8_t pd_get_app_mode_state(void); 
@@ -851,6 +851,9 @@ static void mcu_reset_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)
     // }
 }
 
+
+extern int WLT_OTA_PD(bool flag);
+
 int mcu_ui_ota_deal(void)
 {
     int ret = 0;
@@ -872,15 +875,15 @@ int mcu_ui_ota_deal(void)
             input_dev_disable(dev);
 
         bt_manager_send_fw_update_code(MCU_FW_UPDATEING);
-		extern int WLT_OTA_PD(bool flag);
+
 
         if(ReadODM())
 		{
-		 ret = WLT_OTA_PD(1);
+		    ret = WLT_OTA_PD(1);
       	}
         else
         {
-          ret = user_mspm0l_ota_process();
+            ret = user_mspm0l_ota_process();
         }
 
 	    if (dev)
@@ -1625,7 +1628,7 @@ static void bt_water_charge_warnnig_trigger_fn(void)
         {
 
             pd_manager_disable_charging(true);
-            // otg off must be early， so process in  pd_manager_battery_low_check_otg() funcion
+            // otg off must be early锛?so process in  pd_manager_battery_low_check_otg() funcion
             
             if(!main_system_tts_get_play_warning_tone_flag())
             {
