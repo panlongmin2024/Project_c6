@@ -106,6 +106,28 @@ extern void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event
 static uint8_t test_id = 1;
 static int battery_cap= 25;
 static int battery_temperature=450;
+/* 
+* for ats test, get battery voltage and current!
+*/
+static int16_t ats_current_volt = 0;
+static int16_t ats_current_cur = 0;
+int16_t wlt_get_battery_volt(void)
+{
+	return ats_current_volt;
+}
+void wlt_set_battery_volt(int16_t volt)
+{
+	ats_current_volt = volt;
+}
+int16_t wlt_get_battery_cur(void)
+{
+	return ats_current_cur;
+}
+void wlt_set_battery_cur(uint16_t cur)
+{
+	ats_current_cur = cur;
+}
+
 
 void set_battery_cap(bool flag)
 {
@@ -333,6 +355,10 @@ void battery_read_iic_value(void)
     //current_cur = (int16_t)(buf[1]<<8 | buf[0]);
     printk("\nbattery status,temp:%d,volt:%dmv,current:%dmA,cap:%d%%,status:0x%x\n",((int)current_temp) - KELVIN_TEMPERATURE_BASE_VAL,current_volt,
     current_cur,current_cap,current_status);
+
+	/* for ats test! */
+	wlt_set_battery_volt(current_volt);
+	wlt_set_battery_cur(current_cur);
 }
 
 static void battery_iic_init(void)

@@ -336,6 +336,41 @@ void main_input_event_handle(struct app_msg *msg)
 		}
 		break;
 	}
+	case MSG_ATS_ENTER_DEMO://for ats ggec
+	{
+		SYS_LOG_INF("enter demo\n");
+		
+		int run_mode = run_mode_get();
+		if (run_mode == RUN_MODE_DEMO)
+		{
+			break;
+		}
+		else if (run_mode == RUN_MODE_NORMAL)
+		{
+			run_mode_set(RUN_MODE_DEMO);
+			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
+			pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+			led_manager_set_display(128,LED_OFF,OS_FOREVER,NULL);
+			sys_event_notify(SYS_EVENT_POWER_OFF);
+		}
+		break;
+	}	
+	case MSG_ATS_EXIT_DEMO://for ats ggec
+	{
+		SYS_LOG_INF("exit demo\n");
+		
+		int run_mode = run_mode_get();
+		if (run_mode != RUN_MODE_DEMO)
+		{
+			break;
+		}
+		else if (run_mode == RUN_MODE_NORMAL)
+		{
+			run_mode_set(RUN_MODE_NORMAL);
+			sys_event_notify(SYS_EVENT_POWER_OFF);
+		}
+		break;
+	}		
 	case MSG_SOFT_VERSION:
 		SYS_LOG_INF("soft version\n");
 		fw_version_play_by_tts();
