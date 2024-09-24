@@ -101,11 +101,6 @@ uint8_t pd_get_app_mode_state(void);
 // static int battery_temperature=200;
 extern void mcu_supply_report(mcu_charge_event_t event, mcu_manager_charge_event_para_t *para);
 
-#ifdef CONFIG_C_TEST_BATT_MACRO
-
-static uint8_t test_id = 1;
-static int battery_cap= 25;
-static int battery_temperature=450;
 /* 
 * for ats test, get battery voltage and current!
 */
@@ -128,6 +123,11 @@ void wlt_set_battery_cur(uint16_t cur)
 	ats_current_cur = cur;
 }
 
+#ifdef CONFIG_C_TEST_BATT_MACRO
+
+static uint8_t test_id = 1;
+static int battery_cap= 25;
+static int battery_temperature=450;
 
 void set_battery_cap(bool flag)
 {
