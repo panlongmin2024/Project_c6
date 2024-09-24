@@ -80,7 +80,7 @@ int data_analy_data_get(data_analytics_upload_t* buf, u16_t len)
 		return -1;
 	}
 	data_analy_update_power_on_sec();
-	memcpy(buf, analy_upload_play_p, sizeof(data_analytics_upload_t));
+	memcpy(buf, analy_upload_data_p, sizeof(data_analytics_upload_t));
 	return 0;
 }
 
@@ -280,19 +280,15 @@ static void data_analy_scan_music_playback_with_adapter(void)
 
 		if(!battery_full)
 		{
-			s64_t delta_ms = k_uptime_delta(&analy_data_p->pwr_on_charge_stamp);
-			if(delta_ms > 1500)
+			if(g_data_analy.power_on)
 			{
-				analy_upload_data_p->power_on_charge_sec += delta_ms/1000;
-			}else{
 				analy_upload_data_p->power_on_charge_sec ++;
 			}
 		}else{
-			SYS_LOG_INF("battery_full\n");
+			//SYS_LOG_INF("battery_full\n");
 		}
 	}
 
-	analy_data_p->pwr_on_charge_stamp = k_uptime_get();
 }
 
 static void data_analy_scan_key_press(void)

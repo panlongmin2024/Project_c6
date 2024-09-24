@@ -269,6 +269,13 @@ static void system_sys_event_proc(struct app_msg *msg)
 #ifdef CONFIG_INPUT_MANAGER
 		input_manager_lock();
 #endif
+#ifdef CONFIG_BT_SELFAPP_ADV
+		selfapp_set_system_status(SELF_SYS_POWEROFF);
+		selfapp_set_allowed_adv_crc(false);
+		selfapp_set_allowed_join_party(false);
+		sys_ble_advertise_deinit();
+		sys_ble_advertise_init();
+#endif
 		/* panlm add,poweroff all led off together */
 		extern bool run_mode_is_demo(void);
 		if(!system_get_poweroff()){
@@ -377,13 +384,16 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 						if(msg.value == 1 || msg.value == 2 || !msg.value){
 							selfapp_eq_cmd_switch_auracast(msg.value);
 						}
-						selfapp_notify_role();
+						selfapp_group_status_update(msg.value);
 					}else if(SELFAPP_CMD_LASTING_STEREO_MODE_UPDATE == msg.cmd) {
 						selfapp_notify_lasting_stereo_status();
 					}else if(SELFAPP_CMD_LEAUDIO_STATUS_UPDATE == msg.cmd) {
 						selfapp_report_leaudio_status();
 					}else if(SELFAPP_CMD_THREAD_TIMER_START == msg.cmd){
 						selfapp_thread_timer_start(msg.value);
+					}
+					else if (SELFAPP_CMD_DISCONNECT == msg.cmd) {
+						selfapp_disconnect_all_App();
 					}
 				break;
 #endif

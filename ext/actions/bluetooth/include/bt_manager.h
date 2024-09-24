@@ -1651,6 +1651,8 @@ void bt_manager_app_name_update(void);
 
 void bt_manager_gfp_personalized_name_update(bool valid);
 
+void bt_manager_update_phone_volume(uint16_t hdl,int a2dp);
+
 int bt_manager_sync_volume_before_playing(void);
 
 void bt_manager_check_visual_mode(void);

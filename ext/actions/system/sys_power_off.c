@@ -156,7 +156,7 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 		k_sleep(100);//wait DSP output complete
 		hm_ext_pa_deinit();
 		external_dsp_ats3615_deinit();
-		
+
 #ifdef CONFIG_OTA_UNLOAD
 		printk("reboot reason %d\n", reason);
 		if(reason == REBOOT_REASON_OTA_FINISHED){

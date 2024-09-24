@@ -621,10 +621,12 @@ extern void wlt_pa_media_mute(u8_t tts_mute_flag, u8_t meda_mute_flag);
 
 	case BT_CONNECTED:
 		btmusic_view_show_connected();
+		btmusic_volume_check();
 		break;
 	case BT_DISCONNECTED:
 		btmusic_view_show_disconnected();
 		btmusic_handle_disconnect(msg->ptr);
+		btmusic_volume_check();
 		break;
 	case BT_AUDIO_STREAM_ENABLE:
 		btmusic_handle_enable(msg->ptr);
@@ -832,6 +834,61 @@ static void btmusic_player_reset(void)
 	}
 }
 
+static void btmusic_playTimeBoost_reset(void)
+{
+	uint8_t delay_flag = 0;
+	struct btmusic_app_t *btmusic = btmusic_get_app();
+	if(btmusic == NULL){
+		SYS_LOG_INF("bt music not init\n");
+		return;
+	}
+
+#ifdef CONFIG_PLAYTTS
+	tts_manager_wait_finished(true);
+#endif
+
+	//stop
+	if (btmusic->playback_player_run) {
+		btmusic_stop_playback();
+		btmusic_exit_playback();
+		delay_flag = 1;
+	}
+
+	if (btmusic->capture_player_run) {
+		btmusic_bms_stop_capture();
+		btmusic_bms_exit_capture();
+	}
+	btmusic->tx_start = 0;
+	btmusic->tx_sync_start = 0;
+	//clear restart flag to avoid restart handler to do dumplicated handling.
+	btmusic->restart = 0;
+
+	if (delay_flag) {
+		os_sleep(OS_MSEC(50));
+	}
+
+/* 	if (selfapp_config_get_PB_state()) {
+		flip7_reload_default_eq(true);
+	} else {
+		if (btmusic_get_auracast_mode() == 0) {
+			flip7_reload_default_eq(false);
+		}
+	} */
+
+	extern void hm_ext_pa_stop(void);
+	hm_ext_pa_stop();
+
+	os_sleep(OS_MSEC(10));
+	extern int external_dsp_ats3615_reset(void);
+	external_dsp_ats3615_reset();
+
+	extern void hm_ext_pa_start(void);
+	hm_ext_pa_start();
+	//start
+	bt_manager_audio_stream_restore(BT_TYPE_BR);
+}
+
+
 static void btmusic_switch_auracast()
 {
 	struct btmusic_app_t *btmusic = btmusic_get_app();
@@ -944,8 +1001,8 @@ void btmusic_input_event_proc(struct app_msg *msg)
 	struct btmusic_app_t *btmusic =
 	    (struct btmusic_app_t *)btmusic_get_app();
 	int status;
-    extern uint8_t ReadODM(void);
-	static bool pd_volt_flag = 0;	
+//    extern uint8_t ReadODM(void);
+//	static bool pd_volt_flag = 0;	
 
 	SYS_LOG_INF("cmd: %d\n", msg->cmd);
 
@@ -1034,27 +1091,27 @@ void btmusic_input_event_proc(struct app_msg *msg)
 		break;
 
 	case MSG_SWITCH_BROADCAST:
-		if(pd_volt_flag)
-		{
-		 if(!ReadODM())
-			pd_switch_volt();
-		 else
-		 	pd_mps52002_switch_volt();
-		}
-		else
+		// if(pd_volt_flag)
+		// {
+		//  if(!ReadODM())
+		// 	pd_switch_volt();
+		//  else
+		//  	pd_mps52002_switch_volt();
+		// }
+		// else
 		{
 			btmusic_switch_auracast();
 		}
 		break;
 
 	case MSG_SWITCH_PD_VOLT:
-		pd_volt_flag = true;
-		if(!ReadODM())
-		pd_sink_test_mode(pd_volt_flag);
-		else
-		pd_mps52002_sink_test_mode(pd_volt_flag);
-		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
-		k_sleep(100);
+		// pd_volt_flag = true;
+		// if(!ReadODM())
+		// pd_sink_test_mode(pd_volt_flag);
+		// else
+		// pd_mps52002_sink_test_mode(pd_volt_flag);
+		// pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,LOW_POWER_OFF_LED_STATUS);
+		// k_sleep(100);
 		break;
 
 
@@ -1184,6 +1241,9 @@ void btmusic_app_event_proc(struct app_msg *msg)
 	switch (msg->cmd) {
 	case MSG_BTMUSIC_MESSAGE_CMD_PLAYER_RESET:
 		btmusic_player_reset();
+		break;
+	case MSG_BTMUSIC_MESSAGE_CMD_PLAY_TIME_BOOST:
+		btmusic_playTimeBoost_reset();
 		break;
 	}
 }

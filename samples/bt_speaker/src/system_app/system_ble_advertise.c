@@ -22,7 +22,7 @@
 #endif
 #include "system_app.h"
 
-#define GFP_BLE_ADV_POWER (-10)//-13 //鏁板�艰皟灏忎笉瀹规槗寮圭獥----zth
+#define GFP_BLE_ADV_POWER (-10)//-13 //数值调小不容易弹窗----zth
 #define GFP_ADV_SLEEP_TIME (500) // 20 S
 //#define GFP_CERTIFICATION 1
 
@@ -91,6 +91,7 @@ struct ble_adv_mngr {
 
 static struct ble_adv_mngr ble_adv_info;
 
+#ifdef CONFIG_TWS
 static void sys_check_ble_adv_stop(void)
 {
 	struct ble_adv_mngr *p = &ble_adv_info;
@@ -106,14 +107,25 @@ static void sys_check_ble_adv_stop(void)
 			p->adv[p->adv_index]->adv_disable();
 			//SYS_LOG_INF("rrr:%d\n",p->adv_index);
 		} else if ((p->adv_index == ADV_TYPE_LEAUDIO)
-			   &&
-			   ((p->adv[p->adv_index]->
-			     adv_get_state() & ADV_STATE_BIT_ENABLE) == 0)) {
+					&&((p->adv[p->adv_index]->adv_get_state() & ADV_STATE_BIT_ENABLE) == 0)) {
 			p->adv[p->adv_index]->advert_state = false;
 			p->adv[p->adv_index]->adv_disable();
 		}
 	}
 
+}
+#endif
+
+static int sys_ble_adv_disabled(void)
+{
+	struct ble_adv_mngr *p = &ble_adv_info;
+
+	for (int i = 0; i < ADV_TYPE_MAX; i++) {
+		if (p->adv[i]) {
+			p->adv[i]->adv_enabled = 0;
+		}
+	}
+	return 0;
 }
 
 static bool ble_adv_check_enable(void)
@@ -173,18 +185,31 @@ static bool ble_adv_check_enable(void)
 			    cur_time, p->begin_wait_time);
 	}
 
+#ifdef CONFIG_BT_SELFAPP_ADV
+	if (selfapp_get_system_status() == SELF_SYS_POWEROFF
+		|| selfapp_get_system_status() == SELF_SYS_STANDBY) {
+		sys_ble_adv_disabled();
+		if (p->adv[ADV_TYPE_OTA]) {
+			p->adv_index = ADV_TYPE_OTA;
+			p->adv[ADV_TYPE_OTA]->adv_enabled = 1;
+		}
+		goto end;
+	}
+#endif
+
 	/* close BT when BLE is connected */
 	if (bt_manager_ble_max_connected()) {
-		sys_check_ble_adv_stop();
+		bt_manager_ble_set_advertise_enable(false);
 		enable = false;
 		goto end;
 	}
 
 	if (bt_manager_audio_takeover_flag()) {
-		sys_check_ble_adv_stop();
+		bt_manager_ble_set_advertise_enable(false);
 		enable = false;
 		goto end;
 	}
+
  adv_index_enable_check:
 #ifdef CONFIG_TWS
 	if (bt_manager_tws_get_dev_role() == BTSRV_TWS_SLAVE) {
@@ -545,7 +570,7 @@ static int gfp_ble_mgr_adv_enable(void)
 	t->type = BT_DATA_FLAGS;
 	t->len = 2;
 	t->data[0] = BT_LE_AD_LE_EDR_SAME_DEVICE_CTRL | BT_LE_AD_LE_EDR_SAME_DEVICE_HOST;
-	//鏁板�艰皟澶т笉瀹规槗寮圭獥----zth
+	//数值调大不容易弹窗----zth
 	if (sys_ble_set_adv_data(adv_data, 4, -20)) {
 #else
 	if (sys_ble_set_adv_data(adv_data, 3, -20)) {
@@ -734,6 +759,11 @@ int sys_ble_advertise_init(void)
 	uint8 is_exist_reconn_phone_flag = 0;
 	int role = bt_manager_tws_get_dev_role_ext(&is_exist_reconn_phone_flag);
 
+	if (thread_timer_is_running(&p->check_adv_timer)) {
+		SYS_LOG_WRN("Already init");
+		return -1;
+	}
+
 	memset(p, 0, sizeof(struct ble_adv_mngr));
 
 #ifdef CONFIG_GFP_PROFILE
@@ -758,9 +788,7 @@ int sys_ble_advertise_init(void)
 	}
 
 	thread_timer_init(&p->check_adv_timer, sys_ble_check_advertise, NULL);
-	thread_timer_start(&p->check_adv_timer, ADV_INTERVAL_MS,
-			   ADV_INTERVAL_MS);
-
+	thread_timer_start(&p->check_adv_timer, 0, ADV_INTERVAL_MS);
 
 	SYS_LOG_INF("tws role:%d wait_recon:%d\n", p->tws_role, p->wait_reconn_phone);
 	return 0;
@@ -772,6 +800,8 @@ void sys_ble_advertise_deinit(void)
 
 	thread_timer_stop(&p->check_adv_timer);
 	#ifndef GFP_CERTIFICATION
+	bt_manager_ble_set_advertise_enable(false);
+
 	sys_ble_adv_register(ADV_TYPE_OTA, NULL);
 	#endif
 #ifdef CONFIG_GFP_PROFILE

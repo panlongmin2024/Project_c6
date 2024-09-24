@@ -436,6 +436,87 @@ static u8_t manufacturer_str_ptr[CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN];
 static u8_t product_str_ptr[CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN];
 static u8_t dev_sn_str_ptr[CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN];
 
+/*
+ * @brief modify the descriptor generation sequence number
+ *
+ * @return true/false
+ */
+ bool usb_device_serial_number_change(uint8_t *update_serial_number)
+ {
+	uint16_t num_len = 0;
+
+	if(update_serial_number == NULL) {
+	    /* Handle error: NULL pointer provided */
+	    return false;
+	}
+
+	num_len = strlen(update_serial_number);
+
+	if(num_len > CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN) {
+		/* It's too long. It's not legal */
+		return false;
+	}
+
+	memset(dev_sn_str_ptr, 0, CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN);
+	memcpy(dev_sn_str_ptr, update_serial_number, num_len);
+
+	return true;
+ }
+
+/*
+ * @brief modify the descriptor product name
+ *
+ * @return true/false
+ */
+ bool usb_device_product_name_change(uint8_t *update_product_name)
+ {
+	uint16_t name_len = 0;
+
+	if(update_product_name == NULL) {
+		/* Handle error: NULL pointer provided */
+		return false;
+	}
+
+	name_len = strlen(update_product_name);
+
+	if(name_len > CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN) {
+		/* It's too long. It's not legal */
+		return false;
+	}
+
+	memset(product_str_ptr, 0, CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN);
+	memcpy(product_str_ptr, update_product_name, name_len);
+
+	return true;
+ }
+
+/*
+ * @brief modify the descriptor vendor name
+ *
+ * @return true/false
+ */
+ bool usb_device_manufacturer_name_change(uint8_t *update_manufacturer_name)
+ {
+	uint16_t name_len = 0;
+
+	if(update_manufacturer_name == NULL) {
+		/* Handle error: NULL pointer provided */
+		return false;
+	}
+
+	name_len = strlen(update_manufacturer_name);
+
+	if(name_len > CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN) {
+		/* It's too long. It's not legal */
+		return false;
+	}
+
+	memset(manufacturer_str_ptr, 0, CONFIG_USB_DEVICE_STRING_DESC_MAX_LEN);
+	memcpy(manufacturer_str_ptr, update_manufacturer_name, name_len);
+
+	return true;
+ }
+
 int usb_device_register_string_descriptor(enum usb_device_str_desc type,
 					  u8_t *str_dat, u8_t str_len)
 {
@@ -449,14 +530,26 @@ int usb_device_register_string_descriptor(enum usb_device_str_desc type,
 
 	switch (type) {
 	case MANUFACTURE_STR_DESC:
+		/* If you've already passed a parameter through a function */
+		if(strlen(manufacturer_str_ptr)) {
+			break;
+		}
 		memcpy(manufacturer_str_ptr, str_dat, strlen(str_dat));
 		break;
 
 	case PRODUCT_STR_DESC:
+		/* If you've already passed a parameter through a function */
+		if(strlen(product_str_ptr)) {
+			break;
+		}
 		memcpy(product_str_ptr, str_dat, strlen(str_dat));
 		break;
 
 	case DEV_SN_DESC:
+		/* If you've already passed a parameter through a function */
+		if(strlen(dev_sn_str_ptr)) {
+			break;
+		}
 		memcpy(dev_sn_str_ptr, str_dat, strlen(str_dat));
 		break;
 

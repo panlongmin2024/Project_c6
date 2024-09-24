@@ -413,6 +413,7 @@ SECTIONS
 #endif
 		__btcon_host_bss_start = .;
 		*(.bthost.bss*)
+		*(.bthost.conn.bss*)
 		__btcon_host_bss_end = .;
 	} GROUP_LINK_IN(ram_bt)
 
@@ -553,6 +554,7 @@ SECTIONS
 	. = ALIGN(16);
 	KEEP(*(.MBOX_MSGS_BSS*))
 	KEEP(*(.MEDIA_CODEC_STACK_RAM*))
+	KEEP(*(.MEDIA_AUDIO_EFFECT_PARA*))
 	__bss_end = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
@@ -724,6 +726,7 @@ SECTIONS
         *(.BTCON_MEMPOOL*)
         *(.BTCON_TO_HOST_BUF*)
         __btcon_host_buf_start = .;
+		*(.bthost_rxtx_data_pool*)
         *(.bthost_bss*)
         KEEP(*(SORT_BY_NAME("._bt_buf_pool.noinit.*")))
         *(.btcon.noinit.stack*)

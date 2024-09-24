@@ -87,6 +87,13 @@ struct region_info
 #endif
 };
 
+struct region_check_info
+{
+	u32_t base_addr;
+	u32_t total_size;
+	s32_t seg_size;
+};
+
 /* region segment magic: 'NVRS' */
 #define NVRAM_REGION_SEG_MAGIC			0x5253564E
 /* region item magic: 'I' */
@@ -150,6 +157,28 @@ struct region_info factory_rw_nvram_region = {
 };
 #endif
 
+static const struct region_check_info nvram_region_check_info[] = {
+	{
+		.base_addr = CONFIG_NVRAM_USER_REGION_BASE_ADDR,
+		.total_size = CONFIG_NVRAM_USER_REGION_SIZE,
+		.seg_size = CONFIG_NVRAM_USER_REGION_SEGMENT_SIZE,
+	},
+
+	{
+		.base_addr = CONFIG_NVRAM_FACTORY_REGION_BASE_ADDR,
+		.total_size = CONFIG_NVRAM_FACTORY_REGION_SIZE,
+		.seg_size = CONFIG_NVRAM_FACTORY_REGION_SEGMENT_SIZE,
+	},
+
+#ifdef CONFIG_NVRAM_STORAGE_FACTORY_RW_REGION
+	{
+		.base_addr = CONFIG_NVRAM_FACTORY_RW_REGION_BASE_ADDR,
+		.total_size = CONFIG_NVRAM_FACTORY_RW_REGION_SIZE,
+		.seg_size = CONFIG_NVRAM_FACTORY_RW_REGION_SEGMENT_SIZE,
+	}
+#endif
+};
+
 static u8_t nvram_buf[NVRAM_BUFFER_SIZE];
 static K_SEM_DEFINE(nvram_lock, 1, 1);
 
@@ -198,11 +227,31 @@ static unsigned char calc_crc8(const unsigned char *addr, int len, u8_t initial_
     return crc;
 }
 
+static int is_in_nvram_region_bounds(struct region_info *region)
+{
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(nvram_region_check_info); i++){
+		if((region->base_addr == nvram_region_check_info[i].base_addr) && \
+			region->total_size == nvram_region_check_info[i].total_size && \
+			region->seg_size == nvram_region_check_info[i].seg_size){
+				break;
+			}
+	}
+
+	if(i == ARRAY_SIZE(nvram_region_check_info)){
+		return false;
+	}else{
+		return true;
+	}
+}
+
+
 static int region_read(struct region_info *region, u32_t offset, u8_t *buf, int len)
 {
 	SYS_LOG_DBG("offset 0x%x len 0x%x, buf 0x%x\n", offset, len, buf);
 
-	if (!region->storage || (offset + len > region->total_size)) {
+	if (!region->storage || !is_in_nvram_region_bounds(region) || ((offset + len) > region->total_size)) {
 		SYS_LOG_ERR("invalid param storage %p, offset 0x%x, len 0x%x",
 			region->storage, offset, len);
 		return -EINVAL;
@@ -217,7 +266,7 @@ static int region_write(struct region_info *region, u32_t offset,
 {
 	SYS_LOG_DBG("offset 0x%x len 0x%x, buf 0x%x\n", offset, len, buf);
 
-	if (!region->storage || (offset + len > region->total_size)) {
+	if (!region->storage || !is_in_nvram_region_bounds(region) || ((offset + len) > region->total_size)) {
 		SYS_LOG_ERR("invalid param storage %p, offset 0x%x, len 0x%x",
 			region->storage, offset, len);
 		return -EINVAL;
@@ -928,6 +977,11 @@ static int region_set(struct region_info *region, const char *name,
 
 	if (!name || (!data && len) || len > NVRAM_MAX_DATA_SIZE)
 		return -EINVAL;
+
+	if (!is_in_nvram_region_bounds(region)){
+		SYS_LOG_INF("region invalid");
+		return -EINVAL;
+	}
 
 	SYS_LOG_INF("set config '%s', len %d\n", name, len);
 

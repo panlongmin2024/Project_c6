@@ -39,6 +39,7 @@ typedef struct {
 	u16_t one_touch; //one touch music button
 #endif
 	u8_t eq_data_c2[EQ_DATA_SIZE];
+	u8_t PlaytimeBoost_state:1;	// 0: off  1: on
 } self_stamem_t;
 
 static self_stamem_t selfapp_config; // nvram saved
@@ -346,6 +347,33 @@ int selfapp_config_get_customer_eq_c2(u8_t *buf, u16_t len)
 	}
 
 	return 0;
+}
+
+void selfapp_config_set_PB_state(u8_t state)
+{
+	self_stamem_t *selfsta = self_get_stamem();
+
+	if (NULL == selfsta) {
+		return;
+	}
+
+	if (state) {
+		selfsta->PlaytimeBoost_state = 1;
+	} else {
+		selfsta->PlaytimeBoost_state = 0;
+	}
+	self_stamem_save(0);
+}
+
+u8_t selfapp_config_get_PB_state(void)
+{
+	self_stamem_t *selfsta = self_get_stamem();
+
+	if (NULL == selfsta) {
+		return 0;
+	}
+
+	return selfsta->PlaytimeBoost_state;
 }
 
 void selfapp_config_reset(void)

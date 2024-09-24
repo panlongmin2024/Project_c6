@@ -248,6 +248,8 @@ int ota_app_init(void)
 	if (flash_device)
 		flash_write_protection_set(flash_device, false);
 
+	ota_upgrade_clear_ota_bp_state();
+
 	g_ota = ota_upgrade_init(&param);
 	if (!g_ota) {
 		SYS_LOG_INF("ota app init error");

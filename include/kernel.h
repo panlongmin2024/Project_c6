@@ -3095,6 +3095,20 @@ extern void k_mbox_clear_msg(struct k_mbox *mbox);
  */
 extern int k_mbox_get_pending_msg_cnt(struct k_mbox *mbox, k_tid_t target_thread);
 
+typedef int mbox_msg_match(struct k_mbox_msg *msg);
+
+/**
+ * @brief delete matched message  in mbox.
+ *
+ * This routine delete matched message  in mbox
+ *
+ * @param mbox Address of the mailbox.
+ * @param msg_match  choose msg to delete.
+ *
+ * @retval numer of msg deleted
+ */
+extern int k_mbox_delete_msg(struct k_mbox *mbox,mbox_msg_match msg_match);
+
 /**
  * @} end defgroup mailbox_apis
  */

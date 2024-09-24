@@ -173,11 +173,11 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
 			}
         }
 		bt_manager_audio_stream_event(BT_AUDIO_STREAM_START, (void*)&rep, sizeof(struct bt_audio_report));
-        bt_manager_media_event(BT_MEDIA_SERVER_PLAY, (void*)&rep, sizeof(struct bt_audio_report));
+        //bt_manager_media_event(BT_MEDIA_SERVER_PLAY, (void*)&rep, sizeof(struct bt_audio_report));
 		bt_manager_check_visual_mode();
 		if (need_change) {
 			rep.handle = tmp_a2dp_hdl;
-			bt_manager_media_event(BT_MEDIA_SERVER_PAUSE, (void*)&rep, sizeof(struct bt_audio_report));
+			//bt_manager_media_event(BT_MEDIA_SERVER_PAUSE, (void*)&rep, sizeof(struct bt_audio_report));
 			bt_manager_audio_stream_event(BT_AUDIO_STREAM_STOP, (void*)&rep, sizeof(struct bt_audio_report));
 			bt_manager_audio_stream_event(BT_AUDIO_STREAM_RELEASE, (void*)&rep, sizeof(struct bt_audio_report));
 		}
@@ -198,7 +198,7 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
 			rep.handle = hdl;
 		    rep.id = BT_AUDIO_ENDPOINT_MUSIC;
 		    rep.audio_contexts = BT_AUDIO_CONTEXT_MEDIA;
-            bt_manager_media_event(BT_MEDIA_SERVER_PAUSE, (void*)&rep, sizeof(struct bt_audio_report));
+            //bt_manager_media_event(BT_MEDIA_SERVER_PAUSE, (void*)&rep, sizeof(struct bt_audio_report));
 		    bt_manager_audio_stream_event(BT_AUDIO_STREAM_STOP, (void*)&rep, sizeof(struct bt_audio_report));
 		//    bt_manager_audio_stream_event(BT_AUDIO_STREAM_RELEASE, (void*)&rep, sizeof(struct bt_audio_report));
 			break;
@@ -218,7 +218,7 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
 		rep.handle = hdl;
 		rep.id = BT_AUDIO_ENDPOINT_MUSIC;
 		rep.audio_contexts = BT_AUDIO_CONTEXT_MEDIA;
-        bt_manager_media_event(BT_MEDIA_SERVER_PAUSE, (void*)&rep, sizeof(struct bt_audio_report));
+        //bt_manager_media_event(BT_MEDIA_SERVER_PAUSE, (void*)&rep, sizeof(struct bt_audio_report));
 		bt_manager_audio_stream_event(BT_AUDIO_STREAM_STOP, (void*)&rep, sizeof(struct bt_audio_report));
 		bt_manager_audio_stream_event(BT_AUDIO_STREAM_RELEASE, (void*)&rep, sizeof(struct bt_audio_report));
 

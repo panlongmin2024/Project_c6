@@ -194,11 +194,11 @@ int btmusic_init_playback()
 		init_param.waitto_start = 1;
 		init_param.bind_to_capture = 1;
 
-    if (btmusic->broadcast_duration == BT_FRAME_DURATION_7_5MS) {
-		audio_policy_set_nav_frame_size_us(7500);
-	} else {
-		audio_policy_set_nav_frame_size_us(10000);
-	}
+	    if (btmusic->broadcast_duration == BT_FRAME_DURATION_7_5MS) {
+			audio_policy_set_nav_frame_size_us(7500);
+		} else {
+			audio_policy_set_nav_frame_size_us(10000);
+		}
 		audio_policy_set_bis_link_delay_ms(broadcast_get_bis_link_delay(btmusic->qos));
 
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
@@ -415,6 +415,8 @@ int btmusic_exit_playback()
 
 	btmusic->playback_player_run = 0;
 	btmusic->playback_player = NULL;
+
+	btmusic_volume_check();
 
 	SYS_LOG_INF("%p mode %d\n", btmusic->playback_player,btmusic_get_auracast_mode());
 

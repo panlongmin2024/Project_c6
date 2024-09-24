@@ -457,6 +457,10 @@ int tts_manager_play_process(void)
 
 	if (tts_ctx->tts_curr || tts_ctx->tts_manager_locked) {
 		SYS_LOG_INF("tts_curr %p, locked: %d\n", tts_ctx->tts_curr, tts_ctx->tts_manager_locked);
+		if((!tts_ctx->tts_curr) && tts_ctx->tts_manager_locked){
+			thread_timer_start_prio(&tts_ctx->play_timer, 10, 0, app_manager_get_apptid(CONFIG_SYS_APP_NAME));
+			printk("tts lock resume play tts 10ms\n");
+		}
 		res = -ENOLCK;
 		goto exit;
 	}
@@ -1226,6 +1230,25 @@ int tts_manager_get_same_tts_in_list(u8_t *name)
 	}
 	irq_unlock(key);
 	return i;
+}
+
+int tts_manager_clear_all(void)
+{
+	struct tts_item_t *temp, *tts_item;
+	struct tts_manager_ctx_t *tts_ctx = _tts_get_ctx();
+	os_mutex_lock(&tts_ctx->tts_mutex, OS_FOREVER);
+	if (!sys_slist_is_empty(&tts_ctx->tts_list)) {
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tts_ctx->tts_list, tts_item, temp, node) {
+			if (tts_item) {
+				sys_slist_find_and_remove(&tts_ctx->tts_list, &tts_item->node);
+				mem_free(tts_item);
+			}
+		}
+		tts_ctx->tts_item_num = 0;
+
+	}
+	os_mutex_unlock(&tts_ctx->tts_mutex);
+	return 0;
 }
 #endif
 

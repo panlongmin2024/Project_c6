@@ -88,5 +88,5 @@ int ota_breakpoint_init_default_value(struct ota_breakpoint *bp);
 
 int ota_breakpoint_init(struct ota_breakpoint *bp);
 void ota_breakpoint_exit(struct ota_breakpoint *bp);
-
+int ota_breakpoint_clear_all_file_state(struct ota_breakpoint *bp);
 #endif /* __OTA_BREAKPOINT_H__ */

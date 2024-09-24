@@ -108,10 +108,10 @@ MEMORY
 	ram_trace_hexbuf      (wx) : ORIGIN = 0x00037f00, LENGTH = 0x100
 
 	/* DSP, 64K+128K */
-	ram_dsp1              (wx) : ORIGIN = 0x00040000, LENGTH = 0xBA00
-	ram_dsp2              (wx) : ORIGIN = 0x0004BA00, LENGTH = 0x2200
+	ram_dsp1              (wx) : ORIGIN = 0x00040000, LENGTH = 0x9EF0
+	ram_dsp2              (wx) : ORIGIN = 0x00049EF0, LENGTH = 0x2B10
 #ifdef CONFIG_SOC_SERIES_ANDESC_P2
-	ram_bt                (wx) : ORIGIN = 0x0004DC00, LENGTH = 0x11000
+	ram_bt                (wx) : ORIGIN = 0x0004CA00, LENGTH = 0x12200
 	ram_bt_bss            (wx) : ORIGIN = 0x0005ec00, LENGTH = 0x1400
 #else
 	ram_bt                (wx) : ORIGIN = 0x00048000, LENGTH = 96k
@@ -409,11 +409,9 @@ SECTIONS
 		__app_bss_start = .;
 		/*no used */
 		__app_bss_end = .;
-#ifdef CONFIG_SOC_SERIES_ANDESC_P2
-        *(.bthost.noinit.stack*)
-#endif
 		__btcon_host_bss_start = .;
 		*(.bthost.bss*)
+		*(.bthost_rxtx_data_pool*)
 		__btcon_host_bss_end = .;
 	} GROUP_LINK_IN(ram_bt)
 
@@ -630,6 +628,7 @@ SECTIONS
     SECTION_DATA_PROLOGUE(_SHARE4_SECTION_NAME,(NOLOAD),)
     {
         KEEP(*(.DSP_SHARE4_MEDIA_RAM*))
+		KEEP(*(.MEDIA_AUDIO_EFFECT_PARA*))
     } GROUP_LINK_IN(ram_dsp2)
 
     SECTION_DATA_PROLOGUE(_PARSER_BSS_SECTION_NAME,(NOLOAD),)
@@ -729,8 +728,12 @@ SECTIONS
         *(.BTCON_TO_HOST_BUF*)
         __btcon_host_buf_start = .;
         *(.bthost_bss*)
+		*(.bthost.conn.bss*)
         KEEP(*(SORT_BY_NAME("._bt_buf_pool.noinit.*")))
         *(.btcon.noinit.stack*)
+#ifdef CONFIG_SOC_SERIES_ANDESC_P2
+        *(.bthost.noinit.stack*)
+#endif
         __btcon_host_buf_end = .;
     } GROUP_LINK_IN(BTCON_MEMPOOL_REGION)
 #endif

@@ -87,6 +87,7 @@ typedef struct {
 } volume_tabel_t;
 
 int media_effect_get_param_size(void);
+int media_effect_get_param_buffer_size(void);
 #define ASET_PARA_BIN_SIZE           (media_effect_get_param_size())
 
 #if CONFIG_DSP_HFP_VERSION

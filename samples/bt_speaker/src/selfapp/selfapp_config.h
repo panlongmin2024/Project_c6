@@ -34,5 +34,7 @@ void selfapp_config_set_customer_eq_c1(u8_t eqid, u8_t count, u8_t scope, u8_t* 
 void selfapp_config_set_customer_eq_c2(u8_t eqid, u8_t* data, uint16_t len);
 void selfapp_config_init(void);
 void self_stamem_save(u8_t confirmed);
+void selfapp_config_set_PB_state(u8_t state);
+u8_t selfapp_config_get_PB_state(void);
 
 #endif

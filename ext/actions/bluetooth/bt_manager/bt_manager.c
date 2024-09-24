@@ -429,10 +429,6 @@ static void bt_manager_notify_connected(struct bt_mgr_dev_info *info)
 
 	info->notify_connected = 1;
 
-	if(bt_manager_audio_current_stream() == BT_AUDIO_STREAM_NONE) {
-		bt_manager_update_phone_volume(0,1);
-	}
-
 	bt_manager_set_status_ext(BT_STATUS_CONNECTED, tmp_flag, &info->addr);
 
 	if (info->snoop_role != BTSRV_SNOOP_SLAVE) {
@@ -557,8 +553,7 @@ static bool bt_manager_on_acl_disconnected(struct bt_mgr_dev_info *dev_info, uin
         return false;
     }
 
-    /* ���沥��״̬���ڳ�ʱ�Ͽ�������ɹ�ʱ�ָ�����
-     */
+    /* ���沥��״̬���ڳ�ʱ�Ͽ�������ɹ�ʱ�ָ�����?     */
     if (bt_manager_is_timeout_disconnected(reason))
     {
         dev_info->timeout_disconnected = 1;
@@ -1725,30 +1720,4 @@ uint8_t bt_manager_get_smartcontrol_vol_sync(void)
 	
 	printk("\n%s,smartcontrol_vol_syn:%d\n",__func__,cfg_feature->smartcontrol_vol_syn);
 	return cfg_feature->smartcontrol_vol_syn;
-}
-
-void user_read_rssi(void)
-{
-	int RSSI_VALUE = -99;
-	struct bt_manager_context_t *bt_manager = bt_manager_get_context();
-	char uart_str[] = "------> bt_state=00 rssi=-99";
-		
-	if(bt_manager->bt_state==3){
-		RSSI_VALUE = -bt_manager_bt_read_rssi(0);
-	}
-	else{
-		
-	}
-
-	void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
-	bool ats_is_enable(void);
-	if(ats_is_enable()){
-		uart_str[18] = bt_manager->bt_state+'0';
-		uart_str[26] = RSSI_VALUE/10 + '0';
-		uart_str[27] = RSSI_VALUE%10 + '0';
-		ats_usb_cdc_acm_write_data(uart_str,sizeof(uart_str));
-	}
-	else{
-		SYS_LOG_INF("------> bt_state %d  rssi %d\n",bt_manager->bt_state,RSSI_VALUE);	
-	}
 }

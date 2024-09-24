@@ -23,6 +23,14 @@ void btmusic_delay_resume(struct thread_timer *ttimer, void *expiry_fn_arg)
 	bt_manager_media_play();
 }
 
+void btmusic_volume_check(void)
+{
+	struct btmusic_app_t *btmusic = btmusic_get_app();
+	if ((btmusic) && (!btmusic->playback_player)) {
+		bt_manager_update_phone_volume(0,1);
+	}
+}
+
 #ifdef CONFIG_ESD_MANAGER
 void btmusic_esd_restore(void)
 {

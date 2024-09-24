@@ -1769,10 +1769,6 @@ int delete_audio_conn(uint16_t handle, uint8_t reason)
 
 	os_sched_unlock();
 
-	if(bt_manager_audio_current_stream() == BT_AUDIO_STREAM_NONE) {
-		bt_manager_update_phone_volume(0,1);
-	}
-
 	SYS_LOG_INF("%p, handle: %d %d, reason:0x%x", audio_conn, handle,bt_audio.device_num, reason);
 
 	/* no need to report */
@@ -4586,13 +4582,10 @@ int bt_manager_media_playpause(void)
                 bt_manager_media_play();
             }
         } else {
-			if (!dev_info->a2dp_stream_started) {
-				bt_manager_media_play();
-			}
+            bt_manager_media_play();
         }
 
-		SYS_LOG_INF("hdl: 0x%x play_status: 0x%x a2dp_stream_started 0x%x \n",
-					dev_info->hdl, dev_info->avrcp_ext_status, dev_info->a2dp_stream_started);
+		SYS_LOG_INF("hdl: 0x%x play_status: 0x%x\n",dev_info->hdl, dev_info->avrcp_ext_status);
 	} else if (audio_conn->type == BT_TYPE_LE
 				&& audio_conn->media_state == BT_STATUS_INACTIVE) {
 		if (audio_conn->cis_connected) {
@@ -4727,7 +4720,9 @@ void bt_manager_media_event(int event, void *data, int size)
 	}
 
 	if (audio_conn == get_active_slave()) {
-		bt_manager_event_notify(event, data, size);
+		if(audio_conn->type != BT_TYPE_BR || (event != BT_MEDIA_PLAY && event != BT_MEDIA_PAUSE)){
+			bt_manager_event_notify(event, data, size);
+		}
 	} else {
 		SYS_LOG_INF("drop msg %p %p", audio_conn, get_active_slave());
 		if (event == BT_MEDIA_PLAY) {

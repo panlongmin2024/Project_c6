@@ -616,7 +616,6 @@ void check_adfu_gpio_key(void)
 
 
 //void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);
-void mcu_ui_set_dsp_dcdc(uint8_t onoff);
 
 
 void extern_dsp_3615_io_enable(int enable)
@@ -643,16 +642,7 @@ void extern_dsp_3615_io_enable(int enable)
 		acts_pinmux_set(GPIO_I2S_BCLK, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
 		acts_pinmux_set(GPIO_I2S_LRCLK, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
 		acts_pinmux_set(GPIO_I2S_TX, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
-		
-
-		if(ReadODM())
-		{	
-			mcu_ui_set_dsp_dcdc(1);
-
-			// mcu_ui_set_dsp_dcdc(0);																	// Totti medify
-			// gpio_pin_configure(gpio_dev, AMP_AVDD_PW_ON, GPIO_DIR_OUT | GPIO_POL_NORMAL);
-			// gpio_pin_write(gpio_dev, AMP_AVDD_PW_ON, 1);		
-		}		
+			
 
 	}else{
 		gpio_pin_configure(gpio_dev, DSP_EN_PIN, GPIO_DIR_OUT);
@@ -660,12 +650,7 @@ void extern_dsp_3615_io_enable(int enable)
 
 		 gpio_pin_configure(gpio_dev, DSP_POWER_EN_PIN, GPIO_DIR_OUT);
 		 gpio_pin_write(gpio_dev, DSP_POWER_EN_PIN, 0);		
-       	if(ReadODM())
-		{
-			// gpio_pin_configure(gpio_dev, AMP_AVDD_PW_ON, GPIO_DIR_OUT | GPIO_POL_NORMAL);
-			// gpio_pin_write(gpio_dev, AMP_AVDD_PW_ON, 0);
-			mcu_ui_set_dsp_dcdc(0);
-	    }
+    
 		gpio_pin_configure(gpio_dev, GPIO_SPI1_SS, GPIO_DIR_OUT);
 		gpio_pin_write(gpio_dev, GPIO_SPI1_SS, 0);
 

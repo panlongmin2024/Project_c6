@@ -316,7 +316,6 @@ void bt_manager_avrcp_sync_vol_to_local(uint16_t hdl, uint8_t music_vol, bool sy
 void bt_manager_avrcp_sync_origin_vol(uint16_t hdl);
 void bt_manager_avrcp_sync_playing_vol(uint16_t hdl);
 int bt_manager_avrcp_sync_vol_to_remote_by_addr(uint16_t hdl, uint32_t music_vol, uint16_t delay_ms);
-void bt_manager_update_phone_volume(uint16_t hdl, int a2dp);
 
 void bt_manager_hfp_sync_vol_to_local(uint16_t hdl, uint8_t call_vol);
 void bt_manager_hfp_sync_origin_vol(uint16_t hdl);

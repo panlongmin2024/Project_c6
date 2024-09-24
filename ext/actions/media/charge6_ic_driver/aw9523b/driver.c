@@ -339,7 +339,7 @@ void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff)
 
     SYS_LOG_INF("[%d] on0ff=%d\n", __LINE__, onoff);
 
-    io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_1, onoff);
+    io_expend_aw9523b_gpio_output(AW8523B_I2C_TRANSMIT_ENABLE, AW8523B_PORT_1, AW8523B_PIN_2, onoff);
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////

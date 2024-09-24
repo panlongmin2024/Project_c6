@@ -143,11 +143,13 @@ typedef struct {
 	uint8_t thread_need_terminated;
 	uint8_t flag_no_send_ack;
 
+	struct k_thread cmd_thread;
+
 } otadfu_handle_t;
 
 static int dfu_data_buf_flush(otadfu_handle_t * otadfu);
 static u8_t force_exit_ota;
-static __ota_bss uint8_t ota_thread_data_buffer[OTADFU_THREAD_DATA_SIZE];
+static __ota_bss uint32_t ota_thread_data_buffer[OTADFU_THREAD_DATA_SIZE / 4];
 static __ota_bss uint8_t ota_data_buffer[OTADFU_DATABUF_SIZE] ;
 static __ota_bss uint8_t ota_header_data_buffer[OTADFU_HEADER_DATA_SIZE];
 static __ota_bss uint8_t ota_remain_data_buffer[OTADFU_REMAIN_DATABUF_SIZE];
@@ -605,6 +607,8 @@ int dfu_process_received_data(otadfu_handle_t * otadfu, u8_t *data, size_t len) 
 	size_t to_copy;
 	uint16_t check_cnt = 0;
 	uint32_t remain_len_bak;
+	uint8_t *data_ptr;
+	uint32_t remain_len;
 
 	if (otadfu->state == DFUSTA_READY) {
 		otadfu_set_state(DFUSTA_DOWNLOADING);
@@ -629,6 +633,7 @@ int dfu_process_received_data(otadfu_handle_t * otadfu, u8_t *data, size_t len) 
 	otadfu->outer_temp_len = otadfu->outer_len;
 #endif
 
+	//check first frame data
     if (otadfu->remaining_len > 0) {
 		if(len > (OTADFU_FRAME_LEN - otadfu->remaining_len)){
 			to_copy = OTADFU_FRAME_LEN - otadfu->remaining_len;
@@ -647,14 +652,12 @@ int dfu_process_received_data(otadfu_handle_t * otadfu, u8_t *data, size_t len) 
             if (crc != calculated_crc) {
                 printk("CRC error in previous remaining data %x %x\n", crc, calculated_crc);
             }
-
-            write_len += dfu_save_data_buffer(otadfu, otadfu->remaining_data, OTADFU_FRAME_DATA_LEN);
-
-            otadfu->remaining_len = 0;
         }
     }
 
-
+	//check body frame data
+	data_ptr = data;
+	remain_len = len;
     while (len >= OTADFU_FRAME_LEN) {
         memcpy(&crc, data + OTADFU_FRAME_DATA_LEN, sizeof(uint16_t));
         calculated_crc = calculate_checksum(data, OTADFU_FRAME_DATA_LEN);
@@ -672,12 +675,23 @@ int dfu_process_received_data(otadfu_handle_t * otadfu, u8_t *data, size_t len) 
 			return -EIO;
         }
 
-        write_len += dfu_save_data_buffer(otadfu, data, OTADFU_FRAME_DATA_LEN);
-
         len -= OTADFU_FRAME_LEN;
         data += OTADFU_FRAME_LEN;
     }
 
+	//to this, the frame data is valid, so save data
+	if (otadfu->remaining_len == OTADFU_FRAME_LEN) {
+		write_len += dfu_save_data_buffer(otadfu, otadfu->remaining_data, OTADFU_FRAME_DATA_LEN);
+
+		otadfu->remaining_len = 0;
+	}
+
+    while (remain_len >= OTADFU_FRAME_LEN) {
+        write_len += dfu_save_data_buffer(otadfu, data_ptr, OTADFU_FRAME_DATA_LEN);
+        remain_len -= OTADFU_FRAME_LEN;
+        data_ptr += OTADFU_FRAME_LEN;
+    }
+	//save remain data
     if (len > 0) {
         memcpy(otadfu->remaining_data, data, len);
         otadfu->remaining_len = len;
@@ -698,7 +712,7 @@ int dfu_process_received_data(otadfu_handle_t * otadfu, u8_t *data, size_t len) 
 static int dfu_data_buf_write(otadfu_handle_t * otadfu, u8_t * seq, u8_t ** ptr,
 			      int len)
 {
-	void *outer_stream = self_get_streamhdl();
+	void *outer_stream = self_get_current_streamhdl();
 	int write_len = 0;
 #ifndef OTADFU_BY_DATA_STREAM
 	u8_t *tmp_buf = NULL;
@@ -835,7 +849,7 @@ static void _selfapp_ota_app_cmd_thread(void *p1, void *p2, void *p3)
 			/* ota_app thread handle all App command
 			 * otadata: BT -> sppble_stream -> otadfu_SetDfuData() -> dfu_api_read() -> ota app buffer
 			 */
-			selfapp_handler_by_stream(NULL);
+			selfapp_command_process();
 		}else{
 			//ios cannot send this command in downloading state, app may be abnormal
 #if 0
@@ -862,14 +876,14 @@ static void ota_app_cmd_thread_start(otadfu_handle_t *otadfu)
 
 	selfapp_stream_handle_suspend(true);
 
-	streamhdl = self_get_streamhdl();
+	streamhdl = self_get_current_streamhdl();
 	if (streamhdl) {
 		sppble_stream_set_rxdata_callback(streamhdl, _selfapp_rx_data_callback);
 	}
 
-	otadfu->app_cmd_thread_stack = ota_thread_data_buffer;
+	otadfu->app_cmd_thread_stack = (char *)ota_thread_data_buffer;
 
-	otadfu->app_cmd_thread =  (os_tid_t)os_thread_create(otadfu->app_cmd_thread_stack, OTADFU_THREAD_DATA_SIZE, _selfapp_ota_app_cmd_thread,
+	otadfu->app_cmd_thread =  (os_tid_t)k_thread_create(&otadfu->cmd_thread, (os_thread_stack_t)otadfu->app_cmd_thread_stack, OTADFU_THREAD_DATA_SIZE, _selfapp_ota_app_cmd_thread,
 								otadfu, NULL, NULL, 2, 0, OS_NO_WAIT);
 
 }
@@ -877,7 +891,7 @@ static void ota_app_cmd_thread_start(otadfu_handle_t *otadfu)
 static void ota_app_cmd_thread_stop(otadfu_handle_t *otadfu)
 {
 	uint32_t cur_time;
-	void *streamhdl = self_get_streamhdl();
+	void *streamhdl = self_get_current_streamhdl();
 	if (streamhdl) {
 		sppble_stream_set_rxdata_callback(streamhdl, NULL);
 	}
@@ -978,7 +992,6 @@ static int dfu_api_close(struct ota_backend *backend)
 	selfapp_backend_otadfu_stop();
 #endif
 	otadfu_set_state(DFUSTA_UNKNOWN);
-	//selfapp_routine_start_stop(0);
 
 	os_mutex_unlock(&otadfu_mutex);
 
@@ -1081,7 +1094,7 @@ static int dfu_api_read(struct ota_backend *backend, int offset, void *buf,
 		/* ota_app thread handle all App command
 		 * otadata: BT -> sppble_stream -> otadfu_SetDfuData() -> dfu_api_read() -> ota app buffer
 		 */
-		//selfapp_handler_by_stream(NULL);
+		//selfapp_command_process(NULL);
 
 		// DFUCMD_SetDfuData handled and there are new data
 		if (dfu_get_data_buffer_size(otadfu) > 0) {
@@ -1329,8 +1342,7 @@ int otadfu_ReqDfuStart(dfu_start_t * param)
 
 	if (dfu_prepare(param) == 0) {
 		otadfu = otadfu_get_handle();
-		ret =
-		    selfapp_backend_otadfu_start(&otadfu_api, otadfu_callback);
+		ret = selfapp_backend_otadfu_start(&otadfu_api, otadfu_callback);
 		if (ret != 0) {
 			dfu_release(otadfu);
 			selfapp_backend_otadfu_stop();
@@ -1406,13 +1418,13 @@ int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 
 	switch (CmdID) {
 	case DFUCMD_ReqVer:{
-			u8_t vercode[4];	// 3Bytes is sw version, big endian, 1Byte is hw version
+			u8_t  vercode[4], tmpval = 0;	// 3Bytes is sw version, big endian, 1Byte is hw version
 			u32_t hwver = fw_version_get_hw_code();
 			u32_t swver = fw_version_get_sw_code();
-			vercode[0] = hex2dec_digitpos((swver >> 16) & 0xFF);
-			vercode[1] = hex2dec_digitpos((swver >>  8) & 0xFF);
-			vercode[2] = hex2dec_digitpos( swver & 0xFF);
 			vercode[3] = (u8_t) hwver;
+			vercode[2] = hex2dec_digitpos(  swver & 0xFF, &tmpval);
+			vercode[1] = hex2dec_digitpos(((swver >>  8) & 0xFF) + tmpval, &tmpval);
+			vercode[0] = hex2dec_digitpos(((swver >> 16) & 0xFF) + tmpval, &tmpval);
 
 			#ifdef HM_OTA_AUTO_TEST
 			u32_t ota_swver = fw_version_get_code();
@@ -1424,23 +1436,19 @@ int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 			#endif
 
 			selfapp_log_inf("dfu reqVer=0x%x_%x\n", hwver, swver);
-			sendlen +=
-			    selfapp_pack_cmd_with_bytes(buf, DFUCMD_RetVer,
-					       (u8_t *) vercode, 4);
+			sendlen += selfapp_pack_cmd_with_bytes(buf, DFUCMD_RetVer, (u8_t *) vercode, 4);
 			ret = self_send_data(buf, sendlen);
 			break;
 		}
 
 	case DFUCMD_ReqDfuVer:{
-			u8_t sw_vercode[3];
+			u8_t  sw_vercode[3], tmpval = 0;
 			u32_t swver = fw_version_get_sw_code();
-			sw_vercode[0] = hex2dec_digitpos((swver >> 16) & 0xFF);
-			sw_vercode[1] = hex2dec_digitpos((swver >>  8) & 0xFF);
-			sw_vercode[2] = hex2dec_digitpos( swver & 0xFF);
+			sw_vercode[2] = hex2dec_digitpos(  swver & 0xFF, &tmpval);
+			sw_vercode[1] = hex2dec_digitpos(((swver >>  8) & 0xFF) + tmpval, &tmpval);
+			sw_vercode[0] = hex2dec_digitpos(((swver >> 16) & 0xFF) + tmpval, &tmpval);
 			selfapp_log_inf("dfu reqDfuVer=0x%06x\n", swver);
-			sendlen +=
-			    selfapp_pack_cmd_with_bytes(buf, DFUCMD_RetDfuVer,
-					       (u8_t *) sw_vercode, 3);
+			sendlen += selfapp_pack_cmd_with_bytes(buf, DFUCMD_RetDfuVer, (u8_t *) sw_vercode, 3);
 			ret = self_send_data(buf, sendlen);
 			break;
 		}

@@ -117,7 +117,6 @@ typedef struct {
 	u8_t vol_phy_count_down;
 	u8_t vol_avrcp_count_down;
 	s64_t pwr_on_stamp;
-	s64_t pwr_on_charge_stamp;
 
 	data_analytics_upload_t upload;
 }data_analytics_t;

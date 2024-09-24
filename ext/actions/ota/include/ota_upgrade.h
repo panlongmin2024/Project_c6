@@ -68,4 +68,8 @@ int ota_upgrade_cancel_read(struct ota_upgrade_info *ota);
 
 int ota_upgrade_get_temp_img_size(struct ota_upgrade_info *ota);
 
+int ota_upgrade_set_ota_partition_other_writing(uint8_t file_id);
+
+int ota_upgrade_clear_ota_bp_state(void);
+
 #endif /* __OTA_UPGRADE_H__ */

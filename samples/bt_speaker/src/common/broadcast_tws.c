@@ -749,16 +749,16 @@ void broadcast_tws_vnd_notify_dev_info(){
 	cmd[index++] = TokenID_DeviceSerialNum;
 	memcpy(&cmd[index],serial_num,SELF_SN_LEN);
 	index += SELF_SN_LEN;
-	
+
 	extern u32_t fw_version_get_sw_code(void);
 	extern u8_t fw_version_get_hw_code(void);
 	u32_t hwver = fw_version_get_hw_code();
 	u32_t swver = fw_version_get_sw_code();
-
-	vercode[0] = hex2dec_digitpos((swver >> 16) & 0xFF);
-	vercode[1] = hex2dec_digitpos((swver >>  8) & 0xFF);
-	vercode[2] = hex2dec_digitpos( swver & 0xFF);
+	u8_t  tmpval = 0;
 	vercode[3] = (u8_t)hwver;
+	vercode[2] = hex2dec_digitpos(  swver & 0xFF, &tmpval);
+	vercode[1] = hex2dec_digitpos(((swver >>  8) & 0xFF) + tmpval, &tmpval);
+	vercode[0] = hex2dec_digitpos(((swver >> 16) & 0xFF) + tmpval, &tmpval);
 
 	cmd[index++] = TokenID_DeviceFirmware;
 	memcpy(&cmd[index],vercode,4);

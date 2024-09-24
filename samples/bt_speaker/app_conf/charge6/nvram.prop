@@ -46,6 +46,9 @@ PHONE_CONTROLER_ROLE=0
 
 FM_DEFAULT_FREQ=9100
 
+#0:none bin test; 1:fcc; 2:produce; 3:srrc
+BIN_TEST_ID=0
+
 MPS_OTA_STATUS=0
 
 # end of APPLICATION PROPERTIES

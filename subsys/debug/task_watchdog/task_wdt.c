@@ -24,8 +24,8 @@ struct task_wdt_channel {
 	 * indicate that the channel is available
 	 */
 	uint32_t reload_period;
-	/* abs. times when this channel expires (updated by task_wdt_feed) max time 49days */
-	uint32_t timeout_abs_time;
+	/* abs. times when this channel expires (updated by task_wdt_feed) */
+	int64_t timeout_abs_time;
 	/* user data passed to the callback function */
 	void *user_data;
 	/* function to be called when watchdog timer expired */
@@ -38,14 +38,14 @@ static struct task_wdt_channel wdt_channels[TASK_WDT_CAHNNEL_MAX];
 /* timer used for watchdog handling */
 static struct k_timer timer;
 
-static void schedule_next_timeout(uint32_t current_time)
+static void schedule_next_timeout(int64_t current_time)
 {
 	uintptr_t next_channel_id;	/* channel which will time out next */
-	uint32_t next_timeout;		/* timeout in absolute ticks of this channel */
-	uint32_t cur_time;
+	int64_t next_timeout;		/* timeout in absolute ticks of this channel */
+	int64_t cur_time;
 
 	next_channel_id = 0;
-	next_timeout = INT32_MAX;
+	next_timeout = INT64_MAX;
 
 	/* find minimum timeout of all wdt_channels */
 	for (int id = 0; id < ARRAY_SIZE(wdt_channels); id++) {
@@ -57,8 +57,8 @@ static void schedule_next_timeout(uint32_t current_time)
 	}
 
 	/* update task wdt kernel timer */
-	if(next_timeout != INT32_MAX){
-		cur_time = k_uptime_get_32();
+	if(next_timeout != INT64_MAX){
+		cur_time = k_uptime_get();
 		if((next_timeout > cur_time) && \
 			(next_timeout - cur_time) > MIN_TIMEOUT_DIFF_VALUE){
 			next_timeout = next_timeout - cur_time;
@@ -66,7 +66,7 @@ static void schedule_next_timeout(uint32_t current_time)
 			next_timeout = MIN_TIMEOUT_DIFF_VALUE;
 		}
 		k_timer_user_data_set(&timer, (void *)next_channel_id);
-		k_timer_start(&timer, next_timeout, 0);
+		k_timer_start(&timer, (s32_t)next_timeout, 0);
 	}
 }
 
@@ -101,7 +101,7 @@ static void task_wdt_trigger(struct k_timer *timer_id)
 		wdt_channels[channel_id].callback(channel_id,
 			wdt_channels[channel_id].user_data);
 	} else {
-		printk("!!!task watchdog overflow %d period %d ms\n", channel_id, wdt_channels[channel_id].reload_period);
+		printk("!!!task watchdog overflow %d period %d ms cur time %d\n", channel_id, wdt_channels[channel_id].reload_period, k_uptime_get_32());
 		panic(NULL);
 	}
 }
@@ -137,7 +137,7 @@ int task_wdt_add(uint32_t channel_id, uint32_t reload_period, task_wdt_callback_
 	if (wdt_channels[channel_id].reload_period == 0) {
 		wdt_channels[channel_id].reload_period = reload_period;
 		wdt_channels[channel_id].user_data = user_data;
-		wdt_channels[channel_id].timeout_abs_time = UINT32_MAX;
+		wdt_channels[channel_id].timeout_abs_time = -1;
 		wdt_channels[channel_id].callback = callback;
 
 		/* must be called after hw wdt has been started */
@@ -174,7 +174,7 @@ int task_wdt_delete(uint32_t channel_id)
 
 int task_wdt_feed(uint32_t channel_id)
 {
-	uint32_t current_time;
+	int64_t current_time;
 
 	if (channel_id >= ARRAY_SIZE(wdt_channels)) {
 		return -EINVAL;
@@ -188,11 +188,13 @@ int task_wdt_feed(uint32_t channel_id)
 	 */
 	k_sched_lock();
 
-	current_time = k_uptime_get_32();
+	current_time = k_uptime_get();
 
 	/* feed the specified channel */
 	wdt_channels[channel_id].timeout_abs_time = current_time +
 		wdt_channels[channel_id].reload_period;
+
+	//printk("wdt %d time %u %u\n", channel_id, (uint32_t)current_time, (uint32_t)wdt_channels[channel_id].timeout_abs_time);
 
 	schedule_next_timeout(current_time);
 

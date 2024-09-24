@@ -99,7 +99,14 @@ static audio_bt_type_e app_get_bt_audio_in_type(void)
 
 static u8_t app_get_music_vol_level(void)
 {
-	return system_volume_get(0);
+	struct audio_track_t * track = audio_system_get_track();
+	u8_t stream_type = AUDIO_STREAM_DEFAULT;
+	if(track)
+	{
+		stream_type = track->stream_type;
+	}
+
+	return system_volume_get(stream_type);
 }
 
 

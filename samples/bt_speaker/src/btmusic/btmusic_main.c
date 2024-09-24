@@ -372,6 +372,15 @@ void btmusic_player_reset_trigger(void)
 	}
 }
 
+void btmusic_playTimeBoost_trigger(void)
+{
+	struct app_msg msg = { 0 };
+
+	msg.type = MSG_BTMUSIC_APP_EVENT;
+	msg.cmd = MSG_BTMUSIC_MESSAGE_CMD_PLAY_TIME_BOOST;
+	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
+}
+
 static void btmusic_bms_start_handler(struct thread_timer *ttimer,
 				   void *expiry_fn_arg){
 	if (NULL == p_btmusic_app) {

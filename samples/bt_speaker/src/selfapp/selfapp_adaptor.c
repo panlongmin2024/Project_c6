@@ -24,6 +24,11 @@ static bool bat_user_set = false;
 static u8_t bat_percents = 100;
 static u8_t model_id = BOX_DEFAULT_MODEL_ID;
 
+static bool allowed_adv_crc = true;
+static bool allowed_join_party = true;
+static u8_t system_status = SELF_SYS_POWERON;
+
+
 void self_indication_handler(struct thread_timer *ttimer,
 				   void *expiry_fn_arg);
 
@@ -53,7 +58,7 @@ u8_t selfapp_get_bat_power(void)
 	ret = power_manager_get_charge_status();
 	charging = (ret == POWER_SUPPLY_STATUS_CHARGING) ? 1 : 0;
 	cap = selfapp_get_bat_cap();
-
+	selfapp_log_inf("selfapp_get_bat_power %d\n",cap);
 	//fix illegal value.
 	if(cap > 100) {
 		cap = 100;
@@ -85,6 +90,7 @@ u8_t selfapp_get_bat_level(void)
 	u8_t level;
 
 	cap = selfapp_get_bat_cap();
+	selfapp_log_inf("selfapp_get_bat_level %d\n",cap);
 	//fix illegal value.
 	if(cap > 100) {
 		cap = 100;
@@ -433,23 +439,68 @@ u8_t selfapp_get_model_id(void)
 	return model_id;
 }
 
+void selfapp_set_allowed_adv_crc(bool allowed)
+{
+	os_sched_lock();
+	if (allowed_adv_crc != allowed) {
+		allowed_adv_crc = allowed;
+		SYS_LOG_INF("%d", allowed_adv_crc);
+	}
+	os_sched_unlock();
+}
+
+bool selfapp_get_allowed_adv_crc(void)
+{
+	return allowed_adv_crc;
+}
+
+void selfapp_set_allowed_join_party(bool allowed)
+{
+	os_sched_lock();
+	if (allowed_join_party != allowed) {
+		allowed_join_party = allowed;
+		SYS_LOG_INF("%d", allowed_join_party);
+	}
+	os_sched_unlock();
+}
+
+bool selfapp_get_allowed_join_party(void)
+{
+	return allowed_join_party;
+}
+
+void selfapp_set_system_status(u8_t status)
+{
+	os_sched_lock();
+	if (system_status != status) {
+		system_status = status;
+		SYS_LOG_INF("%d", system_status);
+	}
+	os_sched_unlock();
+}
+
+u8_t selfapp_get_system_status(void)
+{
+	return system_status;
+}
+
 u8_t selfapp_get_manufacturer_data(u8_t * buf)
 {
 	u8_t i = 0;
 	int ret = -1;
 	u16_t crc_name, crc_addr;
-	u8_t role, ch, bat;
+	u8_t role, ch, bat, join_party;
 
 	if (NULL == buf) {
 		return 0;
 	}
 
-	ret = selfapp_get_src_dev_name_crc(&crc_name);
-	if (ret >= 0) {
-		selfapp_get_addr_crc(&crc_addr);
-	}else {
-		crc_name = 0;
-		crc_addr = 0;
+	crc_name = crc_addr = 0;
+	if (selfapp_get_allowed_adv_crc() != false) {
+		ret = selfapp_get_src_dev_name_crc(&crc_name);
+		if (ret >= 0) {
+			selfapp_get_addr_crc(&crc_addr);
+		}
 	}
 
 	//VID
@@ -496,16 +547,18 @@ u8_t selfapp_get_manufacturer_data(u8_t * buf)
 
 	/*
 	   Extra info of Auracast, LE mode, and spotify button actions
-	   bit 7-4 Reserved
+	   bit 7-5 Reserved
+	   bit 4 allowed to join Auracast Party
 	   bit 3 Long Lasting Stereo Support Status
-	   bit 2 Sporify quick access button is triggerd
+	   bit 2 Reserved
 	   bit 1 Auracast party status (0-off, 1-on)
 	   bit 0 Suport Auracast (0-no, 1-yes)
 	 */
+	join_party = (selfapp_get_allowed_join_party() != false)? 0 : 1;
 #ifdef CONFIG_BT_LETWS
-	buf[i++] = (((role == 0) ? 0 : 1) << 1) | 0x01 | 0x08;
+	buf[i++] = (((role == 0) ? 0 : 1) << 1) | 0x01 | 0x08 | (join_party << 4);
 #else
-	buf[i++] = (((role == 0) ? 0 : 1) << 1) | 0x01;
+	buf[i++] = (((role == 0) ? 0 : 1) << 1) | 0x01 | (join_party << 4);
 #endif
 
 	/*Auracast Stereo group ID (Reserved) */
@@ -616,16 +669,28 @@ void selfapp_resume_player()
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }
 
+static int selfapp_msg_match(void *msg,k_tid_t target_thread,k_tid_t source_thread){
+	struct app_msg *p_app_msg = (struct app_msg *)msg;
+	if(!p_app_msg || p_app_msg->cmd != MSG_PLAYER_RESET || p_app_msg->type != MSG_INPUT_EVENT
+		|| source_thread != os_current_get()){
+		return 0;
+	}
+	return 1;
+}
+
 void selfapp_reset_player()
 {
-	selfapp_log_inf("\n");
-
+	int ret = 0;
 	struct app_msg msg = { 0 };
 
 	msg.type = MSG_INPUT_EVENT;
 	msg.cmd = MSG_PLAYER_RESET;
 	msg.value = 0;
+	if(!os_is_free_msg_enough()){
+		ret = os_msg_delete(selfapp_msg_match);
+	}
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
+	selfapp_log_inf("%d\n",ret);
 }
 
 void selfapp_set_device_info(selfapp_device_info_t *info){

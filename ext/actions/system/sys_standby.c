@@ -99,7 +99,6 @@ enum STANDBY_STATE_E {
 struct standby_context_t {
 	u32_t	auto_standby_time;
 	u32_t	auto_powerdown_time;
-	u32_t	auto_powerdown_time_init;
 	u8_t	standby_state;
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
 	u8_t	dvfs_level;
@@ -719,7 +718,7 @@ static void _sys_standby_process_after_s2(void)
 
 static int _sys_standby_process_s2(void)
 {
-	u32_t cur_time, sleep_time;
+	u32_t cur_time;
 	unsigned int irq_flags = irq_lock();
 	unsigned int wakeup_src;
 
@@ -733,7 +732,6 @@ static int _sys_standby_process_s2(void)
 
 	_sys_standby_process_before_s2();
 
-	standby_context->auto_powerdown_time = standby_context->auto_powerdown_time_init;
 	while (true) {
 		/**clear watchdog */
 #ifdef CONFIG_WATCHDOG
@@ -757,27 +755,11 @@ static int _sys_standby_process_s2(void)
 				if ((standby_context->bt_ctrl_sleep_time + standby_context->bt_ctrl_sleep_timestamp)
 					> (cur_time + STANDBY_BT_MIN_SLEEP_MSEC + 0x10000000)) {
 					wakeup_src = _sys_standby_enter_s3();
-
-					if(_sys_standby_allow_auto_powerdown()) {
-						sleep_time = (standby_context->bt_ctrl_sleep_time + standby_context->bt_ctrl_sleep_timestamp) - (cur_time + 0x10000000);
-						if(standby_context->auto_powerdown_time > sleep_time) {
-							standby_context->auto_powerdown_time -= sleep_time;
-							//SYS_LOG_INF("%d, %d", sleep_time, standby_context->auto_powerdown_time);
-						}
-					}
 				}
 			} else {
 				if ((standby_context->bt_ctrl_sleep_time + standby_context->bt_ctrl_sleep_timestamp)
 					> (STANDBY_BT_MIN_SLEEP_MSEC + cur_time)) {
 					wakeup_src = _sys_standby_enter_s3();
-
-					if(_sys_standby_allow_auto_powerdown()) {
-						sleep_time = (standby_context->bt_ctrl_sleep_time + standby_context->bt_ctrl_sleep_timestamp) - (cur_time);
-						if(standby_context->auto_powerdown_time > sleep_time) {
-							standby_context->auto_powerdown_time -= sleep_time;
-							//SYS_LOG_INF("%d, %d", sleep_time, standby_context->auto_powerdown_time);
-						}
-					}
 				}
 			}
 		}
@@ -822,7 +804,7 @@ static int _sys_standby_process_s2(void)
 		}
 #endif
 	}
-	standby_context->auto_powerdown_time = standby_context->auto_powerdown_time_init;
+
 	_sys_standby_process_after_s2();
 
 #ifdef CONFIG_CPU_LOAD_STAT
@@ -936,7 +918,7 @@ int sys_standby_init(void)
 		SYS_LOG_WRN("too small, used default");
 		standby_context->auto_standby_time = STANDBY_MIN_TIME_SEC * 1000;
 	} else {
-		standby_context->auto_standby_time = 58 * 1000;
+		standby_context->auto_standby_time = CONFIG_AUTO_STANDBY_TIME_SEC * 1000;
 	}
 #else
 	standby_context->auto_standby_time = OS_FOREVER;
@@ -944,7 +926,7 @@ int sys_standby_init(void)
 
 #ifdef CONFIG_AUTO_POWEDOWN_TIME_SEC
 	if (_sys_standby_is_auto_powerdown()) {
-		standby_context->auto_powerdown_time = 60 * 1000;
+		standby_context->auto_powerdown_time = CONFIG_AUTO_POWEDOWN_TIME_SEC * 1000;
 	} else {
 		SYS_LOG_WRN("Disable auto powerdown\n");
 		standby_context->auto_powerdown_time = OS_FOREVER;
@@ -953,7 +935,6 @@ int sys_standby_init(void)
 	standby_context->auto_powerdown_time = OS_FOREVER;
 #endif
 
-	standby_context->auto_powerdown_time_init = standby_context->auto_powerdown_time;
 	standby_context->standby_state = STANDBY_NORMAL;
 
 #ifdef CONFIG_SYS_WAKELOCK
@@ -1011,7 +992,6 @@ void sys_standby_time_set(u32_t standby,u32_t power)
 	standby_context = &global_standby_context;
 	standby_context->auto_standby_time = standby*1000;
 	standby_context->auto_powerdown_time = power*1000;
-	standby_context->auto_powerdown_time_init = power*1000;
 }
 
 int system_get_standby_mode(void)

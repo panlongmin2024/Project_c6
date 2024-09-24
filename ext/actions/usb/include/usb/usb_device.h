@@ -438,6 +438,21 @@ void usb_device_register_descriptors(const uint8_t *usb_fs_descriptors,
 				     const uint8_t *usb_hs_descriptors);
 
 /*
+ * API: modify the descriptor generation sequence number
+ */
+bool usb_device_serial_number_change(uint8_t *update_serial_number);
+
+/*
+ * API: modify the descriptor product name
+ */
+bool usb_device_product_name_change(uint8_t *update_product_name);
+
+/*
+ * API: modify the descriptor vendor name
+ */
+bool usb_device_manufacturer_name_change(uint8_t *update_manufacturer_name);
+
+/*
  * API: set configuration for composite device
  */
 int usb_decice_composite_set_config(const struct usb_cfg_data *config);

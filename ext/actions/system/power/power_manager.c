@@ -54,9 +54,14 @@
 #define DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL2				560
 #define DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL3				580
 #define DEFUALT_LOWTEMP_POWER_LEVEL						-180
+#define DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0_DEMO				400
+#define DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL1_DEMO				420
+#define DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL2_DEMO				440
+#define DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL3_DEMO				480
 
 // #define DEFAULT_NOPOWER_CAP_LEVEL	    				5
 #define DEFAULT_JUST_VOLUME_PERIODS						(300*1000)
+#define DEFAULT_JUST_VOLUME_PERIODS_DEMO				(120*1000)
 #define DEFAULT_POWER_OFF_PERIODS						(8*1000)
 #endif	
 
@@ -77,6 +82,7 @@ struct power_manager_info {
 #endif
 	uint32_t charge_full_flag;
 	uint32_t report_timestamp;
+	uint32_t report_ntc_timestamp;
 #ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY	
 	int battary_led_need_change;
 	int current_temperature;
@@ -90,6 +96,7 @@ struct power_manager_info {
 extern uint8_t get_power_first_factory_reset_flag(void);
 extern void set_power_first_factory_reset_flag(uint8_t value);
 extern u8_t pd_manager_send_notify(u8_t event);
+extern bool run_mode_is_demo(void);
 
 struct power_manager_info *power_manager = NULL;
 uint8_t power_first_get_cap_flag = 0;
@@ -103,25 +110,46 @@ int power_manager_get_battery_capacity(void);
 int power_manager_get_just_volume_step(void)
 {
 	int step = 0;
-	if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL3){
-		step = 4;
+	if(run_mode_is_demo())
+	{
+		if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL3_DEMO){
+			step = 4;
+		}
+		else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL2_DEMO){
+			step = 3;
+		}
+		else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL1_DEMO){
+			step = 2;
+		}
+		else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0_DEMO){
+			step = 2;
+		}
+		else{
+			step = 0;
+		}
 	}
-	else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL2){
-		step = 3;
+	else
+	{
+		if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL3){
+			step = 4;
+		}
+		else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL2){
+			step = 3;
+		}
+		else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL1){
+			step = 2;
+		}
+		else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0){
+			step = 1;
+		}
+		else{
+			step = 0;
+		}
 	}
-	else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL1){
-		step = 2;
-	}
-	else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0){
-		step = 1;
-	}
-	else{
-		step = 0;
-	}
+	
 	return step;
 }
 
-extern bool run_mode_is_demo(void);
 void power_manager_battery_display_handle(int led_status ,bool key_flag)
 {
 	int temp_status = power_manager_get_charge_status();
@@ -558,7 +586,20 @@ static int _power_manager_work_handle(void)
 
 	if (!power_manager)
 		return -ESRCH;
-#ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY		
+#ifdef CONFIG_WLT_MODIFY_BATTERY_DISPLAY
+	int smartcontrol_temp_thead;
+	uint32_t smartcontrol_detect_time;
+
+	if(run_mode_is_demo())
+	{
+		smartcontrol_temp_thead = DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0_DEMO;
+		smartcontrol_detect_time = DEFAULT_JUST_VOLUME_PERIODS_DEMO;
+	}	
+	else
+	{
+		smartcontrol_temp_thead = DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0;
+		smartcontrol_detect_time = DEFAULT_JUST_VOLUME_PERIODS;
+	}	
 	//power_manager_battery_led_fn();
 	/*if (power_manager->current_temperature >= DEFUALT_HIAHERTEMP_POWER_LEVEL) {
 		if (((os_uptime_get_32() - power_manager->report_timestamp) >=  2000
@@ -569,13 +610,17 @@ static int _power_manager_work_handle(void)
 		}
 	}
 	else */if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_POWER_LEVEL){
-		SYS_LOG_INF("%d temp too high", power_manager->current_temperature);
-		// sys_event_notify(SYS_EVENT_POWER_OFF);
-		pd_manager_send_notify(PD_EVENT_POWER_OFF);
+			if((os_uptime_get_32() - power_manager->report_ntc_timestamp) >= (DEFAULT_POWER_OFF_PERIODS))
+			{
+                    power_manager->report_ntc_timestamp = os_uptime_get_32();
+			        SYS_LOG_INF("%d temp too high\n", power_manager->current_temperature);
+					// sys_event_notify(SYS_EVENT_POWER_OFF);
+					pd_manager_send_notify(PD_EVENT_POWER_OFF);
+			}
 		return 0;
 	}//DEFUALT_HIAHTEMP_POWER_LEVEL
-	else if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0){
-		if (((os_uptime_get_32() - power_manager->report_justvol_timestamp) >=  DEFAULT_JUST_VOLUME_PERIODS
+	else if(power_manager->current_temperature >= smartcontrol_temp_thead){
+		if (((os_uptime_get_32() - power_manager->report_justvol_timestamp) >=  smartcontrol_detect_time
 				|| !power_manager->report_justvol_timestamp)) {	
 			/*******************当前温度要高上一次的温度----2024.8.15 zth**************************** */			
 			if(power_manager->current_temperature > power_manager->last_temperature)
@@ -654,6 +699,27 @@ static int _power_manager_work_handle(void)
 
 		power_manager->report_timestamp = 0;
 
+		// power_manager->current_cap = power_manager_get_battery_capacity();
+
+		// if(run_mode_is_demo() && (pd_get_app_mode_state() != CHARGING_APP_MODE))
+		// {
+
+		// 	static u8_t demo_low_cap_debounce = 0x00;
+			
+
+		// 	SYS_LOG_INF("[%d] cur_cap:%d, charging state:%d; demo mode\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
+		// 	if((power_manager->current_cap<=100) && (pd_get_sink_charging_state()))
+		// 	{
+		// 		if(demo_low_cap_debounce++ >= 50)
+		// 		{
+		// 			demo_low_cap_debounce = 0x00;
+		// 			SYS_LOG_INF("[%d] current_cap:%d, charging state:%d; too low power off\n", __LINE__, power_manager->current_cap, pd_get_sink_charging_state());
+		// 			goto _POWER_OFF_;
+		// 		}
+		// 	}else{
+		// 		demo_low_cap_debounce = 0x00;
+		// 	}
+		// }
 
 		if(power_manager->last_cap != power_manager->current_cap)
 		{
@@ -698,6 +764,21 @@ _POWER_OFF_:
 			power_manager->report_last_cap_timestamp = 0;
 			power_manager->report_timestamp = 0;
 
+			// if((pd_get_app_mode_state() == CHARGING_APP_MODE && power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE)
+			// 	|| (pd_get_app_mode_state() != CHARGING_APP_MODE && bt_manager_a2dp_get_status() == BT_STATUS_PLAYING)){
+			// if((pd_get_app_mode_state() == CHARGING_APP_MODE) && run_mode_is_demo() 
+			// 		&& (power_manager->current_cap == DEFAULT_NOPOWER_CAP_LEVEL))
+			// {
+			// 	SYS_LOG_INF("[%d] Stop charging in Demo mode, but not shut down \n", __LINE__);
+			// 	return 0;
+			// }	
+			// else if((pd_get_app_mode_state() == CHARGING_APP_MODE) && (power_manager_get_charge_status() == POWER_SUPPLY_STATUS_DISCHARGE))
+			// {
+
+			// 	printk("\n %s,charge mode do not charge  \n",__func__);
+			// 	pd_manager_deinit(0);
+			// 	sys_pm_poweroff(); 
+			// } 
 
 			if(pd_get_app_mode_state() == CHARGING_APP_MODE)
 			{
@@ -714,6 +795,7 @@ _POWER_OFF_:
 			 //  if((pd_manager_get_poweron_filte_battery_led() != WLT_FILTER_STANDBY_POWEROFF)
 			 //  		|| run_mode_is_demo())
 				{
+				    pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_PWR_LED_ON_0_5S);
 				  	sys_event_notify(SYS_EVENT_BATTERY_TOO_LOW);
 			   	}
 			}

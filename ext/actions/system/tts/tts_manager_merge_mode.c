@@ -181,7 +181,8 @@ int tts_merge_manager_deinit(void)
 int tts_merge_manager_start(char *name, uint8_t sample_rate, void (*stop_cb)(void))
 {
 	struct buffer_t buffer;
-
+	struct audio_track_t *track;
+	int extra_wait_fade_out_ms = 0;
 	struct tts_manager_merge_ctx_t *ctx = tts_merge_manager_get_ctx();
 
 	if(sample_rate != TTS_MERGE_MANAGER_SAMPLE_RATE){
@@ -194,7 +195,7 @@ int tts_merge_manager_start(char *name, uint8_t sample_rate, void (*stop_cb)(voi
 	}
 #endif
 	audio_system_mutex_lock();
-	struct audio_track_t *track = audio_system_get_track();
+	track = audio_system_get_track();
 	if(!track){
 		audio_system_mutex_unlock();
 		stop_cb();
@@ -203,9 +204,17 @@ int tts_merge_manager_start(char *name, uint8_t sample_rate, void (*stop_cb)(voi
 
 	//SYS_LOG_INF("merge tts:%s %p %d %p\n", name, buffer.base, buffer.length, stop_cb);
 
+
 	media_player_fade_out(media_player_get_current_main_player(), 60);
 
-	os_sleep(audio_policy_get_bis_link_delay_ms() + 80);
+	// fix JBLFLIP7-2116
+	if (track && track->stream_type == AUDIO_STREAM_LE_AUDIO && track->sample_rate && track->frame_size) {
+		extra_wait_fade_out_ms = stream_get_length(track->audio_stream) / (track->sample_rate*track->frame_size);
+		if (extra_wait_fade_out_ms < 0)
+			extra_wait_fade_out_ms = 0;
+		SYS_LOG_INF("extra_wait_fade_out_ms:%d\n", extra_wait_fade_out_ms);
+	}
+	os_sleep(audio_policy_get_bis_link_delay_ms() + 80 + extra_wait_fade_out_ms);
 
 	os_mutex_lock(&ctx->tts_merge_mutex, OS_FOREVER);
 

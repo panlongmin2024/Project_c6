@@ -549,5 +549,43 @@ int k_mbox_get_pending_msg_cnt(struct k_mbox *mbox,k_tid_t target_thread)
 	return result;
 }
 
+int k_mbox_delete_msg(struct k_mbox *mbox,mbox_msg_match msg_match)
+{
+	struct k_thread *sending_thread, *next;
+	struct k_mbox_msg *tx_msg;
+	struct k_mbox_msg rx_msg;
+	unsigned int key;
+	int count = 0;
 
+	/* search mailbox's tx queue for a compatible sender */
+	key = irq_lock();
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&mbox->tx_msg_queue, sending_thread,
+					  next, base.k_q_node) {
+
+		memset(&rx_msg, 0 ,sizeof(struct k_mbox_msg));
+
+		tx_msg = (struct k_mbox_msg *)sending_thread->base.swap_data;
+		rx_msg.info =  tx_msg->size;
+		rx_msg.size =  tx_msg->size;
+
+		rx_msg.rx_source_thread = (k_tid_t)K_ANY;
+		tx_msg->tx_target_thread = (k_tid_t)K_ANY;
+
+		if(msg_match(tx_msg)){
+			if (_mbox_message_match(tx_msg, &rx_msg) == 0) {
+				/* take sender out of mailbox's tx queue */
+				_unpend_thread(sending_thread);
+				_abort_thread_timeout(sending_thread);
+				rx_msg.size = 0;
+				_mbox_message_data_check(&rx_msg, NULL);
+				count++;
+			}
+		}
+	}
+
+	irq_unlock(key);
+
+	return count;
+}
 

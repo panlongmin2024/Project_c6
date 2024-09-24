@@ -30,13 +30,21 @@ static const void *linein_effect_user_addr = NULL;
 static const void *music_effect_user_addr = NULL;
 static u16_t music_effect_user_len = 0;
 
+#ifdef CONFIG_MUSIC_EXTERNAL_EFFECT
+#define EFFECT_PARAM_BUFFER_SIZE 2048
+#else
+#define EFFECT_PARAM_BUFFER_SIZE 1024
+#endif
+__in_section_unique(MEDIA_AUDIO_EFFECT_PARA) char effect_param_buffer[EFFECT_PARAM_BUFFER_SIZE + 268] __aligned(STACK_ALIGN);
+
 int media_effect_get_param_size(void)
 {
-#ifdef CONFIG_MUSIC_EXTERNAL_EFFECT
-	return 2048;
-#else
-	return 1024;
-#endif
+	return EFFECT_PARAM_BUFFER_SIZE;
+}
+
+int media_effect_get_param_buffer_size(void)
+{
+	return sizeof(effect_param_buffer);
 }
 
 int media_effect_set_user_param(uint8_t stream_type, uint8_t effect_type, const void *vaddr, int size)

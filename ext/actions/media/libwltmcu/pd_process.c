@@ -172,8 +172,7 @@ uint8_t wlt_simulation_test_switch(void)
 
 void wlt_simulation_test_handle(bool flag)
 {
-    uint8_t id = wlt_simulation_get_test_id();
-
+    uint8_t id = wlt_simulation_get_test_id();  
     switch(id)
     {
         case WLT_BATTERY_CAP_TEST:

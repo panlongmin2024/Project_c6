@@ -175,7 +175,11 @@ enum Command_e {
 	CMD_ReqAuracast_SQ_Status = 0xAE,
 	CMD_SetAuracast_SQ_Status = 0xAF,	//0-off, 1-on
 	CMD_RetAuracast_SQ_Status = 0xB0,
-	
+
+	CMD_ReqPlaytimeBoost = 0xB1,
+	CMD_SetPlaytimeBoost = 0xB2,
+	CMD_RetPlaytimeBoost = 0xB3,
+
 	CMD_UNSUPPORTED = 0xEE,
 };
 // - - -

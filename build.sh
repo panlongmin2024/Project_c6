@@ -264,24 +264,24 @@ if [ -d ${PRJ_BASE}/app_conf/${CONFIG} ]; then
 	source $CONF_FILE
 	if [ "X$CONFIG_ACTIONS_IMG_LOAD" == "Xy" ] ; then
 
-		IMG_DIR=${PRJ_BASE}/test_bin/${CONFIG_SOC}
+		IMG_DIR=${SDK_ROOT}/scripts/support/${CONFIG_SOC_FAMILY}/prebuilt/${CONFIG_SOC_SERIES}/${CONFIG_SOC}/test_bin
 
 		IMG_FILE=${IMG_DIR}/pd1.bin
+		#echo "cp ${IMG_FILE}  ${OUTDIR}/sdfs/"
 		if [ -f ${IMG_FILE} ] ; then
 			cp ${IMG_FILE}  ${OUTDIR}/sdfs/
-			#echo "cp ${IMG_FILE}  ${OUTDIR}/sdfs/"
 		fi
 
 		IMG_FILE=${IMG_DIR}/pt1.bin
+		#echo "cp ${IMG_FILE}  ${OUTDIR}/sdfs/"
 		if [ -f ${IMG_FILE} ] ; then
 			cp ${IMG_FILE}  ${OUTDIR}/sdfs/
-			#echo "cp ${IMG_FILE}  ${OUTDIR}/sdfs/"
 		fi
 
 		IMG_FILE=${IMG_DIR}/srrc.bin
+		#echo "cp ${IMG_FILE}  ${OUTDIR}/sdfs/"
 		if [ -f ${IMG_FILE} ] ; then
 			cp ${IMG_FILE}  ${OUTDIR}/sdfs/
-			#echo "cp ${IMG_FILE}  ${OUTDIR}/sdfs/"
 		fi
 
 	fi

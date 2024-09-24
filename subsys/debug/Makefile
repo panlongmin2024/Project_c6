@@ -8,3 +8,4 @@ obj-$(CONFIG_DEBUG_COREDUMP) += coredump/
 obj-$(CONFIG_STREAM_FLASH) += stream_flash/
 obj-$(CONFIG_DEBUG_RAMDUMP) += ramdump/
 obj-$(CONFIG_TASK_WDT) += task_watchdog/
+obj-y += data_export/

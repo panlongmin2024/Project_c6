@@ -1,1 +1,1 @@
-obj-y += strtol.o strtoul.o atoi.o atol.o
+obj-y += strtol.o strtoul.o atoi.o

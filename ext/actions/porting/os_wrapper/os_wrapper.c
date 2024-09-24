@@ -76,6 +76,7 @@ static struct msg_pool globle_msg_pool= {
 	.pool_size = CONFIG_NUM_MBOX_ASYNC_MSGS,
 	.pool = (struct msg_info *)&msg_pool_buff,
 };
+static os_msg_match globle_msg_match;
 
 static void msg_pool_info_dump(struct msg_pool *pool)
 {
@@ -297,6 +298,28 @@ void os_msg_init(void)
 	}
 }
 
+static int _os_msg_match(struct k_mbox_msg *msg){
+	if(!msg || !globle_msg_match)
+		return 0;
+	struct app_msg *tmp_msg = (struct app_msg *)(msg->tx_data);
+	if(!tmp_msg)
+		return 0;
+	if(globle_msg_match(tmp_msg,msg->tx_target_thread,msg->rx_source_thread)){
+		return 1;
+	}
+	return 0;
+}
+
+int os_msg_delete(os_msg_match msg_match)
+{
+	os_sched_lock();
+	globle_msg_match = msg_match;
+	int ret = os_mbox_delete_msg(&global_mailbox,_os_msg_match);
+	globle_msg_match = NULL;
+	os_sched_unlock();
+	return ret;
+}
+
 static bool low_latency_mode = true;
 
 int system_check_low_latencey_mode(void)
@@ -324,7 +347,7 @@ int os_is_free_msg_enough(void)
         return true;
 	}
 	else{
-		msg_pool_info_dump(&globle_msg_pool);
+		//msg_pool_info_dump(&globle_msg_pool);
 		return false;
 	}
 }

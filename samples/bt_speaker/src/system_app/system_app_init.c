@@ -568,6 +568,11 @@ void system_app_init(void)
 	printf("%s:%d led_manager_set_display\n", __func__, __LINE__);
 	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);						// power led
 	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);	
+	if(!main_system_is_enter_bqb())
+	{
+		pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);
+	}
+
 
 #endif
 
@@ -596,6 +601,7 @@ void system_app_init(void)
 #endif
 	user_app_later_init();
 	tts_manager_add_event_lisener(main_system_tts_event_nodify);
+
 	if(run_mode_is_demo()&&(!dc_power_in_status_read())){
 		SYS_LOG_INF("[%d] run_mode_is_demo, but No dc_power_in \n", __LINE__);
 		system_power_off();
@@ -608,7 +614,7 @@ void system_app_init(void)
 			act_event_init(act_event_callback_process);
 			#endif
 			//tts_manager_play_process();
-			pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);
+		//	pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);				// change by totti; 
 		}
 	}
 #endif	
@@ -789,24 +795,30 @@ CRASH_DUMP_REGISTER(dump_ctrl_mem_info, 40) =
 #ifdef CONFIG_DEBUG_RAMDUMP
 
 #include <debug/ramdump.h>
-#include <ota_upgrade.h>
-#include <soc.h>
+#include <debug/data_export.h>
+ #include <soc.h>
+#ifdef CONFIG_TASK_WDT
+#include <debug/task_wdt.h>
+#endif
+
 static void crash_dump_ramdump(void)
 {
-	if(!ota_upgrade_is_ota_running()){
+#ifdef CONFIG_TASK_WDT
+	task_wdt_exit();
+#endif
 
-		dsp_do_wait();
+	dsp_do_wait();
 
-		if(ramdump_check() != 0){
-			printk("start ramdump...\n");
-			ramdump_save();
-		}else{
-			printk("ramdump data existed, override\n");
-			ramdump_save();
-		}
+	data_export_print((uint8_t *)0x60000, 0x20000);
+
+	if(ramdump_check() != 0){
+		printk("start ramdump...\n");
+		ramdump_save();
 	}else{
-		printk("ota is running, skip ramdump!\n");
+		printk("ramdump data existed, override\n");
+		ramdump_save();
 	}
+
 }
 
 static void crash_dump_ramdump_print(void)

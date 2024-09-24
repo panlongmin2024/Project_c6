@@ -14,15 +14,12 @@ int selfapp_playload_len_is_2(u8_t cmd)
 {
 	switch (cmd) {
 	case DFUCMD_SetDfuData:{
-			selfapp_context_t *selfctx = self_get_context();
-			if (NULL == selfctx) {
-				return 0;
-			}
-			if (selfctx->connect_type != CONCTYPE_BLE) {
-				return 1;	// BR_EDR use 2 bytes PayloadLen, BLE use 1 byte
-			}
-			return 0;
+		selfstream_t *sfstream = self_find_current_sfstream();
+		if (sfstream && sfstream->connect_type != BLE_CONNECT_TYPE) {
+			return 1;  // BR_EDR use 2 bytes PayloadLen, BLE use 1 byte
 		}
+		return 0;
+	}
 
 	case APICMD_RetAnalyticsCmd:
 	case APICMD_RetPlayAnalyticsCmd:
@@ -39,6 +36,24 @@ int selfapp_playload_len_is_2(u8_t cmd)
 
 	return 0;
 }
+
+int selfapp_check_status_response(u8_t cmd)
+{
+   // un-tested, don't know which cmd should send, so don't do this now, liushuihua 20140913
+	switch (cmd) {
+	//case DEVCMD_RetRoleInfo:      // 0x16
+	case SPKCMD_RetFeedbackToneStatus:  // 0x66
+	//case APICMD_RetLightStatus:   // 0x72
+	//case APICMD_RetBassVolume:    // 0x78
+	//case APICMD_RetWaterOverHeating:    // 0x80
+	//case CMD_RetBatteryStatus:    // 0x9E
+	//case CMD_RetLeAudioStatus:    // 0xA5
+		return 1;
+
+	} // switch
+	return 0;
+}
+
 
 bool selfapp_cmd_check_id(u8_t val)
 {

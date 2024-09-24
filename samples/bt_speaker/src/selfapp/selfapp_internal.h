@@ -4,6 +4,7 @@
 #include <logging/sys_log.h>
 #include "selfapp_crc16.h"
 #include "selfapp_adaptor.h"
+#include <bt_manager.h>
 
 #ifndef _SELFAPP_INTERNEL_H_
 #define _SELFAPP_INTERNEL_H_
@@ -24,7 +25,6 @@
 //#define SPEC_PARTYBOOST
 
 
-#define SYS_LOG_NO_NEWLINE
 #ifdef SYS_LOG_DOMAIN
 #undef SYS_LOG_DOMAIN
 #endif
@@ -53,6 +53,7 @@ enum DeviceInfo_Role_e {
 };
 
 #define ROUTINE_INTERVAL   (10)
+#define SELFSTREAM_MAX      (2)
 
 #define SELF_SENDBUF_SIZE  (0x100)
 #define SELF_RECVBUF_SIZE  (0x100)
@@ -60,12 +61,6 @@ enum DeviceInfo_Role_e {
 #define SELF_EXTERNAL_SENDBUF_SIZE (0x100)
 #define SELF_NVRAM_STA     "SELFSTA"
 #define SELF_NVRAM_STASZ   "SELFSTASZ"
-
-enum BT_Connect_Type_e {
-	CONCTYPE_NONE = 0x0,
-	CONCTYPE_BR_EDR,
-	CONCTYPE_BLE,
-};
 
 enum MFB_Status_e {
 	MFBSTA_PLAY_PAUSE = 0x0,
@@ -140,18 +135,27 @@ enum CustomEQ_c1_Level_Scope_e {
 #define DEFAULT_SCOPE  (Custom_c1_Scope_n6p6 )
 
 typedef struct {
+	void  *handle;
+	u8_t   connect_type;   // BT_Connect_Type_e
+	u8_t   opened;
+	u8_t   index;
+	u8_t   major;          // 1 mark that connection already exchange dev-info
+} selfstream_t;
+
+typedef struct {
 	void *otadfu;
 	void *spkeq;
 	void *ledpkg;
 #ifdef CONFIG_LOGSRV_SELF_APP
 	void *logsrv;
 #endif
-	void *stream_hdl;
 	u8_t *sendbuf;
 	u8_t *recvbuf;
-	u32_t connect_handle;
-	u8_t connect_type;	// BT_Connect_Type_e
-	u8_t stream_opened;
+
+	selfstream_t  sfstream[SELFSTREAM_MAX];
+	void *current_hdl;  // handle of current handling sfstream
+	u8_t  connect_num;  // amount of connecting sfstream
+
 	u8_t stream_handle_suspend;
 	u8_t pause_player:1;
 	struct thread_timer timer;
@@ -168,17 +172,23 @@ typedef struct {
 } selfapp_context_t;
 
 extern selfapp_context_t *self_get_context(void);
-extern void *self_get_streamhdl(void);
 extern u8_t *self_get_sendbuf(void);
 extern int self_send_data(u8_t * buf, u16_t len);
+extern int self_send_data_all_handle(u8_t *buf, u16_t len);
+extern int self_send_data_major_handle(void *except_hdl, u8_t *buf, u16_t len);
 extern int selfapp_stream_handle_suspend(uint8_t suspend_enable);
+extern selfstream_t *self_find_sfstream_by_handle(void *stream_hdl);
+extern selfstream_t *self_find_current_sfstream(void);
+extern void *self_get_current_streamhdl(void);
+extern void  self_set_sfstream_major(void);
+extern u8_t  self_check_current_sfstream_major(void);
 
 //cmd pack
 u8_t selfapp_has_large_payload(u8_t cmdid);
 int selfapp_playload_len_is_2(u8_t cmd);
+int selfapp_check_status_response(u8_t cmd);
 bool selfapp_cmd_check_id(u8_t val);
-int selfapp_check_header(u8_t * buf, u16_t len, u8_t * cmdid, u8_t ** payload,
-		u16_t * paylen);
+int selfapp_check_header(u8_t * buf, u16_t len, u8_t *cmdid, u8_t **payload, u16_t *paylen);
 u16_t selfapp_get_header_len(u8_t command);
 u16_t selfapp_pack_header(u8_t * buf, u8_t cmd, u16_t len);
 u16_t selfapp_pack_bytes(u8_t * buf, u8_t * data, u16_t len);
@@ -190,8 +200,7 @@ u16_t selfapp_pack_unsupported(u8_t * buf, u8_t ackcmd);
 
 //cmd normal handler
 int selfapp_cmd_handler(u8_t * buf, u16_t len);
-u8_t cmdgroup_special(u8_t CmdID, u8_t * Payload, u16_t PayloadLen,
-		      int *result);
+u8_t cmdgroup_special(u8_t CmdID, u8_t * Payload, u16_t PayloadLen, int *result);
 int cmdgroup_general(u8_t CmdID, u8_t * Payload, u16_t PayloadLen);
 int cmdgroup_device_info(u8_t CmdID, u8_t * Payload, u16_t PayloadLen);
 #ifdef SPEC_REMOTE_CONTROL
@@ -202,8 +211,7 @@ int cmdgroup_analytics(u8_t CmdID, u8_t * Payload, u16_t PayloadLen);
 
 //cmd led handler
 #ifdef SPEC_LED_PATTERN_CONTROL
-extern int cmdgroup_led_pattern_control(u8_t CmdID, u8_t * Payload,
-					u16_t PayloadLen);
+extern int cmdgroup_led_pattern_control(u8_t CmdID, u8_t * Payload, u16_t PayloadLen);
 extern int cmdgroup_led_package(u8_t CmdID, u8_t * Payload, u16_t PayloadLen);
 extern int ledpkg_init(void);
 extern int ledpkg_deinit(void);
@@ -221,18 +229,16 @@ extern u8_t otadfu_running(void);
 extern int otadfu_NotifyDfuCancel(u8_t cansel_reason);
 int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen);
 
-//selfapp transfer
-void selfapp_routine_start_stop(u8_t start);
-int selfapp_handler_by_stream(void *handle);
+extern void selfapp_command_process(void);
 
 #ifdef CONFIG_LOGSRV_SELF_APP
-
 // log service
 int selfapp_logsrv_init(void *data_stream);
 void selfapp_logsrv_exit(void);
 void selfapp_logsrv_timer_routine(void);
 int selfapp_logsrv_check_id(u8_t *buf,u16_t len);
 int selfapp_logsrv_callback_register(p_logsrv_callback_t cb);
+void *selfapp_logsrv_get_datastream(void);
 #endif
 
 /*
@@ -248,8 +254,7 @@ int selfapp_eq_cmd_switch_eq(u8_t id, u8_t pre_id, const u8_t *data, u8_t len);
 void selfapp_set_user_bat_cap(u8_t bat);
 void selfapp_report_secondary_device_info(void);
 
-void self_creat_group_handler(struct thread_timer *ttimer,
-				   void *expiry_fn_arg);
+void self_creat_group_handler(struct thread_timer *ttimer, void *expiry_fn_arg);
 
 void selfapp_cmd_thread_timer_start(struct thread_timer *cur_timer);
 

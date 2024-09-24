@@ -576,11 +576,21 @@ void bt_manager_ble_disconnect_all_link(void)
 
 void bt_manager_ble_service_reg(struct ble_reg_manager *le_mgr)
 {
+	int err;
 	os_mutex_lock(&ble_mgr_lock, OS_FOREVER);
 
+	err = hostif_bt_gatt_service_register(&le_mgr->gatt_svc);
+	if (err < 0) {
+		if (err == -EALREADY) {
+			SYS_LOG_INF("Already register");
+		}else {
+			SYS_LOG_INF("Failed register");
+		}
+		goto exit;
+	}
 	sys_slist_append(&ble_list, &le_mgr->node);
-	hostif_bt_gatt_service_register(&le_mgr->gatt_svc);
 
+exit:
 	os_mutex_unlock(&ble_mgr_lock);
 }
 

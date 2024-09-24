@@ -139,11 +139,13 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 #endif			
 			hm_ext_pa_deinit();		
 			external_dsp_ats3615_deinit();
-			charge_app_state = CHARGING_APP_TTS_DONE;
+			if(charge_app_state == CHARGING_APP_INIT)
+				charge_app_state = CHARGING_APP_TTS_DONE;
 		}
 		#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
 		if(memcmp(tts_id,"c_err.mp3",sizeof("c_err.mp3")) == 0){
-			charge_app_state = CHARGING_APP_TTS_DONE;
+			if(charge_app_state == CHARGING_APP_INIT)
+				charge_app_state = CHARGING_APP_TTS_DONE;
 			main_system_tts_set_play_warning_tone_flag(false);
 		}
 		#endif
@@ -202,7 +204,7 @@ static void charge_app_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 static void charge_app_check_bt_timer(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
 	if(((btif_br_get_connected_device_num() == 0) && (charge_app_state == CHARGING_APP_TTS_DONE)) || \
-	((os_uptime_get_32() - p_charge_app_app->tts_start_time) > 10000)){
+	((os_uptime_get_32() - p_charge_app_app->tts_start_time) > 25000)){
 		charge_app_state = CHARGING_APP_OK;
 		thread_timer_stop(&check_bt_timer);
 		hotplug_charger_init();	
@@ -262,6 +264,12 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	bt_manager_disconnect_all_device_power_off();
 	system_app_set_auracast_mode(0);
 	self_music_effect_ctrl_set_enable(1);
+
+	//lear all tts
+	tts_manager_lock();
+	tts_manager_clear_all();
+	tts_manager_unlock();
+
 	power_off_no_tts = 0;
 	#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
 	if(mcu_ui_get_poweron_from_charge_warnning_status())

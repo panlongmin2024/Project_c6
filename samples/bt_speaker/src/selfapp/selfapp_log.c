@@ -682,6 +682,17 @@ void selfapp_logsrv_timer_routine(void)
 #endif
 }
 
+void *selfapp_logsrv_get_datastream(void)
+{
+	selfapp_context_t *selfctx = self_get_context();
+	logsrv_ctx_t *ctx = NULL;
+	if (selfctx && selfctx->logsrv) {
+		ctx = (logsrv_ctx_t *)selfctx->logsrv;
+		return ctx->sppble_stream;
+	}
+	return NULL;
+}
+
 int selfapp_logsrv_init(void *data_stream)
 {
     logsrv_ctx_t *ctx;
@@ -719,7 +730,7 @@ int selfapp_logsrv_init(void *data_stream)
 
     _svc_prot_send_ack(ctx->sppble_stream);
     ctx->prepared = 1;
-    ctx->connect_type = selfctx->connect_type;
+    //ctx->connect_type = selfctx->connect_type;
     selfctx->logsrv = ctx;
 
 	selfapp_log_inf("logsrv inited:%d\n",(uint32_t)selfctx->logsrv);

@@ -61,6 +61,7 @@
 #include <broadcast.h>
 #endif
 #include <fs_manager.h>
+#include <partition.h>
 
 #define CONFIG_OTA_APP_AUTO_START
 
@@ -511,6 +512,8 @@ int ota_app_init(void)
 
 #ifdef CONFIG_DEBUG_RAMDUMP
 	if(ramdump_check() == 0){
+		//set ota flag that partition data has been override
+		ota_upgrade_set_ota_partition_other_writing(PARTITION_FILE_ID_OTA_TEMP);
 		param.flag_skip_init_erase = true;
 	}
 #endif
@@ -519,6 +522,8 @@ int ota_app_init(void)
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
 	if (flash_device)
 		flash_write_protection_set(flash_device, false);
+
+	ota_upgrade_clear_ota_bp_state();
 
 	g_ota = ota_upgrade_init(&param);
 	if (!g_ota) {
@@ -592,6 +597,7 @@ static int _ota_app_init(void *p1, void *p2, void *p3)
 #endif
 
 	bt_manager_halt_ble();
+	bt_manager_end_pair_mode();
 	pwr_key_ota_end_flag = 0;
 
 	thread_timer_init(&ota_led_timer, ota_led_timer_pro, NULL);
@@ -725,7 +731,7 @@ void ota_input_event_proc(struct app_msg *msg)
 int power_key_ota_exit(void)
 {
    pwr_key_ota_end_flag = 1;
-	thread_timer_stop(&ota_led_timer);
+	//thread_timer_stop(&ota_led_timer);
 	SYS_LOG_INF("ota_led_timer = \n");
 
 	return 0;

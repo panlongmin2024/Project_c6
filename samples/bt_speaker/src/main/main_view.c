@@ -126,20 +126,35 @@ static bool is_need_play_tts(u32_t ui_event)
 #include <audio_system.h>
 extern int power_manager_get_just_volume_step(void);
 extern bool user_shell_get_smartcontrol_switch_status(void);
-#define SMART_JUST_MIN_VOLUME		13
+extern bool run_mode_is_demo(void);
+#define SMART_JUST_MIN_VOLUME			13
+#define SMART_JUST_MIN_VOLUME_DEMO		10
 static int smart_handle_volume(void)
 {
 	int ret;
 	u8_t vol;
 	int step;
+	u8_t min_vol;
+	int stream_type;
 	if(!user_shell_get_smartcontrol_switch_status())
 	{
 		SYS_LOG_ERR("----smartcontrol is close -----\n");
 		return -EINVAL;
 	}
 
-	ret = system_volume_get(AUDIO_STREAM_MUSIC);
-	if (ret < 0 || ret <= SMART_JUST_MIN_VOLUME) {
+	if(run_mode_is_demo())
+	{
+		min_vol = SMART_JUST_MIN_VOLUME_DEMO;
+		stream_type = AUDIO_STREAM_USOUND;
+	}
+	else
+	{
+		min_vol = SMART_JUST_MIN_VOLUME;
+		stream_type = AUDIO_STREAM_MUSIC;
+	}
+
+	ret = system_volume_get(stream_type);
+	if (ret < 0 || ret <= min_vol) {
 		SYS_LOG_ERR("%d\n", ret);
 		return -EINVAL;
 	}else{
@@ -147,13 +162,13 @@ static int smart_handle_volume(void)
 	}
 	step = power_manager_get_just_volume_step();
 	vol -= step;
-	if (vol < SMART_JUST_MIN_VOLUME) {
-		vol = SMART_JUST_MIN_VOLUME;
+	if (vol < min_vol) {
+		vol = min_vol;
 	} 
 
 	SYS_LOG_INF("vol=%d\n", vol);
 	//bt_manager_set_smartcontrol_vol_sync(0);//chole˵������Ҫ������ͬ�� 2024.8.16   zth
-	system_volume_set(AUDIO_STREAM_MUSIC, vol, true);
+	system_volume_set(stream_type, vol, true);
 	bt_manager_set_smartcontrol_vol_sync(1);
 
 	return 0;
@@ -244,7 +259,7 @@ static void main_app_view_deal(u32_t ui_event)
 #endif	
 		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));		
 		pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,CHARGING_WARNING);
-		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));//锁住防止被影�?		if(!is_charge_warning_flag)
+		pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));//锁住防止被影�?		if(!is_charge_warning_flag)
 		{
 			bt_manager_disconnect_all_device();//charge warning ��Ҫ�Ͽ�����---2024.8.16 zth
 			is_charge_warning_flag = true;

@@ -880,6 +880,19 @@ int os_thread_create(char *stack, size_t stack_size,
 			k_mbox_clear_msg(mbox)
 
 /**
+ * @brief delete  message matched in mbox.
+ *
+ * This routine clear message matched in mbox
+ *
+ * @param mbox Address of the mailbox.
+ *
+ * @retval void
+ */
+
+#define os_mbox_delete_msg(mbox,msg_match) \
+			k_mbox_delete_msg(mbox,msg_match)
+
+/**
  * @} end defgroup os_mailbox_apis
  */
 
@@ -1027,6 +1040,9 @@ int os_send_async_msg(void *receiver, void *msg, int msg_size);
 int os_receive_msg(void *msg, int msg_size,int timeout);
 void os_msg_clean(void);
 void os_msg_init(void);
+
+typedef int (*os_msg_match)(void *msg,k_tid_t target_thread,k_tid_t source_thread);
+int os_msg_delete(os_msg_match msg_match);
 
 bool os_is_in_isr(void);
 

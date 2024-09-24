@@ -356,21 +356,6 @@ void battery_charging_LED_on_all(void)
 
 
 
-
-void mcu_ui_set_dsp_dcdc(uint8_t onoff)
-{
-    SYS_LOG_INF("[%d],onoff =%d\n", __LINE__, onoff);
-
-
-    if(pd_srv_sync_send_msg(PA_EVENT_AW_20V5_CTL, (int)onoff) == -1)
-     {
-        SYS_LOG_INF("[%d],msg fail reinstall MCU_SUPPLY_PROP_DSP_DCDC \n", __LINE__);
-        mcu_ui_send_led_code(MCU_SUPPLY_PROP_DSP_DCDC,onoff); 
-     }
-
- //   SYS_LOG_INF("[%d],onoff =%d\n", __LINE__, onoff);
-
-}
 #if 0
 static void battery_led_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
@@ -537,15 +522,8 @@ void battery_status_remaincap_display_handle(uint8_t status, u16_t cap, int led_
                 else*/ 
               
               if(led_status == BATT_LED_ON_2S)
-			  {
-			    if(get_batt_led_display_timer() > 0)
-				 {
-				   set_batt_led_display_timer(2);
-			     }
-				else
-			      {
-			       set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_2s);//set 2s
-				  }
+			  {			  
+			     set_batt_led_display_timer(DISCHARGE_LED_DISPLAY_TIME_2s);//set 2s			
               }
 			  else if(led_status == BATT_PWR_LED_ON_0_5S)
 			  {

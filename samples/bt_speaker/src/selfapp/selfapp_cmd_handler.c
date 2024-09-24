@@ -62,6 +62,8 @@ u8_t cmdgroup_special(u8_t CmdID, u8_t * Payload, u16_t PayloadLen, int *result)
 	case APICMD_ReqWaterOverHeating:
 	case CMD_ReqAuracast_SQ_Status:
 	case CMD_SetAuracast_SQ_Status:
+	case CMD_ReqPlaytimeBoost:
+	case CMD_SetPlaytimeBoost:
 		{
 			ret =
 			    cmdgroup_speaker_settings(CmdID, Payload,
@@ -506,17 +508,17 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 
 	case TokenID_Firmware_Version:
 		size = 0;
-		u8_t vercode[4];	// 3Bytes is sw version, big endian, 1Byte is hw version
+		u8_t vercode[4], tmpval = 0;	// 3Bytes is sw version, big endian, 1Byte is hw version
 		extern u32_t fw_version_get_sw_code(void);
 		extern u8_t fw_version_get_hw_code(void);
 		u32_t hwver = fw_version_get_hw_code();
 		u32_t swver = fw_version_get_sw_code();
 
 		if(!device_id){
-			vercode[0] = hex2dec_digitpos((swver >> 16) & 0xFF);
-			vercode[1] = hex2dec_digitpos((swver >>  8) & 0xFF);
-			vercode[2] = hex2dec_digitpos( swver & 0xFF);
 			vercode[3] = (u8_t)hwver;
+			vercode[2] = hex2dec_digitpos(  swver & 0xFF, &tmpval);
+			vercode[1] = hex2dec_digitpos(((swver >>  8) & 0xFF) + tmpval, &tmpval);
+			vercode[0] = hex2dec_digitpos(((swver >> 16) & 0xFF) + tmpval, &tmpval);
 		}else{
 			if(selfctx->secondary_device.validate){
 				memcpy(vercode, selfctx->secondary_device.firmware_version, 4);
@@ -670,6 +672,7 @@ int cmdgroup_device_info(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 
 	switch (CmdID) {
 	case DEVCMD_ReqDevInfo:
+		self_set_sfstream_major();
 		ret = devinfo_req_devinfo();
 		break;
 	case DEVCMD_ReqDevInfoToken:
@@ -678,15 +681,13 @@ int cmdgroup_device_info(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 	case DEVCMD_SetDevInfo:
 		ret = devinfo_set_devinfo(Payload, PayloadLen);
 		break;
-	case DEVCMD_ReqRoleCheck:
-		{
-			u8_t role = selfapp_get_role();
-			selfapp_log_inf("ReqRoleCheck %d\n", role);
-			sendlen +=
-			    selfapp_pack_cmd_with_int(buf, DEVCMD_RetRoleInfo, role, 1);
-			ret = self_send_data(buf, sendlen);
-			break;
-		}
+	case DEVCMD_ReqRoleCheck: {
+		u8_t role = selfapp_get_role();
+		selfapp_log_inf("ReqRoleCheck %d", role);
+		sendlen += selfapp_pack_cmd_with_int(buf, DEVCMD_RetRoleInfo, role, 1);
+		ret = self_send_data(buf, sendlen);
+		break;
+	}
 	default:
 		selfapp_log_wrn("NoCmd DevInfo 0x%x\n", CmdID);
 		break;
@@ -911,6 +912,21 @@ static int spk_req_auracast_sq_mode(void)
 
 	return ret;
 }
+static int spk_req_PlaytimeBoost_state(void)
+{
+	u8_t buf[10] = {0};
+	int ret = -1;
+	u16_t len = 0;
+	u8_t state = 0;
+
+	state = selfapp_config_get_PB_state();
+
+	selfapp_log_inf("%d", state);
+	len = selfapp_pack_cmd_with_int(buf, CMD_RetPlaytimeBoost, state, 1);
+	ret = self_send_data(buf, len);
+
+	return ret;
+}
 
 void self_creat_group_handler(struct thread_timer *ttimer,
 				   void *expiry_fn_arg){
@@ -920,6 +936,76 @@ void self_creat_group_handler(struct thread_timer *ttimer,
 	}
 	selfapp_log_inf("time out");
 	memset(&selfctx->creat_group,0,sizeof(selfctx->creat_group));
+}
+
+int auracast_group_info_pack(u8_t databuf[80])
+{
+	struct AURACAST_GROUP  group;
+	u16_t len = 0, hdr_len = selfapp_get_header_len(CMD_RetAuracastGroup);
+
+	if (databuf == NULL) {
+		return 0;
+	}
+
+	// the group-info MAX pack len is 3+61
+
+	selfapp_config_get_ac_group(&group);
+	len += hdr_len;
+
+	databuf[len++] = AGIK_GroupAction;
+	databuf[len++] = 0x01;
+	if (0 == group.ch) {
+		databuf[len++] = 0x02;	//destroy group
+	} else {
+		databuf[len++] = 0x01;	//create group
+	}
+
+	databuf[len++] = AGIK_GroupType;
+	databuf[len++] = 0x01;
+	databuf[len++] = 0x01;
+
+#ifdef CONFIG_BT_LETWS
+	databuf[len++] = AGIK_Role;
+	databuf[len++] = 0x01;
+	databuf[len++] = selfapp_get_role();
+#endif
+
+	databuf[len++] = AGIK_StereoChannel;
+	databuf[len++] = 0x01;
+	if(!selfapp_get_lasting_stereo_mode() && group.role){
+		databuf[len++] = 0;
+	}else{
+		databuf[len++] = group.ch;
+	}
+
+	databuf[len++] = AGIK_StereoGroupId;
+	databuf[len++] = 0x04;
+	databuf[len++] = (group.id >> 24 & 0xFF);
+	databuf[len++] = (group.id >> 16 & 0xFF);
+	databuf[len++] = (group.id >> 8 & 0xFF);
+	databuf[len++] = (group.id & 0xFF);
+
+#ifdef CONFIG_BT_LETWS
+	databuf[len++] = AGIK_StereoGroupName;
+	databuf[len++] = strlen(group.name);
+	memcpy(&databuf[len],group.name,strlen(group.name));
+	len += strlen(group.name);
+#endif
+
+	// mac address
+	if(group.role){
+		databuf[len++] = AGIK_PartnerMac;
+		databuf[len++] = 6;
+		for (uint8_t i  = 0; i < 6; i++) {
+			databuf[len + i] = group.addr[5-i];
+		}
+		len += 6;
+	}
+
+	len -= hdr_len;  // was added
+
+	selfapp_pack_header(databuf, CMD_RetAuracastGroup, len);
+	return hdr_len + len;
 }
 
 int spk_set_auracast_group(u8_t * Payload, u16_t PayloadLen)
@@ -1084,7 +1170,12 @@ int spk_set_auracast_group(u8_t * Payload, u16_t PayloadLen)
 			}
 		}else{
 			selfapp_config_set_ac_group(&group);
-			ret = self_send_data(buf, len + PayloadLen);
+
+			/*if (self_check_current_sfstream_major() == 0) {
+				ret = self_send_data_major_handle(NULL, buf, len + PayloadLen);
+			} else*/ {
+				ret = self_send_data(buf, len + PayloadLen);
+			}
 		}
 	}else if(action == 2){
 		memcpy(buf + len, Payload, PayloadLen);
@@ -1107,74 +1198,19 @@ int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen)
 {
 	selfapp_context_t *selfctx = self_get_context();
 	u8_t buf[100];
-	int ret = -1;
 	u16_t len = 0;
-	u16_t hdr_len = selfapp_get_header_len(CMD_RetAuracastGroup);
-	u8_t *data = buf;
-	struct AURACAST_GROUP group;
-
 	if (NULL == selfctx) {
-		return ret;
+		return -1;
 	}
 
-	selfapp_config_get_ac_group(&group);
-	len = 0;
-	data += hdr_len;
-
-	data[len++] = AGIK_GroupAction;
-	data[len++] = 0x01;
-	if (0 == group.ch) {
-		data[len++] = 0x02;	//destroy group
-	} else {
-		data[len++] = 0x01;	//create group
+	len = auracast_group_info_pack(buf);
+	if (len == 0) {
+		selfapp_log_err("nopack");
+		return -1;
 	}
 
-	data[len++] = AGIK_GroupType;
-	data[len++] = 0x01;
-	data[len++] = 0x01;
+	return self_send_data(buf, len);
 
-	data[len++] = AGIK_Role;
-	data[len++] = 0x01;
-	data[len++] = group.role;
-
-	data[len++] = AGIK_StereoChannel;
-	data[len++] = 0x01;
-	if(!selfapp_get_lasting_stereo_mode() && group.role){
-		data[len++] = 0;
-	}else{
-		data[len++] = group.ch;
-	}
-
-	// stereo Group ID
-	data[len++] = AGIK_StereoGroupId;
-	data[len++] = 0x04;
-	data[len++] = (group.id >> 24 & 0xFF);
-	data[len++] = (group.id >> 16 & 0xFF);
-	data[len++] = (group.id >> 8 & 0xFF);
-	data[len++] = (group.id & 0xFF);
-
-#ifdef CONFIG_BT_LETWS
-	// stereo Group name
-	data[len++] = AGIK_StereoGroupName;
-	data[len++] = strlen(group.name);
-	memcpy(&data[len],group.name,strlen(group.name));
-	len += strlen(group.name);
-#endif
-
-	// mac address
-	if(group.role){
-		data[len++] = AGIK_PartnerMac;
-		data[len++] = 6;
-		for (uint8_t i  = 0; i < 6; i++) {
-			data[len + i] = group.addr[5-i];
-		}
-		len += 6;
-	}
-
-	selfapp_pack_header(buf, CMD_RetAuracastGroup, len);
-	ret = self_send_data(buf, hdr_len + len);
-
-	return ret;
 }
 
 int spk_set_feedback_tone(u8_t *payload, u16_t payload_len)
@@ -1375,6 +1411,17 @@ int cmdgroup_speaker_settings(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 	case CMD_ReqAuracast_SQ_Status:
 		ret = spk_req_auracast_sq_mode();
 		break;
+	case CMD_SetPlaytimeBoost:
+		if (Payload[0] == 1) {
+			selfapp_config_set_PB_state(1);
+		} else {
+			selfapp_config_set_PB_state(0);
+		}
+		extern void btmusic_playTimeBoost_trigger(void);
+		//btmusic_playTimeBoost_trigger();
+	case CMD_ReqPlaytimeBoost:
+		ret = spk_req_PlaytimeBoost_state();
+		break;
 	default:
 		selfapp_log_wrn("Not implement cmd 0x%x\n", CmdID);
 		sendlen = selfapp_pack_unsupported(buf, CmdID);
@@ -1477,7 +1524,26 @@ void selfapp_notify_role(void)
 	role = selfapp_get_role();
 	selfapp_log_inf("role=%d", role);
 	len = selfapp_pack_cmd_with_int(buf, DEVCMD_RetRoleInfo, role, 1);
-	self_send_data(buf, len);
+	self_send_data_all_handle(buf, len);
+}
+
+void selfapp_group_status_update(int arg)
+{
+	selfapp_log_inf("%d", arg);
+
+	// report role(new) to all App
+	selfapp_notify_role();
+
+	// report auracast-group-info to major App, to re-new the App-display
+	{
+		u8_t  buf[80];
+		u8_t  packlen = 0;
+		// major_hdl != current_hdl at this time, should send to major handle
+		packlen = auracast_group_info_pack(buf);
+		if (packlen > 0) {
+			self_send_data_major_handle(NULL, buf, packlen);
+		}
+	}
 }
 
 void selfapp_notify_lasting_stereo_status2(void)

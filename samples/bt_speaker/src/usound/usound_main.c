@@ -18,6 +18,9 @@
 #ifdef CONFIG_PROPERTY
 #include "property_manager.h"
 #endif
+#ifdef CONFIG_BT_SELF_APP
+#include "selfapp_api.h"
+#endif
 
 extern void *bt_manager_get_halt_phone(uint8_t *halt_cnt);
 
@@ -70,7 +73,7 @@ static void usound_delay_resume(struct thread_timer *ttimer, void *expiry_fn_arg
 {
 	SYS_LOG_INF("playing %d", p_usound->playing);
 	if (!p_usound->playing) {
-		usb_hid_control_pause_play();
+		//usb_hid_control_pause_play();
 	}
 	usound_playback_start();
 }
@@ -253,6 +256,16 @@ static int usound_init(void *p1, void *p2, void *p3)
 	bt_manager_halt_phone();
 	//bt_manager_disconnect_all_device();
 #endif
+#ifdef CONFIG_BT_SELFAPP_ADV
+	selfapp_set_system_status(SELF_SYS_UAC);
+	selfapp_set_allowed_join_party(false);
+#endif
+
+#ifndef CONFIG_USOUND_BROADCAST_SUPPROT
+	if (0 != system_app_get_auracast_mode()) {
+		system_app_set_auracast_mode(0);
+	}
+#endif
 
 	usound_view_init();
 
@@ -309,6 +322,11 @@ static int usound_exit(void)
 	usb_audio_deinit();
 
 	usound_view_deinit();
+
+#ifdef CONFIG_BT_SELFAPP_ADV
+	selfapp_set_system_status(SELF_SYS_RUNNING);
+	selfapp_set_allowed_join_party(true);
+#endif
 
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
 	if (p_usound->set_dvfs_level) {

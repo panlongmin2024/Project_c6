@@ -338,10 +338,10 @@ void external_dsp_ats3615_deinit(void)
 int external_dsp_ats3615_reset(void)
 {
 	SYS_LOG_WRN(" ");
-	dsp_init_flag = 0;
+	//dsp_init_flag = 0;
+	external_dsp_ats3615_deinit();
 	external_dsp_ats3615_load(0);
-	ats3615_re_comm_after_reset();
-
+	//ats3615_re_comm_after_reset();
 	return 0;
 }
 

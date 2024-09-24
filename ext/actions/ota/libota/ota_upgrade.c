@@ -50,6 +50,7 @@
 #define EIO_READ			(1001)
 
 #define OTA_BPREPORT (1)  // Indicate that ota will resume breakpoint
+#define OTA_FWVERSION_LIMIT_100 (1)  // Max to 100 every version byte
 
 #ifdef CONFIG_OTA_LEGACY_REQ_SIZE
 #define OTA_REQ_MAX_SIZE			(4*1024)
@@ -68,7 +69,7 @@
 
 #define OTA_SIGNATURE_DATA_LEN		(256)
 
-static __ota_bss uint8_t ota_rx_stack[OTA_RX_STACKSIZE] ;
+static __ota_bss uint32_t ota_rx_stack[OTA_RX_STACKSIZE / 4] ;
 static __ota_bss uint8_t ota_rx_data_buf[OTA_RX_BUFSIZE];
 static __ota_bss uint8_t ota_rx_in_buf[OTA_IN_BUFSIZE];
 
@@ -93,6 +94,7 @@ struct ota_rx_info {
 	uint8_t thread_terminated;
 	uint8_t thread_need_terminated;
 	uint8_t file_id;
+	struct k_thread rx_info_thread;
 };
 
 struct ota_upgrade_info {
@@ -387,6 +389,7 @@ static int ota_update_temp_partition_flag(struct ota_upgrade_info *ota, struct o
 
 static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 {
+	int prio;
 	uint32_t crc_calc, crc_orig;
 	const struct partition_entry * part = partition_get_part(file->file_id);
 
@@ -405,8 +408,7 @@ static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 
 		ota_update_temp_partition_flag(ota, file);
 
-		//鏍￠獙鏃堕棿杈冮暱锛岄檷浣庝紭鍏堢骇缁欏簲鐢ㄥ眰鍋歎I
-		int prio = 0;
+		//校验时间较长，降低优先级给应用层做UI
 		prio = k_thread_priority_get(k_current_get());
 		k_thread_priority_set(k_current_get(), 12);
 
@@ -615,7 +617,7 @@ static int ota_rx_init(struct ota_upgrade_info *ota)
 {
 	struct ota_rx_info *rx_info = &ota->rx_info;
 
-	rx_info->rx_stack = ota_rx_stack;
+	rx_info->rx_stack = (char *)ota_rx_stack;
 	rx_info->rx_buf = ota_rx_data_buf;
 	rx_info->rx_bufsize = OTA_RX_BUFSIZE;
 	rx_info->in_buf = ota_rx_in_buf;
@@ -670,7 +672,7 @@ static void ota_rx_start(struct ota_upgrade_info *ota, uint32_t offset,
 
 	stack_ptr = (char *)ROUND_UP(rx_info->rx_stack, STACK_ALIGN);
 
-	rx_info->rx_tid = (os_tid_t)os_thread_create(stack_ptr, OTA_RX_STACKSIZE, ota_rx_thread,
+	rx_info->rx_tid = (os_tid_t)k_thread_create(&rx_info->rx_info_thread, (os_thread_stack_t)stack_ptr, OTA_RX_STACKSIZE, ota_rx_thread,
 									ota, NULL, NULL, 3, 0, OS_NO_WAIT);
 
 }
@@ -1088,12 +1090,35 @@ static int ota_auto_update_version(struct ota_upgrade_info *ota,
 		SYS_LOG_WRN("new version bigger 0x%x_0x%x", cur_ver->version_code, new_ver->version_code);
 	}
 	new_ver->version_code = cur_ver->version_code + 1;
+#if OTA_FWVERSION_LIMIT_100
+	if ((new_ver->version_code & 0xFF) >= 0x64) {
+		new_ver->version_code += 0x9C;  // 0x100 = 0x64 + 0x9C
+	}
+	if ((new_ver->version_code & 0xFF) >= 0x64) {
+		new_ver->version_code += 0x9C;  // 0x100 = 0x64 + 0x9C
+	}
+
+	if ((new_ver->version_code & 0xFF00) >= 0x6400) {
+		new_ver->version_code += 0x9C00;  // 0x10000 = 0x6400 + 0x9C00
+	}
+	if ((new_ver->version_code & 0xFF00) >= 0x6400) {
+		new_ver->version_code += 0x9C00;  // 0x10000 = 0x6400 + 0x9C00
+	}
+
+	if ((new_ver->version_code & 0xFF0000) >= 0x640000) {
+		new_ver->version_code += 0x9C0000;  // 0x1000000 = 0x640000 + 0x9C0000
+	}
+	if ((new_ver->version_code & 0xFF0000) >= 0x640000) {
+		new_ver->version_code += 0x9C0000;  // 0x1000000 = 0x640000 + 0x9C0000
+	}
+#endif
+
 	new_ver->checksum = utils_crc32(0, (const uint8_t *)new_ver, sizeof(struct fw_version) - 4);
 
-	SYS_LOG_INF("cur fw version: 0x%x", cur_ver->version_code);
-	SYS_LOG_INF("cur fw version name: %s", cur_ver->version_name);
-	SYS_LOG_INF("new fw version: 0x%x", new_ver->version_code);
-	SYS_LOG_INF("new fw version name: %s", new_ver->version_name);
+	SYS_LOG_INF("version_code 0x%06x -> 0x%06x", cur_ver->version_code, new_ver->version_code);
+	SYS_LOG_INF("version_name:");
+	printk("%s\n", cur_ver->version_name);
+	printk("%s\n", new_ver->version_name);
 
 	addr = file->offset;
 	/* enable encryption function */
@@ -1992,5 +2017,70 @@ const struct partition_entry *ota_upgrade_get_ota_partition_other_writing(uint8_
 
 	return NULL;
 
+}
+
+int ota_upgrade_set_ota_partition_other_writing(uint8_t file_id)
+{
+	int i;
+	struct ota_breakpoint bp;
+	const struct partition_entry *part;
+
+	ota_breakpoint_init(&bp);
+
+	for (i = 0; i < MAX_PARTITION_COUNT; i++) {
+		part = partition_get_part_by_id(i);
+		if (part == NULL)
+			break;
+
+		SYS_LOG_INF("part[%d]: bp_state %d, file_id %d", i, bp.state, part->file_id);
+
+		if (part->file_id == 0)
+			continue;
+
+#ifndef CONFIG_OTA_RECOVERY
+		/* skip current firmware's partitions */
+		if (!partition_is_mirror_part(part)) {
+			continue;
+		}
+#endif
+
+		if (part->file_id != file_id){
+			continue;
+		}
+
+		if(bp.state != OTA_BP_STATE_UPGRADE_WRITING_OTHER){
+			bp.state = OTA_BP_STATE_UPGRADE_WRITING_OTHER;
+			bp.cur_file.offset = part->offset;
+			bp.cur_file_write_offset = 0;
+			ota_breakpoint_set_file_state(&bp, file_id, OTA_BP_FILE_STATE_OTHER_WRITING);
+#ifdef CONFIG_OTA_RECOVERY
+			ota_breakpoint_set_file_state(&bp, PARTITION_FILE_ID_OTA_TEMP, OTA_BP_FILE_STATE_OTHER_WRITING);
+#else
+			ota_breakpoint_set_file_state(&bp, PARTITION_FILE_ID_SYSTEM, OTA_BP_FILE_STATE_OTHER_WRITING);
+			ota_breakpoint_set_file_state(&bp, PARTITION_FILE_ID_SDFS, OTA_BP_FILE_STATE_OTHER_WRITING);
+#endif
+			ota_breakpoint_save(&bp);
+
+		}
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ota_upgrade_clear_ota_bp_state(void)
+{
+	struct ota_breakpoint bp;
+
+	ota_breakpoint_load(&bp);
+
+	ota_breakpoint_clear_all_file_state(&bp);
+
+	ota_breakpoint_save(&bp);
+
+	SYS_LOG_INF("ok\n");
+
+	return 0;
 }
 

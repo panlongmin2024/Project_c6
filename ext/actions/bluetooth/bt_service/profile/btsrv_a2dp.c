@@ -427,12 +427,23 @@ static void _btsrv_a2dp_seted_codec_cb(struct bt_conn *conn, struct bt_a2dp_medi
 	btsrv_event_notify_malloc(MSG_BTSRV_A2DP, MSG_BTSRV_A2DP_SET_CODEC_CB, (uint8_t *)&param, sizeof(param), 0);
 }
 
+static void _btsrv_a2dp_exception_handle_cb(struct bt_conn *conn,u8_t err)
+{
+    if(!conn)
+        return;
+
+    SYS_LOG_ERR("conn:%p,err:%d",conn,err);
+
+    btsrv_event_notify(MSG_BTSRV_CONNECT, MSG_BTSRV_A2DP_CHANNEL_ERR, conn);
+}
+
 static const struct bt_a2dp_app_cb btsrv_a2dp_cb = {
 	.connected = _btsrv_a2dp_connect_cb,
 	.disconnected = _btsrv_a2dp_disconnected_cb,
 	.media_handler = _btsrv_a2dp_media_handler_cb,
 	.media_state_req = _btsrv_a2dp_media_state_req_cb,
 	.seted_codec = _btsrv_a2dp_seted_codec_cb,
+	.exception_handler = _btsrv_a2dp_exception_handle_cb,
 };
 
 void btsrv_a2dp_halt_aac_endpoint(bool halt)

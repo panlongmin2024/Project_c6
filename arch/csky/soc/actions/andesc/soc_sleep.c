@@ -30,13 +30,13 @@
 
 #ifdef CONFIG_PM_SLEEP_TIME_TRACE
 static u32_t deep_sleep_start_time;
-static u32_t deep_sleep_total_time;
 static u32_t light_sleep_start_time;
 static u32_t light_sleep_total_time;
 #endif
 
 static uint32_t *s2_reg_backup_ptr;
 static uint8_t corepll_backup;
+static u32_t deep_sleep_total_time;
 
 extern void trace_set_panic(void);
 extern void trace_clear_panic(void);
@@ -200,6 +200,21 @@ static void soc_pmu_deep_wakeup(uint32_t vout_ctl_backup)
 }
 extern void soc_pm_deep_power_ctrl(void);
 
+#define MAX_RC_TIMESTAMP (83886079)
+
+static uint32_t soc_get_rc_timestamp_us(uint32_t cur_time, uint32_t prev_time)
+{
+	if(cur_time > prev_time){
+		return cur_time - prev_time;
+	}else{
+		if(prev_time > MAX_RC_TIMESTAMP){
+			prev_time = MAX_RC_TIMESTAMP;
+		}
+
+		return (MAX_RC_TIMESTAMP - prev_time + cur_time);
+	}
+}
+
 void sys_pm_deep_sleep_routinue(void)
 {
 	uint32_t backup_reg[ARRAY_SIZE(backup_regs_addr)];
@@ -209,6 +224,8 @@ void sys_pm_deep_sleep_routinue(void)
 	uint32_t vout_ctl_backup;
 
 	uint32_t deep_sleep_time;
+
+	uint32_t cur_time;
 
 	pm_backup_registers(backup_reg);
 
@@ -224,7 +241,7 @@ void sys_pm_deep_sleep_routinue(void)
 	deep_sleep_start_time = deep_sleep_time;
 
     if(light_sleep_start_time){
-        light_sleep_total_time += deep_sleep_start_time - light_sleep_start_time;
+        light_sleep_total_time += soc_get_rc_timestamp_us(deep_sleep_start_time, light_sleep_start_time);
     }
 #endif
 
@@ -234,17 +251,19 @@ void sys_pm_deep_sleep_routinue(void)
 	soc_pm_deep_power_ctrl();
 #endif
 
-    deep_sleep_time = sys_pm_get_rc_timestamp() - deep_sleep_time;
+	cur_time = sys_pm_get_rc_timestamp();
+
+	deep_sleep_time = soc_get_rc_timestamp_us(cur_time, deep_sleep_time);
+
+	/* compensate ticks with sleep time */
+	_sys_clock_tick_count += _ms_to_ticks(deep_sleep_time);
+
+	deep_sleep_total_time += deep_sleep_time;
 
 #ifdef CONFIG_PM_SLEEP_TIME_TRACE
 
-    deep_sleep_total_time += deep_sleep_time;
-
     light_sleep_start_time = sys_pm_get_rc_timestamp();
 #endif
-
-    /* compensate ticks with sleep time */
-    _sys_clock_tick_count += _ms_to_ticks(deep_sleep_time);
 
     soc_pmu_deep_wakeup(vout_ctl_backup);
 

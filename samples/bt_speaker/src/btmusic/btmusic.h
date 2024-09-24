@@ -162,6 +162,7 @@ enum {
 
 enum {
 	MSG_BTMUSIC_MESSAGE_CMD_PLAYER_RESET,
+	MSG_BTMUSIC_MESSAGE_CMD_PLAY_TIME_BOOST,
 };
 
 enum BT_MUSIC_KEY_FUN {
@@ -200,6 +201,8 @@ void btmusic_app_event_proc(struct app_msg *msg);
 void btmusic_esd_restore(void);
 
 void btmusic_delay_resume(struct thread_timer *ttimer, void *expiry_fn_arg);
+
+void btmusic_volume_check(void);
 
 void btmusic_view_init(void);
 
