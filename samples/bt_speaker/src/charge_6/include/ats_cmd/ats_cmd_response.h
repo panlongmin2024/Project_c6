@@ -87,5 +87,9 @@
 #define ATS_CMD_RESP_POWER_OFF                			"TL_POWREOFF="
 
 #define ATS_CMD_RESP_SWITCH_DEMO	           			"TL_SWITCH_DEMO="
+#define ATS_CMD_RESP_ENTER_DEMO	           				"TL_ENTER_DEMO="
+#define ATS_CMD_RESP_EXIT_DEMO	           				"TL_EXIT_DEMO="
+#define ATS_CMD_RESP_BAT_VOLTAGE_CURRENT     			"TL_GET_BAT_VOLTAGE_CURRENT="
+
 
 #endif

@@ -61,6 +61,9 @@ extern int mcu_ui_get_logic_version(void);
 // extern int bt_mcu_send_pw_cmd_powerdown(void);
 extern void sys_event_notify(uint32_t event);
 extern int charge_app_enter_cmd(void);
+extern int16_t wlt_get_battery_volt(void);
+extern int16_t wlt_get_battery_cur(void);
+
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -1527,6 +1530,61 @@ int cdc_shell_ats_switch_demo_mode(struct device *dev, u8_t *buf, int len)
 
 	return 0;
 }
+int cdc_shell_ats_enter_demo_mode(struct device *dev, u8_t *buf, int len)
+{	
+	struct app_msg msg = { 0 };
+    msg.type = MSG_INPUT_EVENT;
+    msg.cmd = MSG_ATS_ENTER_DEMO;
+    send_async_msg("main", &msg);
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_ENTER_DEMO, sizeof(ATS_CMD_RESP_ENTER_DEMO)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	return 0;
+}
+int cdc_shell_ats_exit_demo_mode(struct device *dev, u8_t *buf, int len)
+{	
+	struct app_msg msg = { 0 };
+    msg.type = MSG_INPUT_EVENT;
+    msg.cmd = MSG_ATS_EXIT_DEMO;
+    send_async_msg("main", &msg);
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_EXIT_DEMO, sizeof(ATS_CMD_RESP_EXIT_DEMO)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	return 0;
+}
+int cdc_shell_ats_get_voltage_current(struct device *dev, u8_t *buf, int len)
+{	
+	uint8_t buffer[15+1] = "V:+XXXX-I:+XXXX";
+	uint16_t bat_voltage = wlt_get_battery_volt();
+	uint16_t bat_cur = wlt_get_battery_cur();
+
+	if(bat_voltage>=0){
+		buffer[2] = '+';
+		hex_to_string_4(bat_voltage,buffer+3);
+	}
+	else{
+		buffer[2] = '-';
+		hex_to_string_4((-bat_voltage),buffer+3);
+	}		
+	if(bat_cur>=0){
+		buffer[10] = '+';
+		hex_to_string_4(bat_cur,buffer+11);
+	}
+	else{
+		buffer[10] = '-';
+		hex_to_string_4((-bat_cur),buffer+11);
+	}
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_BAT_VOLTAGE_CURRENT, sizeof(ATS_CMD_RESP_BAT_VOLTAGE_CURRENT)-1, 
+		buffer, sizeof(buffer)-1);
+
+	return 0;
+}
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -1943,7 +2001,22 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* switch demo mode */
 		cdc_shell_ats_switch_demo_mode(dev, NULL, 0);
-	}			
+	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_ENTER_DEMO, sizeof(ATS_AT_CMD_ENTER_DEMO)-1))
+	{		   
+		/* enter demo mode */
+		cdc_shell_ats_enter_demo_mode(dev, NULL, 0);
+	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_EXIT_DEMO, sizeof(ATS_AT_CMD_EXIT_DEMO)-1))
+	{		   
+		/* exit demo mode */
+		cdc_shell_ats_exit_demo_mode(dev, NULL, 0);
+	}	
+	else if (!memcmp(&buf[index],ATS_CMD_RESP_BAT_VOLTAGE_CURRENT, sizeof(ATS_CMD_RESP_BAT_VOLTAGE_CURRENT)-1))
+	{		   
+		/* get bat boltage and current */
+		cdc_shell_ats_get_voltage_current(dev, NULL, 0);
+	}		
 	else	
 	{
 		//ats_usb_cdc_acm_write_data("live ats_usb_cdc_acm_shell_command_handler exit",sizeof("live ats_usb_cdc_acm_shell_command_handler exit")-1);
