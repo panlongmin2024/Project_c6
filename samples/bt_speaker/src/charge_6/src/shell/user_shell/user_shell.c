@@ -268,7 +268,17 @@ static int shell_user_reboot(int argc, char *argv[])
 	printk("------> shell_user_reboot \n");
 	return 0;
 }
-
+static int shell_get_ble_mac(int argc, char *argv[])
+{
+	uint8_t address[12];
+	void get_ble_address(uint8_t* address);
+	get_ble_address(address);
+	for(int i=0; i<12; i++){
+		printk("------> shell_user_reboot %d = 0x%x \n",i,address[i]);
+	}
+	
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -299,6 +309,7 @@ static const struct shell_cmd commands[] = {
 	{ "enter_fcc", shell_user_enter_fcc, "user enter fcc"},
 	{ "user_info", shell_user_info, "user get info"},
 	{ "user_reboot", shell_user_reboot, "user reboot"},
+	{ "get_blemac", shell_get_ble_mac, "user get ble mac"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
