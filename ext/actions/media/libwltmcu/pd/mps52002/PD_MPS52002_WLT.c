@@ -867,17 +867,27 @@ u8_t page_check(u8_t index)
   return check_result;
  }
 
+
+ void wlt_reset_pd(void)
+ {
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+
+	SYS_LOG_INF("%d \n", __LINE__);
+
+ 	k_sleep(10); //delay 10ms
+	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
+	k_sleep(10); //delay 10ms
+	gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
+	k_sleep(60); //delay 10ms		
+ }
+
  int OTA_PD(u8_t flag)
  {
 	 // struct device *iic_dev;
 	 // union dev_config config = {0};
-	 struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
-	 
-	 printf("Totti	OTA_PD start \n");
-	 gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
-	 k_sleep(10); //delay 10ms
-	 gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
-	 k_sleep(60); //delay 10ms		
+	
+	 wlt_reset_pd();
+
 	 u8_t request_cmd[] = { 0x4D, 0x50, 0x53, 0x53, 0x54, 0x41, 0x52, 0x54 };
 	 
 	 pd_mps52002_write_ota_value(PD_MPS_AA_REG, request_cmd, sizeof(request_cmd));
@@ -1042,13 +1052,10 @@ u8_t page_check(u8_t index)
 	 // u8_t jump_cmd = 0xAC;
 	 // pd_mps52002_write_ota_value(PD_MPS_BB_REG, &jump_cmd, 1);
   SUCCES: 
-	     printf("[%s %d] OTA_PD SUCESS!!!!!!!!!!!!!!!!!!\n", __func__, __LINE__);
-	     mps_ota_set_status(0x88);
-		 k_sleep(10); //delay 10ms
-		 gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
-		 k_sleep(10); //delay 10ms
-		 gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 0);
-		 k_sleep(200); //delay 10ms
+	    printf("[%s %d] OTA_PD SUCESS!!!!!!!!!!!!!!!!!!\n", __func__, __LINE__);
+	    mps_ota_set_status(0x88);
+		wlt_reset_pd();
+		
 		#ifdef CONFIG_TASK_WDT
 		 task_wdt_feed_all();
 		#endif	 
@@ -1251,7 +1258,6 @@ int WLT_OTA_PD(bool flag)
 			gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
 		}
 
-
 	}else{											// auto update upon power on
 
 		for(int i=0; i<2; i++)
@@ -1262,12 +1268,15 @@ int WLT_OTA_PD(bool flag)
 				return ret;
 			}
 		}
-        upgrade_fail_check();
+
+		wlt_reset_pd();
+		upgrade_fail_check();
+	
 		gpio_pin_write(gpio_dev, GPIO_PIN_PD_RST, 1);
 		k_sleep(100); //delay 100ms
 
-	//	SYS_LOG_INF("[%d] PD OTA FAIL!!! \n\n", __LINE__);
-	//	sys_pm_reboot(REBOOT_TYPE_NORMAL);
+		SYS_LOG_INF("[%d] PD OTA FAIL, reset!!! \n\n", __LINE__);
+		sys_pm_reboot(REBOOT_TYPE_NORMAL);
 	}
 
 	return ret;
@@ -1287,22 +1296,30 @@ static void pd_mps52002_status_value(void)
 
 #ifndef INDIA_APP_TEST
 	u8_t upgrade_regflag;
-	if(ota_flag != 0x88)
-	{
-		pd_ota_complete_flag = WLT_OTA_PD(0);
-	}else if(!pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2))
-	{
-	   printf("live debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
-	   pd_mps52002->pd_version = buf[0];
 
-	    if(pd_mps52002->pd_version < mps_pd_current_version)
+
+	if(!pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2))
+	{
+	   	printf("live debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
+
+	   	pd_mps52002->pd_version = buf[0];
+		if(pd_mps52002->pd_version < mps_pd_current_version)
 		{
 		  pd_ota_complete_flag = WLT_OTA_PD(0);
-	    }
-    }
+	    }else{
+			if(ota_flag != 0x88)
+			{
+				printf("MPS PD have new version \n");
+				mps_ota_set_status(0x88);
+			}
+		}
+    }else if(ota_flag != 0x88)
+	{
+		pd_ota_complete_flag = WLT_OTA_PD(0);
+	}
 	else
-	 {
-       if(!pd_tps52002_read_ota_value(0x01, &upgrade_regflag, 1))  
+	{
+        if(!pd_tps52002_read_ota_value(0x01, &upgrade_regflag, 1))  
        	{
 			printf("live debug upgrade_regflag:0x%x \n", upgrade_regflag);
 
@@ -1311,7 +1328,7 @@ static void pd_mps52002_status_value(void)
                pd_ota_complete_flag = WLT_OTA_PD(0);
 		    }
 	    }
-	 }
+	}
 #endif
 
 	k_sleep(10);
