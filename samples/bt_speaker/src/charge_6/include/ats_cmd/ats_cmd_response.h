@@ -95,4 +95,7 @@
 #define ATS_CMD_RESP_KEY_ALL_TEST_IN         			"TL_KEY_ALL_IN="
 #define ATS_CMD_RESP_KEY_ALL_TEST_OUT         			"TL_KEY_ALL_OUT="
 
+#define ATS_CMD_RESP_GET_BAT_LEV_VOL        			"TL_GET_BAT_LEV_VOL="
+
+
 #endif
