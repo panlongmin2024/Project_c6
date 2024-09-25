@@ -133,9 +133,11 @@ exit:
     return ret;
 }
 
+static bool ats_pwrkey_pressed = false;
 /* in ats key test mode, verify power key pressed. */
 bool ats_get_pwr_key_pressed(void)
 {
+	return ats_pwrkey_pressed;
     if(!p_ats_ctx){
         return false;
     }	
@@ -145,6 +147,8 @@ bool ats_get_pwr_key_pressed(void)
 }
 void ats_set_pwr_key_pressed(bool pressed)
 {
+	ats_pwrkey_pressed = pressed;
+	return;
     if(!p_ats_ctx){
         return;
     }	
@@ -490,7 +494,7 @@ int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
         {
             memcpy(key_buf, "04", 2);
         }
-        else if (key_value == 51)
+        else if (key_value == KEY_ATS_PWR_KEY)
         {
             memcpy(key_buf, "05", 2);
 			ats_set_pwr_key_pressed(true);
@@ -500,9 +504,9 @@ int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
             memcpy(key_buf, "06", 2);
 			if(ats_get_pwr_key_pressed()){
 				/* powerkey first, then other key trigger */
-	        ats_usb_cdc_acm_cmd_response_at_data(
-	            dev, ATS_CMD_RESP_KEY_READ, sizeof(ATS_CMD_RESP_KEY_READ)-1, 
-	            key_buf, sizeof(key_buf)-1);				
+		        ats_usb_cdc_acm_cmd_response_at_data(
+		            dev, ATS_CMD_RESP_KEY_READ, sizeof(ATS_CMD_RESP_KEY_READ)-1, 
+		            key_buf, sizeof(key_buf)-1);				
 			}
         }			
         else 
