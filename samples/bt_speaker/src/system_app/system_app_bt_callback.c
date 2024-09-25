@@ -210,25 +210,25 @@ int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len)
 		case BT_BROADCAST_SOURCE_CONFIG:
 		{
 			/* switch to source mode.. */
-			user_set_auracast_sink_connected(false);
+			//user_set_auracast_sink_connected(false);
 		}
 		break;
 		case BT_BROADCAST_SINK_CONFIG:
 		{
 			/* switch to sink mode.. */
-			user_set_auracast_sink_connected(false);
+			//user_set_auracast_sink_connected(false);
 		}
 		break;		
 		case BT_BIS_CONNECTED:
 		{
 			/* sink conected to source.. */
-			user_set_auracast_sink_connected(true);
+			//user_set_auracast_sink_connected(true);
 		}
 		break;		
 		case BT_BIS_DISCONNECTED:
 		{
 			/* sink disconected from source.. */
-			user_set_auracast_sink_connected(false);
+			//user_set_auracast_sink_connected(false);
 		}
 		break;	
 	
