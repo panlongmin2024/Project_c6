@@ -222,14 +222,28 @@ int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len)
 		}
 		break;
 		/* for ats test ggec */
+		case BT_BROADCAST_SOURCE_CONFIG:
+		{
+			/* switch to source mode.. */
+			send_message_to_system(MSG_ATS_LE_AUDIO,1,0);
+		}
+		break;
+		case BT_BROADCAST_SINK_CONFIG:
+		{
+			/* switch to sink mode.. */
+			send_message_to_system(MSG_ATS_LE_AUDIO,2,0);
+		}
+		break;		
 		case BT_BIS_CONNECTED:
 		{
-			send_message_to_system(MSG_ATS_LE_AUDIO,1,0);
+			/* sink conected to source.. */
+			send_message_to_system(MSG_ATS_LE_AUDIO,2,1);
 		}
 		break;		
 		case BT_BIS_DISCONNECTED:
 		{
-			send_message_to_system(MSG_ATS_LE_AUDIO,2,0);
+			/* sink disconected from source.. */
+			send_message_to_system(MSG_ATS_LE_AUDIO,2,2);
 		}
 		break;	
 		
