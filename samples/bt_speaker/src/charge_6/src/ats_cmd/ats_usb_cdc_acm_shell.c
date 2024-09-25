@@ -1620,8 +1620,9 @@ static int cdc_shell_ats_key_all_test_exit(struct device *dev, u8_t *buf, int le
 static int cdc_shell_ats_get_bat_level_voltage(struct device *dev, u8_t *buf, int len)
 {	
 	uint8_t buffer[11+1] = "XXX%-XXXXmV";
+	int16 battery_volt,battery_curr;
 	int battery_capacity = power_manager_get_battery_capacity();
-	int battery_volt = power_manager_get_battery_vol()*2;
+	pd_manager_get_volt_cur_value(&battery_volt,&battery_curr);
 
 	if(battery_capacity == 100) {	
 		buffer[0] = '1';
