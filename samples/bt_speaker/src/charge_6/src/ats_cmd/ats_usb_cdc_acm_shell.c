@@ -1642,6 +1642,15 @@ static int cdc_shell_ats_get_bat_level_voltage(struct device *dev, u8_t *buf, in
 
 	return 0;
 }
+static int cdc_shell_ats_get_auracast_state(struct device *dev, u8_t *buf, int len)
+{	
+	/* if only auracast is sink mode, can check state...*/
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_KEY_ALL_TEST_OUT, sizeof(ATS_CMD_RESP_KEY_ALL_TEST_OUT)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+
+	return 0;
+}
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -2093,6 +2102,11 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* get battery percent level and voltage */
 		cdc_shell_ats_get_bat_level_voltage(dev, NULL, 0);
+	}
+	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_AURACAST_STATE, sizeof(ATS_AT_CMD_GET_AURACAST_STATE)-1))
+	{		   
+		/* get auracast connect state */
+		cdc_shell_ats_get_auracast_state(dev, NULL, 0);
 	}	
 	else	
 	{

@@ -96,6 +96,7 @@
 #define ATS_CMD_RESP_KEY_ALL_TEST_OUT         			"TL_KEY_ALL_OUT="
 
 #define ATS_CMD_RESP_GET_BAT_LEV_VOL        			"TL_GET_BAT_LEV_VOL="
+#define ATS_CMD_RESP_GET_AURACAST_STATE	    			"TL_GET_AURACAST_ST="
 
 
 #endif
