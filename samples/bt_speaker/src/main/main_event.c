@@ -341,11 +341,7 @@ void main_input_event_handle(struct app_msg *msg)
 		SYS_LOG_INF("enter demo\n");
 		
 		int run_mode = run_mode_get();
-		if (run_mode == RUN_MODE_DEMO)
-		{
-			break;
-		}
-		else if (run_mode == RUN_MODE_NORMAL)
+		if (run_mode == RUN_MODE_NORMAL)
 		{
 			run_mode_set(RUN_MODE_DEMO);
 			pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_UNLINKED);
@@ -360,15 +356,11 @@ void main_input_event_handle(struct app_msg *msg)
 		SYS_LOG_INF("exit demo\n");
 		
 		int run_mode = run_mode_get();
-		if (run_mode != RUN_MODE_DEMO)
-		{
-			break;
-		}
-		else if (run_mode == RUN_MODE_NORMAL)
+		if (run_mode == RUN_MODE_DEMO)
 		{
 			run_mode_set(RUN_MODE_NORMAL);
 			sys_event_notify(SYS_EVENT_POWER_OFF);
-		}
+		}		
 		break;
 	}		
 	case MSG_SOFT_VERSION:
