@@ -784,7 +784,6 @@ static int cdc_shell_ats_enter_key_check(struct device *dev, u8_t *buf, int len)
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 
 	ats_enter_key_check(true);
-	ats_set_pwr_key_pressed(false);
 	return 0;
 }
 
@@ -795,7 +794,6 @@ static int cdc_shell_ats_exit_key_check(struct device *dev, u8_t *buf, int len)
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 
 	ats_enter_key_check(false);
-	ats_set_pwr_key_pressed(false);
 	return 0;
 }
 
@@ -1192,7 +1190,7 @@ static int cdc_shell_ats_speaker_all_off(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_key_test_in(struct device *dev, u8_t *buf, int len)
 {	
 	ats_enter_key_check(true);
-
+	
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_KEY_TEST_IN, sizeof(ATS_CMD_RESP_KEY_TEST_IN)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
@@ -1202,7 +1200,7 @@ static int cdc_shell_ats_key_test_in(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_key_test_exit(struct device *dev, u8_t *buf, int len)
 {	
 	ats_enter_key_check(false);
-
+	ats_set_pwr_key_pressed(false);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_KEY_TEST_OUT, sizeof(ATS_CMD_RESP_KEY_TEST_OUT)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
