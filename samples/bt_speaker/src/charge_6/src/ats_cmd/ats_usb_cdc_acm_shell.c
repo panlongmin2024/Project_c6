@@ -1555,7 +1555,7 @@ int cdc_shell_ats_exit_demo_mode(struct device *dev, u8_t *buf, int len)
 }
 int cdc_shell_ats_get_battery_voltage_current(struct device *dev, u8_t *buf, int len)
 {	
-	uint8_t buffer[15+1] = "V:+XXXX-I:+XXXX";
+	uint8_t buffer[19+1] = "V:+XXXXmV-I:+XXXXmA";
 	int16_t bat_voltage = wlt_get_battery_volt();
 	int16_t bat_cur = wlt_get_battery_cur();
 
@@ -1569,11 +1569,11 @@ int cdc_shell_ats_get_battery_voltage_current(struct device *dev, u8_t *buf, int
 	}		
 	if(bat_cur>=0){
 		buffer[10] = '+';
-		hex_to_string_4(bat_cur,buffer+11);
+		hex_to_string_4(bat_cur,buffer+13);
 	}
 	else{
 		buffer[10] = '-';
-		hex_to_string_4((-bat_cur),buffer+11);
+		hex_to_string_4((-bat_cur),buffer+13);
 	}
 
 	ats_usb_cdc_acm_cmd_response_at_data(
@@ -1619,7 +1619,7 @@ static int cdc_shell_ats_key_all_test_exit(struct device *dev, u8_t *buf, int le
 }
 static int cdc_shell_ats_get_bat_level_voltage(struct device *dev, u8_t *buf, int len)
 {	
-	uint8_t buffer[11+1] = "XXX%-XXXXmV";
+	uint8_t buffer[11+1] = "000%-XXXXmV";
 	int battery_capacity = power_manager_get_battery_capacity();
 	int16_t battery_voltage = wlt_get_battery_volt();
 
