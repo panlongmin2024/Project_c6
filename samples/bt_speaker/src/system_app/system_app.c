@@ -408,6 +408,16 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 				}
 				break;
 
+			case MSG_ATS_LE_AUDIO:
+				if(msg.cmd == 1){
+					SYS_LOG_INF("------> AURACAST sink connected!\n");
+				}
+				else{
+					SYS_LOG_INF("------> AURACAST sink disconnected!\n");
+				}
+				break;
+
+
 				default:
 					break;
 			}
