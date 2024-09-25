@@ -1559,8 +1559,8 @@ int cdc_shell_ats_exit_demo_mode(struct device *dev, u8_t *buf, int len)
 int cdc_shell_ats_get_voltage_current(struct device *dev, u8_t *buf, int len)
 {	
 	uint8_t buffer[15+1] = "V:+XXXX-I:+XXXX";
-	uint16_t bat_voltage = wlt_get_battery_volt();
-	uint16_t bat_cur = wlt_get_battery_cur();
+	int16_t bat_voltage = wlt_get_battery_volt();
+	int16_t bat_cur = wlt_get_battery_cur();
 
 	if(bat_voltage>=0){
 		buffer[2] = '+';
