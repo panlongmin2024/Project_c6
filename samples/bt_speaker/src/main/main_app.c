@@ -261,7 +261,14 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 				//app_manager_exit_app((char *)msg.ptr, true);
 				break;
 
-
+		case MSG_ATS_LE_AUDIO:
+			if(msg.cmd == 1){
+				SYS_LOG_INF("------> AURACAST sink connected!\n");
+			}
+			else{
+				SYS_LOG_INF("------> AURACAST sink disconnected!\n");
+			}
+			break;
 
 			default:
 				desktop_manager_proc_app_msg(&msg);

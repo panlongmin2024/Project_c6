@@ -96,6 +96,7 @@ typedef enum
 	MSG_PD_BAT_SINK_FULL,
 	MSG_CHARGE_WARNNING_OPEN_PA,
 	MSG_PD_EVENT,
+	MSG_ATS_LE_AUDIO,//for ats test ggec
 #endif
 
 	MSG_SWITCH_APP_LOCK_EVENT,
