@@ -29,6 +29,17 @@
 #include "desktop_manager.h"
 #include "system_app.h"
 
+/* for ats test GGEC */
+static bool auracast_sink_connected = false;
+void user_set_auracast_sink_connected(bool connect)
+{
+	auracast_sink_connected = connect;
+}
+bool user_get_auracast_sink_connected(void)
+{
+	return auracast_sink_connected;
+}
+
 #ifdef CONFIG_BT_MANAGER
 static void _event_notify_cb(struct app_msg *msg, int result, void *not_used)
 {
@@ -221,33 +232,33 @@ int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len)
 			send_message_to_system_ext(MSG_TWS_EVENT, rep->cmd_id, rep, sizeof(tws_message_t));
 		}
 		break;
-#if 0		
+	
 		/* for ats test ggec */
 		case BT_BROADCAST_SOURCE_CONFIG:
 		{
 			/* switch to source mode.. */
-			//send_message_to_system(MSG_ATS_LE_AUDIO,1,0);
+			user_set_auracast_sink_connected(false);
 		}
 		break;
 		case BT_BROADCAST_SINK_CONFIG:
 		{
 			/* switch to sink mode.. */
-			//send_message_to_system(MSG_ATS_LE_AUDIO,2,0);
+			user_set_auracast_sink_connected(false);
 		}
 		break;		
 		case BT_BIS_CONNECTED:
 		{
 			/* sink conected to source.. */
-			send_message_to_system(MSG_ATS_LE_AUDIO,2,1);
+			user_set_auracast_sink_connected(true);
 		}
 		break;		
 		case BT_BIS_DISCONNECTED:
 		{
 			/* sink disconected from source.. */
-			send_message_to_system(MSG_ATS_LE_AUDIO,2,2);
+			user_set_auracast_sink_connected(false);
 		}
 		break;	
-#endif		
+	
 		default:
 		{
 			if(event == BT_AUDIO_STREAM_ENABLE  && !os_is_free_msg_enough()){
