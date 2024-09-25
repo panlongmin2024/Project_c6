@@ -2026,12 +2026,12 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* exit demo mode */
 		cdc_shell_ats_exit_demo_mode(dev, NULL, 0);
 	}	
-	else if (!memcmp(&buf[index],ATS_CMD_RESP_BAT_VOLTAGE_CURRENT, sizeof(ATS_CMD_RESP_BAT_VOLTAGE_CURRENT)-1))
+	else if (!memcmp(&buf[index],ATS_AT_CMD_BAT_VOLTAGE_CURRENT, sizeof(ATS_AT_CMD_BAT_VOLTAGE_CURRENT)-1))
 	{		   
 		/* get bat boltage and current */
 		cdc_shell_ats_get_voltage_current(dev, NULL, 0);
 	}	
-	else if (!memcmp(&buf[index],ATS_CMD_RESP_VERIFY_UUID, sizeof(ATS_CMD_RESP_VERIFY_UUID)-1))
+	else if (!memcmp(&buf[index],ATS_AT_CMD_VERIFY_UUID, sizeof(ATS_AT_CMD_VERIFY_UUID)-1))
 	{		   
 		/* verify uuid */
 		cdc_shell_ats_verify_uuid(dev, NULL, 0);
