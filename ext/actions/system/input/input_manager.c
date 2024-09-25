@@ -97,13 +97,11 @@ void report_key_event(struct k_work *work)
 	}
 #endif	
 	if(ats_get_enter_key_check_record() == false){
-		SYS_LOG_INF("----> sys_event_report_input 0x%x\n",input->report_key_value);
+		SYS_LOG_INF("----> sys_event_report_input\n");
 		sys_event_report_input(input->report_key_value);
 	}
 	else{
 		SYS_LOG_INF("----> sys_event_report_input_ats\n");
-		void ats_usb_cdc_acm_write_data(unsigned char *buf, int len);
-		ats_usb_cdc_acm_write_data("1111",5);
 		sys_event_report_input_ats(input->report_key_value);
 	}
 }
