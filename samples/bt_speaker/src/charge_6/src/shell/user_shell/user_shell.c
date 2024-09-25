@@ -279,6 +279,12 @@ static int shell_get_ble_mac(int argc, char *argv[])
 	
 	return 0;
 }
+static int shell_get_auracast_state(int argc, char *argv[])
+{
+	uint8_t system_app_get_auracast_mode(void);
+	printk("------> system_app_get_auracast_mode %d \n",system_app_get_auracast_mode());
+	return 0;
+}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -310,6 +316,7 @@ static const struct shell_cmd commands[] = {
 	{ "user_info", shell_user_info, "user get info"},
 	{ "user_reboot", shell_user_reboot, "user reboot"},
 	{ "get_blemac", shell_get_ble_mac, "user get ble mac"},
+	{ "get_leaudio", shell_get_auracast_state, "user get ble mac"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ NULL, NULL, NULL }
 };
