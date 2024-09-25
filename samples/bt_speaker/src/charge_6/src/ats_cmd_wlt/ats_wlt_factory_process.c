@@ -658,6 +658,20 @@ static int ats_wlt_shell_set_gpio_short(struct device *dev, u8_t *buf, int len)
 	ats_wlt_cmd_response_ok_or_fail(dev,ATS_WLT_RET_OK);
 	return 0;
 }
+static int ats_wlt_shell_verify_uuid(struct device *dev, u8_t *buf, int len)
+{
+	if(!user_uuid_verify()){
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_VERIFY_UUID, sizeof(ATS_CMD_RESP_VERIFY_UUID)-1, 
+			ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_VERIFY_UUID, sizeof(ATS_CMD_RESP_VERIFY_UUID)-1, 
+			ATS_CMD_RESP_FAIL, sizeof(ATS_CMD_RESP_FAIL)-1);
+	}
+	return 0;
+}
 
 int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -726,6 +740,9 @@ int ats_wlt_command_shell_handler(struct device *dev, u8_t *buf, int size)
 	}
 	else if (!memcmp(&buf[index], (ATS_CMD_SET_SHORT), sizeof(ATS_CMD_SET_SHORT)-1)){
 		ats_wlt_shell_set_gpio_short(0, 0, 0);
+	}	
+	else if (!memcmp(&buf[index], (ATS_CMD_VERIFY_UUID), sizeof(ATS_CMD_VERIFY_UUID)-1)){
+		ats_wlt_shell_verify_uuid(0, 0, 0);
 	}	
 	else{
 	    ats_wlt_cmd_response_ok_or_fail(dev, ATS_WLT_RET_NG);
