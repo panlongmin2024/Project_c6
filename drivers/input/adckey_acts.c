@@ -270,12 +270,12 @@ static u16_t gpiokey_acts_get_keycode(const struct acts_adckey_config *cfg,
 	}
 	
 	/* for ats test all key */
-	bool ats_get_enter_key_check_record(void);
-	if(ats_get_enter_key_check_record()){
-		/* now is ats test key mode... */
-		if (key_broadcast_status_read() && key_vol_down_status_read() && key_vol_up_status_read() 
-				&& key_bt_status_read() && key_play_pause_status_read())
-		{
+	if (key_broadcast_status_read() && key_vol_down_status_read() && key_vol_up_status_read() 
+			&& key_bt_status_read() && key_play_pause_status_read())
+	{
+		bool ats_get_enter_key_check_record(void);
+		if(ats_get_enter_key_check_record()){
+			/* now is ats test key mode... */
 			ret = KEY_ATS_ALL_KEY;
 		}	
 	}	
