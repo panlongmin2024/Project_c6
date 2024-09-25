@@ -221,6 +221,18 @@ int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len)
 			send_message_to_system_ext(MSG_TWS_EVENT, rep->cmd_id, rep, sizeof(tws_message_t));
 		}
 		break;
+		/* for ats test ggec */
+		case BT_BIS_CONNECTED:
+		{
+			send_message_to_system(MSG_ATS_LE_AUDIO,1,0);
+		}
+		break;		
+		case BT_BIS_DISCONNECTED:
+		{
+			send_message_to_system(MSG_ATS_LE_AUDIO,2,0);
+		}
+		break;	
+		
 		default:
 		{
 			if(event == BT_AUDIO_STREAM_ENABLE  && !os_is_free_msg_enough()){
