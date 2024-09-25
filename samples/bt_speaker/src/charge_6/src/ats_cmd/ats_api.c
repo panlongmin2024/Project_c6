@@ -502,7 +502,8 @@ int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
         else if (key_value == KEY_ATS_ALL_KEY)
         {
             memcpy(key_buf, "06", 2);
-			if(ats_get_pwr_key_pressed()){
+			//if(ats_get_pwr_key_pressed())
+			{
 				/* powerkey first, then other key trigger */
 		        ats_usb_cdc_acm_cmd_response_at_data(
 		            dev, ATS_CMD_RESP_KEY_READ, sizeof(ATS_CMD_RESP_KEY_READ)-1, 
