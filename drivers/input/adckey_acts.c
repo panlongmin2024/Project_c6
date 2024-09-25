@@ -274,8 +274,8 @@ static u16_t gpiokey_acts_get_keycode(const struct acts_adckey_config *cfg,
 	//		&& key_bt_status_read() && key_play_pause_status_read())
 	if (key_vol_up_status_read() && key_vol_down_status_read() && key_play_pause_status_read())
 	{
-		bool ats_get_enter_all_key_check(void);
-		if(ats_get_enter_all_key_check()){
+		bool ats_get_all_key_check(void);
+		if(ats_get_all_key_check()){
 			/* now is ats test key mode... */
 			ret = KEY_ATS_ALL_KEY;
 		}	
