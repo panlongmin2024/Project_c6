@@ -94,6 +94,7 @@
 #define ATS_CMD_RESP_VERIFY_UUID	           			"TL_VERIFY_UUID="
 #define ATS_CMD_RESP_KEY_ALL_TEST_IN         			"TL_KEY_ALL_IN="
 #define ATS_CMD_RESP_KEY_ALL_TEST_OUT         			"TL_KEY_ALL_OUT="
+#define ATS_CMD_RESP_GET_KEY_ALL	        			"TL_KEY_ALL_GET="
 
 #define ATS_CMD_RESP_GET_BAT_LEV_VOL        			"TL_GET_BAT_LEV_VOL="
 #define ATS_CMD_RESP_GET_AURACAST_STATE	    			"TL_GET_AURACAST_ST="

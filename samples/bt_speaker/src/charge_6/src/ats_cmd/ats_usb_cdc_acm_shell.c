@@ -1671,6 +1671,18 @@ static int cdc_shell_ats_get_auracast_state(struct device *dev, u8_t *buf, int l
 
 	return 0;
 }
+static int cdc_shell_ats_get_all_key(struct device *dev, u8_t *buf, int len)
+{	
+	uint8_t buffer[2+1] = "00";
+	uint8_t all_key_pressed = ats_get_all_key_pressed();
+	hex_to_string_2(all_key_pressed,buffer);
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_GET_KEY_ALL, sizeof(ATS_CMD_RESP_GET_KEY_ALL)-1, 
+		buffer, sizeof(buffer)-1);
+	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+
+	return 0;
+}
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -2118,6 +2130,11 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* key all test out */
 		cdc_shell_ats_key_all_test_exit(dev, NULL, 0);
 	}
+	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_KEY_ALL, sizeof(ATS_AT_CMD_GET_KEY_ALL)-1))
+	{		   
+		/* get all key */
+		cdc_shell_ats_get_all_key(dev, NULL, 0);
+	}	
 	else if (!memcmp(&buf[index],ATS_AT_CMD_GET_BAT_LEV_VOL, sizeof(ATS_AT_CMD_GET_BAT_LEV_VOL)-1))
 	{		   
 		/* get battery percent level and voltage */

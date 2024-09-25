@@ -69,6 +69,8 @@ bool ats_get_pwr_key_pressed(void);
 void ats_set_pwr_key_pressed(bool pressed);
 void ats_set_all_key_check(bool enable);
 bool ats_get_all_key_check(void);
+void ats_set_all_key_pressed(bool pressed);
+bool ats_get_all_key_pressed(void);
 
 
 #endif
