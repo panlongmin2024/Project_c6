@@ -194,6 +194,7 @@ int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len)
 			send_message_to_system_ext(MSG_TWS_EVENT, rep->cmd_id, rep, sizeof(tws_message_t));
 		}
 		break;
+#if 0		
 		/* for ats test ggec */
 		case BT_BROADCAST_SOURCE_CONFIG:
 		{
@@ -219,7 +220,7 @@ int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len)
 			send_message_to_system(MSG_ATS_LE_AUDIO,2,2);
 		}
 		break;	
-		
+#endif		
 		default:
 			send_message_to_foregroup(MSG_BT_EVENT, event, extra, extra_len);
 		break;
