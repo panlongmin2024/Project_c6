@@ -77,6 +77,8 @@ extern "C" {
 #define KEY_F6              45
 
 #define KEY_MUTE            50
+#define KEY_ATS_ALL_KEY            60
+
 /* We avoid low common keys in module aliases so they don't get huge. */
 #define KEY_MIN_INTERESTING	KEY_MUTE
 

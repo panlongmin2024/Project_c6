@@ -267,7 +267,12 @@ static u16_t gpiokey_acts_get_keycode(const struct acts_adckey_config *cfg,
 	else if (key_broadcast_status_read() && key_vol_down_status_read())
 	{
 		ret = KEY_SOFT_VERSION;
-	}//
+	}
+	else if (key_broadcast_status_read() && key_vol_down_status_read() && key_vol_up_status_read() && key_bt_status_read() && key_play_pause_status_read())
+	{
+		ret = KEY_ATS_ALL_KEY;
+	}	
+	//
 	// else if (key_broadcast_status_read() && key_vol_up_status_read())
 	// {
 	// 	ret = KEY_FW_UPDATE;
