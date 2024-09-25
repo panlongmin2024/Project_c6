@@ -1619,15 +1619,17 @@ static int cdc_shell_ats_key_all_test_exit(struct device *dev, u8_t *buf, int le
 }
 static int cdc_shell_ats_get_bat_level_voltage(struct device *dev, u8_t *buf, int len)
 {	
-	uint8_t buffer[10+1] = "XXX%-XXXXmV";
-	int battery_capacity = power_manager_get_battery_capacity();;
-	int battery_volt = power_manager_get_battery_vol()*2;;
+	uint8_t buffer[11+1] = "XXX%-XXXXmV";
+	int battery_capacity = power_manager_get_battery_capacity();
+	int battery_volt = power_manager_get_battery_vol()*2;
 
 	if(battery_capacity == 100) {	
-		hex_to_string_4(battery_capacity,buffer);
+		buffer[0] = '1';
+		buffer[1] = '0';
+		buffer[2] = '0';
 	}
 	else{
-		hex_to_string_4(battery_capacity,buffer+1);
+		hex_to_string_2((uint8_t)battery_capacity,buffer+1);
 	}
 	hex_to_string_4(battery_volt,buffer+5);
 	
