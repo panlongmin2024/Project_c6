@@ -1663,6 +1663,7 @@ static int cdc_shell_ats_get_auracast_state(struct device *dev, u8_t *buf, int l
 	else{
 		auracast_state = auracast_mode;
 	}
+	hex_to_string_2(auracast_state,buffer);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_GET_AURACAST_STATE, sizeof(ATS_CMD_RESP_GET_AURACAST_STATE)-1, 
 		buffer, sizeof(buffer)-1);
