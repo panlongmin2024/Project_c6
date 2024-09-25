@@ -128,7 +128,7 @@
 #define ATS_AT_CMD_SWITCH_DEMO	           	"TL_SWITCH_DEMO"
 #define ATS_AT_CMD_ENTER_DEMO	           	"TL_ENTER_DEMO"
 #define ATS_AT_CMD_EXIT_DEMO	           	"TL_EXIT_DEMO"
-#define ATS_AT_CMD_BAT_VOLTAGE_CURRENT     	"TL_GET_BAT_VOLTAGE_CURRENT"
+#define ATS_AT_CMD_BAT_VOLTAGE_CURRENT     	"TL_GET_BAT_V_C" //get bat voltage and current
 
 #define ATS_AT_CMD_VERIFY_UUID	           	"TL_VERIFY_UUID"
 
