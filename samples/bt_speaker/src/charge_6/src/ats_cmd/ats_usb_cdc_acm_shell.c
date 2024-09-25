@@ -1585,6 +1585,20 @@ int cdc_shell_ats_get_voltage_current(struct device *dev, u8_t *buf, int len)
 
 	return 0;
 }
+int cdc_shell_ats_verify_uuid(struct device *dev, u8_t *buf, int len)
+{	
+	if(!user_uuid_verify()){
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_VERIFY_UUID, sizeof(ATS_CMD_RESP_VERIFY_UUID)-1, 
+			ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_VERIFY_UUID, sizeof(ATS_CMD_RESP_VERIFY_UUID)-1, 
+			ATS_CMD_RESP_FAIL, sizeof(ATS_CMD_RESP_FAIL)-1);
+	}
+	return 0;
+}
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -2016,6 +2030,11 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* get bat boltage and current */
 		cdc_shell_ats_get_voltage_current(dev, NULL, 0);
+	}	
+	else if (!memcmp(&buf[index],ATS_CMD_RESP_VERIFY_UUID, sizeof(ATS_CMD_RESP_VERIFY_UUID)-1))
+	{		   
+		/* verify uuid */
+		cdc_shell_ats_verify_uuid(dev, NULL, 0);
 	}		
 	else	
 	{
