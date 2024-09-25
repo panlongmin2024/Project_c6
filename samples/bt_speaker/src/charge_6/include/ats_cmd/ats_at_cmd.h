@@ -131,5 +131,8 @@
 #define ATS_AT_CMD_BAT_VOLTAGE_CURRENT     	"TL_GET_BAT_V_C" //get bat voltage and current
 
 #define ATS_AT_CMD_VERIFY_UUID	           	"TL_VERIFY_UUID"
+#define ATS_AT_CMD_KEY_ALL_TEST_IN         	"TL_KEY_ALL_IN"
+#define ATS_AT_CMD_KEY_ALL_TEST_OUT        	"TL_KEY_ALL_OUT"
+
 
 #endif

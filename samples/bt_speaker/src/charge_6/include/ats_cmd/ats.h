@@ -67,5 +67,8 @@ int ats_mac_write(uint8_t *buf, int size);
 
 bool ats_get_pwr_key_pressed(void);
 void ats_set_pwr_key_pressed(bool pressed);
+void ats_enter_all_key_check(bool enable);
+bool ats_get_enter_all_key_check(void);
+
 
 #endif

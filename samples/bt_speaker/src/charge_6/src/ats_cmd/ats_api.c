@@ -27,6 +27,7 @@ struct _ats_ctx {
     uint8_t ats_enable_enter_key_check:1;
     uint8_t ats_enter_key_check_record:1;
     uint8_t ats_music_bypass_allow_flag:1;
+	uint8_t ats_enter_all_key_check_record:1;
 	uint8_t ats_key_pwr_pressed:1;
 };
 
@@ -445,7 +446,6 @@ int ats_enter_key_check(bool enable)
 
     return 0;
 }
-
 bool ats_get_enter_key_check_record(void)
 {
     if(p_ats_ctx){
@@ -456,6 +456,31 @@ bool ats_get_enter_key_check_record(void)
         SYS_LOG_INF("---->:p_ats_ctx not inited!\n");
         return false;
     }
+}
+
+void ats_enter_all_key_check(bool enable)
+{
+    if (!p_ats_ctx->ats_enable_enter_key_check){
+        return;
+    }
+
+	p_ats_ctx->ats_enter_all_key_check_record = enable;
+}
+bool ats_get_enter_all_key_check(void)
+{
+	bool ret = false;
+    if(p_ats_ctx){
+		if(!p_ats_ctx->ats_enable_enter_key_check){
+			ret = false;
+		}
+		else{
+        	ret = p_ats_ctx->ats_enable_enter_key_check;
+		}
+    }
+    else{
+        ret = false;
+    }
+	return ret;
 }
 
 int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
@@ -493,16 +518,20 @@ int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
         else if (key_value == KEY_ATS_PWR_KEY)
         {
             memcpy(key_buf, "05", 2);
-			ats_set_pwr_key_pressed(true);
+			if(ats_get_enter_all_key_check()){
+				ats_set_pwr_key_pressed(true);
+			}
         }	
         else if (key_value == KEY_ATS_ALL_KEY)
         {
             memcpy(key_buf, "06", 2);
-			if(ats_get_pwr_key_pressed()){
-				/* powerkey first, then other key trigger */
-		        ats_usb_cdc_acm_cmd_response_at_data(
-		            dev, ATS_CMD_RESP_KEY_READ, sizeof(ATS_CMD_RESP_KEY_READ)-1, 
-		            key_buf, sizeof(key_buf)-1);				
+			if(ats_get_enter_all_key_check()){
+				if(ats_get_pwr_key_pressed()){
+					/* powerkey first, then other key trigger */
+			        ats_usb_cdc_acm_cmd_response_at_data(
+			            dev, ATS_CMD_RESP_KEY_READ, sizeof(ATS_CMD_RESP_KEY_READ)-1, 
+			            key_buf, sizeof(key_buf)-1);				
+				}
 			}
         }			
         else 
@@ -511,6 +540,12 @@ int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
         }
         
         SYS_LOG_INF("key_str:%s", key_buf);
+		
+		if(!ats_get_enter_all_key_check()){
+	        ats_usb_cdc_acm_cmd_response_at_data(
+	            dev, ATS_CMD_RESP_KEY_READ, sizeof(ATS_CMD_RESP_KEY_READ)-1, 
+	            key_buf, sizeof(key_buf)-1);
+		}
 		
         return 0;
     }
