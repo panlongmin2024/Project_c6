@@ -458,7 +458,7 @@ bool ats_get_enter_key_check_record(void)
     }
 }
 
-void ats_enter_all_key_check(bool enable)
+void ats_set_all_key_check(bool enable)
 {
     if (!p_ats_ctx->ats_enable_enter_key_check){
         return;
@@ -466,7 +466,7 @@ void ats_enter_all_key_check(bool enable)
 
 	p_ats_ctx->ats_enter_all_key_check_record = enable;
 }
-bool ats_get_enter_all_key_check(void)
+bool ats_get_all_key_check(void)
 {
 	bool ret = false;
     if(p_ats_ctx){
@@ -474,7 +474,7 @@ bool ats_get_enter_all_key_check(void)
 			ret = false;
 		}
 		else{
-        	ret = p_ats_ctx->ats_enable_enter_key_check;
+        	ret = p_ats_ctx->ats_enter_all_key_check_record;
 		}
     }
     else{
@@ -518,14 +518,14 @@ int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
         else if (key_value == KEY_ATS_PWR_KEY)
         {
             memcpy(key_buf, "05", 2);
-			if(ats_get_enter_all_key_check()){
+			if(ats_get_all_key_check()){
 				ats_set_pwr_key_pressed(true);
 			}
         }	
         else if (key_value == KEY_ATS_ALL_KEY)
         {
             memcpy(key_buf, "06", 2);
-			if(ats_get_enter_all_key_check()){
+			if(ats_get_all_key_check()){
 				if(ats_get_pwr_key_pressed()){
 					/* powerkey first, then other key trigger */
 			        ats_usb_cdc_acm_cmd_response_at_data(
@@ -541,7 +541,7 @@ int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
         
         SYS_LOG_INF("key_str:%s", key_buf);
 		
-		if(!ats_get_enter_all_key_check()){
+		if(!ats_get_all_key_check()){
 	        ats_usb_cdc_acm_cmd_response_at_data(
 	            dev, ATS_CMD_RESP_KEY_READ, sizeof(ATS_CMD_RESP_KEY_READ)-1, 
 	            key_buf, sizeof(key_buf)-1);
