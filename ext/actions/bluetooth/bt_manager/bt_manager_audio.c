@@ -6904,8 +6904,10 @@ static int broadcast_config(bool source, void *data, int size)
 			channel->kbps);
     SYS_EVENT_INF(EVENT_BTMGR_BROAD_CONFIG,0,channel->sample,  
             channel->kbps);
-
-	if (source) {
+	/* for ats test ggec */
+	void user_set_auracast_sink_connected(bool connect);
+	user_set_auracast_sink_connected(false);
+	if (source) {	
 		return bt_manager_event_notify(BT_BROADCAST_SOURCE_CONFIG, data, size);
 	}
 

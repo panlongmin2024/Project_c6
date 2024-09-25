@@ -82,6 +82,17 @@ void gfp_ble_mgr_update_sleep_time(void);
 int system_tws_event_handle(struct app_msg *msg);
 extern int sys_standby_start(void);
 
+/* for ats test GGEC */
+static bool auracast_sink_connected = false;
+void user_set_auracast_sink_connected(bool connect)
+{
+	auracast_sink_connected = connect;
+}
+bool user_get_auracast_sink_connected(void)
+{
+	return auracast_sink_connected;
+}
+
 #ifdef CONFIG_LOGIC_MCU_LS8A10023T
 static void logic_mcu_ls8a10023t_thread_timer_handler(struct thread_timer *timer, void* pdata)
 {
@@ -407,24 +418,19 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 					#endif
 				}
 				break;
-#if 0
+
 			/* for ats test GGEC */
 			case MSG_ATS_LE_AUDIO:
 				if(msg.cmd == 1){
-					/* source mode... */
-					user_set_auracast_sink_connected(false);
+					/* sink is connected to source... */
+					user_set_auracast_sink_connected(true);
 				}
 				else if(msg.cmd == 2){
-					/* sink mode... */
-					if(msg.reserve == 2){
-						user_set_auracast_sink_connected(true);
-					}
-					else{
-						user_set_auracast_sink_connected(false);
-					}
+					/* sink disconnected from source */
+					user_set_auracast_sink_connected(false);
 				}
 				break;
-#endif
+
 
 				default:
 					break;
