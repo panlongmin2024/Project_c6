@@ -140,7 +140,7 @@ bool ats_get_pwr_key_pressed(void)
         return false;
     }	
 	else{
-		return p_ats_ctx.ats_key_pwr_pressed;
+		return (bool)p_ats_ctx.ats_key_pwr_pressed;
 	}
 }
 void ats_set_pwr_key_pressed(bool pressed)
@@ -149,7 +149,7 @@ void ats_set_pwr_key_pressed(bool pressed)
         return;
     }	
 	else{
-		p_ats_ctx.ats_key_pwr_pressed = pressed;
+		p_ats_ctx.ats_key_pwr_pressed = (uint8_t)pressed;
 	}
 }
 

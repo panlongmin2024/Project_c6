@@ -795,7 +795,7 @@ static int cdc_shell_ats_exit_key_check(struct device *dev, u8_t *buf, int len)
 	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 
 	ats_enter_key_check(false);
-
+	ats_set_pwr_key_pressed(false);
 	return 0;
 }
 
