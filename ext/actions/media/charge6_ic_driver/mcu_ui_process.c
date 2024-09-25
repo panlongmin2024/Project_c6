@@ -1088,7 +1088,7 @@ static void mcu_power_key_deal_fn(mcu_manager_charge_event_para_t *para)
     if(ats_get_enter_key_check_record()){
         // mcu_ui_send_led_code(MCU_SUPPLY_PROP_FACTORY_TEST_KEY,1);
         bt_mcu_send_pw_cmd_poweron();
-        sys_event_report_input_ats(51);
+        sys_event_report_input_ats(KEY_ATS_PWR_KEY);
     }
     else if(pd_manager_get_power_key_debounce())  
     {
