@@ -29,6 +29,7 @@ struct _ats_ctx {
     uint8_t ats_music_bypass_allow_flag:1;
 	uint8_t ats_enter_all_key_check_record:1;
 	uint8_t ats_key_pwr_pressed:1;
+	uint8_t ats_key_all_pressed:1;
 };
 
 static struct _ats_ctx *p_ats_ctx;
@@ -482,6 +483,22 @@ bool ats_get_all_key_check(void)
     }
 	return ret;
 }
+void ats_set_all_key_pressed(bool pressed)
+{
+	if(!p_ats_ctx){
+		return;
+	}
+	p_ats_ctx->ats_key_all_pressed = pressed;
+}
+bool ats_get_all_key_pressed(void)
+{
+	if(!p_ats_ctx){
+		return false;
+	}
+	else{
+		return p_ats_ctx->ats_key_all_pressed;
+	}
+}
 
 int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
 {
@@ -528,9 +545,7 @@ int ats_usb_cdc_acm_key_check_report(struct device *dev, uint32_t key_value)
 			if(ats_get_all_key_check()){
 				if(ats_get_pwr_key_pressed()){
 					/* powerkey first, then other key trigger */
-			        ats_usb_cdc_acm_cmd_response_at_data(
-			            dev, ATS_CMD_RESP_KEY_READ, sizeof(ATS_CMD_RESP_KEY_READ)-1, 
-			            key_buf, sizeof(key_buf)-1);				
+			        ats_set_all_key_pressed(true);			
 				}
 			}
         }			
