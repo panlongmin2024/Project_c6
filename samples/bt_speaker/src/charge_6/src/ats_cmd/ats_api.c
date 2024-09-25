@@ -133,9 +133,11 @@ exit:
     return ret;
 }
 
+static bool ats_pwrkey_pressed = false;
 /* in ats key test mode, verify power key pressed. */
 bool ats_get_pwr_key_pressed(void)
 {
+	return ats_pwrkey_pressed;
     if(!p_ats_ctx){
         return false;
     }	
@@ -145,6 +147,8 @@ bool ats_get_pwr_key_pressed(void)
 }
 void ats_set_pwr_key_pressed(bool pressed)
 {
+	ats_pwrkey_pressed = pressed;
+	return;
     if(!p_ats_ctx){
         return;
     }	
