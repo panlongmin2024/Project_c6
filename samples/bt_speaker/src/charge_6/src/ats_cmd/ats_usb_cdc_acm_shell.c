@@ -1569,11 +1569,11 @@ int cdc_shell_ats_get_battery_voltage_current(struct device *dev, u8_t *buf, int
 		hex_to_string_4((-bat_voltage),buffer+3);
 	}		
 	if(bat_cur>=0){
-		buffer[10] = '+';
+		buffer[12] = '+';
 		hex_to_string_4(bat_cur,buffer+13);
 	}
 	else{
-		buffer[10] = '-';
+		buffer[12] = '-';
 		hex_to_string_4((-bat_cur),buffer+13);
 	}
 

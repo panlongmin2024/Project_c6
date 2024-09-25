@@ -225,13 +225,13 @@ int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len)
 		case BT_BROADCAST_SOURCE_CONFIG:
 		{
 			/* switch to source mode.. */
-			send_message_to_system(MSG_ATS_LE_AUDIO,1,0);
+			//send_message_to_system(MSG_ATS_LE_AUDIO,1,0);
 		}
 		break;
 		case BT_BROADCAST_SINK_CONFIG:
 		{
 			/* switch to sink mode.. */
-			send_message_to_system(MSG_ATS_LE_AUDIO,2,0);
+			//send_message_to_system(MSG_ATS_LE_AUDIO,2,0);
 		}
 		break;		
 		case BT_BIS_CONNECTED:
