@@ -63,7 +63,8 @@ extern void sys_event_notify(uint32_t event);
 extern int charge_app_enter_cmd(void);
 extern int16_t wlt_get_battery_volt(void);
 extern int16_t wlt_get_battery_cur(void);
-
+extern bool user_get_auracast_sink_connected(void);
+extern uint8_t system_app_get_auracast_mode(void);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -1580,6 +1581,8 @@ int cdc_shell_ats_get_battery_voltage_current(struct device *dev, u8_t *buf, int
 		dev, ATS_CMD_RESP_BAT_VOLTAGE_CURRENT, sizeof(ATS_CMD_RESP_BAT_VOLTAGE_CURRENT)-1, 
 		buffer, sizeof(buffer)-1);
 
+	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
+
 	return 0;
 }
 int cdc_shell_ats_verify_uuid(struct device *dev, u8_t *buf, int len)
@@ -1645,9 +1648,25 @@ static int cdc_shell_ats_get_bat_level_voltage(struct device *dev, u8_t *buf, in
 static int cdc_shell_ats_get_auracast_state(struct device *dev, u8_t *buf, int len)
 {	
 	/* if only auracast is sink mode, can check state...*/
+	uint8_t buffer[2+1] = "00";
+	uint8_t auracast_mode = system_app_get_auracast_mode();
+	uint8_t auracast_state = 0;
+	if(auracast_mode == 2){
+		/* in auracast sink mode... check if connected.. */
+		if(user_get_auracast_sink_connected()){
+			auracast_state = 2;
+		}
+		else{
+			auracast_state = 3;
+		}
+	}
+	else{
+		auracast_state = auracast_mode;
+	}
 	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_CMD_RESP_KEY_ALL_TEST_OUT, sizeof(ATS_CMD_RESP_KEY_ALL_TEST_OUT)-1, 
-		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+		dev, ATS_CMD_RESP_GET_AURACAST_STATE, sizeof(ATS_CMD_RESP_GET_AURACAST_STATE)-1, 
+		buffer, sizeof(buffer)-1);
+	ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
 
 	return 0;
 }
