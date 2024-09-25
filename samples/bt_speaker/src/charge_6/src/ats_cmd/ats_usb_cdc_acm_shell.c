@@ -2048,8 +2048,13 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* get bat boltage and current */
 		cdc_shell_ats_get_voltage_current(dev, NULL, 0);
-	}	
+	}
 	else if (!memcmp(&buf[index],ATS_AT_CMD_VERIFY_UUID, sizeof(ATS_AT_CMD_VERIFY_UUID)-1))
+	{		   
+		/* verify uuid */
+		cdc_shell_ats_verify_uuid(dev, NULL, 0);
+	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_KEY_ALL_TEST_IN, sizeof(ATS_AT_CMD_KEY_ALL_TEST_IN)-1))
 	{		   
 		/* key all test in */
 		cdc_shell_ats_key_all_test_in(dev, NULL, 0);
