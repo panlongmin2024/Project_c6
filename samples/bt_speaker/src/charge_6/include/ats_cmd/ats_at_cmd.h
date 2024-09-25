@@ -130,5 +130,6 @@
 #define ATS_AT_CMD_EXIT_DEMO	           	"TL_EXIT_DEMO"
 #define ATS_AT_CMD_BAT_VOLTAGE_CURRENT     	"TL_GET_BAT_VOLTAGE_CURRENT"
 
+#define ATS_AT_CMD_VERIFY_UUID	           	"TL_VERIFY_UUID"
 
 #endif
