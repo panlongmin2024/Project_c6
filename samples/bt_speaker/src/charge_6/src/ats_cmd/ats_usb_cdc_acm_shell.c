@@ -2056,7 +2056,7 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	else if (!memcmp(&buf[index],ATS_AT_CMD_KEY_ALL_TEST_OUT, sizeof(ATS_AT_CMD_KEY_ALL_TEST_OUT)-1))
 	{		   
 		/* key all test out */
-		cdc_shell_ats_key_all_test_out(dev, NULL, 0);
+		cdc_shell_ats_key_all_test_exit(dev, NULL, 0);
 	}	
 	else	
 	{
