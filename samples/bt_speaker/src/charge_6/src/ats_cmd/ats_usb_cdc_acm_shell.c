@@ -1603,6 +1603,7 @@ static int cdc_shell_ats_key_all_test_in(struct device *dev, u8_t *buf, int len)
 {	
 	ats_enter_key_check(true);
 	ats_set_all_key_check(true);
+	ats_set_all_key_pressed(false);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_KEY_ALL_TEST_IN, sizeof(ATS_CMD_RESP_KEY_ALL_TEST_IN)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
@@ -1614,6 +1615,7 @@ static int cdc_shell_ats_key_all_test_exit(struct device *dev, u8_t *buf, int le
 	ats_enter_key_check(false);
 	ats_set_pwr_key_pressed(false);
 	ats_set_all_key_check(false);
+	ats_set_all_key_pressed(false);
 	ats_usb_cdc_acm_cmd_response_at_data(
 		dev, ATS_CMD_RESP_KEY_ALL_TEST_OUT, sizeof(ATS_CMD_RESP_KEY_ALL_TEST_OUT)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
