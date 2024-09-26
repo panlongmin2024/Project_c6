@@ -489,9 +489,23 @@ void ats_set_all_key_pressed(bool pressed)
 		return;
 	}
 	p_ats_ctx->ats_key_all_pressed = pressed;
+
+	if(p_ats_ctx->ats_key_all_pressed){
+		ats_usb_cdc_acm_write_data("-->ALL predssed 01",sizeof("-->ALL predssed 01")-1);
+	}
+	else{
+		ats_usb_cdc_acm_write_data("-->ALL predssed 00",sizeof("-->ALL predssed 00")-1);
+	}
 }
 bool ats_get_all_key_pressed(void)
 {
+	if(p_ats_ctx->ats_key_all_pressed){
+		ats_usb_cdc_acm_write_data("-->ALL predssed 11",sizeof("-->ALL predssed 11")-1);
+	}
+	else{
+		ats_usb_cdc_acm_write_data("-->ALL predssed 10",sizeof("-->ALL predssed 10")-1);
+	}
+
 	if(!p_ats_ctx){
 		return false;
 	}
