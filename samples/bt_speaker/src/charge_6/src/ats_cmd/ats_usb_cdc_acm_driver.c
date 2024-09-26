@@ -74,7 +74,7 @@ static int read_data_handler(struct device *dev)
 		   rx_size += s1;
 	   } while (s1 > 0);
 
-         memcpy(p_ctx->data_buf, ats_uart->rx_buffer, rx_size);
+         memcpy(data_buf, rx_buffer, rx_size);
 
 		if (rx_size == 0)
 		{
@@ -93,7 +93,7 @@ static int read_data_handler(struct device *dev)
 			 return 0;
 		
 		}
-		ats_usb_cdc_acm_shell_command_handler(dev, p_ctx->data_buf, rx_size);
+		ats_usb_cdc_acm_shell_command_handler(dev, data_buf, rx_size);
 	return 0;
 }
 
