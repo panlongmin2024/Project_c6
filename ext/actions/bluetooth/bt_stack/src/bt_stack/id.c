@@ -257,9 +257,9 @@ int bt_id_set_private_addr(uint8_t id)
 		return err;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
+//	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
 		BT_INFO("RPA: %s", bt_addr_str(&rpa));
-	}
+//	}
 
 	return 0;
 }

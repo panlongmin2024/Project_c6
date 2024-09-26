@@ -621,11 +621,13 @@ void check_adfu_gpio_key(void)
 void extern_dsp_3615_io_enable(int enable)
 {
 	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
-
+	static int dsp_power_enable = 0;
 	if(enable){
-
-		gpio_pin_configure(gpio_dev, DSP_POWER_EN_PIN, GPIO_DIR_OUT);
-		gpio_pin_write(gpio_dev, DSP_POWER_EN_PIN, 1);
+		if(dsp_power_enable == 0){
+			gpio_pin_configure(gpio_dev, DSP_POWER_EN_PIN, GPIO_DIR_OUT);
+			gpio_pin_write(gpio_dev, DSP_POWER_EN_PIN, 1);
+		}
+		dsp_power_enable = 1;
 
 		gpio_pin_configure(gpio_dev, DSP_EN_PIN, GPIO_DIR_OUT);
 		gpio_pin_write(gpio_dev, DSP_EN_PIN, 1);
@@ -639,10 +641,10 @@ void extern_dsp_3615_io_enable(int enable)
 		acts_pinmux_set(GPIO_SPI1_MOSI, 5 | (0x1 << 5) | GPIO_CTL_PADDRV_LEVEL(5));
 		acts_pinmux_set(GPIO_SPI1_MISO, 5 | (0x1 << 5) | GPIO_CTL_PADDRV_LEVEL(5));
 
-		acts_pinmux_set(GPIO_I2S_BCLK, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
+/* 		acts_pinmux_set(GPIO_I2S_BCLK, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
 		acts_pinmux_set(GPIO_I2S_LRCLK, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
-		acts_pinmux_set(GPIO_I2S_TX, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
-			
+		acts_pinmux_set(GPIO_I2S_TX, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4)); */
+		
 
 	}else{
 		gpio_pin_configure(gpio_dev, DSP_EN_PIN, GPIO_DIR_OUT);
@@ -665,8 +667,35 @@ void extern_dsp_3615_io_enable(int enable)
 
 		gpio_pin_configure(gpio_dev, GPIO_DSP_SATTUS, GPIO_DIR_OUT);
 		gpio_pin_write(gpio_dev, GPIO_DSP_SATTUS, 0);
+		dsp_power_enable = 0;
+/* 		gpio_pin_configure(gpio_dev, GPIO_I2S_BCLK, GPIO_DIR_OUT);
+		gpio_pin_write(gpio_dev, GPIO_I2S_BCLK, 0);
 
-		gpio_pin_configure(gpio_dev, GPIO_I2S_BCLK, GPIO_DIR_OUT);
+		gpio_pin_configure(gpio_dev, GPIO_I2S_LRCLK, GPIO_DIR_OUT);
+		gpio_pin_write(gpio_dev, GPIO_I2S_LRCLK, 0);
+
+		gpio_pin_configure(gpio_dev, GPIO_I2S_TX, GPIO_DIR_OUT);
+		gpio_pin_write(gpio_dev, GPIO_I2S_TX, 0); */
+	}
+
+}
+void board_i2s_io_enable(int enable)
+{
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+	if(enable){
+		int pinmux_i2s_bclk = 0;
+		acts_pinmux_get(GPIO_I2S_BCLK, &pinmux_i2s_bclk);
+		if(pinmux_i2s_bclk == (0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4))){
+			printk("i2s have init\n");
+			return ;
+		}
+
+		acts_pinmux_set(GPIO_I2S_BCLK, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
+		acts_pinmux_set(GPIO_I2S_LRCLK, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
+		acts_pinmux_set(GPIO_I2S_TX, 0x9 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(4));
+
+	}else{
+ 		gpio_pin_configure(gpio_dev, GPIO_I2S_BCLK, GPIO_DIR_OUT);
 		gpio_pin_write(gpio_dev, GPIO_I2S_BCLK, 0);
 
 		gpio_pin_configure(gpio_dev, GPIO_I2S_LRCLK, GPIO_DIR_OUT);
@@ -675,7 +704,6 @@ void extern_dsp_3615_io_enable(int enable)
 		gpio_pin_configure(gpio_dev, GPIO_I2S_TX, GPIO_DIR_OUT);
 		gpio_pin_write(gpio_dev, GPIO_I2S_TX, 0);
 	}
-
 }
 
 void _ls8a10049t_power_hold_test(bool onoff)

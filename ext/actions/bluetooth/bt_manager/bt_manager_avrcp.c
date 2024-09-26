@@ -86,9 +86,6 @@ static void _bt_manager_avrcp_callback(uint16_t hdl, btsrv_avrcp_event_e event, 
             } else {
                 dev_info->avrcp_ext_status = BT_MANAGER_AVRCP_EXT_STATUS_PAUSED;
 		        dev_info->avrcp_ext_status &= ~BT_MANAGER_AVRCP_EXT_STATUS_PASSTHROUGH_PLAY;
-				#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-				dev_info->avrcp_ext_status_set_time = k_uptime_get_32();
-				#endif
             }
 
             playstatus.handle = hdl;
@@ -121,6 +118,10 @@ static void _bt_manager_avrcp_callback(uint16_t hdl, btsrv_avrcp_event_e event, 
 			rep.handle = hdl;
 			bt_manager_media_event(BT_MEDIA_PLAY, &rep, sizeof(struct bt_media_report));
 			bt_manager_media_event(BT_MEDIA_PLAYBACK_STATUS_CHANGED_EVENT, (void *)&playstatus, sizeof(struct bt_media_play_status));
+
+			#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+			dev_info->avrcp_ext_status_set_time = 0;
+			#endif
 
 			if (dev_info->a2dp_status_playing)
 			{
@@ -562,6 +563,10 @@ int bt_manager_avrcp_pause_by_hdl(uint16_t hdl)
 
 	    bt_manager_tws_sync_a2dp_status(a2dp_dev->hdl, NULL);
 	    _bt_manager_avrcp_on_paused(a2dp_dev);
+		
+		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+		a2dp_dev->avrcp_ext_status_set_time = k_uptime_get_32();
+		#endif
 	}
 
 	return btif_avrcp_send_command_by_hdl(a2dp_dev->hdl, BTSRV_AVRCP_CMD_PAUSE);

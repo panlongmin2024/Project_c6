@@ -339,7 +339,7 @@ int amp_tas5828m_pa_start()
 
 	struct device *i2c_dev = NULL;
 	union dev_config config = {0};
-	uint8_t buf[10]={0};
+	// uint8_t buf[10]={0};
 	
 	if(amp_tas5828m_mutex_ptr == NULL){
 		amp_tas5828m_mutex_ptr = &amp_tas5828m_mutex;
@@ -360,17 +360,20 @@ int amp_tas5828m_pa_start()
 	// k_sleep(300);
 	// printk("[%s,%d] delay 300ms\n", __FUNCTION__, __LINE__);
 
-	// back to page 0 
-	buf[0] = 0x0;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
+	// // back to page 0 
+	// buf[0] = 0x0;
+	// i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x00 , buf, 1);
 
-	// back to book 0 
-	buf[0] = 0x0;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x7f , buf, 1);
+	// // back to book 0 
+	// buf[0] = 0x0;
+	// i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x7f , buf, 1);
 
-	// write 03h play
-	buf[0] = 0x03;
-	i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x03 , buf, 1);
+	// // write 03h play
+	// buf[0] = 0x03;
+	// i2c_burst_write(i2c_dev, I2C_DEV_ADDR, 0x03 , buf, 1);
+    
+
+	amp_tas5828m_i2c_register(i2c_dev, ti_play_registers, ti_play_registers_cnt, "ti_play_registers", I2C_DEV_ADDR);
 
 exit:	
 	os_mutex_unlock(amp_tas5828m_mutex_ptr);

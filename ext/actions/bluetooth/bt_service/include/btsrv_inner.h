@@ -1239,6 +1239,8 @@ int btsrv_mics_mute_get(uint16_t handle);
 
 uint16_t tmas_srv_get_local_tmas_role(void);
 
+uint8_t gmas_srv_get_loc_role(void);
+
 int call_cli_read_tbs_chrc(struct bt_conn *conn, uint8_t type);
 
 int call_cli_set_strength_report_interval(struct bt_conn *conn, uint8_t interval, bool with_rsp);

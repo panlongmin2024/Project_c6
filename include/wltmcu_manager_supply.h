@@ -17,6 +17,17 @@
 
 //#define OTG_PHONE_POWER_NEED_SHUTDOWN
 
+                         
+
+typedef enum
+{
+    CHARGE_IN_LIMIT_CURRENT_1500MA,
+    CHARGE_IN_LIMIT_CURRENT_2400MA,
+    CHARGE_IN_LIMIT_CURRENT_3000MA,
+   
+} pd_charge_in_current;
+
+
 #define BATTERY_DISCHARGE_REMAIN_CAP_LEVEL0        5
 #define BATTERY_DISCHARGE_REMAIN_CAP_LEVEL1        15
 #define BATTERY_DISCHARGE_REMAIN_CAP_LEVEL2        30

@@ -43,7 +43,6 @@
 
 #define ATS3615_CHIP_VERSION_VALUE		0xAC280000
 
-
 extern int dolphin_comm_init(void);
 struct dsp_ats3615_data{
 	const unsigned int *data_iram_ptr;
@@ -187,29 +186,41 @@ int external_dsp_ats3615_load(int effect)
 	int ret = 0;
 	uint32_t reg_val;
 	int retry_cnt = 0;
+	struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
 #ifndef SLC_DEBUG
 	int write_size,one_write_size;
 	const struct dsp_ats3615_data *data_ptr = &dsp_ats3615_ram_data[0];
 #endif
-	if (!external_dsp_ats3615_tuning_init())
-	{
-		SYS_LOG_ERR("DSP and tuning info not match ! \n");
+	
+	if(dsp_3615_mutex_ptr == NULL){
+		SYS_LOG_ERR("not have init?\n");
 		return -1;
 	}
-	self_music_effect_ctrl_set_enable(true);
-	if(dsp_3615_mutex_ptr == NULL){
-		dsp_3615_mutex_ptr = &dsp_3615_mutex;
-		os_mutex_init(dsp_3615_mutex_ptr);
-	}
 	os_mutex_lock(dsp_3615_mutex_ptr, OS_FOREVER);
+	
 	if(dsp_init_flag == 1){
 		SYS_LOG_ERR("dsp 3615 have init\n");
 		goto __err_exit;
 	}
 
+	if(!external_dsp_ats3615_tuning_init())
+	{
+		SYS_LOG_ERR("DSP and tuning info not match ! \n");
+		goto __err_exit;
+	}
 
+	self_music_effect_ctrl_set_enable(true);
+	
+	gpio_pin_configure(gpio_dev, DSP_EN_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_dev, DSP_EN_PIN, 0);
+	k_sleep(50);
 
 	extern_dsp_3615_io_enable(1);
+	board_i2s_io_enable(1);
+	k_sleep(10);
+
+	gpio_pin_write(gpio_dev, DSP_EN_PIN, 1);
+
 	// if read chip version ok, it mean dsp ok.
 #if 1
 	while(1)
@@ -233,9 +244,11 @@ int external_dsp_ats3615_load(int effect)
 		{
 			SYS_LOG_ERR("read chip version fail, break\n");
 	
-			extern_dsp_3615_io_enable(0);
-			k_sleep(200);
-			extern_dsp_3615_io_enable(1);
+			gpio_pin_configure(gpio_dev, DSP_EN_PIN, GPIO_DIR_OUT);
+			gpio_pin_write(gpio_dev, DSP_EN_PIN, 0);
+			k_sleep(50);
+			gpio_pin_write(gpio_dev, DSP_EN_PIN, 1);
+
 			if(retry_cnt > 20){
 				ret = -2;
 				goto __err_exit;
@@ -307,8 +320,9 @@ int external_dsp_ats3615_load(int effect)
 
 	#ifdef CONFIG_BT_SELF_APP
 		extern int spkeq_SetCus(void);
-		extern bool selfapp_eq_is_default(void); 
-		if(!selfapp_eq_is_default()){
+		extern bool selfapp_eq_is_default(void);
+		extern u8_t selfapp_config_get_PB_state(void); 
+		if((!selfapp_eq_is_default())&& (selfapp_config_get_PB_state() == 0)){
 			spkeq_SetCus();
 		}
 	#endif
@@ -323,12 +337,13 @@ __err_exit:
 void external_dsp_ats3615_deinit(void)
 {
 	if(dsp_3615_mutex_ptr == NULL){
-		dsp_3615_mutex_ptr = &dsp_3615_mutex;
-		os_mutex_init(dsp_3615_mutex_ptr);
+		SYS_LOG_ERR("not have init?\n");
+		return;
 	}
 	os_mutex_lock(dsp_3615_mutex_ptr, OS_FOREVER);
 	dolphin_comm_deinit();
 	extern_dsp_3615_io_enable(0);
+	board_i2s_io_enable(0);
 	dsp_init_flag = 0;
 	SYS_LOG_INF("ok\n");
 	os_mutex_unlock(dsp_3615_mutex_ptr);
@@ -338,11 +353,27 @@ void external_dsp_ats3615_deinit(void)
 int external_dsp_ats3615_reset(void)
 {
 	SYS_LOG_WRN(" ");
-	//dsp_init_flag = 0;
-	external_dsp_ats3615_deinit();
+	if(dsp_3615_mutex_ptr == NULL){
+		SYS_LOG_ERR("not have init?\n");
+		return -1;
+	}
+	os_mutex_lock(dsp_3615_mutex_ptr, OS_FOREVER);
+	dolphin_comm_deinit();
+	dsp_init_flag = 0;
+	SYS_LOG_INF("ok\n");
+	os_mutex_unlock(dsp_3615_mutex_ptr);
 	external_dsp_ats3615_load(0);
-	//ats3615_re_comm_after_reset();
 	return 0;
+}
+
+void external_dsp_ats3615_pre_init(void)
+{
+	if(dsp_3615_mutex_ptr == NULL){
+		dsp_3615_mutex_ptr = &dsp_3615_mutex;
+		os_mutex_init(dsp_3615_mutex_ptr);
+	}else{
+		SYS_LOG_ERR("have init?\n");
+	}
 }
 
 #ifdef CONFIG_SPI_SWITCH_BY_GPIO

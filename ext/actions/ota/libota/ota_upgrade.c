@@ -393,6 +393,10 @@ static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 	uint32_t crc_calc, crc_orig;
 	const struct partition_entry * part = partition_get_part(file->file_id);
 
+	if(!part){
+		return -1;
+	}
+
 	if(ota_use_recovery_app(ota) && (part->flag & PARTITION_FLAG_ENABLE_ENCRYPTION)){
 		return ota_encrypt_data_verify(ota, file);
 	}else if (file->file_id != PARTITION_FILE_ID_OTA_TEMP){
@@ -548,7 +552,7 @@ static void ota_rx_thread(void *p1, void *p2, void *p3)
 	ota_backend_ioctl(backend, OTA_BACKEND_IOCTL_GET_MAX_SIZE, (unsigned int)&max_req_size);
 
 	if(ota_use_recovery(ota)){
-		if(partition_is_boot_part(part) || partition_is_param_part(part)){
+		if(part && (partition_is_boot_part(part) || partition_is_param_part(part))){
 			read_local_image = true;
 		}
 	}
@@ -709,11 +713,15 @@ static int ota_calc_write_seg_size(struct ota_upgrade_info *ota)
 
 static int ota_write_file_partition(struct ota_upgrade_info *ota, struct ota_file *file, uint32_t offs, uint8_t *data, uint32_t size)
 {
-	int ret;
+	int ret = 0;
 	uint32_t wlen;
 	uint32_t addr = file->offset + offs;
 	struct ota_storage *storage = ota->storage;
 	const struct partition_entry * part = partition_get_part(file->file_id);
+
+	if(!part){
+		return -EINVAL;
+	}
 
 	if(ota_use_recovery_app(ota) && (part->flag & PARTITION_FLAG_ENABLE_ENCRYPTION)){
 		addr |= (1 << 31);
@@ -1273,6 +1281,10 @@ static int ota_write_boot_image(struct ota_upgrade_info *ota)
 	for (i = 0; i < manifest->file_cnt; i++) {
 		file = &manifest->wfiles[i];
 		part = partition_get_boot_mirror_part(file->file_id);
+
+		if(!part){
+			continue;
+		}
 
 		file->offset = part->file_offset;
 		if (partition_is_boot_part(part)) {

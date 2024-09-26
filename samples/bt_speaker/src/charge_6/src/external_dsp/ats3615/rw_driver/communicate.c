@@ -21,7 +21,9 @@
 
 extern const unsigned char charge6_3nod[];
 extern const unsigned char charge6_ggec[];
+extern const unsigned char charge6_ggec_PB[];
 extern const unsigned char charge6_tcl[];
+extern const unsigned char charge6_tcl_PB[];
 
 extern u32_t flip7_get_odm_id(void);
 extern int ats3615_comm_set_dsp_run(void);
@@ -40,9 +42,11 @@ unsigned int g_tuning_data_size = 0;
 unsigned int g_dolphin_com_struct_address = 0;
 extern unsigned int charge6_3nod_size;
 extern unsigned int charge6_ggec_size;
+extern unsigned int charge6_ggec_PB_size;
 extern unsigned int charge6_tcl_size;
+extern unsigned int charge6_tcl_PB_size;
 
-
+extern u8_t selfapp_config_get_PB_state(void);
 int get_tuning_info_by_odm(void)
 {
     u32_t odm_id = ReadODM();
@@ -55,12 +59,21 @@ int get_tuning_info_by_odm(void)
 
     }else if(HW_TONGLI_BOARD == odm_id){
 
-        tuning_info = charge6_tcl;
-        g_tuning_data_size = charge6_tcl_size;
+         if (selfapp_config_get_PB_state() == 0){
+            tuning_info = charge6_tcl;
+            g_tuning_data_size = charge6_tcl_size;
+         }else{
+            tuning_info = charge6_tcl_PB;
+            g_tuning_data_size = charge6_tcl_PB_size;
+         }
     }else{
-
-        tuning_info = charge6_ggec;
-        g_tuning_data_size = charge6_ggec_size;
+        if (selfapp_config_get_PB_state() == 0){
+            tuning_info = charge6_ggec;
+            g_tuning_data_size = charge6_ggec_size;
+        }else{
+            tuning_info = charge6_ggec_PB;
+            g_tuning_data_size = charge6_ggec_PB_size;
+        }
     }
 
     g_dsp_tuning_info = (unsigned char * )tuning_info;

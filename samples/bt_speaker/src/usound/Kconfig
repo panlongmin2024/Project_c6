@@ -43,3 +43,12 @@ config USOUND_BROADCAST_SUPPROT
 	default n
 	help
 	This option enables or disable usound broadcast.
+
+config USOUND_START_DEFAULT_VOLUME
+	int
+	prompt "USOUND start default volume "
+	depends on USOUND_APP
+	range 1,32
+	default 20
+	help
+	This option USOUND start default volume.

@@ -26,6 +26,8 @@ extern void *bt_manager_get_halt_phone(uint8_t *halt_cnt);
 
 static struct usound_app_t *p_usound = NULL;
 
+extern bool usb_audio_get_download_streaming_enabled(void);
+
 struct usound_app_t *usound_get_app(void)
 {
 	return p_usound;
@@ -63,7 +65,29 @@ static void usound_restart_handler(struct thread_timer *ttimer, void *expiry_fn_
 		msg.type = MSG_USOUND_APP_EVENT;
 		msg.cmd = MSG_USOUND_STREAM_RESTART;
 		send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
-		p_usound->restart_count = 0;
+		//p_usound->restart_count = 0;
+	}
+
+	if(p_usound->need_test_hid)
+	{
+		if(usb_audio_get_download_streaming_enabled())
+		{
+			if(p_usound->host_enmu_db == 0)
+			{
+				usb_hid_control_volume_inc();
+			}else if(p_usound->host_enmu_db <= -600){
+				usb_hid_control_volume_dec();
+			}else{
+				usb_hid_control_volume_inc();
+				usb_hid_control_volume_dec();
+			}
+
+			printk("uac_download enable %d, enmu_db %d\n", usb_audio_get_download_streaming_enabled(), p_usound->host_enmu_db);
+
+			p_usound->host_enmu_db = 1;
+			p_usound->need_test_hid = 0;
+		}
+
 	}
 }
 #endif // USOUND_FEATURE_RESTART
@@ -125,6 +149,18 @@ static void usound_sync_host_vol(int vol_db)
 	p_usound->current_volume_level = level;
 	SYS_LOG_INF("%ddB -> level %d, require %d_%d", vol_db, level, p_usound->volume_req_type, p_usound->volume_req_level);
 
+	if((vol_db >= 0 || (p_usound->host_last_db > vol_db)) && p_usound->volume_req_type == USOUND_VOLUME_INC)
+	{
+		p_usound->volume_req_type = USOUND_VOLUME_NONE;
+	}
+
+	if((p_usound->host_last_db <= -600 || (p_usound->host_last_db < vol_db))&& p_usound->volume_req_type == USOUND_VOLUME_DEC)
+	{
+		p_usound->volume_req_type = USOUND_VOLUME_NONE;
+	}
+
+	p_usound->host_last_db = vol_db;
+
 	usound_view_volume_show(level);
 
 	switch (p_usound->volume_req_type) {
@@ -156,6 +192,8 @@ static void usound_sync_host_vol(int vol_db)
 	}
 
 	if (do_update) {
+		printk("%s do_update, type %d db %d\n", __func__, p_usound->volume_req_type, vol_db);
+
 		system_volume_set(AUDIO_STREAM_USOUND, level, false);
 #ifdef CONFIG_USOUND_BROADCAST_SUPPROT
 #if ENABLE_PADV_APP
@@ -186,7 +224,13 @@ static void usound_usb_audio_event_callback(u8_t info_type, int pstore_info)
 		break;
 	}
 	case USOUND_SYNC_HOST_VOL_TYPE: {  // 0
-		usound_sync_host_vol(pstore_info);
+		if(usb_audio_get_download_streaming_enabled())
+		{
+			usound_sync_host_vol(pstore_info);
+		}else{
+			p_usound->host_enmu_db = pstore_info;
+			printk("uac enum is not ready, skip vol %d\n", pstore_info);
+		}
 		break;
 	}
 
@@ -251,6 +295,18 @@ static int usound_init(void *p1, void *p2, void *p3)
 	}
 	memset(p_usound, 0, sizeof(struct usound_app_t));
 
+	u8_t usound_start_vol = CONFIG_USOUND_START_DEFAULT_VOLUME;
+	if(CONFIG_USOUND_START_DEFAULT_VOLUME > USOUND_VOLUME_LEVEL)
+	{
+		usound_start_vol = USOUND_VOLUME_LEVEL>>1;
+	}
+
+	p_usound->need_test_hid = 1;
+	p_usound->host_enmu_db = 1;
+	p_usound->host_last_db = 1;
+
+	audio_system_set_stream_volume(AUDIO_STREAM_USOUND, usound_start_vol);
+
 #ifdef USOUND_FEATURE_DISABLE_BLUETOOTH
 	// not-discoverable, not connnectable, disconnect phone/tws
 	bt_manager_halt_phone();
@@ -271,7 +327,7 @@ static int usound_init(void *p1, void *p2, void *p3)
 
 	usb_audio_init(usound_usb_audio_event_callback);
 	p_usound->current_volume_level = audio_system_get_stream_volume(AUDIO_STREAM_USOUND);
-	
+
 #ifdef USOUND_FEATURE_RESTART
 	thread_timer_init(&p_usound->restart_timer, usound_restart_handler, NULL);
 	thread_timer_start(&p_usound->restart_timer, 200, 200);

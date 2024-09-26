@@ -1028,8 +1028,8 @@ int tts_manager_process_ui_event(int ui_event)
 #endif
 
 	if( 0 == tts_manager_find_tts(ui_event, &mode, &tts_file_name)){
-#if 0
-		if((tts_ctx->filter_enable && !(mode & TTS_CANNOT_BE_FILTERED))&& (bt_manager_a2dp_get_status_check_avrcp_status() != BT_STATUS_PAUSED)){
+#if 1
+		if((tts_ctx->filter_enable && !(mode & TTS_CANNOT_BE_FILTERED))&& (bt_manager_a2dp_get_status_check_avrcp_status() != BT_STATUS_PAUSED)&& (ui_event != 66)){
 #else
 		if(tts_ctx->filter_enable && !(mode & TTS_CANNOT_BE_FILTERED)){
 #endif
@@ -1213,6 +1213,9 @@ void tts_manager_disable_keycode_check(void)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tts_ctx->tts_list, item, tmp, node) {
 		input_manager_disable_key(get_tts_key_code(item->tts_file_name));
 	}
+	if(tts_ctx->tts_curr){
+		input_manager_disable_key(get_tts_key_code(tts_ctx->tts_curr->tts_file_name));
+	}
 
 	irq_unlock(key);
 }
@@ -1248,6 +1251,15 @@ int tts_manager_clear_all(void)
 
 	}
 	os_mutex_unlock(&tts_ctx->tts_mutex);
+	return 0;
+}
+
+int tts_manager_is_able_play(void)
+{
+	struct tts_manager_ctx_t *tts_ctx = _tts_get_ctx();
+
+	if((tts_ctx->filter_enable) && (bt_manager_a2dp_get_status_check_avrcp_status() != BT_STATUS_PAUSED))
+		return 1;
 	return 0;
 }
 #endif

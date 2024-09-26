@@ -1420,6 +1420,34 @@ enum {
 			   BT_CONN_TYPE_SCO | BT_CONN_TYPE_ISO | BT_TYPE_BR_SNOOP | BT_TYPE_SCO_SNOOP,
 };
 
+struct bt_gaming_audio_role_config {
+	uint8_t role_ugg : 1; /* Gaming Role Unicast Game Gateway */
+	uint8_t role_ugt : 1; /* Gaming Role Unicast Game Terminal */
+	uint8_t role_bgs : 1; /* Gaming Role Broadcast Game Sender */
+	uint8_t role_bgr : 1; /* Gaming Role Broadcast Game Receiver */
+};
+
+struct bt_gaming_audio_feat_config {
+	uint16_t ugg_feat_multiplex : 1; /* Support transmitting multiple LC3 codec frames per block in an SDU */
+	uint16_t ugg_feat_96kbps_source : 1; /* 96 kbps source support */
+	uint16_t ugg_feat_multisink : 1; /* Support for receiving at least two channels of audio, each in a separate CIS */
+	uint16_t ugt_feat_source : 1; /* Source support */
+	uint16_t ugt_feat_80kbps_source : 1; /* 80 kbps source support */
+	uint16_t ugt_feat_sink : 1; /* Sink support */
+	uint16_t ugt_feat_64kbps_sink : 1; /* 64 kbps sink support */
+	uint16_t ugt_feat_multiplex : 1; /* Support for receiving multiple LC3 codec frames per block in an SDU */
+	uint16_t ugt_feat_multisink : 1; /* Support for receiving at least two audio channels, each in a separate CIS */
+	uint16_t ugt_feat_multisource : 1; /* Support for sending at least two audio channels, each in a separate CIS */
+	uint16_t bgs_feat_96kbps : 1; /* 96 kbps support */
+	uint16_t bgr_feat_multisink : 1; /* Support for receiving at least two audio channels, each in a separate BIS */
+	uint16_t bgr_feat_multiplex : 1; /* Support for receiving multiple LC3 codec frames per block in an SDU */
+};
+
+struct bt_gaming_audio_config {
+	struct bt_gaming_audio_role_config gmas_role; /* local role */
+	struct bt_gaming_audio_feat_config feat; /* local gmas roles feat */
+};
+
 struct bt_audio_config {
 	uint32_t num_master_conn : 3;	/* as a master, range: [0: 7] */
 	uint32_t num_slave_conn : 3;	/* as a slave, range: [0: 7] */
@@ -1476,6 +1504,9 @@ struct bt_audio_config {
 	/* whether support tmas_client */
 	uint32_t tmas_cli_num : 1;
 
+	/* whether support gmas_client */
+	uint32_t gmas_cli_num : 1;
+
 	/* support how many connections for unicast_client */
 	uint32_t uni_cli_dev_num : 3;	/* [0 : 7] */
 	/* support how many connections for unicast_server */
@@ -1496,6 +1527,8 @@ struct bt_audio_config {
 	uint32_t tmas_cli_dev_num : 3;	/* [0 : 7] */
 	/* support how many connections for cas_client */
 	uint32_t cas_cli_dev_num : 3;	/* [0 : 7] */
+	/* support how many connections for gmas_client */
+	uint32_t gmas_cli_dev_num : 3;	/* [0 : 7] */
 
 	/* support how many PAC Characteristic for server */
 	uint32_t pacs_srv_pac_num : 3;	/* [0 : 7] */
@@ -1584,6 +1617,10 @@ struct bt_audio_config {
 	uint8_t volume_step;
 	uint8_t volume_persisted : 1;
 	uint8_t volume_muted : 1;
+
+	/* Gaming audio configuration*/
+	uint8_t gmas_server : 1;
+	struct bt_gaming_audio_config gmas_config;
 };
 
 /*
@@ -2517,6 +2554,7 @@ int btif_pacs_set_sink_loc(uint32_t locations);
 int btif_audio_set_sirk(uint8_t type, uint8_t *sirk_value);
 int btif_audio_update_rsi(uint8_t **rsi_out);
 struct bt_audio_config * btif_audio_get_cfg_param(void);
+uint8_t btif_audio_get_loc_gmas_role(void);
 
 
 int btif_audio_set_ble_tws_addr(bt_addr_le_t *addr);
@@ -2635,6 +2673,8 @@ typedef enum
 	BTSRV_AUDIO_DISCOVER_TBS,
 	BTSRV_AUDIO_READ_TBS,
 	BTSRV_AUDIO_DISCOVER_GTBS,
+	BTSRV_AUDIO_DISCOVER_GMAS,
+	BTSRV_AUDIO_READ_GMAS_CHRC,
 } audio_core_evt_type_e;
 
 #ifdef CONFIG_BT_PTS_TEST

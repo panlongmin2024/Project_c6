@@ -1181,7 +1181,7 @@ void pd_manager_over_temp_protect(void)
             {
                 temp_ten_flag = 1;
                 SYS_LOG_INF("[%d] set current 1500ma \n", __LINE__);
-                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, CHARGE_IN_LIMIT_CURRENT_1500MA);
             }
 
         }else if((power_manager_get_battery_temperature() < 440) && (power_manager_get_battery_temperature() > 100))
@@ -1190,7 +1190,7 @@ void pd_manager_over_temp_protect(void)
             {
                 temp_ten_flag = 0;
                 SYS_LOG_INF("[%d] set current 2400ma \n", __LINE__);
-                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 0);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, CHARGE_IN_LIMIT_CURRENT_2400MA);
             }        
         }
 
@@ -1207,12 +1207,15 @@ void pd_manager_over_temp_protect(void)
             {
                 temp_ten_flag = 1;
                 SYS_LOG_INF("[%d] set current 1500ma \n", __LINE__);
-                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 1);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, CHARGE_IN_LIMIT_CURRENT_1500MA);
 
             }else if((power_manager_get_battery_temperature() < 440) && (power_manager_get_battery_temperature() > 100))
             {
                 SYS_LOG_INF("[%d] set current 2400ma \n", __LINE__);
-                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 0);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, CHARGE_IN_LIMIT_CURRENT_2400MA);
+            }else{
+                SYS_LOG_INF("[%d] set current 2400ma \n", __LINE__);
+                pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, CHARGE_IN_LIMIT_CURRENT_2400MA);
             }
         }
     }else{
@@ -1453,6 +1456,14 @@ void pd_supply_report(pd_manager_charge_event_t event, pd_manager_charge_event_p
             if(para->pd_event_val != 0)
             {
                 wlt_pd_manager->pd_sink_status_flag = true;
+                if(power_manager_get_battery_capacity() < BATTERY_DISCHARGE_REMAIN_CAP_LEVEL2)
+                {
+                    pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, CHARGE_IN_LIMIT_CURRENT_3000MA);
+                }else{
+                    pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, CHARGE_IN_LIMIT_CURRENT_2400MA);    
+                }
+
+
             }else
             {
                // pd_manager_send_cmd_code(PD_SUPPLY_PROP_CURRENT_2400MA, 2);

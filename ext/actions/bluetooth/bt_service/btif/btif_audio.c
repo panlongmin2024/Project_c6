@@ -715,6 +715,11 @@ uint16_t btif_audio_get_local_tmas_role(void)
 	return tmas_srv_get_local_tmas_role();
 }
 
+uint8_t btif_audio_get_loc_gmas_role(void)
+{
+	return gmas_srv_get_loc_role();
+}
+
 int btif_audio_set_ble_tws_addr(bt_addr_le_t *addr)
 {
 	int ret;

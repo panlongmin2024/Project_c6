@@ -162,6 +162,10 @@ int bt_pacs_server_available_contexts_set(struct bt_conn *conn,
 int bt_pacs_server_supported_contexts_set(struct bt_conn *conn,
 				struct bt_pacs_server *srv, uint16_t source_sac, uint16_t sink_sac);
 
+const struct bt_pacs_pac *bt_pacs_server_get_sink_pac(struct bt_pacs_server *srv);
+
+const struct bt_pacs_pac *bt_pacs_server_get_source_pac(struct bt_pacs_server *srv);
+
 int bt_pacs_server_capability_init(struct bt_pacs_server *srv,
 				bool sink, uint8_t coding_format,
 				uint16_t company_id, uint16_t vs_codec_id,

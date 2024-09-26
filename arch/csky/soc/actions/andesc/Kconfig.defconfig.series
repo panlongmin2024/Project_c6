@@ -40,7 +40,7 @@ config SRAM_END_ADDRESS
 
 config DSP_SRAM_BASE_ADDRESS
 	hex
-	default 0x00000
+	default 0x40000
 
 config DSP_SRAM_END_ADDRESS
 	hex

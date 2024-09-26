@@ -62,5 +62,6 @@ source "ext/actions/bluetooth/bt_stack/Kconfig.tmas"
 source "ext/actions/bluetooth/bt_stack/Kconfig.tbs"
 source "ext/actions/bluetooth/bt_stack/Kconfig.cas"
 source "ext/actions/bluetooth/bt_stack/Kconfig.bass"
+source "ext/actions/bluetooth/bt_stack/Kconfig.gmas"
 
 endif # BT_AUDIO

@@ -122,6 +122,10 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
 			dev_info->a2dp_stream_is_check_started = 1;
 		}
 
+		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+		dev_info->avrcp_ext_status_set_time = 0;
+		#endif
+		
         if(bt_manager_audio_current_stream() == BT_AUDIO_STREAM_NONE){
             update_volume_wait = 1;
             SYS_LOG_INF("stream none");

@@ -123,7 +123,7 @@ int fw_version_play_by_tts(void)
 		return -1;
 	} */
 	
-	if(tts_manager_is_filter())
+	if(tts_manager_is_able_play())
 		return 0;
 
 	tts_manager_os_mutex_lock();

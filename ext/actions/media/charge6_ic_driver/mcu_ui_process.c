@@ -49,6 +49,7 @@
 #include <pd_manager_supply.h>
 #include "app/charge_app/charge_app.h"
 #include "run_mode/run_mode.h"
+#include <pd_manager.h>
 /*
  * Copyright (c) 2017 Intel Corporation
  *
@@ -1059,6 +1060,8 @@ static int mcu_poweron_is_charge_warnning(void)
 #else
 //static bool bt_is_charge_warnning_flag = false;
 #endif
+extern bool ats_is_enable(void);
+extern u8_t pd_manager_send_notify(u8_t event);
 static void mcu_power_key_deal_fn(mcu_manager_charge_event_para_t *para)
 {
     uint8 result=0;
@@ -1082,7 +1085,12 @@ static void mcu_power_key_deal_fn(mcu_manager_charge_event_para_t *para)
                 msg.type = MSG_POWER_KEY;
                 send_async_msg(APP_ID_MAIN, &msg);
                 printk("POWER KEY first MSG_POWER_KEY\n");
-                pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
+                
+                if(!run_mode_is_demo())
+                {
+                    pd_manager_set_poweron_filte_battery_led(WLT_FILTER_DISCHARGE_POWERON);
+                }
+
 /* 
                 k_sleep(10);
                 msg.type = MSG_CHARGER_MODE;
@@ -1156,6 +1164,11 @@ static void mcu_power_key_deal_fn(mcu_manager_charge_event_para_t *para)
                     int power_key_ota_exit(void);
                     power_key_ota_exit();
             }
+            if(ats_is_enable())
+			{
+			   printk("ats_is_enable POWER KEY exit \n");
+			   pd_manager_send_notify(PD_EVENT_SOURCE_EXIT_ATS);
+			 }
             pd_manager_set_poweron_filte_battery_led(WLT_FILTER_STANDBY_POWEROFF);
             if(!ReadODM())
             {
@@ -1606,7 +1619,7 @@ static void bt_water_charge_warnnig_trigger_fn(void)
         {
 
             pd_manager_disable_charging(true);
-            // otg off must be earlyé”›?so process in  pd_manager_battery_low_check_otg() funcion
+            // otg off must be earlyé”?so process in  pd_manager_battery_low_check_otg() funcion
             
             if(!main_system_tts_get_play_warning_tone_flag())
             {

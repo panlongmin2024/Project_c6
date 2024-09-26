@@ -159,7 +159,7 @@ static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 		break;
 	case TTS_EVENT_STOP_PLAY:
 		SYS_LOG_INF("%s end \n", tts_id);
-		tts_manager_disable_keycode_check();
+		//tts_manager_disable_keycode_check();
 		if(!memcmp(tts_id,"poweroff.mp3",12)){
 			if(btdrv_get_bqb_mode()){
 				sys_pm_reboot(7);
@@ -566,12 +566,24 @@ void system_app_init(void)
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 
 	printf("%s:%d led_manager_set_display\n", __func__, __LINE__);
+	
 	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);						// power led
-	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);	
+	
+	
+	if(run_mode_is_demo()&&(!dc_power_in_status_read())){
+		
+		SYS_LOG_INF("[%d] run_mode_is_demo, but No dc_power_in \n", __LINE__);
+		system_power_off();
+		k_sleep(2000);
+		return;
+	}
+
+	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);		
 	if(!main_system_is_enter_bqb())
 	{
 		pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);
 	}
+
 
 
 #endif

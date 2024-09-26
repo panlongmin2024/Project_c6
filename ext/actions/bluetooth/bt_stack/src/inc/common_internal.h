@@ -10,7 +10,8 @@
 #define __COMMON_INTERNAL_H__
 
 #define __IN_BT_SECTION	__in_section_unique(bthost_bss)
-#define __IN_BT_BSS_SECTION	__in_section_unique(bthost.bss)
+//#define __IN_BT_BSS_SECTION	__in_section_unique(bthost.bss)
+#define __IN_BT_BSS_CONN_SECTION __in_section_unique(bthost.conn.bss)
 
 struct bt_inner_value_t {
 	uint32_t max_conn:4;

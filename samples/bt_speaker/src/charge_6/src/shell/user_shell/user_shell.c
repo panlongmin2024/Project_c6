@@ -21,7 +21,6 @@
 #include <ats_cmd/ats.h>
 
 #include <property_manager.h>
-#include <sys_manager.h>
 
 int dolphin_set_vol(int argc, char *argv[]);
 int dolphin_read_frames_start(int argc, char *argv[]);
@@ -169,6 +168,13 @@ static int shell_reset_pa_test(int argc, char *argv[])
 	return 0;
 }
 
+extern int external_dsp_ats3615_reset(void);
+static int shell_reset_dsp_test(int argc, char *argv[])
+{
+	external_dsp_ats3615_reset();
+	return 0;
+}
+
 extern int property_set_factory(const char *key, char *value, int value_len);
 static int shell_user_set_mac(int argc, char *argv[])
 {
@@ -192,99 +198,6 @@ static int shell_user_set_mac_name(int argc, char *argv[])
 
 	return 0;
 }
-static int shell_user_hex(int argc, char *argv[])
-{
-	char source[10] = "3122533415";
-	char direct[10] = {0};
-	extern int hex2bin(uint8_t *dst, const char *src, unsigned long count);
-	hex2bin(direct,source,10);
-	for(int i=0;i<10;i++){
-		printk("------> %s source %d\n",__func__,source[i]);
-	}
-	for(int j=0;j<10;j++){
-		printk("------> %s direct %d\n",__func__,direct[j]);
-	}
-
-	return 0;
-}
-static int shell_user_enter_standby(int argc, char *argv[])
-{
-	sys_standby_time_set(5,CONFIG_AUTO_POWEDOWN_TIME_SEC);
-	return 0;
-}
-static int shell_user_exit_standby(int argc, char *argv[])
-{
-	sys_standby_time_set(1,1000);
-	return 0;
-}
-static int shell_user_get_mode(int argc, char *argv[])
-{
-	return 0;
-}
-static int shell_user_get_uuid(int argc, char *argv[])
-{
-	uint32_t uuid[4];
-	int soc_get_system_uuid(unsigned int *uuid);
-    soc_get_system_uuid(uuid);
-	printk("------> %s 0x%x 0x%x 0x%x 0x%x\n ",__func__,uuid[0],uuid[1],uuid[2],uuid[3]);
-	return 0;
-}
-static int shell_user_reset(int argc, char *argv[])
-{
-	int cdc_shell_ats_rst_reboot(struct device *dev, u8_t *buf, int len);
-	cdc_shell_ats_rst_reboot(0,0,0);
-	return 0;
-}
-int shell_user_enter_fcc(int argc, char *argv[])
-{
-	int ret1;
-	u8_t buffer[1+1] = {6,0};
-
-    ret1 = property_set(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE, buffer, 1);
-	if(ret1==0){
-		property_flush(CFG_USER_IN_OUT_NOSIGNAL_TEST_MODE);
-	}
-
-	if (ret1==0){
-		sys_pm_reboot(REBOOT_REASON_GOTO_BQB);
-	}
-
-	return 0;
-}
-static int shell_user_info(int argc, char *argv[])
-{
-	int desktop_manager_get_plugin_id(void);
-	uint8_t pd_get_app_mode_state(void);
-	
-	int id = desktop_manager_get_plugin_id();
-	uint8_t app_mode = pd_get_app_mode_state();
-
-	printk("------> desktop_id app_mode %d %d   \n",id,app_mode);
-	return 0;
-}
-static int shell_user_reboot(int argc, char *argv[])
-{
-	sys_pm_reboot(REBOOT_REASON_REBOOT_AND_POWERON);
-	printk("------> shell_user_reboot \n");
-	return 0;
-}
-static int shell_get_ble_mac(int argc, char *argv[])
-{
-	uint8_t address[12];
-	void get_ble_address(uint8_t* address);
-	get_ble_address(address);
-	for(int i=0; i<12; i++){
-		printk("------> shell_user_reboot %d = 0x%x \n",i,address[i]);
-	}
-	
-	return 0;
-}
-static int shell_get_auracast_state(int argc, char *argv[])
-{
-	uint8_t system_app_get_auracast_mode(void);
-	printk("------> system_app_get_auracast_mode %d \n",system_app_get_auracast_mode());
-	return 0;
-}
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -306,18 +219,8 @@ static const struct shell_cmd commands[] = {
 	{ "set_mac", shell_user_set_mac, "user set mac"},
 	{ "set_name", shell_user_set_name, "user set name"},
 	{ "set_mac_name", shell_user_set_mac_name, "user set mac name"},
-	{ "set_hex", shell_user_hex, "user hex2bin"},
-	{ "enter_stb", shell_user_enter_standby, "user enter stangby"},
-	{ "exit_stb", shell_user_exit_standby, "user exit stangby"},
-	{ "get_mode", shell_user_get_mode, "user get mode"},
-	{ "get_uuid", shell_user_get_uuid, "user uuid"},
-	{ "set_reset", shell_user_reset, "user reset"},
-	{ "enter_fcc", shell_user_enter_fcc, "user enter fcc"},
-	{ "user_info", shell_user_info, "user get info"},
-	{ "user_reboot", shell_user_reboot, "user reboot"},
-	{ "get_blemac", shell_get_ble_mac, "user get ble mac"},
-	{ "get_leaudio", shell_get_auracast_state, "user get ble mac"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
+	{ "dsp_reset", shell_reset_dsp_test, "dsp reset"},
 	{ NULL, NULL, NULL }
 };
 

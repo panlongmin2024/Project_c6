@@ -48,6 +48,8 @@
 #include "gatt_internal.h"
 #include <hex_str.h>
 
+#define SUPPORT_MULTI_INSTANCE 1
+
 #define SC_TIMEOUT	K_MSEC(10)
 #define CCC_STORE_DELAY	K_SECONDS(1)
 
@@ -887,9 +889,15 @@ populate:
 			handle = attrs->handle;
 		} else if (find_attr(attrs->handle)) {
 			/* Service has conflicting handles */
-			BT_ERR("Unable to register handle 0x%04x",
+			#if SUPPORT_MULTI_INSTANCE
+				BT_INFO("Already register handle 0x%04x",
 			       attrs->handle);
-			return -EINVAL;
+				return -EALREADY;
+			#else
+				BT_ERR("Unable to register handle 0x%04x",
+			       attrs->handle);
+				return -EINVAL;
+			#endif
 		}
 
 		BT_DBG("attr %p handle 0x%04x uuid %s perm 0x%02x",

@@ -40,6 +40,7 @@ struct bt_a2dp_app_cb {
 	/* Return 0: accepte state request, other: reject state request */
 	int (*media_state_req)(struct bt_conn *conn, uint8_t state);
 	void (*seted_codec)(struct bt_conn *conn, struct bt_a2dp_media_codec *codec, uint8_t cp_type);
+	void (*exception_handler)(struct bt_conn *conn, u8_t err);
 };
 
 /** @brief A2DP Connect.

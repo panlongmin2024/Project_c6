@@ -2452,7 +2452,7 @@ struct net_buf_pool_continue {
 extern const struct net_buf_data_cb net_buf_continue_cb;
 
 #define BT_BUF_POOL_ALLOC_DATA_DEFINE(_name, _size)   \
-	static u8_t _net_data_##_name[ROUND_UP((_size), 4)] __net_buf_align __IN_BT_STACK_SECTION;  \
+	static u8_t _net_data_##_name[ROUND_UP((_size), 4)] __net_buf_align __IN_BT_DATA_POOL_SECTION;  \
 	struct net_buf_pool_continue _name = { \
 		.init_flag = 0,                           \
 		.data_size = _size,                        \

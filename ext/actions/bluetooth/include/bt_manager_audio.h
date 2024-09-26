@@ -122,6 +122,11 @@ struct bt_audio_role {
 	uint8_t set_size;
 	uint8_t set_rank;
 	uint8_t set_sirk[16];	/* depends on sirk_enabled */
+
+	/* Gaming audio configuration*/
+	uint32_t gmas_client : 1;
+	uint32_t gmas_server : 1;
+	struct bt_gaming_audio_config gmas_config;
 };
 
 struct bt_audio_chan_info {

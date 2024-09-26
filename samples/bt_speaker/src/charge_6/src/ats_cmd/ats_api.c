@@ -68,15 +68,22 @@ int ats_cmd_response(uint8_t *buf, int size)
 
 int ats_usb_cdc_acm_cmd_response(struct device *dev, uint8_t *buf, int size)
 {
-   
     ats_usb_cdc_acm_write_data(buf, size);
 	return 0;
 }
 
 void enter_ats(void)
 {
-     ats_init();
-     ats_usb_cdc_acm_init();
+    int ret;
+
+    ret = ats_init();
+    if (ret)
+    {
+        SYS_LOG_ERR("init err\n");
+        return;
+    }
+
+    ats_usb_cdc_acm_init();
 }
 
 int ats_init(void)
@@ -117,7 +124,7 @@ int ats_init(void)
 
     os_mutex_init(ats_get_mutex());
 
-    goto exit;
+    return ret;
 
 err_exit:
     if (p_ats_ctx)
@@ -131,7 +138,6 @@ err_exit:
         free(p_ats_ctx);
         p_ats_ctx = NULL;
     }
-exit:
     return ret;
 }
 

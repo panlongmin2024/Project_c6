@@ -309,20 +309,18 @@ int init_key_based_pairing(uint8_t* packet, int packet_length)
 		goto keybase_pair_exit;
 	}
 
-/*  two phone mode, not need force pair mode
-	if ((packet_length == AES_BLOCK_SIZE) && 
-		(packet[0] == BASED_PAIRING_REQUEST))
-	{
-		bt_manager_enter_pair_mode();
-	}
-*/
+	print_hex_comm("based pairing:",packet,16);
+
     if(packet_length == AES_BLOCK_SIZE + ECDH_PUBLIC_KEY_SIZE){
-        if(!bluetooth_provider->is_pairing()){
-            bt_manager_enter_pair_mode();
+        if(packet[0] == BASED_PAIRING_REQUEST){
+            if (!(packet[1] & RETROACTIVELY_WRITING_ACCOUNT_KEY)){
+                if(!bluetooth_provider->is_pairing()){
+                    bt_manager_enter_pair_mode();
+                }
+            }
         }
     }
 
-	print_hex_comm("based pairing:",packet,16);
 	// Packet now contains the decoded information, so use it as needed.
 	if (packet[0] == ACTION_REQUESET) {
 		if(packet[1] & ACTION_REQUEST_ADDITIONAL_DATA){

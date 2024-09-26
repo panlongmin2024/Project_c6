@@ -1052,19 +1052,34 @@ int audio_policy_get_volume_level_by_db(uint8_t stream_type, int volume_db)
 		-290, -240, -210, -190,
 		-170, -147, -123, -100,
 		-74, -50, -30, -2,
-		0
+		0,
+	};
+
+	const int usound_vol_level_db_table[USOUND_VOLUME_LEVEL+1] = {
+		-590, -431, -353, -302, -264, -233, -207, -186,
+		-167, -150, -135, -120, -108, -102, -96,  -90,
+		-84,  -78,  -72,  -66,  -60,  -54,  -48,  -42,
+		-36,  -30,  -25,  -20,  -16,  -12,  -7,   -2,
+		0,
 	};
 
 	int volume_level = 0;
+	int total_volume = 16;
 	const int *volume_table = vol_level_db_table;
 
-	if (volume_db >= volume_table[16])
+	if(stream_type == AUDIO_STREAM_USOUND)
 	{
-		volume_level = 16;
+		volume_table = usound_vol_level_db_table;
+		total_volume = USOUND_VOLUME_LEVEL;
+	}
+
+	if (volume_db >= volume_table[total_volume])
+	{
+		volume_level = total_volume;
 	}
 	else
 	{
-		for (int i = 0; i <= 16; i++)
+		for (int i = 0; i <= total_volume; i++)
 		{
 			if (volume_db < volume_table[i])
 			{
@@ -1074,7 +1089,7 @@ int audio_policy_get_volume_level_by_db(uint8_t stream_type, int volume_db)
 		}
 	}
 
-	volume_level = volume_level * audio_policy_get_volume_level()/16;
+	volume_level = volume_level * audio_policy_get_volume_level()/total_volume;
 
 	return volume_level;
 }

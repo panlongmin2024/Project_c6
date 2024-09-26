@@ -28,6 +28,8 @@ static bool allowed_adv_crc = true;
 static bool allowed_join_party = true;
 static u8_t system_status = SELF_SYS_POWERON;
 
+static uint16_t addr_crc = 0;
+static uint16_t name_crc = 0;
 
 void self_indication_handler(struct thread_timer *ttimer,
 				   void *expiry_fn_arg);
@@ -424,7 +426,6 @@ static int selfapp_get_addr_crc(u16_t *p_addr_crc)
 	str_to_hex(mac, mac_str, 12);
 	crc = self_crc16(0, mac, 6);
 	*p_addr_crc = crc;
-
 	return 0;
 }
 
@@ -503,6 +504,7 @@ u8_t selfapp_get_manufacturer_data(u8_t * buf)
 		}
 	}
 
+
 	//VID
 	buf[i++] = (CONFIG_BT_COMPANY_ID & 0xFF);
 	buf[i++] = (CONFIG_BT_COMPANY_ID >> 8);
@@ -544,6 +546,16 @@ u8_t selfapp_get_manufacturer_data(u8_t * buf)
 	/*CRC of BT device address */
 	buf[i++] = (crc_addr >> 0) & 0xff;
 	buf[i++] = (crc_addr >> 8) & 0xff;
+
+    if(name_crc != crc_name){
+        SYS_LOG_INF("name crc %x", crc_name);
+        name_crc = crc_name;
+    }
+
+    if(addr_crc != crc_addr){
+        SYS_LOG_INF("addr crc %x", crc_addr);
+        addr_crc = crc_addr;
+    }
 
 	/*
 	   Extra info of Auracast, LE mode, and spotify button actions

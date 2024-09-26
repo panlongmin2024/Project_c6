@@ -89,6 +89,8 @@ void report_key_event(struct k_work *work)
 
 	input->click_num = 0;
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	extern void tts_manager_disable_keycode_check(void);
+	tts_manager_disable_keycode_check();
 	for(int i = 0; i < 10;i++){
 		if((diable_key[i]) && (diable_key[i] == (input->report_key_value&~(KEY_TYPE_SHORT_UP | KEY_TYPE_SHORT_LONG_UP)))){
 			SYS_LOG_ERR("key is diable %x %x\n",diable_key[i],(input->report_key_value&~(KEY_TYPE_SHORT_UP | KEY_TYPE_SHORT_LONG_UP)));

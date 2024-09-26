@@ -177,12 +177,17 @@ static void cdc_acm_thread_main_loop(void *p1, void *p2, void *p3)
 	}
 
 __thread_exit:
+	if (thread_timer_is_running(&p_ctx->rx_timer))
+	{
+		thread_timer_stop(&p_ctx->rx_timer);
+	}
 	
 	SYS_LOG_INF("exit\n");
 
     p_ctx->thread_running = 0;
 }
 extern void console_input_deinit(struct device *dev);
+extern void console_input_init(struct device *dev);
 
 extern struct device *uart_console_dev;
 
@@ -195,7 +200,7 @@ int ats_uart_init(struct device *dev)
 	//disable uart0 tx dma print
 	// trace_print_disable_set(true);
     console_input_deinit(dev);
-	
+	k_sleep(2);
 
     ats_uart->uio_opened = 0;
 
@@ -208,6 +213,27 @@ int ats_uart_init(struct device *dev)
     }
     stream_open(ats_uart->uio, MODE_IN_OUT);
     ats_uart->uio_opened = 1;
+    return ats_uart->uio_opened;
+}
+
+int ats_uart_deinit(struct device *dev)
+{
+    ats_uart_t * ats_uart = &ats_uart_context;
+	//SYS_LOG_INF();
+
+	//disable uart0 tx dma print
+    stream_close(ats_uart->uio);
+	//stream_destroy(ats_uart->uio);
+	ats_uart->uio_opened = 0;
+	//k_sleep(2);
+    //console_input_init(dev);
+	if (thread_timer_is_running(&p_ctx->rx_timer))
+	{
+		thread_timer_stop(&p_ctx->rx_timer);
+	}  
+
+	trace_print_disable_set(false);
+   
    // stream_write(ats_uart->uio, ATS_CMD_RESP_OK, (sizeof(ATS_CMD_RESP_OK) - 1));
     return ats_uart->uio_opened;
 }
@@ -245,7 +271,8 @@ int ats_usb_cdc_acm_init(void)
 	   }
 
        ret = ats_uart_init(p_ctx->usb_cdc_acm_dev);
-	  // ats_usb_cdc_acm_write_data("live test",sizeof("live test")-1);
+	   k_sleep(2);
+	   ats_usb_cdc_acm_write_data("live test",sizeof("live test")-1);
 
 
     p_ctx->cdc_acm_enabled = true;
@@ -309,6 +336,8 @@ int ats_usb_cdc_acm_deinit(void)
 {
     if (p_ctx != NULL)
     {
+       
+	   
         p_ctx->cdc_acm_enabled = false;
 
         while(p_ctx->thread_running)
@@ -331,7 +360,8 @@ int ats_usb_cdc_acm_deinit(void)
 
         free(p_ctx);
         p_ctx = NULL;
-
+		
+          ats_uart_deinit(p_ctx->usb_cdc_acm_dev);
         SYS_LOG_INF("ok\n");
     }
     else

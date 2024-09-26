@@ -255,51 +255,26 @@ u8_t padv_volume_map(u8_t vol, u8_t to_adv)
 {
 	u8_t map;
 	int i;
-#if (MAX_AUDIO_VOL_LEVEL == 16)
-#define vol_table(x) (x*100/MAX_AUDIO_VOL_LEVEL)
+
+	#define vol_table(x) ((x) * 100 / MAX_AUDIO_VOL_LEVEL)
+
 	static const u8_t table[MAX_AUDIO_VOL_LEVEL + 1] = {
 		vol_table(0),
 		vol_table(1),	vol_table(2),	vol_table(3),	vol_table(4),
 		vol_table(5),	vol_table(6),	vol_table(7),	vol_table(8),
 		vol_table(9),	vol_table(10),	vol_table(11),	vol_table(12),
 		vol_table(13),	vol_table(14),	vol_table(15),	vol_table(16),
-
 #if MAX_AUDIO_VOL_LEVEL > 16
 		vol_table(17),	vol_table(18),	vol_table(19),	vol_table(20),
 		vol_table(21),	vol_table(22),	vol_table(23),	vol_table(24),
 		vol_table(25),	vol_table(26),	vol_table(27),	vol_table(28),
 		vol_table(29),	vol_table(30),	vol_table(31),
 #endif
-
 #if MAX_AUDIO_VOL_LEVEL > 31
 		vol_table(32),
 #endif
 	};	
-#elif (MAX_AUDIO_VOL_LEVEL == 31)
-	static const u8_t table[MAX_AUDIO_VOL_LEVEL + 1] = {
-		0,
-		3,	6,	9,	12,
-		15,	18,	21,	24,
-		27,	30,	33, 36,
-		39,	42, 45,	48,
-		51,	54,	57,	60,
-		63,	67,	70,	73,
-		76,	79,	82, 85,
-		88,	91, 100,
-	};	
-#else
-	static const u8_t table[MAX_AUDIO_VOL_LEVEL + 1] = {
-		0,
-		3,	6,	9,	12,
-		15,	18,	21,	25,
-		28,	31,	34, 37,
-		40,	43, 46,	50,
-		53,	56,	59,	62,
-		65,	68,	71,	75,
-		78,	81,	84, 87,
-		90,	93, 96, 100,
-	};	
-#endif
+
 	if (to_adv != 0) {
 		//local vol to adv vol
 		if (vol > MAX_AUDIO_VOL_LEVEL)

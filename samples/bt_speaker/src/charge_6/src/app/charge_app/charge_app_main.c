@@ -131,7 +131,7 @@ static void charge_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 		if(memcmp(tts_id,"poweroff.mp3",sizeof("poweroff.mp3")) == 0){
 			input_manager_lock();
 			tts_manager_lock();
-			tts_manager_wait_finished(1);
+			tts_manager_clear_all();
 			os_sleep(100);
 			printk("wati 100ms output\n");
 #ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
@@ -263,7 +263,7 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	bt_manager_set_user_visual(1,0,0,0);
 	bt_manager_disconnect_all_device_power_off();
 	system_app_set_auracast_mode(0);
-	self_music_effect_ctrl_set_enable(1);
+	//self_music_effect_ctrl_set_enable(1);
 
 	//lear all tts
 	tts_manager_lock();

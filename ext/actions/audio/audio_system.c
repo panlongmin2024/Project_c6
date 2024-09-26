@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- 
+
 /**
  * @file
  * @brief audio system.
-*/ 
+*/
 #include <os_common_api.h>
 #include <mem_manager.h>
 #include <msg_manager.h>
@@ -401,8 +401,8 @@ int audio_system_set_stream_volume(int stream_type, int volume)
 
 	/**usound default used 16 level */
 	if (stream_type == AUDIO_STREAM_USOUND) {
-		if (volume >= 32) {
-			volume = 32;
+		if (volume >= USOUND_VOLUME_LEVEL) {
+			volume = USOUND_VOLUME_LEVEL;
 			ret = MAX_VOLUME_VALUE;
 		}
 	}
@@ -449,7 +449,7 @@ int audio_system_set_stream_volume(int stream_type, int volume)
 
 	if (stream_type == AUDIO_STREAM_USOUND || stream_type == AUDIO_STREAM_DEFAULT) {
 	    audio_system->usound_volume = volume;
-	    //_audio_system_save_volume(CFG_USOUND_VOLUME, volume);
+	    _audio_system_save_volume(CFG_USOUND_VOLUME, volume);
 	}
 
 	if (stream_type == AUDIO_STREAM_LOCAL_MUSIC || stream_type == AUDIO_STREAM_DEFAULT) {

@@ -37,7 +37,8 @@ static int bmr_sync_padv_volume(u8_t sync_vol)
 			if (synced_vol == INVALID_VOL) {
 				u8_t  tmpvol = sync_vol;
 			#if (CONFIG_BROCAST_SAFE_LIMIT_VOLUME > 0)
-				if (sync_vol > CONFIG_BROCAST_SAFE_LIMIT_VOLUME) {
+				// donot apply volume-limit when stereo-group by App, fix JBLFLIP7-2525 JBLCH6-2623
+				if (sync_vol > CONFIG_BROCAST_SAFE_LIMIT_VOLUME && selfapp_get_group_id() == 0) {
 					tmpvol = CONFIG_BROCAST_SAFE_LIMIT_VOLUME;
 				}
 			#endif

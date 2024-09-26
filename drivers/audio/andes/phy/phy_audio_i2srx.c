@@ -692,15 +692,15 @@ int PHY_audio_enable_i2srx(struct device *dev, PHY_audio_in_param_t *ain_param, 
 
 	uint8_t i2srx_clk_type;
 	uint8_t i2srx_index;
-
-	i2s_param = ain_param->ptr_i2srx_setting;
-
-	uint8_t sample_rate = i2s_param->i2srx_sample_rate;
-
+	uint8_t sample_rate;
 
 	if((ain_param == NULL) || (ain_param->ptr_i2srx_setting == NULL)) {
 		return -EINVAL;
 	}
+
+	i2s_param = ain_param->ptr_i2srx_setting;
+
+	sample_rate = i2s_param->i2srx_sample_rate;
 
 #if defined(CONFIG_I2S0_PSEUDO_5WIRE) || defined(CONFIG_I2S1_PSEUDO_5WIRE)
 	if (ain_param->ptr_i2srx_setting->i2srx_role != I2S_DEVICE_SLAVE) {

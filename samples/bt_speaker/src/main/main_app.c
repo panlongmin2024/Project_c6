@@ -220,11 +220,16 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 						 logic_mcu_ls8a10023t_otg_mobile_det();
 						 sys_event_notify(SYS_EVENT_AUTO_POWER_OFF);
 				      }
+					  else if(msg.value == PD_EVENT_SOURCE_EXIT_ATS)
+					  {
+                           sys_event_notify(SYS_EVENT_POWER_OFF);	
+					   }
 					  else
 					  	{
 					      sys_event_notify(SYS_EVENT_AUTO_POWER_OFF);
 					  	}
 					}
+				
 				else 
 					{	
 					    sys_event_notify(SYS_EVENT_POWER_OFF);			
@@ -272,6 +277,8 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 				exit = 1;
 				//app_manager_exit_app((char *)msg.ptr, true);
 				break;
+
+
 
 			default:
 				desktop_manager_proc_app_msg(&msg);

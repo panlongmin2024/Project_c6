@@ -72,12 +72,17 @@ static usb_audio_start audio_source_start_cb;
 static usb_audio_pm audio_device_pm_cb;
 
 static usb_sample_rate_change audio_sink_sam_change_cb;
-	
+
 static usb_audio_volume_sync audio_sink_vol_ctrl_cb;
 static usb_audio_volume_sync audio_source_vol_ctrl_cb;
 
 static bool audio_download_streaming_enabled;
 static bool audio_upload_streaming_enabled;
+
+bool usb_audio_get_download_streaming_enabled(void)
+{
+	return audio_download_streaming_enabled;
+}
 
 static const struct usb_if_descriptor usb_audio_interface  = {
 	.bLength = sizeof(struct usb_if_descriptor),
@@ -238,10 +243,10 @@ static inline int usb_audio_handle_set_sample_rate(struct usb_setup_packet *setu
 		SYS_LOG_DBG("buf[1]: 0x%02x", buf[1]);
 		SYS_LOG_DBG("buf[2]: 0x%02x", buf[2]);
 		g_cur_sample_rate = (buf[2] << 16) | (buf[1] << 8) | buf[0];
-		
+
 		USB_AudioSinkSampleRateSet(g_cur_sample_rate);			/* Update the current sampling rate */
 		audio_sink_sam_change_cb(USOUND_SAMPLERATE_CHANGE);		/* Trigger system audio switching sampling rate */
-		
+
 		SYS_LOG_DBG("g_cur_sample_rate:%d ", g_cur_sample_rate);
 		return 0;
 	default:

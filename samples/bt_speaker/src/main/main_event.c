@@ -114,6 +114,26 @@ static void main_input_enter_pairing_mode(void)
 		SYS_LOG_ERR("max connected dev num,bt:%d\n", bt_link_num);
 	}
 }
+static struct thread_timer ats_led_timer;
+extern uint8_t system_app_get_auracast_mode(void);
+
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+static void ats_led_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)
+{
+	thread_timer_stop(&ats_led_timer);
+    pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
+	if(system_app_get_auracast_mode())
+	{
+	  pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);//???auracast?? 2024.8.16----zth
+	}
+    else
+    {
+	  pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+    }
+    bt_manager_update_led_display();
+    pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_RESET);
+}
+#endif
 
 void main_input_event_handle(struct app_msg *msg)
 {
@@ -288,7 +308,7 @@ void main_input_event_handle(struct app_msg *msg)
 		}	*/	
 /*  		if (dc_power_in_status_read() 
 		|| (sys_pm_get_power_5v_status() == 2)){  */
-		//从充电模式关�?		
+		//从充电模式关�?		
 		if(1){
 			u8_t name[33];
 			int ret;
@@ -307,6 +327,11 @@ void main_input_event_handle(struct app_msg *msg)
 #endif
 		break;
 	case MSG_DEMO_SWITCH:
+		if (desktop_manager_get_plugin_id() == DESKTOP_PLUGIN_ID_OTA){
+			SYS_LOG_INF("ota running, not enter demo mode\n");
+			break;
+		}
+
 	{
 		SYS_LOG_INF("demo switch\n");
 		
@@ -376,6 +401,14 @@ void main_input_event_handle(struct app_msg *msg)
 	case MSG_ENTER_ATS:
 		enter_ats();
 		SYS_LOG_INF("enter ATS\n");
+	    #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	    pd_srv_event_notify(PD_EVENT_BT_LED_DISPLAY,SYS_EVENT_BT_CONNECTED);
+	    pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);
+	    pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_ON); // all led turn on
+	    pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(1)|AC_LED_STATE(1)|BAT_LED_STATE(1));
+	    thread_timer_init(&ats_led_timer, ats_led_timer_fn, NULL);
+	    thread_timer_start(&ats_led_timer,2000,2000);
+	    #endif
 		break;
 	case MSG_DSP_EFFECT_SWITCH:
 		

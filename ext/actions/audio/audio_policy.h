@@ -20,6 +20,7 @@
  * @defgroup audio_policy_apis Auido policy APIs
  * @{
  */
+#define USOUND_VOLUME_LEVEL 32
 
 struct audio_policy_t {
 	u8_t audio_out_channel;

@@ -11,6 +11,7 @@ extern int aw85xxx_pa_start(void);
 extern int aw85xxx_pa_stop(void);
 extern void aw85xxx_init();
 extern int aw85xxx_pa_deinit(void);
+extern void HAL_TIM_PeriodElapsedCallback(void);
 #endif
 #ifdef CONFIG_C_AMP_TAS5828M
 extern int amp_tas5828m_registers_init(void);
@@ -162,7 +163,7 @@ static void hm_ext_pa_clear_fault_timer_handle(struct thread_timer *ttimer, void
         printk("err hm_ext_pa_clear_fault_timer_handle pa fault\n");
         if(ReadODM() == HW_GUOGUANG_BOARD)
         {
-            
+            HAL_TIM_PeriodElapsedCallback();
         }else{
             amp_tas5828m_clear_fault();
             // amp_tas5828m_pa_start();

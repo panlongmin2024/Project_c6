@@ -314,6 +314,7 @@ void tts_ext_event_notify(int start_stop);
 void tts_manager_disable_keycode_check(void);
 int tts_manager_get_same_tts_in_list(u8_t *name);
 int tts_manager_clear_all(void);
+int tts_manager_is_able_play(void);
 #endif
 
 #endif

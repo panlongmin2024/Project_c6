@@ -42,7 +42,7 @@ static void bt_manager_le_audio_callback(btsrv_audio_event_e event,
 #define UNICAST_ANNOUNCEMENT_TARGETED   0x01
 
 #ifdef CONFIG_BT_LEA_PTS_TEST
-static uint8_t bt_le_audio_buf[9800] __aligned(4) __in_section_unique(bthost.bss);
+static uint8_t bt_le_audio_buf[10100] __aligned(4) __in_section_unique(bthost.bss);
 #else
 static uint8_t bt_le_audio_buf[CONFIG_BT_LE_AUDIO_BUF_SIZE] __aligned(4) __in_section_unique(bthost.bss);
 #endif
@@ -162,6 +162,30 @@ static int bt_manager_init_adv_data(struct bt_audio_config* cfg)
 
 	if (cfg->uni_srv_num) {
 		/* ASCS UUID */
+		uint16_t sink_contexts = BT_AUDIO_CONTEXT_UNSPECIFIED |
+					BT_AUDIO_CONTEXT_MEDIA;
+		uint16_t source_contexts = 0;
+		if (cfg->call_cli_num) {
+			sink_contexts |= BT_AUDIO_CONTEXT_CONVERSATIONAL;
+			source_contexts |= BT_AUDIO_CONTEXT_UNSPECIFIED |
+					BT_AUDIO_CONTEXT_CONVERSATIONAL |
+					BT_AUDIO_CONTEXT_MEDIA;
+		}
+		if (cfg->gmas_config.gmas_role.role_ugt) {
+			if (cfg->gmas_config.feat.ugt_feat_sink) {
+				sink_contexts |= BT_AUDIO_CONTEXT_GAME;
+			} else {
+				sink_contexts = 0;
+			}
+			if (cfg->gmas_config.feat.ugt_feat_source) {
+				source_contexts |= BT_AUDIO_CONTEXT_UNSPECIFIED |
+						BT_AUDIO_CONTEXT_GAME |
+						BT_AUDIO_CONTEXT_MEDIA;
+			} else {
+				source_contexts = 0;
+			}
+		}
+
 		/* General Announcement */
 		uint8_t ann_type = UNICAST_ANNOUNCEMENT_GENERAL;
 		if (cfg->target_announcement) {
@@ -176,26 +200,12 @@ static int bt_manager_init_adv_data(struct bt_audio_config* cfg)
 		adv_buf[len++] = ann_type;
 
 		/* FIXME: initialize Available Audio Contexts until cap_init */
-		if (cfg->call_cli_num) {
-			/* Sink Available Audio Contexts */
-			adv_buf[len++] = BT_AUDIO_CONTEXT_UNSPECIFIED |
-					BT_AUDIO_CONTEXT_CONVERSATIONAL |
-					BT_AUDIO_CONTEXT_MEDIA;
-			adv_buf[len++] = 0;
-			/* Source Available Audio Contexts */
-			adv_buf[len++] = BT_AUDIO_CONTEXT_UNSPECIFIED |
-					BT_AUDIO_CONTEXT_CONVERSATIONAL |
-					BT_AUDIO_CONTEXT_MEDIA;
-			adv_buf[len++] = 0;
-		} else {
-			/* Sink Available Audio Contexts */
-			adv_buf[len++] = BT_AUDIO_CONTEXT_UNSPECIFIED |
-					BT_AUDIO_CONTEXT_MEDIA;
-			adv_buf[len++] = 0;
-			/* Source Available Audio Contexts */
-			adv_buf[len++] = BT_AUDIO_CONTEXT_UNSPECIFIED;
-			adv_buf[len++] = 0;
-		}
+		/* Sink Available Audio Contexts */
+		adv_buf[len++] = sink_contexts;
+		adv_buf[len++] = 0;
+		/* Source Available Audio Contexts */
+		adv_buf[len++] = source_contexts;
+		adv_buf[len++] = 0;
 
 		adv_buf[len++] = 0;
 		entry++;
@@ -213,6 +223,17 @@ static int bt_manager_init_adv_data(struct bt_audio_config* cfg)
 	adv_buf[len++] = (uint8_t)(role >> 8);
 	entry++;
 
+	if (cfg->gmas_server) {
+		data[entry].type = BT_DATA_SVC_DATA16;
+		data[entry].data_len = 3;
+		data[entry].data = &adv_buf[len];
+		/* GMAS UUID */
+		adv_buf[len++] = (uint8_t)BT_UUID_GMAS_VAL;
+		adv_buf[len++] = (uint8_t)(BT_UUID_GMAS_VAL >> 8);
+		/* TMAP Role */
+		adv_buf[len++] = btif_audio_get_loc_gmas_role();
+		entry++;
+	}
 
 	if (cfg->vol_srv_num) {
 		/* VCS UUID */
@@ -292,6 +313,8 @@ int bt_manager_le_audio_init(struct bt_audio_role *role)
 		memcpy(c.set_sirk, role->set_sirk, 16);
 	}
 
+	c.gmas_server = role->gmas_server;
+	c.gmas_config = role->gmas_config;
 	/* disable remote_keys in test_addr case */
 	if (role->test_addr) {
 		c.remote_keys = 0;
@@ -410,6 +433,11 @@ int bt_manager_le_audio_init(struct bt_audio_role *role)
 	if (num > 0) {
 		c.tmas_cli_num = 1;
 		c.tmas_cli_dev_num = num;
+	}
+
+	if (role->gmas_client) {
+		c.gmas_cli_num = 1;
+		c.gmas_cli_dev_num = num;
 	}
 
 	num *= NUM_CIS_CHAN_PER_CONN;

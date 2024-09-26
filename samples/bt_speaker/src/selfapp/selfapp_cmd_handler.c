@@ -1418,7 +1418,7 @@ int cmdgroup_speaker_settings(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 			selfapp_config_set_PB_state(0);
 		}
 		extern void btmusic_playTimeBoost_trigger(void);
-		//btmusic_playTimeBoost_trigger();
+		btmusic_playTimeBoost_trigger();
 	case CMD_ReqPlaytimeBoost:
 		ret = spk_req_PlaytimeBoost_state();
 		break;

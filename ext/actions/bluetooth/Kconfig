@@ -412,4 +412,42 @@ config BT_PER_ADV_SYNC_TRANSFER_SENDER
   bool   
   depends on BT_MANAGER
   default n
-    
+
+config BT_GMAS_SERVICE
+	bool
+	prompt "BT LE GMAS Service Support"
+	depends on BT_MANAGER
+	default n
+	help
+	  This option enables bt le gmas service.
+
+config BT_GMAS_SERVICE_UGG
+	bool
+	prompt "BT LE GMAS Service UGG role Support"
+	depends on BT_GMAS_SERVICE
+	default n
+	help
+	  This option enables bt le gmas service ugg role.
+
+config BT_GMAS_SERVICE_UGT
+	bool
+	prompt "BT LE GMAS Service UGT role Support"
+	depends on BT_GMAS_SERVICE
+	default n
+	help
+	  This option enables bt le gmas service ugt role.
+
+config BT_GMAS_SERVICE_BGS
+	bool
+	prompt "BT LE GMAS Service BGS role Support"
+	depends on BT_GMAS_SERVICE
+	default n
+	help
+	  This option enables bt le gmas service bgs role.
+config BT_GMAS_SERVICE_BGR
+	bool
+	prompt "BT LE GMAS Service BGR role Support"
+	depends on BT_GMAS_SERVICE
+	default n
+	help
+	  This option enables bt le gmas service bgr role.

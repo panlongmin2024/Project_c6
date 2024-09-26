@@ -117,6 +117,7 @@ void selfapp_set_feedback_tone(u8_t enable)
 		}
 	} else {
 		tts_manager_lock();
+		tts_manager_clear_all();
 	}
 #endif
 	if (selfsta) {
@@ -459,6 +460,7 @@ void selfapp_config_init(void)
 		if (selfsta->feedback_tone == 0) {
 			selfapp_log_inf("feedbacktone off\n");
 			tts_manager_lock();
+			tts_manager_wait_finished(1);
 		}
 	}
 #endif

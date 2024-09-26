@@ -76,11 +76,20 @@ void self_music_effect_ctrl_init(void)
     p_self_music_effect_ctrl_mutex = &self_music_effect_ctrl_mutex;
 }
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+extern uint8_t system_app_get_auracast_mode(void);
+
 static void bypass_led_timer_fn(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
 	thread_timer_stop(&bypass_led_timer);
     pd_srv_event_notify(PD_EVENT_LED_LOCK,BT_LED_STATE(0)|AC_LED_STATE(0)|BAT_LED_STATE(0));
-    pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+	if(system_app_get_auracast_mode())
+	{
+	  pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,1);//�ָ�auracast�� 2024.8.16----zth
+	}
+	else
+	{
+      pd_srv_event_notify(PD_EVENT_AC_LED_DISPLAY,0);
+    }
     bt_manager_update_led_display();
     pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_RESET);
 }

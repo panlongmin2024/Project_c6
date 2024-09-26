@@ -864,9 +864,9 @@ static void btmusic_playTimeBoost_reset(void)
 	btmusic->restart = 0;
 
 	if (delay_flag) {
-		os_sleep(OS_MSEC(50));
+		//os_sleep(OS_MSEC(50));
 	}
-
+	os_sleep(OS_MSEC(100));
 /* 	if (selfapp_config_get_PB_state()) {
 		flip7_reload_default_eq(true);
 	} else {
@@ -876,15 +876,16 @@ static void btmusic_playTimeBoost_reset(void)
 	} */
 
 	extern void hm_ext_pa_stop(void);
-	hm_ext_pa_stop();
-
+	extern int ext_dsp_set_bypass(int bypass);
+	//hm_ext_pa_stop();
+	//EQ模式暂停后DSP data还会有数据，复位DSP data直接拉低概率性导致PA有噪音
+	ext_dsp_set_bypass(1);
 	os_sleep(OS_MSEC(10));
 	extern int external_dsp_ats3615_reset(void);
 	external_dsp_ats3615_reset();
 
 	extern void hm_ext_pa_start(void);
-	hm_ext_pa_start();
-	//start
+	//hm_ext_pa_start();
 	bt_manager_audio_stream_restore(BT_TYPE_BR);
 }
 

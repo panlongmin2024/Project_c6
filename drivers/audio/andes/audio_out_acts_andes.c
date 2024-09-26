@@ -882,6 +882,7 @@ static void *acts_audio_out_open(struct device *dev, aout_param_t *param)
 
 	if (NULL == data) {
 		SYS_LOG_ERR("data is NULL!");
+		return NULL;
 	}
 	SYS_LOG_INF("pa is %d!", data->pa_open_flag);
 
@@ -1225,11 +1226,12 @@ int audio_out_asrc_ioctl(struct device *dev, void *handle, int cmd, void *param)
 		}
 		case AOUT_CMD_SET_ASRC_VOLUME:
 		{
-			uint32_t vol = *(uint32_t *)param;
+			uint32_t vol;
 			if (!param) {
 				SYS_LOG_ERR("Invalid volume");
 				return -EINVAL;
 			}
+			vol = *(uint32_t *)param;
 
 			ret = audio_out_set_asrc_vol_gain(dev, channel_node, vol);
 			break;

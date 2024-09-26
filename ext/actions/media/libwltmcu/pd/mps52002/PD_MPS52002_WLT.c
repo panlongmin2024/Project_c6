@@ -396,10 +396,18 @@ void pd_mps52002_pd_24A_proccess(int val)
     // config.bits.speed = I2C_SPEED_STANDARD;
     // i2c_configure(iic_dev, config.raw);JBLCH6-524
 
-  	if(val)
-    	buf[0] = 0x1a;
-  	else
-  		buf[0] = 0x30;
+  	if(val == CHARGE_IN_LIMIT_CURRENT_1500MA)
+	{
+		buf[0] = 0x1a;
+	}
+  	else if(val == CHARGE_IN_LIMIT_CURRENT_2400MA)
+	{
+		buf[0] = 0x30;
+	}else{
+
+		buf[0] = 0x3C;						// CHARGE_IN_LIMIT_CURRENT_3000MA
+	}
+
   
     buf[1] = 0x00;
 
@@ -2311,7 +2319,7 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			val->intval = logic_mcu_ls8a10049t_get_water_warning_status();	
 			break;	
 		case PD_SUPPLY_PROP_TYPEC_WATER_WARNING_TRIGGER_CNT:
-		/*********return 0:none�?：rerady�?2：triggered	*///////////		
+		/*********return 0:none�?：rerady�?2：triggered	*///////////		
 			val->intval = mcu_get_water_charge_warnning_status();
 			break;
         default:

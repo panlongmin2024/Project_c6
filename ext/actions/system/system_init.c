@@ -20,7 +20,7 @@
 
 
 /*share stack for app thread */
-char __stack_noinit  __aligned(STACK_ALIGN) share_stack_area[CONFIG_APP_STACKSIZE];
+char __aligned(STACK_ALIGN) share_stack_area[CONFIG_APP_STACKSIZE];
 
 
 #ifdef CONFIG_MEDIA_SERVICE

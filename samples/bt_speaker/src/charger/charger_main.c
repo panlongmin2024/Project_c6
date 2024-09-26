@@ -204,6 +204,7 @@ int charger_mode_check(void)
 
 		
 			case MSG_POWER_KEY:
+				if(!run_mode_is_demo())
 				{
 
 					terminaltion = true;

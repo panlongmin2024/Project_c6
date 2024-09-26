@@ -41,6 +41,7 @@ extern void hm_ext_pa_deinit(void);
 extern void hm_ext_pa_init(void);
 extern void amp_tas5828m_clear_fault_timer_init(void);
 extern void extern_dsp_3615_io_enable(int enable);
+extern void external_dsp_ats3615_pre_init(void);
 #endif
 
 u16_t g_reboot_type = 0;
@@ -70,6 +71,7 @@ void user_app_early_init(void)
 {
     SYS_LOG_INF("\n");
 	extern_dsp_3615_io_enable(0);
+	board_i2s_io_enable(0);
 	fw_version_format_check();
 	run_mode_init();
 	pd_manager_v_sys_g1_g2(PD_V_BUS_G1_G2_INIT);
@@ -89,7 +91,8 @@ void user_app_later_init(void)
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	soc_dvfs_set_level(SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, "pa init");
-	self_music_effect_ctrl_init();	
+	self_music_effect_ctrl_init();
+	external_dsp_ats3615_pre_init();	
 	external_dsp_ats3615_load(0);
 	external_dsp_ats3615_timer_start();	
 	hm_ext_pa_init();

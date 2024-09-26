@@ -141,10 +141,10 @@ struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BT_MAX_BR_CONN] __IN_BT_SECTION;
 struct bt_keys_link_key br_key_pool[CONFIG_BT_MAX_BR_CONN] __IN_BT_SECTION;
 
 /* conn */
-struct bt_conn acl_conns[CONFIG_BT_MAX_CONN] __IN_BT_BSS_SECTION;
+struct bt_conn acl_conns[CONFIG_BT_MAX_CONN] __IN_BT_BSS_CONN_SECTION;
 struct bt_conn acl_le_adv_conn __IN_BT_SECTION;
 /* CONFIG_BT_MAX_SCO_CONN == CONFIG_BT_MAX_BR_CONN */
-struct bt_conn sco_conns[CONFIG_BT_MAX_BR_CONN] __IN_BT_BSS_SECTION;
+struct bt_conn sco_conns[CONFIG_BT_MAX_BR_CONN] __IN_BT_BSS_CONN_SECTION;
 
 /* hfp, Wait todo: Can use union to manager  hfp_hf_connection and hfp_ag_connection, for reduce memory */
 //struct bt_hfp_hf hfp_hf_connection[CONFIG_BT_MAX_BR_CONN] __IN_BT_SECTION;

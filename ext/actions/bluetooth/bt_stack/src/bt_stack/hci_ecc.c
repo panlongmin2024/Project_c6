@@ -383,11 +383,11 @@ void bt_hci_ecc_init(void)
 #if	HCI_ECC_DYNAMIC_THREAD
 static void hci_ecc_finish_work(struct k_work *work)
 {
-	if(ecc_thread_stack){
-		bt_free(ecc_thread_stack);
-		ecc_thread_stack = NULL;
-	}
-	
+    if(ecc_thread_stack){
+        bt_free(ecc_thread_stack);
+        ecc_thread_stack = NULL;
+    }
+
 	atomic_clear_bit(flags, PENDING_EXIT);
 }
 

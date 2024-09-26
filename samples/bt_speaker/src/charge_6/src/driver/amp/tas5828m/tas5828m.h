@@ -63,5 +63,7 @@ extern const cfg_reg registers[];
 extern const int registers_cnt;
 extern const cfg_reg ti_registers[];
 extern const int ti_registers_cnt;
+extern const int ti_play_registers_cnt;
+extern const cfg_reg ti_play_registers[];
 
 #endif

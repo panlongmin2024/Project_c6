@@ -2,19 +2,15 @@
 #ifndef _APP_COMMON_H_
 #define _APP_COMMON_H_
 
+#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+#define MAX_AUDIO_VOL_LEVEL 32
+#else
 #ifdef CONFIG_MUSIC_EXTERNAL_EFFECT
-#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-#define MAX_AUDIO_VOL_LEVEL 32
-#else
 #define MAX_AUDIO_VOL_LEVEL 31
-#endif
-#else
-#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-#define MAX_AUDIO_VOL_LEVEL 32
 #else
 #define MAX_AUDIO_VOL_LEVEL 16
 #endif
-#endif
+#endif //CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 
 void system_app_init_bte_ready(void);
 

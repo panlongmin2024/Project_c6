@@ -135,6 +135,10 @@ struct usound_app_t {
 	u8_t  broadcast_code[16];
 	struct bt_broadcast_qos *qos;
 #endif
+
+	u8_t need_test_hid;
+	int host_enmu_db;
+	int host_last_db;
 };
 
 struct usound_app_t *usound_get_app(void);

@@ -34,6 +34,13 @@ enum {
 	BT_AVDTP_AV_CP_TYPE_SCMS_T = 2,
 };
 
+enum {
+	BT_AVDTP_SESSION_STATE_NONE = 0,
+	BT_AVDTP_SESSION_STATE_IN_USED = 1,
+	BT_AVDTP_SESSION_STATE_INCORRECT = 2,
+};
+
+
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 /** @brief AVDTP SEID Information */
 struct bt_avdtp_seid_info {

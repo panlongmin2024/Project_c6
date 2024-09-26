@@ -18,6 +18,7 @@ enum pd_event_e
 
     /** pd event poweroff, no need power off tone */
 	PD_EVENT_SOURCE_LOW_BATTERY,
+	PD_EVENT_SOURCE_EXIT_ATS,
 };
 
 #endif

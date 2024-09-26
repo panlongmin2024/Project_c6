@@ -30,6 +30,8 @@ extern "C" {
 #define __IN_BT_STACK_SECTION	__IN_BT_SECTION
 #endif
 
+#define __IN_BT_DATA_POOL_SECTION	__in_section_unique(bthost_rxtx_data_pool)
+
 #define k_timeout_t	int
 #define Z_TIMEOUT_TICKS(x)		(x)
 

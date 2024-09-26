@@ -95,6 +95,10 @@ int system_ramdump_log_transfer(int (*traverse_cb)(uint8_t *data, uint32_t max_l
 {
 	char *print_buf = mem_malloc(RAMDUMP_PRINT_BUF_SIZE);
 
+	if(!print_buf){
+		return -ENOMEM;
+	}
+
 	ramdump_transfer(print_buf, RAMDUMP_PRINT_BUF_SIZE, traverse_cb);
 
 	mem_free(print_buf);

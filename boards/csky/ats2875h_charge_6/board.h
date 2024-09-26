@@ -178,6 +178,7 @@ extern bool dc_power_in_status_read(void);
 extern bool key_water_status_read(void);
 
 extern void extern_dsp_3615_io_enable(int enable);
+extern void board_i2s_io_enable(int enable);
 #define GPIO_SPI1_SS 8
 #define GPIO_SPI1_CLK 9
 #define GPIO_SPI1_MOSI 10
