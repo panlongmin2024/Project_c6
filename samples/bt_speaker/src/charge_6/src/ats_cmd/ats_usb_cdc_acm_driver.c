@@ -24,7 +24,7 @@
 typedef struct ats_uart {
     io_stream_t uio;
     u8_t uio_opened;
-  //  char rx_buffer[600];
+    char rx_buffer[600];
 } ats_uart_t;
 
 ats_uart_t ats_uart_context;
@@ -49,9 +49,8 @@ struct _ats_usb_cdc_acm_driver_ctx_t {
 
 	struct thread_timer rx_timer;
 
-	//char data_buf[600];
+	char data_buf[600];
 };
-char data_buf[600], rx_buffer[600];
 
 static struct _ats_usb_cdc_acm_driver_ctx_t *p_ctx;
 
@@ -70,11 +69,11 @@ static int read_data_handler(struct device *dev)
 	 
 	   int s1;
 	   do {
-		   s1 = stream_read(ats_uart->uio, rx_buffer+rx_size, 1);
+		   s1 = stream_read(ats_uart->uio, ats_uart->rx_buffer+rx_size, 1);
 		   rx_size += s1;
 	   } while (s1 > 0);
 
-         memcpy(data_buf, rx_buffer, rx_size);
+         memcpy(p_ctx->data_buf, ats_uart->rx_buffer, rx_size);
 
 		if (rx_size == 0)
 		{
@@ -93,7 +92,7 @@ static int read_data_handler(struct device *dev)
 			 return 0;
 		
 		}
-		ats_usb_cdc_acm_shell_command_handler(dev, data_buf, rx_size);
+		ats_usb_cdc_acm_shell_command_handler(dev, p_ctx->data_buf, rx_size);
 	return 0;
 }
 
