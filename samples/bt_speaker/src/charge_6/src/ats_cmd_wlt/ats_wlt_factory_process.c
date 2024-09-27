@@ -661,14 +661,14 @@ static int ats_wlt_shell_set_gpio_short(struct device *dev, u8_t *buf, int len)
 static int ats_wlt_shell_verify_uuid(struct device *dev, u8_t *buf, int len)
 {
 	if(!user_uuid_verify()){
-		ats_usb_cdc_acm_cmd_response_at_data(
-			dev, ATS_CMD_RESP_VERIFY_UUID, sizeof(ATS_CMD_RESP_VERIFY_UUID)-1, 
-			ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+		ats_wlt_response_at_data(
+			dev, ATS_RESP_CMD_VERIFY_UUID, sizeof(ATS_RESP_CMD_VERIFY_UUID)-1, 
+			ATS_AT_CMD_RESP_OK, sizeof(ATS_AT_CMD_RESP_OK)-1);
 	}
 	else{
-		ats_usb_cdc_acm_cmd_response_at_data(
-			dev, ATS_CMD_RESP_VERIFY_UUID, sizeof(ATS_CMD_RESP_VERIFY_UUID)-1, 
-			ATS_CMD_RESP_FAIL, sizeof(ATS_CMD_RESP_FAIL)-1);
+		ats_wlt_response_at_data(
+			dev, ATS_RESP_CMD_VERIFY_UUID, sizeof(ATS_RESP_CMD_VERIFY_UUID)-1, 
+			ATS_AT_CMD_RESP_FAIL, sizeof(ATS_AT_CMD_RESP_FAIL)-1);
 	}
 	return 0;
 }
