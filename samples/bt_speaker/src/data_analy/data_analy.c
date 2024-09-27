@@ -58,12 +58,12 @@ void data_analy_play_clear(void)
 
 u32_t data_analy_get_product_history_pwr_on_min(void)
 {
-	return (u32_t)(product_info.product_pwr_on_sec/60);
+	return (u32_t)((product_info.product_pwr_on_sec/60/60)*60);
 }
 
 u32_t data_analy_get_product_history_play_min(void)
 {
-	return (u32_t)(product_info.product_play_sec/60);
+	return (u32_t)((product_info.product_play_sec/60/60)*60);
 }
 void poweron_playing_clear(void)
 {

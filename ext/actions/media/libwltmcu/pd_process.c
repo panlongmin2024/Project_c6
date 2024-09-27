@@ -587,6 +587,10 @@ int bt_mcu_send_pw_cmd_powerdown(void)
     return bt_mcu_send_cmd_code(MCU_INT_TYPE_POWER_KEY, MCU_INT_CMD_POWEROFF);
 }
 
+void set_low_current_flag(u32_t onoff)
+{
+   wlt_pd_manager->pd_manager_low_cur_flag = onoff;
+}
 
 int logic_mcu_ls8a10023t_otg_mobile_det()
 {
@@ -1142,7 +1146,7 @@ void pd_manager_over_temp_protect(void)
     {
         if((power_manager_get_battery_temperature() <= 430) && (power_manager_get_battery_temperature() >= 20))
         {    
-            if(debounce_count++ == 3){
+            if(debounce_count++ == 2){
 
                // wlt_pd_manager->pd_sink_dischg_flag = false;
                 debounce_count = 0;
@@ -1158,7 +1162,7 @@ void pd_manager_over_temp_protect(void)
     
         if((power_manager_get_battery_temperature() >= 440) || (power_manager_get_battery_temperature() <= 10))
         {
-            if(debounce_count++ == 3)
+            if(debounce_count++ == 2)
             {
                // wlt_pd_manager->pd_sink_dischg_flag = true;
                 debounce_count = 0;
@@ -1249,7 +1253,11 @@ void pd_set_app_mode_state(u8_t status)
         return;
 
     wlt_pd_manager->bt_app_mode = status;  
-
+    if(status == BTMODE_APP_MODE)
+    {
+       SYS_LOG_INF("[%d] clear low current flag \n", __LINE__);
+       set_low_current_flag(0);
+	}
     SYS_LOG_INF("[%d] app_mode:%d\n", __LINE__, status);
 
     pd_set_source_current(true);

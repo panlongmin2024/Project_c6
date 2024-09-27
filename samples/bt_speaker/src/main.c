@@ -121,6 +121,7 @@ static void main_pre_init(void)
 	msg.cmd = 0;
 	send_async_msg(CONFIG_SYS_APP_NAME, &msg);
     pd_set_app_mode_state(BTMODE_APP_MODE);
+	pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);	
 	msg.type = MSG_INIT_APP;
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 

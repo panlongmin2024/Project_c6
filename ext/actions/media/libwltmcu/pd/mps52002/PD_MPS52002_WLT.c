@@ -61,7 +61,7 @@
  * @}
  */
 
-#define mps_pd_current_version 0x51
+#define mps_pd_current_version 0x53
 #define I2C_DEV_ADDR        0x48                    //TODO
 
 // #define INDIA_APP_TEST			0x01
@@ -2319,7 +2319,7 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			val->intval = logic_mcu_ls8a10049t_get_water_warning_status();	
 			break;	
 		case PD_SUPPLY_PROP_TYPEC_WATER_WARNING_TRIGGER_CNT:
-		/*********return 0:none�?：rerady�?2：triggered	*///////////		
+		/*********return 0:none�?：rerady�?2：triggered	*///////////		
 			val->intval = mcu_get_water_charge_warnning_status();
 			break;
         default:

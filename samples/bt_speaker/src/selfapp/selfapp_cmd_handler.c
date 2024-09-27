@@ -840,6 +840,7 @@ static int spk_req_battery_status(u8_t * Payload, u16_t PayloadLen)
 
 #ifdef CONFIG_DATA_ANALY
 				duration = data_analy_get_product_history_pwr_on_min();
+				printk("power on time %d\n",duration);
 #else
 				duration = 70;
 #endif
@@ -860,6 +861,7 @@ static int spk_req_battery_status(u8_t * Payload, u16_t PayloadLen)
 
 #ifdef CONFIG_DATA_ANALY
 				duration = data_analy_get_product_history_play_min();
+				printk("play time %d\n",duration);
 #else
 				duration = 30;
 #endif

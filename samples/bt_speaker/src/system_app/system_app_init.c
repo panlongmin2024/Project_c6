@@ -569,7 +569,6 @@ void system_app_init(void)
 	
 	led_manager_set_display(128,LED_ON,OS_FOREVER,NULL);						// power led
 	
-	
 	if(run_mode_is_demo()&&(!dc_power_in_status_read())){
 		
 		SYS_LOG_INF("[%d] run_mode_is_demo, but No dc_power_in \n", __LINE__);
@@ -579,10 +578,7 @@ void system_app_init(void)
 	}
 
 	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);		
-	if(!main_system_is_enter_bqb())
-	{
-		pd_srv_event_notify(PD_EVENT_SOURCE_REFREST,0);
-	}
+	
 
 
 
