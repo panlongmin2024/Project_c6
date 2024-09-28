@@ -222,14 +222,20 @@ out:
 	return ret;
 }
 
+extern u8_t get_triger_smart_control_flag(void);
+extern uint8_t mcu_get_water_charge_warnning_status(void);
+
 static u8_t app_get_is_water_proof(void)
 {
-	return 0;
+  u8_t ret = 0;
+    if(mcu_get_water_charge_warnning_status() > 0)
+		 ret = 1;
+	return ret;
 }
 
 static u8_t app_get_is_smart_ctl(void)
 {
-	return 0;
+	return get_triger_smart_control_flag();
 }
 
 

@@ -1105,6 +1105,10 @@ void pd_manager_source_change_debunce_process(void)
                     send_async_msg(APP_ID_MAIN, &msg);
 
                 }
+				else
+				{
+                  wlt_pd_manager->source_change_debunce_count = 1;
+				}
             }
         }
     }

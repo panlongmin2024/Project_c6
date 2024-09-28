@@ -243,7 +243,7 @@ static u16_t gpiokey_acts_get_keycode(const struct acts_adckey_config *cfg,
     }
 	else if (key_bt_status_read() && key_vol_down_status_read() && key_broadcast_status_read())
     {
-		ret = KEY_DSP_EFFECT_SWITCH;
+		//ret = KEY_MEDIA_EFFECT_BYPASS;// KEY_DSP_EFFECT_SWITCH;
     }else if (key_bt_status_read() && key_vol_up_status_read() && key_broadcast_status_read()){
 		ret = KEY_ENTER_BQB;
 	}
@@ -262,7 +262,7 @@ static u16_t gpiokey_acts_get_keycode(const struct acts_adckey_config *cfg,
     }
 	else if (key_bt_status_read() && key_vol_down_status_read())
 	{
-		ret = KEY_MEDIA_EFFECT_BYPASS;
+		ret =KEY_DSP_EFFECT_SWITCH;// KEY_MEDIA_EFFECT_BYPASS;
 	}
 	else if (key_broadcast_status_read() && key_vol_down_status_read())
 	{

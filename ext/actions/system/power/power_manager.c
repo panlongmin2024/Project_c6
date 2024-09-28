@@ -107,6 +107,27 @@ extern void battery_charging_remaincap_is_full(void);
 int power_manager_get_charge_status(void);
 int power_manager_get_battery_capacity(void);
 
+u8_t get_triger_smart_control_flag(void)
+{
+  u8_t ret = 0;
+
+  if(run_mode_is_demo())
+	{
+		 if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0_DEMO){
+			ret = 1;
+		}
+		
+	}
+	else
+	{
+		 if(power_manager->current_temperature >= DEFUALT_HIAHTEMP_JUST_VOLUME_LEVEL0){
+			ret = 1;
+		}
+	
+	}
+  return ret;
+}
+
 int power_manager_get_just_volume_step(void)
 {
 	int step = 0;
