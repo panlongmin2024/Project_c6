@@ -109,6 +109,8 @@ static void _bt_manager_avrcp_callback(uint16_t hdl, btsrv_avrcp_event_e event, 
 	case BTSRV_AVRCP_PLAYING:
 		{
             struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
+			dev_info->user_pause_pending = 0;
+
 			dev_info->avrcp_ext_status = BT_MANAGER_AVRCP_EXT_STATUS_PLAYING;
 			dev_info->avrcp_ext_status |= BT_MANAGER_AVRCP_EXT_STATUS_PASSTHROUGH_PLAY;
 			playstatus.handle = hdl;
@@ -376,13 +378,22 @@ void bt_manager_avrcp_sync_vol_to_local(uint16_t hdl, uint8_t music_vol, bool sy
 
     /* no current A2DP active device
      */
-    media_handle = bt_manager_media_get_active_br_handle();
-    if(a2dp_active_dev)
-    {
-        if(media_handle && dev_info->hdl != media_handle){
-            SYS_LOG_INF("no active ad2p dev %x, %x\n", dev_info->hdl,media_handle);
-            notify_app = false;
-        }
+    if(a2dp_active_dev) {
+        media_handle = bt_manager_media_get_active_br_handle();
+		//player media_handle exist
+		if (media_handle) {
+            if (dev_info->hdl != media_handle) {
+				SYS_LOG_INF("no active ad2p dev %x, %x\n", dev_info->hdl,media_handle);
+				notify_app = false;
+			}
+        }else {
+			//bt active dev
+			media_handle = bt_manager_find_active_slave_handle();
+			if (media_handle && dev_info->hdl != media_handle && bt_manager_audio_get_cur_dev_num() > 1) {
+				SYS_LOG_INF("non active ad2p dev %x, %x\n", dev_info->hdl,media_handle);
+				notify_app = false;
+			}
+		}
     }
 	SYS_LOG_INF("hdl 0x%x bt_vol:%d,rm_vol:%d\n", dev_info->hdl, dev_info->bt_music_vol,dev_info->avrcp_remote_vol);
 

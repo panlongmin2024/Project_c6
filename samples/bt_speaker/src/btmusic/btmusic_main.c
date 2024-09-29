@@ -498,7 +498,10 @@ static int _btmusic_exit(void)
 
 	if (thread_timer_is_running(&p_btmusic_app->user_pause_timer))
 		thread_timer_stop(&p_btmusic_app->user_pause_timer);
-		
+
+	if (thread_timer_is_running(&p_btmusic_app->user_pause_media_active_timer))
+		thread_timer_stop(&p_btmusic_app->user_pause_media_active_timer);
+
 	if (thread_timer_is_running(&p_btmusic_app->mute_timer))
 		thread_timer_stop(&p_btmusic_app->mute_timer);
 		

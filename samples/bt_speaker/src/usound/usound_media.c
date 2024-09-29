@@ -95,7 +95,7 @@ void usound_playback_start(void)
 		return;
 	}
 
-	// audio_system_set_output_sample_rate(48);
+	audio_system_set_output_sample_rate(48);
 
 	memset(&init_param, 0, sizeof(media_init_param_t));
 
@@ -116,6 +116,8 @@ void usound_playback_start(void)
 	init_param.sample_rate = (uint8_t)(USB_AudioSinkSampleRateGet() / 1000);
 	init_param.sample_bits = 32;  // usb-audio driver gives 32bit data
 	init_param.event_notify_handle = usound_media_palyer_event_notify;
+
+	usound->download_sr = USB_AudioSinkSampleRateGet();
 
 #if CONFIG_USOUND_BROADCAST_SUPPROT
 	if (usound_broadcast_is_bms_mode() && usound->bms_source) {

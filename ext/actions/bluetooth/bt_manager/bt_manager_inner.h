@@ -202,6 +202,9 @@ typedef struct bt_mgr_dev_info {
 	uint8_t	 key_miss:1;
     uint8_t  need_reconnect:1;
 
+	uint8_t  user_pause_pending:1;
+    uint16_t self_name_update:1;
+
     uint8_t  avrcp_remote_vol;
     uint8_t  avrcp_ext_status;  /* BT_MANAGER_AVRCP_EXT_STATUS */
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
@@ -306,6 +309,8 @@ void bt_mgr_add_dev_info(bd_address_t *addr, uint16_t hdl);
 void bt_mgr_free_dev_info(struct bt_mgr_dev_info *info);
 struct bt_mgr_dev_info *bt_mgr_find_dev_info(bd_address_t *addr);
 struct bt_mgr_dev_info *bt_mgr_find_dev_info_by_hdl(uint16_t hdl);
+
+void bt_mgr_disconnect_other_connected_dev(uint16_t hdl);
 bt_mgr_dev_info_t* bt_mgr_get_a2dp_active_dev(void);
 bt_mgr_dev_info_t* bt_mgr_get_last_a2dp_connected_dev(void);
 bt_mgr_dev_info_t* bt_mgr_get_hfp_active_dev(void);

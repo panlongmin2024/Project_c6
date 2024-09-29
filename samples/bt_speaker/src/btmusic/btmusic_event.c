@@ -242,6 +242,8 @@ static void btmusic_handle_passthrough_release(struct bt_media_play_status *stat
             thread_timer_init(&btmusic->user_pause_timer, btmusic_user_pause_handler,NULL);
             thread_timer_start(&btmusic->user_pause_timer, 100, 0);
         }
+    }else if(status->status == BT_MANAGER_AVRCP_PASSTHROUGH_PAUSE) {
+		btmusic_user_pause_media_active_timer_start(status->handle);
     }
 }
 
@@ -273,6 +275,9 @@ static void btmusic_handle_playback_status(struct bt_media_play_status *status)
 		btmusic->media_state = 0;
 	} else if (status->status == BT_STATUS_PLAYING) {
 		SYS_LOG_INF("play\n");
+		if ((uint32_t)(btmusic->user_pause_media_active_timer.expiry_fn_arg) == bt_manager_media_get_active_br_handle()) {
+			btmusic_user_pause_media_active_timer_stop();
+		}
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
 		if (!btmusic->media_state && btmusic->ios_dev)
 			media_player_fade_in(btmusic->playback_player, 290);
@@ -621,12 +626,12 @@ extern void wlt_pa_media_mute(u8_t tts_mute_flag, u8_t meda_mute_flag);
 
 	case BT_CONNECTED:
 		btmusic_view_show_connected();
-		btmusic_volume_check();
+		btmusic_media_active_check();
 		break;
 	case BT_DISCONNECTED:
 		btmusic_view_show_disconnected();
 		btmusic_handle_disconnect(msg->ptr);
-		btmusic_volume_check();
+		btmusic_media_active_check();
 		break;
 	case BT_AUDIO_STREAM_ENABLE:
 		btmusic_handle_enable(msg->ptr);

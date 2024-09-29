@@ -1306,7 +1306,7 @@ int audio_policy_get_reduce_threshold(int format, u8_t stream_type)
 				return 32;
 			}
 			#else
-				return 16 + audio_policy_get_bis_link_delay_ms();
+				return 20 + audio_policy_get_bis_link_delay_ms();
 			#endif
 		} else {
 			int lth = 160; //AAC_TYPE
@@ -1370,9 +1370,9 @@ int audio_policy_get_increase_threshold(int format, u8_t stream_type)
 				|| stream_type == AUDIO_STREAM_MIC_IN) {
 				return 32 + audio_policy_get_bis_link_delay_ms();
 			} else if (stream_type == AUDIO_STREAM_USOUND ||stream_type == AUDIO_STREAM_LOCAL_MUSIC) {
-				return 32 + audio_policy_get_bis_link_delay_ms();
+				return 30 + audio_policy_get_bis_link_delay_ms();
 			} else {
-				return 20;
+				return 25;
 			}
 #endif
 		} else {

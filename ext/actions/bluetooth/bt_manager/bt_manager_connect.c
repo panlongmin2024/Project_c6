@@ -27,6 +27,35 @@
 static u8_t bt_manager_ota_reboot = 0;
 
 
+struct autoconn_info *bt_manager_get_ota_phone(struct autoconn_info *info)
+{
+	int i;
+	struct autoconn_info *info_tmp = NULL;
+	bd_address_t ota_dev_addr;
+
+	if (!info) {
+		return NULL;
+	}
+
+	memset(&ota_dev_addr, 0, sizeof(bd_address_t));
+	bt_manager_ota_get_connected_dev((void *)&ota_dev_addr, sizeof(bd_address_t));
+
+	for (i = 0; i < BT_MAX_AUTOCONN_DEV; i++) {
+		if ((info[i].addr_valid) &&
+			(info[i].a2dp || info[i].avrcp || info[i].hfp) &&
+			(info[i].tws_role == BTSRV_TWS_NONE)) {
+			if (0 == memcmp(&info[i].addr, &ota_dev_addr, sizeof(bd_address_t))) {
+				info_tmp = &info[i];
+				break;
+			}
+		}
+	}
+
+	bt_manager_ota_clr_connected_dev();
+
+	return info_tmp;
+}
+
 struct autoconn_info *bt_manager_get_last_phone(struct autoconn_info *info)
 {
 	int i;
@@ -92,7 +121,7 @@ bool bt_manager_startup_reconnect(void)
     uint8_t not_connect_phone = 0;
     uint8_t profile_valid = false;
     int cnt = 0;
-    struct autoconn_info *info, *last_phone;
+    struct autoconn_info *info, *reconnect_phone;
     struct bt_set_autoconn reconnect_param;
     btmgr_tws_pair_cfg_t *cfg_tws =  bt_manager_get_tws_pair_config();
     btmgr_pair_cfg_t * cfg_pair = bt_manager_get_pair_config();
@@ -195,16 +224,29 @@ bool bt_manager_startup_reconnect(void)
 
 	if((phone_num > 0) && ((cfg_reconnect->enable_auto_reconnect & (1 << 0)) != 0)){
 
+		//try to connect ota device
+		if ((!phone_cnt) && (cfg_reconnect->always_reconnect_ota_device)) {
+			reconnect_phone = bt_manager_get_ota_phone(info);
+			if (reconnect_phone) {
+				bt_manager_connect_phone(reconnect_phone->addr.val);
+				bt_manager->auto_reconnect_startup = true;
+				SYS_LOG_INF("reconnect_ota_device");
+				phone_cnt++;
+			}
+		}
+
 		//try to connect last phone(active phone)
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE	
-		if (cfg_reconnect->always_reconnect_last_device || bt_manager_ota_reboot) {
+		if ((!phone_cnt) && ((cfg_reconnect->always_reconnect_last_device) || (bt_manager_ota_reboot)))
 	#else
-		if (cfg_reconnect->always_reconnect_last_device) {
-	#endif		
-			last_phone = bt_manager_get_last_phone(info);
-			if (last_phone) {
-				bt_manager_connect_phone(last_phone->addr.val);
+		if ((!phone_cnt) && (cfg_reconnect->always_reconnect_last_device))
+	#endif
+		{
+			reconnect_phone = bt_manager_get_last_phone(info);
+			if (reconnect_phone) {
+				bt_manager_connect_phone(reconnect_phone->addr.val);
 				bt_manager->auto_reconnect_startup = true;
+				SYS_LOG_INF("reconnect_last_device");
 				phone_cnt++;
 			}
 		}
@@ -214,11 +256,14 @@ bool bt_manager_startup_reconnect(void)
 			if (phone_cnt == phone_num){
 				break;
 			}
-			#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE	
-			if ((phone_num > 1) && ((cfg_reconnect->always_reconnect_last_device || bt_manager_ota_reboot)) && (phone_cnt == 1)) {
-			#else
-			if ((phone_num > 1) && (cfg_reconnect->always_reconnect_last_device) && (phone_cnt == 1)) {
-			#endif	
+		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+            if ((phone_num > 1) &&
+				((cfg_reconnect->always_reconnect_last_device) || ((cfg_reconnect->always_reconnect_last_device) || (bt_manager_ota_reboot))) &&
+				 (phone_cnt == 1))
+		#else
+			if ((phone_num > 1) && ((cfg_reconnect->always_reconnect_last_device) || (cfg_reconnect->always_reconnect_last_device)) && (phone_cnt == 1))
+		#endif
+			{
 				break;
 			}
 			if (info[i].addr_valid){
@@ -719,6 +764,12 @@ void bt_manager_set_user_visual(bool enable,bool discoverable, bool connectable,
     btif_br_set_user_visual(&user_visual);
 }
 
+bool bt_manager_is_poweron_auto_reconnect_running(void)
+{
+	struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
+	return bt_manager->auto_reconnect_startup;
+}
+
 bool bt_manager_is_auto_reconnect_runing(void)
 {
 	return btif_br_is_auto_reconnect_runing();
@@ -808,3 +859,19 @@ u8_t bt_manager_set_ota_reboot(u8_t reboot_type)
 	bt_manager_ota_reboot = reboot_type;
 	return 0;
 }
+
+void bt_manager_disconnect_other_connected_dev(struct bt_conn * conn)
+{
+    uint16_t hdl;
+
+    if(!conn){
+        return;
+    }
+
+    hdl = hostif_bt_conn_get_handle(conn);
+
+    SYS_LOG_INF("conn:%p hdl:%x",conn,hdl);
+
+    bt_mgr_disconnect_other_connected_dev(hdl);
+}
+

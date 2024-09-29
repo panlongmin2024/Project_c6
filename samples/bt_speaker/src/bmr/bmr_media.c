@@ -319,11 +319,22 @@ int bmr_stop_playback(void)
 		thread_timer_stop(&bmr->mute_timer);
 #endif
 #endif
+	struct audio_track_t *track = audio_system_get_track();
+	int extra_wait_fade_out_ms = 0;
+	if (track && track->stream_type == AUDIO_STREAM_LE_AUDIO && track->sample_rate && track->frame_size) {
+		extra_wait_fade_out_ms = stream_get_length(track->audio_stream) / (track->sample_rate*track->frame_size);
+		if (extra_wait_fade_out_ms < 0)
+			extra_wait_fade_out_ms = 0;
+		SYS_LOG_INF("extra_wait_fade_out_ms:%d\n", extra_wait_fade_out_ms);
+	}
 
-	media_player_fade_out(bmr->player, 10);
+	if (extra_wait_fade_out_ms > 15)
+		media_player_sync_fade_out(bmr->player, extra_wait_fade_out_ms - 5);
+	else
+		media_player_fade_out(bmr->player, 10);
 
 	/* reserve time to fade out */
-	os_sleep(60);
+	os_sleep(20 + extra_wait_fade_out_ms);
 
     bmr_broadcast_sink_stream_set(NULL);
 	if (bmr->player_load) {

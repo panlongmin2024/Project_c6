@@ -48,3 +48,5 @@ obj-$(CONFIG_BT_LEATWS) += bt_manager_leatws.o
 obj-$(CONFIG_BT_LETWS) += bt_manager_letws.o
 
 obj-y += bt_manager_lea_stereo.o
+
+obj-y += bt_manager_ota.o

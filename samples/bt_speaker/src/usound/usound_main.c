@@ -21,12 +21,14 @@
 #ifdef CONFIG_BT_SELF_APP
 #include "selfapp_api.h"
 #endif
+#include "app_common.h"
 
 extern void *bt_manager_get_halt_phone(uint8_t *halt_cnt);
 
 static struct usound_app_t *p_usound = NULL;
 
 extern bool usb_audio_get_download_streaming_enabled(void);
+static void usound_sync_host_vol(int vol_db);
 
 struct usound_app_t *usound_get_app(void)
 {
@@ -68,30 +70,98 @@ static void usound_restart_handler(struct thread_timer *ttimer, void *expiry_fn_
 		//p_usound->restart_count = 0;
 	}
 
-	if(p_usound->need_test_hid)
-	{
-		if(usb_audio_get_download_streaming_enabled())
-		{
-			if(p_usound->host_enmu_db == 0)
-			{
-				usb_hid_control_volume_inc();
-			}else if(p_usound->host_enmu_db <= -600){
-				usb_hid_control_volume_dec();
-			}else{
-				usb_hid_control_volume_inc();
-				usb_hid_control_volume_dec();
-			}
-
-			printk("uac_download enable %d, enmu_db %d\n", usb_audio_get_download_streaming_enabled(), p_usound->host_enmu_db);
-
-			p_usound->host_enmu_db = 1;
-			p_usound->need_test_hid = 0;
-		}
-
-	}
 }
 #endif // USOUND_FEATURE_RESTART
 
+static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn_arg)
+{
+	if(!p_usound)
+		return;
+
+	u8_t download_stream_status = usb_audio_get_download_streaming_enabled();
+	u8_t download_stream_stable_status = 0;;
+
+	if(download_stream_status)
+	{
+		p_usound->download_stream_stable_cnt ++;
+		if(p_usound->download_stream_stable_cnt > 7)
+		{
+			download_stream_stable_status = 1;
+		}
+	}else{
+		p_usound->download_stream_stable_cnt = 0;
+	}
+
+	if(!download_stream_stable_status)
+		return;
+
+
+
+	if(download_stream_stable_status)
+	{
+		if(p_usound->need_test_hid_later){
+			SYS_LOG_INF("enmu no volume, delay_start hid test %d\n", p_usound->need_test_hid_later);
+			usb_hid_control_volume_dec();
+			usb_hid_control_volume_inc();
+			p_usound->need_test_hid_later --;
+		}
+	}
+
+
+	if(p_usound->need_test_hid)
+	{
+		SYS_LOG_INF("uac_download enable %d, num %d, enmu_db %d %d\n", download_stream_stable_status,
+				p_usound->host_enmu_num, p_usound->host_enmu_db[0], p_usound->host_enmu_db[1]);
+
+		if(p_usound->host_enmu_num == 2 &&
+				((p_usound->host_enmu_db[0] == -6 && p_usound->host_enmu_db[1] == 0) ||
+				 (p_usound->host_enmu_db[0] == -163 && p_usound->host_enmu_db[1] == -170)))
+		{
+
+				SYS_LOG_INF("uac_download enable %d, maybe is phone uac\n", download_stream_stable_status);
+
+			if(audio_system_get_stream_volume(AUDIO_STREAM_USOUND) != MAX_AUDIO_VOL_LEVEL)
+			{
+				usound_sync_host_vol(0);
+			}
+
+			p_usound->host_enmu_num = 0;
+
+		}else if(p_usound->host_enmu_num){
+
+			int last_emnu_db = p_usound->host_enmu_db[(p_usound->host_enmu_num -1)%2];
+
+				SYS_LOG_INF("enmu volume %d, set\n", last_emnu_db);
+
+			usound_sync_host_vol(last_emnu_db);
+			p_usound->host_enmu_num = 0;
+
+#if 0
+			if(last_emnu_db >= 0)
+			{
+				SYS_LOG_INF("enmu volume, max\n");
+				usb_hid_control_volume_dec();
+				usb_hid_control_volume_inc();
+			}else if(last_emnu_db <= -600){
+				SYS_LOG_INF("enmu volume, mute\n");
+				usb_hid_control_volume_inc();
+				usb_hid_control_volume_dec();
+			}else{
+				SYS_LOG_INF("enmu volume, mid\n");
+				usb_hid_control_volume_inc();
+				usb_hid_control_volume_dec();
+			}
+#endif
+
+		}else{
+			SYS_LOG_INF("enmu no volume, hid test later\n");
+			usound_sync_host_vol(-601);
+			p_usound->need_test_hid_later = 3;
+		}
+
+		p_usound->need_test_hid = 0;
+	}
+}
 
 static void usound_delay_resume(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
@@ -206,6 +276,7 @@ static void usound_sync_host_vol(int vol_db)
 static void usound_usb_audio_event_callback(u8_t info_type, int pstore_info)
 {
 	struct app_msg msg = { 0 };
+
 	SYS_LOG_INF("%d: %d", info_type, pstore_info);
 
 	switch (info_type) {
@@ -227,8 +298,10 @@ static void usound_usb_audio_event_callback(u8_t info_type, int pstore_info)
 		if(usb_audio_get_download_streaming_enabled())
 		{
 			usound_sync_host_vol(pstore_info);
+			p_usound->need_test_hid_later = 0;
 		}else{
-			p_usound->host_enmu_db = pstore_info;
+			p_usound->host_enmu_db[p_usound->host_enmu_num%2] = pstore_info;
+			p_usound->host_enmu_num ++;
 			printk("uac enum is not ready, skip vol %d\n", pstore_info);
 		}
 		break;
@@ -272,8 +345,18 @@ static void usound_usb_audio_event_callback(u8_t info_type, int pstore_info)
 		send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 		break;
 	}
+
 	case USOUND_SAMPLERATE_CHANGE: {  //14
-		usound_restart_player_trigger();
+		if(p_usound->download_sr != pstore_info)
+		{
+			SYS_LOG_INF("sample_rate change %d -> %d", p_usound->download_sr, pstore_info);
+			if(p_usound->playback_player)
+			{
+				usound_restart_player_trigger();
+			}else{
+				SYS_LOG_INF("player is not open, no need restart\n");
+			}
+		}
 		break;
 
 	}
@@ -302,7 +385,8 @@ static int usound_init(void *p1, void *p2, void *p3)
 	}
 
 	p_usound->need_test_hid = 1;
-	p_usound->host_enmu_db = 1;
+	p_usound->host_enmu_db[0] = 1;
+	p_usound->host_enmu_db[1] = 1;
 	p_usound->host_last_db = 1;
 
 	audio_system_set_stream_volume(AUDIO_STREAM_USOUND, usound_start_vol);
@@ -332,6 +416,11 @@ static int usound_init(void *p1, void *p2, void *p3)
 	thread_timer_init(&p_usound->restart_timer, usound_restart_handler, NULL);
 	thread_timer_start(&p_usound->restart_timer, 200, 200);
 #endif
+
+	thread_timer_init(&p_usound->vol_sync_timer, usound_vol_sync_handler, NULL);
+	thread_timer_start(&p_usound->vol_sync_timer, 30, 30);
+
+
 #ifdef CONFIG_USOUND_BROADCAST_SUPPROT
 	usound_broadcast_init();
 #endif
@@ -350,6 +439,11 @@ static int usound_exit(void)
 	if (thread_timer_is_running(&p_usound->monitor_timer)) {
 		thread_timer_stop(&p_usound->monitor_timer);
 	}
+
+	if (thread_timer_is_running(&p_usound->vol_sync_timer)) {
+		thread_timer_stop(&p_usound->vol_sync_timer);
+	}
+
 #ifdef USOUND_FEATURE_RESTART
 	if (thread_timer_is_running(&p_usound->restart_timer)) {
 		thread_timer_stop(&p_usound->restart_timer);

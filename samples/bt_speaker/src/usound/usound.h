@@ -136,9 +136,14 @@ struct usound_app_t {
 	struct bt_broadcast_qos *qos;
 #endif
 
-	u8_t need_test_hid;
-	int host_enmu_db;
+	struct thread_timer  vol_sync_timer;
+	int host_enmu_num;
+	int host_enmu_db[2];
 	int host_last_db;
+	int download_sr;
+	u8_t need_test_hid;
+	u8_t need_test_hid_later;
+	u8_t download_stream_stable_cnt;
 };
 
 struct usound_app_t *usound_get_app(void);

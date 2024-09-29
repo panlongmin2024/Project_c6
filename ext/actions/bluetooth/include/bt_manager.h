@@ -1165,6 +1165,14 @@ void bt_manager_disconnect_all_device_power_off(void);
 void bt_manager_br_disconnect_all_phone_device(void);
 
 /**
+ * @brief disconnect another br connected phone device
+ *
+ * This routine disconnect another br connected phone device.
+ *
+ */
+void bt_manager_disconnect_other_connected_dev(struct bt_conn * conn);
+
+/**
  * @brief bt manager lock stream pool
  *
  * This routine provides to unlock stream pool
@@ -1261,6 +1269,8 @@ io_stream_t sppble_stream_create(void *param);
 int sppble_stream_modify_write_timeout(io_stream_t handle,uint32_t write_timeout);
 
 int sppble_stream_set_rxdata_callback(io_stream_t handle, void (*callback)(void));
+int sppble_stream_disconnect_conn(io_stream_t handle);
+struct bt_conn * sppble_stream_get_conn_by_stream(io_stream_t handle);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -1496,6 +1506,7 @@ int bt_manager_allow_sco_connect(bool allowed);
 void bt_manager_halt_phone(void);
 void bt_manager_resume_phone(void);
 void bt_manager_set_user_visual(bool enable,bool discoverable, bool connectable, uint8_t scan_mode);
+bool bt_manager_is_poweron_auto_reconnect_running(void);
 bool bt_manager_is_auto_reconnect_runing(void);
 void bt_manager_auto_reconnect_stop(void);
 int bt_manager_get_linkkey(struct bt_linkkey_info *info, uint8_t cnt);
@@ -1652,6 +1663,16 @@ void bt_manager_app_name_update(void);
 void bt_manager_gfp_personalized_name_update(bool valid);
 
 void bt_manager_update_phone_volume(uint16_t hdl,int a2dp);
+
+void bt_manager_set_selfapp_name_update_dev( struct bt_conn *conn);
+
+void bt_manager_ota_set_connected_dev(const struct bt_conn *conn);
+
+int bt_manager_ota_get_connected_dev(void *value, int value_len);
+
+void bt_manager_ota_save_connected_dev(void);
+
+void bt_manager_ota_clr_connected_dev(void);
 
 int bt_manager_sync_volume_before_playing(void);
 

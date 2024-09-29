@@ -97,6 +97,12 @@ config XSPI_NOR_SUSPEND_RESUME
 	help
 	  Enable suspend/resume by SPI controller.
 
+config NOR_ACTS_DATA_PROTECTION_ENABLE
+	bool "write protection"
+	default n
+	help
+	  Enables write protection.
+
 config XSPI1_NOR_ACTS
 	bool "SPI1 NOR driver for Actions SoC"
 	depends on XSPI_NOR_ACTS

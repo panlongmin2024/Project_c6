@@ -188,6 +188,7 @@ typedef struct
 
     unsigned char enter_pair_mode_when_startup_reconnect_fail;  // 开机回连失败时进入配对模式
     unsigned char always_reconnect_last_device;      // 只回连最后一个设备，即使支持多设备,0:不启用,1：启用
+    unsigned char always_reconnect_ota_device;       // 只回连OTA设备，即使支持多设备,0:不启用,1：启用
 
     unsigned short hid_auto_disconnect_delay_sec;    // <"HID 操作后自动断开延迟时间 (秒)", 0 ~ 600, /* 设置为 0 时不自动断开 */>
     unsigned short hid_connect_operation_delay_ms;  // <"HID 连接时操作延迟时间 (毫秒)",   100 ~ 2000>

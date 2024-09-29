@@ -163,7 +163,7 @@ int self_send_data_all_handle(u8_t *buf, u16_t len)
 
 	// handle all connected stream
 	for (i = 0; i < SELFSTREAM_MAX; i++) {
-		if (selfctx->sfstream[i].handle && selfctx->sfstream[i].opened) {
+		if (selfctx->sfstream[i].handle && selfctx->sfstream[i].opened >= SFS_CONCED) {
 			ret |= self_send_data_by_handle(selfctx->sfstream[i].handle, buf, len);
 		}
 	}
@@ -181,7 +181,7 @@ int self_send_data_major_handle(void *except_hdl, u8_t *buf, u16_t len)
 
 	// handle all connected stream
 	for (i = 0; i < SELFSTREAM_MAX; i++) {
-		if (selfctx->sfstream[i].handle && selfctx->sfstream[i].opened && selfctx->sfstream[i].major) {
+		if (selfctx->sfstream[i].handle && (selfctx->sfstream[i].opened >= SFS_CONCED) && selfctx->sfstream[i].major) {
 			if (except_hdl && except_hdl == selfctx->sfstream[i].handle) {
 				continue;
 			}
@@ -320,7 +320,7 @@ void selfapp_command_process(void)
 
 	// handle all connected stream
 	for (i = 0; i < SELFSTREAM_MAX; i++) {
-		if (selfctx->sfstream[i].handle && selfctx->sfstream[i].opened) {
+		if (selfctx->sfstream[i].handle && selfctx->sfstream[i].opened >= SFS_CONCED) {
 			selfapp_command_process_by_stream(selfctx->sfstream[i].handle);
 		}
 	}
@@ -353,14 +353,21 @@ static int selfapp_connect_init(selfstream_t *sfstream)
 	if (selfctx == NULL || sfstream == NULL || sfstream->handle == NULL) {
 		return -1;
 	}
+
+	sfstream->major = 0;
+#if SELFSTREAM_PREOPEN
+	if (sfstream->opened != SFS_OPENED) {
+		selfapp_log_wrn("notmatch %d", sfstream->opened);
+	}
+	sfstream->opened = SFS_CONCED;
+#else
 	os_sched_lock();
 
-	if (sfstream->opened == 0) {
+	if (sfstream->opened == SFS_NONE) {
 		if (stream_open(sfstream->handle, MODE_IN_OUT) != 0) {
 			goto Label_conc_fail;
 		}
-		sfstream->opened = 1;
-		sfstream->major  = 0;
+		sfstream->opened = SFS_CONCED;
 	}
 
 	if (selfctx->sendbuf == NULL) {
@@ -373,8 +380,12 @@ static int selfapp_connect_init(selfstream_t *sfstream)
 		selfctx->recvbuf = &(selfctx->sendbuf[SELF_SENDBUF_SIZE]);
 	}
 
-	selfctx->connect_num += 1;
 	os_sched_unlock();
+#endif
+	selfctx->connect_num += 1;
+	if (selfctx->current_hdl == NULL) {
+		selfctx->current_hdl  = sfstream->handle;
+	}
 
 	// things need to do only when the 1st connection
 	if (selfctx->connect_num == 1) {
@@ -387,26 +398,29 @@ static int selfapp_connect_init(selfstream_t *sfstream)
 	self_show_sfstream_status("connected");
 	return 0;
 
- Label_conc_fail:
+#if (SELFSTREAM_PREOPEN == 0)
+Label_conc_fail:
+	sfstream->major = 0;
 	selfapp_log_err("fail, idx %d/%d, %d_%p", sfstream->index, selfctx->connect_num, sfstream->opened, selfctx->sendbuf);
 	if (selfctx->sendbuf && selfctx->connect_num == 0) {  // free sendbuf only when no connected
 		mem_free(selfctx->sendbuf);
 		selfctx->sendbuf = NULL;
 		selfctx->recvbuf = NULL;
 	}
-	if (sfstream->opened) {
+
+	if (sfstream->opened >= SFS_CONCED) {
 		stream_close(sfstream->handle);
-		sfstream->opened = 0;
-		sfstream->major  = 0;
+		sfstream->opened = SFS_NONE;
 	}
 	os_sched_unlock();
 	return -1;
+#endif
 }
 
 static int selfapp_connect_deinit(selfstream_t *sfstream)
 {
 	selfapp_context_t *selfctx = self_get_context();
-	if (selfctx == NULL || sfstream == NULL) {
+	if (selfctx == NULL || sfstream == NULL || sfstream->handle == NULL) {
 		return -1;
 	}
 
@@ -417,13 +431,23 @@ static int selfapp_connect_deinit(selfstream_t *sfstream)
 	}
 #endif
 
-	if (sfstream->opened) {
-		stream_close(sfstream->handle);
-		sfstream->opened = 0;
-		sfstream->major  = 0;
+	sfstream->major = 0;
+#if SELFSTREAM_PREOPEN
+	if (sfstream->opened != SFS_CONCED) {
+		selfapp_log_wrn("notmatch %d", sfstream->opened);
 	}
+	sfstream->opened = SFS_OPENED;
+#else
+	if (sfstream->opened >= SFS_CONCED) {
+		stream_close(sfstream->handle);
+		sfstream->opened = SFS_NONE;
+	}
+#endif
 	if (selfctx->connect_num > 0) {
 		selfctx->connect_num -= 1;
+	}
+	if (selfctx->current_hdl == sfstream->handle) {
+		selfctx->current_hdl =  NULL;
 	}
 
 	selfapp_log_inf("%d_0x%x, rest=%d", sfstream->index, (u32_t)(sfstream->handle), selfctx->connect_num);
@@ -442,12 +466,13 @@ static int selfapp_connect_deinit(selfstream_t *sfstream)
 		ledpkg_deinit();
 	}
 #endif
+#if (SELFSTREAM_PREOPEN == 0)
 	if (selfctx->sendbuf) {
 		mem_free(selfctx->sendbuf);
 		selfctx->sendbuf = NULL;
 		selfctx->recvbuf = NULL;
 	}
-
+#endif
 	if(selfctx->pause_player){
 		selfctx->pause_player = 0;
 	}
@@ -547,14 +572,14 @@ static void selfapp_connect_callback(int connected, uint8_t connect_type, void *
 			selfapp_log_err("%d connected", sfstream ? sfstream->connect_type : 0xFF);
 			return ;
 		}
-
-		if (sfstream->opened == 0) {
+#if (SELFSTREAM_PREOPEN == 0)
+		if (sfstream->opened == SFS_NONE) {
 			if (stream_open(sfstream->handle, MODE_IN_OUT) != 0) {
 				return ;
 			}
-			sfstream->opened = 1;
-			sfstream->major  = 0;
+			sfstream->opened = SFS_CONCED;
 		}
+#endif
 	}
 
 	// release to application-thread, avoid bluetooth-thread block too long
@@ -614,23 +639,47 @@ int selfapp_init(p_logsrv_callback_t cb)
 	stream_param.tx_ccc_attr  = &app_gatt_attr[5];
 	stream_param.rx_attr      = &app_gatt_attr[2];
 	stream_param.connect_cb   = selfapp_connect_callback;
-	//stream_param.rx_data_on_changed_con_cb = selfapp_handle_old_device_data;
 	stream_param.connect_filter_cb = selfapp_connect_filter_cb;
 	stream_param.read_timeout  = OS_NO_WAIT;
 	stream_param.write_timeout = OS_NO_WAIT;
+	stream_param.read_buf_size = SELF_STREAM_SIZE;
 	stream_param.write_attr_enable_ccc = 1;
 
 	for (i = 0; i < SELFSTREAM_MAX; i++) {
 		selfctx->sfstream[i].handle = sppble_stream_create(&stream_param);
 		selfctx->sfstream[i].index  = i + 1;
-		if (selfctx->sfstream[i].handle && has_stream == 0) {
-			has_stream = 1;
+		selfctx->sfstream[i].opened = SFS_NONE;
+
+		if (selfctx->sfstream[i].handle) {
+#if SELFSTREAM_PREOPEN
+			if (stream_open(selfctx->sfstream[i].handle, MODE_IN_OUT) != 0) {
+				stream_close(selfctx->sfstream[i].handle);
+				selfctx->sfstream[i].handle = NULL;
+				continue;
+			}
+			selfctx->sfstream[i].opened = SFS_OPENED;
+#endif
+			if (has_stream == 0) {
+				has_stream = 1;
+			}
 		}
 	}
 	if (has_stream == 0) {
 		selfapp_log_err("nostream");
 		goto Label_init_fail;
 	}
+
+#if SELFSTREAM_PREOPEN
+	if (selfctx->sendbuf == NULL) {
+		selfctx->sendbuf = mem_malloc(SELF_SENDBUF_SIZE + SELF_RECVBUF_SIZE);
+		if (selfctx->sendbuf == NULL) {
+			goto Label_init_fail;
+		}
+
+		selfctx->sendbuf_tid = (uint32_t)k_current_get();
+		selfctx->recvbuf = &(selfctx->sendbuf[SELF_SENDBUF_SIZE]);
+	}
+#endif
 
 	thread_timer_init(&(selfctx->timer), selfapp_timer_handler, NULL);
 
@@ -670,9 +719,21 @@ int selfapp_deinit(void)
 	for (i = 0; i < SELFSTREAM_MAX; i++) {
 		if (selfctx->sfstream[i].handle) {
 			selfapp_connect_deinit(&(selfctx->sfstream[i]));
+#if SELFSTREAM_PREOPEN
+			selfctx->sfstream[i].opened = SFS_NONE;
+			stream_close(selfctx->sfstream[i].handle);
+#endif
 			stream_destroy(selfctx->sfstream[i].handle);
 		}
 	}
+
+#if SELFSTREAM_PREOPEN
+	if (selfctx->sendbuf) {
+		mem_free(selfctx->sendbuf);
+		selfctx->sendbuf = NULL;
+		selfctx->recvbuf = NULL;
+	}
+#endif
 
 	self_set_context(NULL);
 	memset(selfctx, 0, sizeof(selfapp_context_t));
@@ -709,8 +770,6 @@ void selfapp_on_connect_event(u8_t connect, u8_t connect_type, int stream_hdl)
 			selfapp_routine_start_stop(0);  // command-handler timer stop
 		}
 	}
-
-	// self_stamem_save(1);  // why need save?  // TODO
 }
 
 int selfapp_stream_handle_suspend(uint8_t suspend_enable)
@@ -743,8 +802,7 @@ int selfapp_disconnect_all_App(void)
 	selfapp_log_inf();
 
 	for (i = 0; i < SELFSTREAM_MAX; i++) {
-		selfctx->sfstream[i].connect_type = NONE_CONNECT_TYPE;
-		selfapp_connect_deinit(&(selfctx->sfstream[i]));
+		sppble_stream_disconnect_conn(selfctx->sfstream[i].handle);
 	}
 
 	return 0;

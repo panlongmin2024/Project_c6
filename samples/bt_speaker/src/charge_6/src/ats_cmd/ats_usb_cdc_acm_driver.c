@@ -38,7 +38,7 @@ struct _ats_usb_cdc_acm_driver_ctx_t {
 	struct device *usb_cdc_acm_dev;
 
  	struct k_thread cdc_acm_thread_data;
-	u8_t *cdc_acm_thread_stack;
+	int *cdc_acm_thread_stack;
 
 	bool cdc_acm_enabled;
 	
@@ -199,7 +199,7 @@ int ats_uart_init(struct device *dev)
 
 	//disable uart0 tx dma print
 	// trace_print_disable_set(true);
-    console_input_deinit(dev);
+   console_input_deinit(dev);
 	k_sleep(2);
 
     ats_uart->uio_opened = 0;
@@ -216,6 +216,8 @@ int ats_uart_init(struct device *dev)
     return ats_uart->uio_opened;
 }
 
+static struct _ats_usb_cdc_acm_driver_ctx_t acm_driver_ctx_t;
+static int cdc_acm_thread_stack_buf[CDC_ACM_THREAD_STACK_SZ/4];
 int ats_uart_deinit(struct device *dev)
 {
     ats_uart_t * ats_uart = &ats_uart_context;
@@ -254,7 +256,8 @@ int ats_usb_cdc_acm_init(void)
 
 	os_sem_init(&callback_sem, 0, 1);
 
-	p_ctx = malloc(sizeof(struct _ats_usb_cdc_acm_driver_ctx_t));
+	//p_ctx = malloc(sizeof(struct _ats_usb_cdc_acm_driver_ctx_t));
+	p_ctx = &acm_driver_ctx_t;
 	if (p_ctx == NULL)
 	{
 		SYS_LOG_ERR("ctx malloc fail\n");
@@ -288,7 +291,8 @@ int ats_usb_cdc_acm_init(void)
 
 	k_msgq_init(&p_ctx->msgq, p_ctx->msg_buf, msg_size, msg_num);
 
-	p_ctx->cdc_acm_thread_stack = app_mem_malloc(CDC_ACM_THREAD_STACK_SZ);
+	//p_ctx->cdc_acm_thread_stack = app_mem_malloc(CDC_ACM_THREAD_STACK_SZ);
+	p_ctx->cdc_acm_thread_stack = cdc_acm_thread_stack_buf;
 	if (p_ctx->cdc_acm_thread_stack == NULL)
 	{
 		ats_usb_cdc_acm_write_data("live test7",sizeof("live test7")-1);
@@ -320,11 +324,11 @@ err_exit:
 
 		if (p_ctx->cdc_acm_thread_stack != NULL)
 		{
-			app_mem_free(p_ctx->cdc_acm_thread_stack);
+			//app_mem_free(p_ctx->cdc_acm_thread_stack);
 			p_ctx->cdc_acm_thread_stack = NULL;
 		}
 
-		free(p_ctx);
+		//free(p_ctx);
 		p_ctx = NULL;
 	}
 	ats_usb_cdc_acm_write_data("live fail",sizeof("live fail")-1);
@@ -354,11 +358,11 @@ int ats_usb_cdc_acm_deinit(void)
 
 		if (p_ctx->cdc_acm_thread_stack != NULL)
 		{
-			app_mem_free(p_ctx->cdc_acm_thread_stack);
+			//app_mem_free(p_ctx->cdc_acm_thread_stack);
 			p_ctx->cdc_acm_thread_stack = NULL;
 		}
 
-        free(p_ctx);
+        //free(p_ctx);
         p_ctx = NULL;
 		
           ats_uart_deinit(p_ctx->usb_cdc_acm_dev);

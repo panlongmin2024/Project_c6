@@ -20,7 +20,7 @@
 #endif
 #include <logging/sys_log.h>
 
-#define MAX_NVRAM_ITEM_CACHE_NUM 10
+#define MAX_NVRAM_ITEM_CACHE_NUM 20
 
 struct cahce_item_data {
 	char *name;
@@ -42,7 +42,7 @@ static struct cahce_item_data *find_property_cache(const char *name)
 
 	for (i = 0; i < MAX_NVRAM_ITEM_CACHE_NUM; i++) {
 		item = &globle_property_cache[i];
-		if (item->used_flag && !memcmp(item->name, name, strlen(name))) {
+		if (item->used_flag && !strcmp(item->name, name)) {
 			SYS_LOG_DBG(" %d %s\n", i, item->name);
 			return item;
 		}
@@ -196,6 +196,7 @@ int property_cache_set(const char *name, const void *data, int len)
 	ret = nvram_config_set(name, data, len);
 
 exit:
+
 	os_mutex_unlock(&nvram_cache_mutex);
 	return ret;
 }

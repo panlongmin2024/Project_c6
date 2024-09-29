@@ -37,6 +37,10 @@
 #include <cpuload_stat.h>
 #include <input_manager.h>
 
+#ifdef CONFIG_BT_SELF_APP
+#include "../.././samples/bt_speaker/src/include/selfapp_api.h"
+#endif
+
 #ifdef CONFIG_C_AMP_TAS5828M
 #include <driver/amp/tas5828m/tas5828m_head.h>
 #endif
@@ -117,11 +121,14 @@ extern int usb_hotplug_suspend(void);
 extern int usb_hotplug_resume(void);
 extern bool bt_manager_is_pair_mode(void);
 extern uint8_t system_app_get_auracast_mode(void);
+extern int sys_ble_advertise_init(void);
+extern void sys_ble_advertise_deinit(void);
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 static u32_t power_led_last_tinme;
 static int power_led_wait_time;
 int power_led_state;
+static u8_t disable_ble = 0;
 extern void hm_ext_pa_deinit(void);
 extern void hm_ext_pa_init(void);
 #endif
@@ -305,6 +312,14 @@ static int _sys_standby_enter_s1(void)
 	external_dsp_ats3615_deinit();
 	bt_mcu_send_pw_cmd_standby();
 	input_manager_lock();
+
+	selfapp_set_system_status(SELF_SYS_STANDBY);
+	selfapp_set_allowed_adv_crc(false);
+	selfapp_set_allowed_join_party(false);
+	sys_ble_advertise_deinit();
+	sys_ble_advertise_init();
+	selfapp_enter_standby();
+	disable_ble = 0;
 #endif
 
 	ats_test_send_enter_s1();
@@ -358,6 +373,13 @@ static int _sys_standby_exit_s1(void)
 #endif
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+
+	selfapp_set_system_status(SELF_SYS_RUNNING);
+	selfapp_set_allowed_adv_crc(true);
+	selfapp_set_allowed_join_party(true);
+	sys_ble_advertise_deinit();
+	sys_ble_advertise_init();
+
 	soc_dvfs_set_level(SOC_DVFS_LEVEL_BR_FULL_PERFORMANCE, "pa init");
  	external_dsp_ats3615_load(0);
 	hm_ext_pa_init();
@@ -397,7 +419,7 @@ static int _sys_standby_enter_s2(void)
 
 #ifdef CONFIG_SYS_STANDBY_CONTROL_LEADV
 #ifdef CONFIG_BT_BLE
-	bt_manager_halt_ble();
+	//bt_manager_halt_ble();
 #endif
 #endif
 
@@ -826,7 +848,6 @@ static int _sys_standby_process_s2(void)
 static int _sys_standby_process_s2_hm(void)
 {
 	u32_t cur_time;
-
 	task_wdt_feed_all();
 
 	/**have sys wake lock*/
@@ -858,6 +879,14 @@ static int _sys_standby_process_s2_hm(void)
 		}
 	}
 	#endif
+
+	#ifdef CONFIG_BT_BLE
+	if((disable_ble == 0) && ((sys_wakelocks_get_free_time() - standby_context->auto_standby_time) > 2000)){
+		bt_manager_halt_ble();
+		disable_ble = 1;
+	}
+	#endif	
+
 	return 0;
 }	
 #endif

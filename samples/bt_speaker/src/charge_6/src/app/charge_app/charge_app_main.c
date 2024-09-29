@@ -208,6 +208,8 @@ static void charge_app_check_bt_timer(struct thread_timer *ttimer, void *expiry_
 		charge_app_state = CHARGING_APP_OK;
 		thread_timer_stop(&check_bt_timer);
 		hotplug_charger_init();	
+		bt_manager_halt_ble();
+		printk("charge_app_check_bt_timer %d %d \n",charge_app_state,(os_uptime_get_32() - p_charge_app_app->tts_start_time));
 	}
 }
 static int _charge_app_init(void *p1, void *p2, void *p3)
@@ -224,6 +226,9 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	desktop_manager_lock();
 	input_manager_lock();
 	charge_app_view_init();
+
+	sys_event_send_message_new(MSG_BLE_ADV_ENABLE, 0, NULL, 0);
+
 	#ifdef CONFIG_HM_CHARGE_WARNNING_ACTION_FROM_X4
 	if(mcu_ui_get_poweron_from_charge_warnning_status())
 	{
@@ -257,7 +262,7 @@ static int _charge_app_init(void *p1, void *p2, void *p3)
 	pd_manager_send_disc();
 	system_set_power_run_mode(1);
 	bt_manager_set_autoconn_info_need_update(0);
-	bt_manager_halt_ble();
+	//bt_manager_halt_ble();
 	bt_manager_auto_reconnect_stop();
 	bt_manager_end_pair_mode();
 	bt_manager_set_user_visual(1,0,0,0);
@@ -319,6 +324,9 @@ static int _charge_app_exit(void)
 		pd_manager_send_disc();
 		charge_app_view_deinit();
 		system_set_power_run_mode(0);
+
+		sys_event_send_message_new(MSG_BLE_ADV_ENABLE, 1, NULL, 0);
+
 	#ifdef CONFIG_BT_SELF_APP
 		if(selfapp_get_feedback_tone_ext()){
 			int i = 0;

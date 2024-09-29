@@ -542,12 +542,13 @@ int bt_manager_ble_send_data(struct bt_conn *conn, struct bt_gatt_attr *chrc_att
 	return -EIO;
 }
 
-void bt_manager_ble_disconnect(struct bt_conn *conn)
+int bt_manager_ble_disconnect(struct bt_conn *conn)
 {
 	int err;
 
 	if (!conn) {
 		SYS_LOG_ERR("param err");
+		return -1;
 	}
 
 	// SYS_LOG_INF("conn: %p", conn);
@@ -555,6 +556,7 @@ void bt_manager_ble_disconnect(struct bt_conn *conn)
 	if (err) {
 		SYS_LOG_INF("Disconnection failed (err %d)", err);
 	}
+	return err;
 }
 
 void bt_manager_ble_disconnect_all_link(void)

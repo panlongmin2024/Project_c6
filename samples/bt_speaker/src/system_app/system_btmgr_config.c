@@ -233,6 +233,7 @@ int system_btmgr_config_update_2nd(void)
     reconnect_config->reconnect_resume_play = 0;
 
 	reconnect_config->always_reconnect_last_device = 0;
+	reconnect_config->always_reconnect_ota_device = 1;
 
     if(reconnect_config->reconnect_phone_interval <= reconnect_config->reconnect_phone_timeout){
         reconnect_config->reconnect_phone_interval = reconnect_config->reconnect_phone_timeout + 10;

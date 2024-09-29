@@ -253,7 +253,7 @@ static void stream_spp_connected_cb(uint8_t channel, uint8_t *uuid)
 		if (info->connect_type == NONE_CONNECT_TYPE) {
 			info->connect_type = SPP_CONNECT_TYPE;
 			if (info->connect_cb) {
-				info->connect_cb(true, info->connect_type, (void *)((int)channel));
+				info->connect_cb(true, info->connect_type, (void *)handle);
 			}
 		} else {
 			SYS_LOG_WRN("Had connecte: %d", info->connect_type);
@@ -275,7 +275,7 @@ static void stream_spp_disconnected_cb(uint8_t channel)
 			info->connect_type = NONE_CONNECT_TYPE;
 			os_sem_give(&info->read_sem);
 			if (info->connect_cb) {
-				info->connect_cb(false, info->connect_type, (void *)((int)channel));
+				info->connect_cb(false, info->connect_type, (void *)handle);
 			}
 		} else {
 			SYS_LOG_WRN("Not connecte spp: %d", info->connect_type);
@@ -557,10 +557,10 @@ static int sppble_open(io_stream_t handle, stream_mode mode)
 	struct sppble_info_t *info = NULL;
 
 	info = (struct sppble_info_t *)handle->data;
-	if (info->connect_type == NONE_CONNECT_TYPE) {
+/*	if (info->connect_type == NONE_CONNECT_TYPE) {
 		return -EIO;
 	}
-
+*/
 	os_mutex_lock(&info->read_mutex, OS_FOREVER);
 	info->buff = mem_malloc(info->read_buf_size);
 	if (!info->buff) {
@@ -569,7 +569,7 @@ static int sppble_open(io_stream_t handle, stream_mode mode)
 		return -ENOMEM;
 	}
 
-	handle->total_size = SPPBLE_BUFF_SIZE;
+	handle->total_size = info->read_buf_size;
 	handle->cache_size = 0;
 	handle->rofs = 0;
 	handle->wofs = 0;
@@ -787,19 +787,13 @@ static int sppble_write(io_stream_t handle, uint8_t *buf, int num)
 static int sppble_close(io_stream_t handle)
 {
 	struct sppble_info_t *info = NULL;
+	if (handle == NULL) {
+		return -1;
+	}
 
 	info = (struct sppble_info_t *)handle->data;
 	if (info->connect_type != NONE_CONNECT_TYPE) {
-		SYS_LOG_INF("Active do %d disconnect", info->connect_type);
-		if (info->connect_type == SPP_CONNECT_TYPE) {
-			bt_manager_spp_disconnect(info->spp_chl);
-		} else if (info->connect_type == BLE_CONNECT_TYPE) {
-		#ifdef CONFIG_BT_BLE
-			bt_manager_ble_disconnect(info->conn);
-		#endif
-		} else if (info->connect_type == GATT_OVER_BR_CONNECT_TYPE) {
-			hostif_bt_gatt_over_br_disconnect(info->conn);
-		}
+		sppble_stream_disconnect_conn(handle);
 	}
 
 	os_mutex_lock(&info->read_mutex, OS_FOREVER);
@@ -881,6 +875,42 @@ int sppble_stream_set_rxdata_callback(io_stream_t handle, void (*callback)(void)
     return 0;
 }
 
+int sppble_stream_disconnect_conn(io_stream_t handle)
+{
+	struct sppble_info_t *info = NULL;
+	int ret = -1;
+	if (handle == NULL) {
+		return -1;
+	}
+
+	info = (struct sppble_info_t *)handle->data;
+	SYS_LOG_INF("%d %p", info->connect_type, handle);
+
+	if (info->connect_type == SPP_CONNECT_TYPE) {
+		ret = bt_manager_spp_disconnect(info->spp_chl);
+	}
+	else if (info->connect_type == BLE_CONNECT_TYPE) {
+#ifdef CONFIG_BT_BLE
+		ret = bt_manager_ble_disconnect(info->conn);
+#endif
+	}
+	else if (info->connect_type == GATT_OVER_BR_CONNECT_TYPE) {
+		ret = hostif_bt_gatt_over_br_disconnect(info->conn);
+	}
+
+	return ret;
+}
+
+struct bt_conn * sppble_stream_get_conn_by_stream(io_stream_t handle)
+{
+	struct sppble_info_t *info = NULL;
+	if (handle == NULL) {
+		return NULL;
+	}
+
+	info = (struct sppble_info_t *)handle->data;
+	return info->conn;
+}
 
 io_stream_t sppble_stream_create(void *param)
 {

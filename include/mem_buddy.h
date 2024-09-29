@@ -26,7 +26,7 @@ struct buddy_debug_info{
 };
 
 extern void * mem_buddy_malloc(int size, int *need_size, struct mem_info *mem_info, void *caller);
-extern void mem_buddy_free(void *where, struct mem_info *mem_info, void *caller);
+extern int mem_buddy_free(void *where, struct mem_info *mem_info, void *caller);
 
 #ifdef __cplusplus
 }

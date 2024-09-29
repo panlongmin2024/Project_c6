@@ -1440,10 +1440,6 @@ static int bt_manager_device_is_stoped(uint16_t handle)
 	if(!btif_a2dp_stream_is_open(handle)) {
 		return 1;
 	}
-
-	if(!a2dp_dev->a2dp_status_playing) {
-		return 1;
-	}
 #else
 	if(!btif_a2dp_stream_is_open(handle)) {
 		return 1;
@@ -1605,10 +1601,12 @@ int new_audio_conn(uint16_t handle)
 	SYS_LOG_INF("%p, h:%d, t:%d, r:%d a:%s n:%d p:%d\n", audio_conn,
 		handle, type, role, addr, bt_audio.device_num,audio_conn->is_phone_dev);
 
+#if 0
 	/* filter non active_slave */
 	if ((audio_conn->role == BT_ROLE_SLAVE) && get_active_slave()) {
 		return 0;
 	}
+#endif
 
 	return bt_manager_event_notify(BT_CONNECTED, &handle, sizeof(handle));
 		
@@ -4461,10 +4459,36 @@ static int stream_restore_le(void)
 	return ret;
 }
 
+int bt_manager_media_set_user_pause_pending(uint16_t hdl)
+{
+	struct bt_audio_conn *audio_conn;
+	bt_mgr_dev_info_t* dev_info;
+
+	os_sched_lock();
+
+	audio_conn = find_conn(hdl);
+	if ((audio_conn) && (audio_conn->type == BT_TYPE_BR)) {
+		dev_info = bt_mgr_find_dev_info_by_hdl(audio_conn->handle);
+		if (dev_info) {
+			dev_info->user_pause_pending = 1;
+			SYS_LOG_INF("");
+		}
+	}
+
+	os_sched_unlock();
+
+	return 1;
+}
+
 int bt_manager_audio_stream_restore(uint8_t type)
 {
+	bt_mgr_dev_info_t* dev_info;
+
 	if (type == BT_TYPE_BR) {
-		return stream_restore_br();
+		dev_info = bt_mgr_get_a2dp_active_dev();
+		if ((dev_info) && !(dev_info->user_pause_pending)) {
+			return stream_restore_br();
+		}
 	} else if (type == BT_TYPE_LE) {
 		return stream_restore_le();
 	}
@@ -4807,8 +4831,8 @@ int bt_manager_media_get_status(void)
 		SYS_LOG_INF("hdl: 0x%x play_status: 0x%x\n",dev_info->hdl, dev_info->avrcp_ext_status);
 		if (dev_info->avrcp_ext_status & BT_MANAGER_AVRCP_EXT_STATUS_PLAYING) {
 			return BT_STATUS_PLAYING;
-		} else if (dev_info->a2dp_stream_started) {
-			return BT_STATUS_PLAYING;
+		//} else if (dev_info->a2dp_stream_started) {
+		//	return BT_STATUS_PLAYING;
 		} else {
 			return BT_STATUS_PAUSED;
 		}
@@ -4824,12 +4848,17 @@ int bt_manager_media_get_status(void)
 	return audio_conn->media_state;
 }
 
-int bt_manager_media_get_local_passthrough_status(void)
+int bt_manager_media_get_local_passthrough_status(uint16_t handle)
 {
 	struct bt_audio_conn *audio_conn;
 	bt_mgr_dev_info_t* dev_info;
 
-	audio_conn = find_active_slave();
+	if (handle) {
+		audio_conn = find_conn(handle);
+	}else {
+		audio_conn = find_active_slave();
+	}
+
 	if (!audio_conn) {
 		return BT_STATUS_PAUSED;
 	}
@@ -4858,33 +4887,38 @@ int bt_manager_media_get_local_passthrough_status(void)
 	return audio_conn->media_state;
 }
 
-static uint16_t media_handle = 0;
-uint16_t bt_manager_media_set_active_br_handle(void)
+static uint16_t media_active = 0;
+int bt_manager_media_set_active_br_handle(uint16_t set)
 {
 	uint16_t active_hdl = 0;
 	struct bt_audio_conn *audio_conn;
 
-	audio_conn = find_active_slave();
-	if (!audio_conn) {
-		goto exit;
-	}
+	if (!set) {
+		active_hdl = 0;
+	}else {
+		audio_conn = find_active_slave();
+		if (!audio_conn) {
+			goto exit;
+		}
 
-	if(audio_conn->type == BT_TYPE_BR){
-		active_hdl = audio_conn->handle;
+		if(audio_conn->type == BT_TYPE_BR){
+			active_hdl = audio_conn->handle;
+		}
 	}
 
 exit:
-	if (media_handle != active_hdl) {
-		media_handle = active_hdl;
-		bt_manager_update_phone_volume(media_handle, 1);
-		SYS_LOG_INF("%x", active_hdl);
+	SYS_LOG_INF("%x, %x, %x",active_hdl, media_active, set);
+	if ((media_active != active_hdl) || (!set)) {
+		media_active = active_hdl;
+		bt_manager_update_phone_volume(media_active, 1);
 	}
+
 	return 1;
 }
 
 uint16_t bt_manager_media_get_active_br_handle(void)
 {
-	return media_handle;
+	return media_active;
 }
 
 static struct bt_audio_call_inst *new_bt_call(struct bt_audio_conn *audio_conn,
@@ -5623,12 +5657,17 @@ int bt_manager_volume_down(void)
 int bt_manager_volume_set(uint8_t value,int type)
 {
 	struct bt_audio_conn *audio_conn;
+	uint16_t media_handle = bt_manager_media_get_active_br_handle();
 
-	audio_conn = find_active_slave();
+	if (media_handle) {
+		audio_conn = find_conn(media_handle);
+	}else {
+		audio_conn = find_active_slave();
+	}
+	SYS_LOG_INF("%p %d %d %d %x\n", audio_conn, audio_conn->type,type,value,media_handle);
 	if (!audio_conn) {
 		return -EINVAL;
 	}
-	SYS_LOG_INF("%p %d %d %d\n", audio_conn, audio_conn->type,type,value);
 
 	if (audio_conn->type == BT_TYPE_LE) {
 		if (type == BT_VOLUME_TYPE_LE_AUDIO) {
@@ -7420,8 +7459,12 @@ char *bt_manager_audio_get_last_connected_dev_name(void)
 	os_sched_unlock();
 
 	if (p_phone_dev) {
-		return p_phone_dev->dev_name;
-	} else {
+		if(bt_manager_audio_is_ios_dev(p_phone_dev->handle) || k_uptime_get_32() - connect_time > 2000){
+			return p_phone_dev->dev_name;
+		}else{
+			return NULL;
+		}
+	}else{
 		return NULL;
 	}
 }

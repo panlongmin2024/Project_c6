@@ -57,11 +57,12 @@ void self_stamem_save(u8_t confirmed)
 	self_stamem_t *selfsta = self_get_stamem();
 	if (selfsta) {
 #ifdef CONFIG_PROPERTY
-		selfapp_log_inf("set %d", confirmed);
+		//selfapp_log_inf("set %d", confirmed);
+		selfapp_log_inf();
 		property_set(SELF_NVRAM_STA, (char *)selfsta,
 			     sizeof(self_stamem_t));
 		if (confirmed) {
-			property_flush(SELF_NVRAM_STA);
+			//property_flush(SELF_NVRAM_STA);  // donot flush to reduce nvram write
 		}
 #endif
 	}
@@ -72,7 +73,7 @@ void self_stamem_size_save(void)
 #ifdef CONFIG_PROPERTY
 	u32_t size = sizeof(self_stamem_t);
 	property_set(SELF_NVRAM_STASZ, (char *)&size, sizeof(size));
-	property_flush(SELF_NVRAM_STASZ);
+	//property_flush(SELF_NVRAM_STASZ);
 #endif
 
 }

@@ -126,6 +126,24 @@ static uint32_t _check_sp_end_addr(uint32_t sp_cur)
 	}
 }
 
+static int sh_backtrace_is_funcs(uint32_t pc)
+{
+	if ((pc >= (unsigned long)&_image_rom_start) && (pc <= (unsigned long)&_image_text_end)) {
+		return 1;
+	}
+
+	if ((pc >= (unsigned long)&_image_text_ramfunc_start) && (pc <= (unsigned long)&_image_text_ramfunc_end)) {
+		return 1;
+	}
+
+	if ((pc >= (unsigned long)&__btcon_ramfunc_start) && (pc <= (unsigned long)&__btcon_ramfunc_end)) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
 static void sh_backtrace_print_elx(uint32_t addr, uint32_t sp, uint32_t bak_lr, struct __esf *esf)
 {
 	uint32_t where = sp;
@@ -145,7 +163,7 @@ static void sh_backtrace_print_elx(uint32_t addr, uint32_t sp, uint32_t bak_lr, 
 	}
 	while (where < stk_end) {
 		pc = *(uint32_t*)where;
-		if( (pc > (uint32_t)&_image_rom_start) && (pc < (uint32_t)&_image_text_end) ){
+		if(sh_backtrace_is_funcs(pc)){
 			printk("%08x ", pc);
 		}
 
@@ -155,6 +173,80 @@ static void sh_backtrace_print_elx(uint32_t addr, uint32_t sp, uint32_t bak_lr, 
 
 	sh_dump_mem("stack:", sp, stk_end - sp);
 	printk("\n");
+}
+
+static void sh_backtrace_get_stack(uint32_t *sp, uint32_t *sp_len)
+{
+	struct k_thread *th = k_current_get();
+	uint32_t stack_start, stack_sz;
+
+	if (k_is_in_isr()) {
+		*sp = csky_get_current_sp();
+		stack_start = (uint32_t)_interrupt_stack;
+		stack_sz = CONFIG_ISR_STACK_SIZE;
+	} else {
+		*sp = csky_get_current_sp();
+		stack_start = (uint32_t)th->stack_info.start;
+		stack_sz = th->stack_info.size;
+
+	}
+
+	*sp_len = (stack_start + stack_sz - *sp) / sizeof(uint32_t);
+}
+
+void sh_backtrace_get_funcs(uint32_t *func, uint32_t num, uint32_t skip_func_addr)
+{
+	uint32_t pc;
+	uint32_t sp, sp_len;
+	uint32_t *buf;
+	uint32_t skip_func_num = 6;
+	uint32_t last_sp_len = 0;
+	uint32_t *last_buf;
+
+	sh_backtrace_get_stack(&sp, &sp_len);
+
+	buf = (uint32_t *)sp;
+
+	while ((sp_len > 0) && (skip_func_addr > 0)) {
+		pc = *buf;
+		buf++;
+		sp_len --;
+
+		if (sh_backtrace_is_funcs(pc)) {
+			if(pc == skip_func_addr){
+				last_sp_len = (sp_len - 1);
+				last_buf = (buf - 1);
+				skip_func_num--;
+				if(skip_func_num == 0){
+					break;
+				}
+			}
+		}
+
+	}
+
+	if(last_sp_len){
+		sp_len = last_sp_len;
+		buf = last_buf;
+	}
+
+	while ((sp_len > 0) && (num > 0)) {
+		pc = *buf;
+		buf ++;
+		sp_len --;
+
+		if (sh_backtrace_is_funcs(pc)) {
+			*func = pc;
+			func ++;
+			num --;
+		}
+	}
+
+	while (num > 0) {
+		*func = 0;
+		func ++;
+		num --;
+	}
 }
 
 

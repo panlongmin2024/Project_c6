@@ -269,6 +269,22 @@ bt_mgr_dev_info_t* bt_mgr_get_hfp_active_dev(void)
 	return bt_mgr_find_dev_info_by_hdl(hdl);
 }
 
+void bt_mgr_disconnect_other_connected_dev(uint16_t hdl)
+{
+    int i;
+    struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
+
+    if(!hdl){
+        return;
+    }
+
+    for (i = 0; i < MAX_MGR_DEV; i++) {
+        if (bt_manager->dev[i].used && bt_manager->dev[i].hdl != hdl && !bt_manager->dev[i].is_tws) {
+            bt_manager_br_disconnect(&bt_manager->dev[i].addr);
+        }
+    }
+}
+
 bool btmgr_is_snoop_link_created(void)
 {
 	uint8_t i;

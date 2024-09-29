@@ -31,6 +31,7 @@ typedef struct
 void dump_stack(void);
 void show_thread_stack(struct k_thread *thread);
 void show_all_threads_stack(void);
+void sh_backtrace_get_funcs(uint32_t *func, uint32_t num, uint32_t skip_func_num);
 
 #else /* !CONFIG_STACK_BACKTRACE */
 
@@ -45,6 +46,13 @@ static inline void show_thread_stack(struct k_thread *thread)
 
 static inline void show_all_threads_stack(void)
 {
+}
+
+static inline void sh_backtrace_get_funcs(uint32_t *func, uint32_t num, uint32_t skip_func_num)
+{
+	ARG_UNUSED(func);
+	ARG_UNUSED(num);
+	ARG_UNUSED(skip_func_num);
 }
 
 #endif /* !CONFIG_STACK_BACKTRACE */
