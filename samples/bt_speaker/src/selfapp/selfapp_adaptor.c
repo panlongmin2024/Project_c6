@@ -97,17 +97,19 @@ u8_t selfapp_get_bat_level(void)
 	if(cap > 100) {
 		cap = 100;
 	}
-
+	
 	if (cap > 75) {
-		level = 5;
-	} else if (cap > 60) {
-		level = 4;
+		level = 6; //100%
+	}else if (cap > 60) {
+		level = 5; //80%
 	} else if (cap > 45) {
-		level = 3;
+		level = 4; //60%
+	} else if (cap > 30) {
+		level = 3; //40%
 	} else if (cap > 15) {
-		level = 2;
+		level = 2; //20%
 	} else if (cap > 5) {
-		level = 1;
+		level = 1; //10%
 	} else {
 		level = 0;
 	}
@@ -488,7 +490,6 @@ u8_t selfapp_get_system_status(void)
 u8_t selfapp_get_manufacturer_data(u8_t * buf)
 {
 	u8_t i = 0;
-	int ret = -1;
 	u16_t crc_name, crc_addr;
 	u8_t role, ch, bat, join_party;
 
@@ -498,12 +499,9 @@ u8_t selfapp_get_manufacturer_data(u8_t * buf)
 
 	crc_name = crc_addr = 0;
 	if (selfapp_get_allowed_adv_crc() != false) {
-		ret = selfapp_get_src_dev_name_crc(&crc_name);
-		if (ret >= 0) {
-			selfapp_get_addr_crc(&crc_addr);
-		}
+		selfapp_get_src_dev_name_crc(&crc_name);
 	}
-
+	selfapp_get_addr_crc(&crc_addr);
 
 	//VID
 	buf[i++] = (CONFIG_BT_COMPANY_ID & 0xFF);

@@ -118,6 +118,9 @@
 #endif
 #define CFG_ATS_SN "ATS_SN"
 
+#define CFG_OTA_MAC	"BT_OTA_MAC"
+
+
 /**
  * @defgroup property_manager_apis App property Manager APIs
  * @ingroup system_apis

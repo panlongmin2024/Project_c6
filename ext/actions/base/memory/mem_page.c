@@ -17,15 +17,25 @@
 #include <linker/sections.h>
 #include <string.h>
 #include <mem_buddy.h>
+#include <stack_backtrace.h>
 
 #ifndef CONFIG_DETECT_MEMLEAK
-#define MAX_BUDDY_DEBUG_NODE_SIZE   (128)
+#define MAX_BUDDY_DEBUG_NODE_SIZE   (64)
 #else
 #define MAX_BUDDY_DEBUG_NODE_SIZE   (128)
 #endif
 
 struct mem_info sys_meminfo;
 
+
+void print_malloc_funcs(uint32_t num_bytes, void *caller, void *ptr)
+{
+	uint32_t funcs[4] = {0};
+
+	sh_backtrace_get_funcs(funcs, 4, (uint32_t)caller);
+
+	printk("malloc ptr %p %d caller 0x%x 0x%x 0x%x 0x%x\n", ptr, num_bytes, funcs[0], funcs[1], funcs[2], funcs[3]);
+}
 void *mem_page_malloc(unsigned int num_bytes, void *caller)
 {
     void *ptr;
@@ -44,11 +54,14 @@ void *mem_page_malloc(unsigned int num_bytes, void *caller)
     ptr = mem_buddy_malloc(num_bytes, &need_size, &sys_meminfo, caller);
 
     if(num_bytes >= MAX_BUDDY_DEBUG_NODE_SIZE){
-        printk("malloc %d caller %p ptr %p\n\n", num_bytes, caller, ptr);
     }
 
 #else
     ptr = mem_buddy_malloc(num_bytes, &num_bytes, &sys_meminfo, caller);
+
+	if(num_bytes >= MAX_BUDDY_DEBUG_NODE_SIZE){
+		print_malloc_funcs(num_bytes, caller, ptr);
+	}
 
 #if 0
     if((uint32_t)ptr >= 0x98000 && (uint32_t)ptr <= 0x98300){
@@ -112,7 +125,11 @@ void check_mem_debug(void *where, struct mem_info *mem_info, void *caller, struc
 
 void mem_page_free(void *ptr, void *caller)
 {
-    return mem_buddy_free(ptr, &sys_meminfo, caller);
+    int free_size = mem_buddy_free(ptr, &sys_meminfo, caller);
+
+	if(free_size >= MAX_BUDDY_DEBUG_NODE_SIZE){
+		printk("free ptr %p %d caller %p \n\n", ptr, free_size, caller);
+	}
 }
 
 void mem_page_init(void)
@@ -136,6 +153,7 @@ void mem_page_dump(uint32_t dump_detail)
         printk("\nmalloc detail:\n");
         printk("address \tsize(space thread)\tcaller\n");
         thread_dump_memory(&sys_meminfo, true);
+		printk("\nmalloc detail end\n");
     }
 }
 

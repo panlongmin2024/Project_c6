@@ -839,7 +839,7 @@ static int cdc_shell_write_hash_uuid(struct device *dev, u8_t *buf, int len)
 	else{
 		goto exit;
 	}
-#if 0
+
 	if(!user_uuid_verify()){
 		/* uuid verify OK! */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 1);
@@ -848,7 +848,7 @@ static int cdc_shell_write_hash_uuid(struct device *dev, u8_t *buf, int len)
 		/* uuid verify NG! */
 		ats_usb_cdc_acm_cmd_response_ok_or_fail(dev, 0);
 	}
-#endif
+
 	mem_free(sign_msg);
 	mem_free(hash_uuid);
     return 0;

@@ -545,7 +545,6 @@ static void bt_mgr_check_disconnect_nonactive_dev(struct bt_mgr_dev_info *info)
 }
 #endif
 
-
 static bool bt_manager_on_acl_disconnected(struct bt_mgr_dev_info *dev_info, uint8_t reason)
 {
     if (dev_info == NULL)
@@ -553,7 +552,8 @@ static bool bt_manager_on_acl_disconnected(struct bt_mgr_dev_info *dev_info, uin
         return false;
     }
 
-    /* ���沥��״̬���ڳ�ʱ�Ͽ�������ɹ�ʱ�ָ�����?     */
+    /* ���沥��״̬���ڳ�ʱ�Ͽ�������ɹ�ʱ�ָ�����
+     */
     if (bt_manager_is_timeout_disconnected(reason))
     {
         dev_info->timeout_disconnected = 1;
@@ -659,7 +659,7 @@ int bt_manager_link_event(void *param)
             bt_manager_manual_reconnect();
         }
 
-        if(bt_manager->update_local_name && !bt_manager->connected_phone_num){
+        if(info->self_name_update){
             bt_manager->update_local_name = 0;
             bt_manager->personalized_name_update = 0;
             btif_br_update_devie_name();

@@ -23,6 +23,7 @@
 #include <sys_event.h>
 #include <property_manager.h>
 #include <hex_str.h>
+#include <acts_bluetooth/host_interface.h>
 
 //#define CONFIG_AUDIO_RANDOM 1
 
@@ -290,6 +291,17 @@ int bt_manager_bt_name_update_fatcory_reset(uint8_t *name, uint8_t len)
 	//property_flush(NULL);
 #endif
 	return 0;
+}
+
+void bt_manager_set_selfapp_name_update_dev( struct bt_conn * conn)
+{
+    uint16_t hdl = hostif_bt_conn_get_handle(conn);
+    SYS_LOG_INF("conn:%p hdl:%x",conn,hdl);
+
+    bt_mgr_dev_info_t* dev_info = bt_mgr_find_dev_info_by_hdl(hdl);
+    if(dev_info){
+        dev_info->self_name_update = 1;
+    }
 }
 
 void bt_manager_bt_mac(uint8_t *mac_str)

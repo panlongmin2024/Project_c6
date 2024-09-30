@@ -14,6 +14,7 @@ obj-$(CONFIG_XSPI_NOR_ACTS) += xspi_nor_acts.o
 obj-$(CONFIG_XSPI_PSRAM_ACTS) += xspi_psram_acts.o
 obj-$(CONFIG_SOC_SERIES_ANDES) += xspi_nor_acts_andes.o
 obj-$(CONFIG_SOC_SERIES_ANDESC) += xspi_nor_acts_andesc.o
+obj-$(CONFIG_NOR_ACTS_DATA_PROTECTION_ENABLE) += flash_write_protection.o
 
 obj-$(CONFIG_SOC_PSRAM_DCACHE) += xspi_psram_cache_acts.o
 

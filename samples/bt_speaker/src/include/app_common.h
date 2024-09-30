@@ -24,7 +24,7 @@ void bms_br_dump_app_data(void);
 void bmr_dump_app_data(void);
 void bms_uac_dump_app_data(void);
 void bms_audioin_dump_app_data(void);
-void usound_dump_app_data(void);
+int usound_dump_app_data(void);
 void demo_dump_app_data(void);
 void audio_input_dump_app_data(void);
 

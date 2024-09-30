@@ -32,10 +32,12 @@
 #define ADV_INTERVAL_MS (200)
 #endif
 
+#define ADV_DATA_MAX (4)
+
 #define TWS_WAIT_TIME_MS (2000)
 #define TWS_SLAVE_WAIT_TIME_MS (TWS_WAIT_TIME_MS)
 #define TWS_MASTER_WAIT_TIME_MS (TWS_WAIT_TIME_MS/3)
-#define TWS_MASTER_WAIT_TIME1_MS (2500)
+#define TWS_MASTER_WAIT_TIME1_MS (7000)
 
 //#include <sys_comm.h>
 int print_hex_comm(const char *prefix, const void *data, unsigned int size);
@@ -83,10 +85,12 @@ struct ble_adv_mngr {
 	u8_t total_time_cnt;
 	u8_t curr_time_cnt;
     u16_t gfp_sleep_time_cnt;
-	u32_t begin_wait_time;
+	s64_t begin_wait_time;
 
 	struct thread_timer check_adv_timer;
 	btmgr_adv_register_func_t *adv[ADV_TYPE_MAX];
+    adv_data_t *adv_data;
+    u16_t adv_data_size;
 };
 
 static struct ble_adv_mngr ble_adv_info;
@@ -132,8 +136,8 @@ static bool ble_adv_check_enable(void)
 {
 	struct ble_adv_mngr *p = &ble_adv_info;
 	bool enable = true;
-	uint32_t cur_time = os_uptime_get_32();
-	uint32_t cur_wait_time_ms = 0;
+	s64_t cur_time = os_uptime_get();
+	s64_t cur_wait_time_ms = 0;
 	int tmp_cur_tws_role = bt_manager_tws_get_dev_role();
 
 #ifdef CONFIG_GFP_PROFILE
@@ -144,7 +148,7 @@ static bool ble_adv_check_enable(void)
 		return false;
 	}
 
-	//SYS_LOG_INF("%d,%d,%d", p->wait_tws_paired, p->wait_reconn_phone, tmp_cur_tws_role);
+	//SYS_LOG_INF("%d,%d,%d,%d,%d\n", p->wait_tws_paired, p->wait_reconn_phone, tmp_cur_tws_role,bt_manager_is_auto_reconnect_runing(),p->tws_role);
 	if ((p->wait_tws_paired == 1) || (p->wait_reconn_phone)) {
 		if (tmp_cur_tws_role != BTSRV_TWS_NONE) {
 			p->wait_tws_paired = 0;
@@ -171,18 +175,21 @@ static bool ble_adv_check_enable(void)
 			cur_wait_time_ms = TWS_MASTER_WAIT_TIME_MS;
 			if (p->wait_reconn_phone) {
 				cur_wait_time_ms = TWS_MASTER_WAIT_TIME1_MS;
+				if(!bt_manager_is_poweron_auto_reconnect_running()){
+					cur_wait_time_ms = 0;
+				}
 			}
 		} else if (p->tws_role == BTSRV_TWS_TEMP_SLAVE) {
 			cur_wait_time_ms = TWS_SLAVE_WAIT_TIME_MS;
 		}
-		//
+		//SYS_LOG_INF("wait:%d \n", cur_wait_time_ms);
 		if (cur_time - p->begin_wait_time < cur_wait_time_ms) {
 			return false;
 		}
 		p->wait_tws_paired = 0;
 		p->wait_reconn_phone = 0;
-		SYS_LOG_INF(":tws_start_adv:%d:%d:%d \n", cur_wait_time_ms,
-			    cur_time, p->begin_wait_time);
+		SYS_LOG_INF(":tws_start_adv:%d:%d:%d \n", (int)cur_wait_time_ms,
+			    (int)cur_time, (int)p->begin_wait_time);
 	}
 
 #ifdef CONFIG_BT_SELFAPP_ADV
@@ -429,17 +436,19 @@ static int leatws_mgr_adv_enable(void)
 	adv_data_t *t;
 	int i = 0;
 	static uint32_t time_stamp = 0;
+	struct ble_adv_mngr *p = &ble_adv_info;
 
 	if (!time_stamp) {
 		time_stamp = os_uptime_get_32();
 	}
 
-	adv_data = mem_malloc(2 * sizeof(adv_data_t));
-	if (adv_data == NULL) {
-		SYS_LOG_ERR("malloc failed");
-		goto end;
-	}
-	memset(adv_data, 0, 2 * sizeof(adv_data_t));
+    if(!p->adv_data){
+        SYS_LOG_ERR("no mem!");
+        return -1;
+    }
+
+	memset(p->adv_data, 0, p->adv_data_size);
+    adv_data = p->adv_data;
 
 	/* flags */
 	t = &adv_data[0];
@@ -470,8 +479,7 @@ static int leatws_mgr_adv_enable(void)
 	if (sys_ble_set_adv_data(adv_data, 2, CONFIG_BT_CONTROLER_BLE_MAX_TXPOWER)) {
 		bt_manager_ble_set_advertise_enable(true);
 	}
-	mem_free(adv_data);
- end:
+
 	return 0;
 }
 #endif
@@ -530,13 +538,15 @@ static int gfp_ble_mgr_adv_enable(void)
 	adv_data_t *adv_data;
 	adv_data_t *t;
 	int len;
+    struct ble_adv_mngr *p = &ble_adv_info;
 
-	adv_data = mem_malloc(4 * sizeof(adv_data_t));
-	if (adv_data == NULL) {
-		SYS_LOG_ERR("malloc failed");
-		goto end;
-	}
-	memset(adv_data, 0, 4 * sizeof(adv_data_t));
+    if(!p->adv_data){
+        SYS_LOG_ERR("no mem!");
+        return -1;
+    }
+
+	memset(p->adv_data, 0, p->adv_data_size);
+    adv_data = p->adv_data;
 
 	/* adv tx power */
 	t = &adv_data[0];
@@ -581,9 +591,7 @@ static int gfp_ble_mgr_adv_enable(void)
 		bt_manager_ble_set_advertise_enable(true);
 #endif
 	}
-	mem_free(adv_data);
 
- end:
 	return 0;
 }
 #endif
@@ -601,20 +609,22 @@ static int ota_ble_mgr_adv_enable(void)
 	adv_data_t *adv_data;
 	adv_data_t *t;
 	int name_len;
-	u8_t len;
+	u8_t len = 0;
+    struct ble_adv_mngr *p = &ble_adv_info;
 
-	adv_data = mem_malloc(3 * sizeof(adv_data_t));
-	if (adv_data == NULL) {
-		SYS_LOG_ERR("malloc failed");
-		return -1;
-	}
+    if(!p->adv_data){
+        SYS_LOG_ERR("no mem!");
+        return -1;
+    }
 
-	memset(adv_data, 0, 3 * sizeof(adv_data_t));
+    memset(p->adv_data, 0, p->adv_data_size);
+    adv_data = p->adv_data;
 
 	t = &adv_data[0];
 	t->type = BT_DATA_MANUFACTURER_DATA;
 	len = selfapp_get_manufacturer_data(t->data);
 	t->len = len + 1;
+	len += 2;
 
 	i = 0;
 	t = &adv_data[1];
@@ -622,15 +632,22 @@ static int ota_ble_mgr_adv_enable(void)
 	t->data[i++] = (BOX_SERIVCE_UUID & 0xff);
 	t->data[i++] = (BOX_SERIVCE_UUID >> 8);
 	t->len = i + 1;
+	len += t->len + 1;
 
 	/* BLE name */
 	t = &adv_data[2];
 	t->type = BT_DATA_NAME_COMPLETE;
 	name_len = property_get(CFG_BT_NAME, &t->data[0], 29);
 	if (name_len > 0) {
-		t->len = strlen(&t->data[0]) + 1;
-		//SYS_LOG_DBG("name_len %d.", strlen(&t->data[0]));
+		if(t->data[28] || strlen(&t->data[0]) + 2 + len > 31){
+			t->type = BT_DATA_NAME_SHORTENED;
+			t->len = 31 - len - 1;
+		}else{
+			t->type = BT_DATA_NAME_COMPLETE;
+			t->len = strlen(&t->data[0]) + 1;
+		}
 	} else {
+		t->type = BT_DATA_NAME_COMPLETE;
 		t->len = 1;
 	}
 
@@ -646,7 +663,6 @@ static int ota_ble_mgr_adv_enable(void)
 #endif
 		bt_manager_ble_set_advertise_enable(true);
 	}
-	mem_free(adv_data);
 
 	return 0;
 }
@@ -656,13 +672,15 @@ static int ota_ble_mgr_adv_enable(void)
 	adv_data_t *adv_data;
 	adv_data_t *t;
 	int name_len;
+    struct ble_adv_mngr *p = &ble_adv_info;
 
-	adv_data = mem_malloc(2 * sizeof(adv_data_t));
-	if (adv_data == NULL) {
-		SYS_LOG_ERR("malloc failed");
-		return 0;
+	if (!p->adv_data){
+        SYS_LOG_ERR("no mem!");
+        return -1;
 	}
-	memset(adv_data, 0, 2 * sizeof(adv_data_t));
+
+    memset(p->adv_data, 0, p->adv_data_size);
+    adv_data = p->adv_data;
 
 	/* flags */
 	t = &adv_data[0];
@@ -688,7 +706,6 @@ static int ota_ble_mgr_adv_enable(void)
 	if (sys_ble_set_adv_data(adv_data, 2, CONFIG_BT_CONTROLER_BLE_MAX_TXPOWER)) {
 		bt_manager_ble_set_advertise_enable(true);
 	}
-	mem_free(adv_data);
 
 	return 0;
 }
@@ -758,6 +775,7 @@ int sys_ble_advertise_init(void)
 	struct ble_adv_mngr *p = &ble_adv_info;
 	uint8 is_exist_reconn_phone_flag = 0;
 	int role = bt_manager_tws_get_dev_role_ext(&is_exist_reconn_phone_flag);
+	is_exist_reconn_phone_flag = bt_manager_is_poweron_auto_reconnect_running();
 
 	if (thread_timer_is_running(&p->check_adv_timer)) {
 		SYS_LOG_WRN("Already init");
@@ -782,10 +800,21 @@ int sys_ble_advertise_init(void)
 	p->total_time_cnt = 1;
 
 	if ((role == BTSRV_TWS_TEMP_MASTER) || (role == BTSRV_TWS_TEMP_SLAVE)) {
-		p->begin_wait_time = os_uptime_get_32();
+		p->begin_wait_time = os_uptime_get();
 		p->wait_tws_paired = 1;
 		p->tws_role = role;
+	}else if(p->wait_reconn_phone){
+		p->begin_wait_time = os_uptime_get();
 	}
+
+    p->adv_data = mem_malloc(ADV_DATA_MAX * sizeof(adv_data_t));
+    if (p->adv_data == NULL) {
+        SYS_LOG_ERR("malloc failed!");
+        return -1;
+    }
+
+    p->adv_data_size = ADV_DATA_MAX * sizeof(adv_data_t);
+	memset(p->adv_data, 0, p->adv_data_size);
 
 	thread_timer_init(&p->check_adv_timer, sys_ble_check_advertise, NULL);
 	thread_timer_start(&p->check_adv_timer, 0, ADV_INTERVAL_MS);
@@ -814,5 +843,11 @@ void sys_ble_advertise_deinit(void)
 	sys_ble_adv_register(ADV_TYPE_TWS, NULL);
 #endif
 
-	SYS_LOG_INF("### ble deinit.\n");
+    if(p->adv_data){
+	    mem_free(p->adv_data);
+	    p->adv_data = NULL;
+	    p->adv_data_size = 0;
+	}
+
+	SYS_LOG_INF("");
 }

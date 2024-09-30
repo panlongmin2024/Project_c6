@@ -31,6 +31,7 @@
 #define MONITOR_PRIFILE_INTERVEL	                (200)  /* 500ms */
 
 #define BT_SUPERVISION_TIMEOUT					(8000)		/* 8000*0.625ms = 5000ms */
+#define BT_CONNECT_PENDING_TIMEOUT			    (3000)
 
 enum {
 	AUTOCONN_STATE_IDLE,
@@ -92,6 +93,7 @@ struct auto_conn_t {
     uint8_t profile_reconnect_times;
     uint8_t last_reason;
     uint32_t last_begin_time;
+	uint32_t start_reconnect_time;
 };
 
 struct profile_conn_t {
@@ -121,6 +123,7 @@ struct btsrv_connect_priv {
 	uint8_t reconnect_req_high_performance:1;
 	uint8_t reconnect_br_connect:1;
     uint8_t reconnect_ramdon_delay:1;
+    uint32_t connect_pending_time;
 };
 
 
@@ -930,9 +933,10 @@ static void btsrv_update_autoconn_state(uint8_t *addr, uint8_t event)
              */
 			if (p->reason_times == 0 &&
 			    p->base_try != 0 &&
-			    p->base_reconnect_times >= p->base_try)
+			    ((p->base_reconnect_times >= p->base_try) || ((os_uptime_get_32() - p->start_reconnect_time) >= 175000)))
 			{
-			    SYS_LOG_INF("%d, TIMES_OUT %d", index, p->base_try);
+			    SYS_LOG_INF("%d, TIMES_OUT %d time %d %d", index, p->base_try,os_uptime_get_32(),p->start_reconnect_time);
+				p->base_reconnect_times = p->base_try;
 				p->state = AUTOCONN_STATE_END;
 			}
 
@@ -1065,9 +1069,9 @@ static void btsrv_update_autoconn_state(uint8_t *addr, uint8_t event)
 			/* reconnect times out?
              */
 			if (p->base_try != 0 &&
-			    p->base_reconnect_times >= p->base_try)
+				((p->base_reconnect_times >= p->base_try) || ((os_uptime_get_32() - p->start_reconnect_time) >= 175000)))
 			{
-			    SYS_LOG_INF("%d, TIMES_OUT %d, %d", index, p->base_try, os_uptime_get_32());
+			    SYS_LOG_INF("%d, TIMES_OUT %d time %d %d", index, p->base_try,os_uptime_get_32(),p->start_reconnect_time);
 				p->state = AUTOCONN_STATE_END;
 			}
 
@@ -1717,7 +1721,18 @@ static void btsrv_update_monitor(uint8_t *addr, uint8_t type)
 
 bool btsrv_connect_is_pending(void)
 {
-    return (p_connect != NULL) ? p_connect->connect_is_pending : false;
+    uint32_t current_time;
+    if(!p_connect){
+        return false;
+    }
+
+    if(p_connect->connect_is_pending){
+        current_time = os_uptime_get_32();
+        if((current_time  - p_connect->connect_pending_time) >= BT_CONNECT_PENDING_TIMEOUT){
+            p_connect->connect_is_pending = 0;
+        }
+    }
+    return p_connect->connect_is_pending;
 }
 
 void btsrv_proc_link_change(uint8_t *mac, uint8_t type)
@@ -1740,6 +1755,9 @@ void btsrv_proc_link_change(uint8_t *mac, uint8_t type)
     if (p_connect->connect_is_pending != is_pending)
     {
         p_connect->connect_is_pending = is_pending;
+        if(is_pending){
+            p_connect->connect_pending_time = os_uptime_get_32();
+        }
         scan_update = true;
         btsrv_scan_update_mode(false);
     }
@@ -2577,6 +2595,9 @@ static void btsrv_auto_connect_proc(struct bt_set_autoconn *param)
             p_connect->auto_conn[idle_pos].profile_reconnect_times = 0;
             p_connect->auto_conn[idle_pos].last_reason = 0;
             p_connect->auto_conn[idle_pos].last_begin_time = 0;
+
+			p_connect->auto_conn[idle_pos].start_reconnect_time = os_uptime_get_32();
+
 			need_start_timer = 1;
 			SYS_LOG_INF("PHONE MODE:%d VALID:%d ROLE:%d",
 				param->reconnect_mode,

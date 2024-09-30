@@ -245,7 +245,7 @@ static inline int usb_audio_handle_set_sample_rate(struct usb_setup_packet *setu
 		g_cur_sample_rate = (buf[2] << 16) | (buf[1] << 8) | buf[0];
 
 		USB_AudioSinkSampleRateSet(g_cur_sample_rate);			/* Update the current sampling rate */
-		audio_sink_sam_change_cb(USOUND_SAMPLERATE_CHANGE);		/* Trigger system audio switching sampling rate */
+		audio_sink_sam_change_cb(USOUND_SAMPLERATE_CHANGE, g_cur_sample_rate);		/* Trigger system audio switching sampling rate */
 
 		SYS_LOG_DBG("g_cur_sample_rate:%d ", g_cur_sample_rate);
 		return 0;

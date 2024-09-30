@@ -71,6 +71,8 @@ struct btmusic_app_t {
 	struct thread_timer broadcast_start_timer;
 	struct thread_timer broadcast_switch_timer;
 	struct thread_timer user_pause_timer;
+	struct thread_timer user_pause_media_active_timer;
+	uint16_t user_pause_media_active;
 #ifdef CONFIG_EXTERNAL_DSP_DELAY
 	struct thread_timer mute_timer;
 	uint32_t mute_delay_time;
@@ -202,7 +204,11 @@ void btmusic_esd_restore(void);
 
 void btmusic_delay_resume(struct thread_timer *ttimer, void *expiry_fn_arg);
 
-void btmusic_volume_check(void);
+void btmusic_media_active_check(void);
+
+void btmusic_user_pause_media_active_timer_stop(void);
+
+void btmusic_user_pause_media_active_timer_start(uint32_t handle);
 
 void btmusic_view_init(void);
 

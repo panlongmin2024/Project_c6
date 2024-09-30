@@ -1,6 +1,5 @@
 #include "selfapp_internal.h"
 #include "selfapp_cmd_def.h"
-#include "../bt_manager/bt_manager_inner.h"
 #include "crc16.h"
 
 #include <mem_manager.h>
@@ -10,6 +9,8 @@
 #include <ota_upgrade.h>
 #include <fw_version.h>
 #include <sys_event.h>
+#include <property_manager.h>
+#include <acts_bluetooth/host_interface.h>
 
 
 #define OTADFU_BY_DATA_STREAM   (1)  //use stream to manager dfu data
@@ -312,8 +313,8 @@ static int dfu_prepare(dfu_start_t * param)
 		handle->flag_abort = 0;
 		handle->flag_cancel = 0;
 
-		dfu_data_buf_flush(handle);
- 		return 0;
+		//dfu_data_buf_flush(handle);
+		return 1;
 	}
 
 	handle = (otadfu_handle_t *) mem_malloc(sizeof(otadfu_handle_t));
@@ -1163,6 +1164,7 @@ static void otadfu_callback(int event)
 	if (event == OTA_DONE) {
 		//otadfu_set_state(DFUSTA_UPLOADING);
 		//dfureport_state(otadfu->state);
+		bt_manager_ota_save_connected_dev();
 		otadfu_NotifyDfuCancel(0xDD);	// release otadfu handle
 	} else if (event == OTA_FAIL || event == OTA_CANCEL) {
 		if (otadfu->flag_cancel == 0 && otadfu->flag_abort == 0) {
@@ -1209,7 +1211,7 @@ static void otadfu_callback(int event)
 		dfureport_image_state(0x0);
     } else if(event == OTA_INIT_FINISHED) {
 		otadfu_set_state(DFUSTA_READY);
-		dfureport_state(otadfu->state);
+		dfureport_start(otadfu, 0);  // send bp_offset = 0, fix App progress-bar error after bp resumed
     }
 }
 #endif				//CONFIG_OTA_SELF_APP
@@ -1331,6 +1333,15 @@ int otadfu_NotifyDfuCancel(u8_t cancel_reason)
 	return 0;
 }
 
+void otadfu_check_connected_dev(void)
+{
+	struct bt_conn *conn = selfapp_get_current_device_conn();
+    if(conn){
+		bt_manager_ota_set_connected_dev(conn);
+		bt_manager_disconnect_other_connected_dev(conn);
+    }
+}
+
 int otadfu_ReqDfuStart(dfu_start_t * param)
 {
 	int ret = -1;
@@ -1340,15 +1351,20 @@ int otadfu_ReqDfuStart(dfu_start_t * param)
 
 	os_mutex_lock(&otadfu_mutex, OS_FOREVER);
 
-	if (dfu_prepare(param) == 0) {
+	ret = dfu_prepare(param);
+	if (ret == 0) {
 		otadfu = otadfu_get_handle();
 		ret = selfapp_backend_otadfu_start(&otadfu_api, otadfu_callback);
 		if (ret != 0) {
 			dfu_release(otadfu);
 			selfapp_backend_otadfu_stop();
 		} else {
+		    otadfu_check_connected_dev();
 			//otadfu_set_state(DFUSTA_INITED);
 		}
+	}
+	else if (ret > 0) {
+		ret = 0;  // donot report error
 	}
 
 	os_mutex_unlock(&otadfu_mutex);

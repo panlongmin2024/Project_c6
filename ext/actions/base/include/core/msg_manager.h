@@ -97,6 +97,7 @@ typedef enum
 	MSG_CHARGE_WARNNING_OPEN_PA,
 	MSG_PD_EVENT,
 	MSG_ATS_LE_AUDIO,//for ats test ggec
+	MSG_BLE_ADV_ENABLE,
 #endif
 
 	MSG_SWITCH_APP_LOCK_EVENT,

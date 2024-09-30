@@ -22,6 +22,9 @@ static data_analy_get_dev_data_t dev_data_get = {0};
 static data_analytics_t *analy_data_p = NULL;
 static play_analytics_t *analy_play_p = NULL;
 
+static play_analytics_upload_t play_data_store[DATA_ANALY_PLAY_ID_MAX]= {0};
+
+
 static data_analytics_upload_t *analy_upload_data_p = NULL;
 static play_analytics_upload_t *analy_upload_play_p = NULL;
 
@@ -46,14 +49,12 @@ u32_t data_analy_update_power_on_sec(void)
 void data_analy_data_clear(void)
 {
 	memset(analy_upload_data_p, 0, sizeof(data_analytics_upload_t));
-	nvram_config_set(CFG_DATA_ANALY_DATA, analy_upload_data_p, sizeof(data_analytics_upload_t));
 }
 
 void data_analy_play_clear(void)
 {
 	//only clear nvram save id, current recording data need keep counting
 	memset(analy_play_index_p, 0, sizeof(play_index_info_t));
-	nvram_config_set(CFG_DATA_ANALY_PLAY, analy_play_p, sizeof(play_analytics_t));
 }
 
 u32_t data_analy_get_product_history_pwr_on_min(void)
@@ -93,7 +94,6 @@ int data_analy_play_get(play_analytics_upload_t* arr, u16_t arr_num)
 
 	s8_t id = analy_play_index_p->next_write_id;
 	u8_t max = analy_play_index_p->ever_full?DATA_ANALY_PLAY_ID_MAX:analy_play_index_p->next_write_id;
-	char id_info[16];
 	u8_t i = 0;
 	for( i = 0; i < max; i++)
 	{
@@ -101,13 +101,7 @@ int data_analy_play_get(play_analytics_upload_t* arr, u16_t arr_num)
 		{
 			id = DATA_ANALY_PLAY_MAX_SAVE_ID;
 		}
-		snprintf(id_info, sizeof(id_info), "DA_PLAY_%d", id);
-
-		int ret = nvram_config_get(id_info, arr, sizeof(play_analytics_upload_t));
-		if(ret != sizeof(play_analytics_upload_t))
-		{
-			break;
-		}
+		memcpy(arr, &play_data_store[id], sizeof(play_analytics_upload_t));
 		arr ++;
 	}
 
@@ -364,9 +358,8 @@ static int data_analy_play_set_data_by_id(u8_t id, play_analytics_upload_t* data
 
 	data_analy_dump_play_record(data);
 
-	char id_info[16];
-	snprintf(id_info, sizeof(id_info), "DA_PLAY_%d", id);
-	ret = nvram_config_set(id_info, data, sizeof(play_analytics_upload_t));
+	memcpy(&play_data_store[id], data, sizeof(play_analytics_upload_t));
+
 	return ret;
 }
 
@@ -388,9 +381,7 @@ static int data_analy_play_get_data_by_id(u8_t id, play_analytics_upload_t* data
 		return -1;
 	}
 
-	char id_info[16];
-	snprintf(id_info, sizeof(id_info), "DA_PLAY_%d", id);
-	ret = nvram_config_get(id_info, data, sizeof(play_analytics_upload_t));
+	memcpy(data, &play_data_store[id], sizeof(play_analytics_upload_t));
 	return ret;
 
 }
@@ -677,10 +668,9 @@ void data_analy_dump_play_all_record(void)
 
 	SYS_LOG_INF("reocrd total %d", max);
 
-	char id_info[16];
 	u8_t i = 0;
 
-	static play_analytics_upload_t buf;
+	play_analytics_upload_t buf;
 
 	for( i=0; i < max; i++)
 	{
@@ -688,13 +678,8 @@ void data_analy_dump_play_all_record(void)
 		{
 			id = DATA_ANALY_PLAY_MAX_SAVE_ID;
 		}
-		snprintf(id_info, sizeof(id_info), "DA_PLAY_%d", id);
+		memcpy(&buf, &play_data_store[id], sizeof(play_analytics_upload_t));
 
-		int ret = nvram_config_get(id_info, &buf, sizeof(play_analytics_upload_t));
-		if(ret != sizeof(play_analytics_upload_t))
-		{
-			break;
-		}
 		SYS_LOG_INF("new to old %d, buf_id = %d", i, id);
 		data_analy_dump_play_record(&buf);
 	}
@@ -867,6 +852,20 @@ int data_analy_init(data_analy_init_param_t* init_param)
 		analy_data_p->pwr_on_stamp = k_uptime_get();
 	}
 
+	char id_info[16];
+	u8_t i = 0;
+	for( i = 0; i < DATA_ANALY_PLAY_ID_MAX; i++)
+	{
+
+		snprintf(id_info, sizeof(id_info), "DA_PLAY_%d", i);
+
+		int ret = nvram_config_get(id_info, &play_data_store[i], sizeof(play_analytics_upload_t));
+		if(ret != sizeof(play_analytics_upload_t))
+		{
+			SYS_LOG_WRN("get play data %s, error\n",id_info);
+			//break;
+		}
+	}
 
 
 	thread_timer_init(&g_data_analy.play_time_thread_timer, play_time_thread_timer_cb, NULL);
@@ -894,6 +893,15 @@ int data_analy_exit(void)
 	ret = nvram_config_set(CFG_DATA_ANALY_DATA, analy_upload_data_p, sizeof(data_analytics_upload_t));
 	ret = nvram_config_set(CFG_DATA_ANALY_PLAY, analy_play_p, sizeof(play_analytics_t));
 	ret = nvram_config_set(CFG_PRODUCT_INFO, &product_info, sizeof(product_info_t));
+
+
+	char id_info[16];
+	u8_t i = 0;
+	for( i = 0; i < DATA_ANALY_PLAY_ID_MAX; i++)
+	{
+		snprintf(id_info, sizeof(id_info), "DA_PLAY_%d", i);
+		nvram_config_set(id_info, &play_data_store[i], sizeof(play_analytics_upload_t));
+	}
 
 	thread_timer_stop(&g_data_analy.play_time_thread_timer);
 

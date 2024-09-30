@@ -23,9 +23,11 @@
 #include "bt_manager_inner.h"
 #include "btservice_api.h"
 #include <sys_wakelock.h>
+
 #ifdef CONFIG_ACT_EVENT
 #include <bt_act_event_id.h>
 #include <logging/log_core.h>
+
 LOG_MODULE_DECLARE(bt_br, CONFIG_ACT_EVENT_APP_COMPILE_LEVEL);
 #endif
 
@@ -117,6 +119,8 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
 #endif
 	case BTSRV_A2DP_STREAM_CHECK_STARTED:
 	{
+		dev_info->user_pause_pending = 0;
+
 		dev_info->a2dp_stream_is_check_started = 0;
 		if (event == BTSRV_A2DP_STREAM_CHECK_STARTED){
 			dev_info->a2dp_stream_is_check_started = 1;
@@ -190,6 +194,8 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
 	case BTSRV_A2DP_STREAM_SUSPEND:
 	case BTSRV_A2DP_DISCONNECTED_STREAM_SUSPEND:		
 	{
+		dev_info->user_pause_pending = 0;
+
 		if (event == BTSRV_A2DP_DISCONNECTED_STREAM_SUSPEND)
 		{
 			//fix bluetooth timeout disconnect, reconnect to resume play.
@@ -207,7 +213,7 @@ static void _bt_manager_a2dp_callback(uint16_t hdl, btsrv_a2dp_event_e event, vo
 		//    bt_manager_audio_stream_event(BT_AUDIO_STREAM_RELEASE, (void*)&rep, sizeof(struct bt_audio_report));
 			break;
 		}
-	
+
 		dev_info->a2dp_stream_is_check_started = 0;	
 		dev_info->a2dp_stream_started = 0;
 		dev_info->a2dp_status_playing = 0;

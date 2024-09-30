@@ -58,12 +58,17 @@ __ramfunc void system_nor_prepare_hook(void)
 }
 #endif
 
-
-
+#ifdef CONFIG_NOR_ACTS_DATA_PROTECTION_ENABLE
+extern int nor_write_protection(const struct device *dev, bool enable);
+#endif
 static int xspi_nor_write_protection(struct device *dev, bool enable)
 {
+#ifdef CONFIG_NOR_ACTS_DATA_PROTECTION_ENABLE
+	nor_write_protection(dev, enable);
+#else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(enable);
+#endif
 
 	return 0;
 }
@@ -256,6 +261,7 @@ int acts_xspi_nor_init(struct device *dev)
 
 	sni->chipid = xspi_nor_read_chipid(sni);
 
+	xspi_nor_write_protection(dev, true);
 	xspi_nor_dump_info(sni);
 
 	acts_xspi_nor_init_internal(sni);

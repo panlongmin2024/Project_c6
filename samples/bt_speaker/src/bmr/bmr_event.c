@@ -496,7 +496,7 @@ static int bmr_handle_sink_release(struct bt_broadcast_report *rep)
 {
 	struct bmr_app_t *bmr = bmr_get_app();
     struct bt_broadcast_chan *chan;
-	int ret; 
+	int ret;
     chan = find_broad_chan(rep->handle,rep->id);
 
 	if(NULL == chan) {
@@ -772,6 +772,7 @@ void bmr_input_event_proc(struct app_msg *msg)
 		SYS_LOG_INF("pause: %d\n", bmr->player_paused);
 		{
 			struct audio_track_t * track;
+			int extra_wait_fade_out_ms = 0;
 			track = audio_system_get_audio_track_handle(AUDIO_STREAM_LE_AUDIO);
 
 			if (NULL != track && bmr->player_run) {
@@ -780,8 +781,14 @@ void bmr_input_event_proc(struct app_msg *msg)
 					audio_track_mute(track, 0);
 					bmr->player_paused = 0;
 				} else {
-					media_player_fade_out(bmr->player, 60);
-					os_sleep(90);
+					media_player_fade_out(bmr->player, 50);
+					if (track && track->stream_type == AUDIO_STREAM_LE_AUDIO && track->sample_rate && track->frame_size) {
+						extra_wait_fade_out_ms = stream_get_length(track->audio_stream) / (track->sample_rate*track->frame_size);
+						if (extra_wait_fade_out_ms < 0)
+							extra_wait_fade_out_ms = 0;
+						SYS_LOG_INF("extra_wait_fade_out_ms:%d\n", extra_wait_fade_out_ms);
+					}
+					os_sleep(60 + extra_wait_fade_out_ms);
 					audio_track_mute(track, 1);
 					bmr->player_paused = 1;
 				}

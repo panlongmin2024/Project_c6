@@ -228,7 +228,8 @@ int btmusic_init_playback()
 	btmusic->sink_stream = input_stream;
 
 	audio_system_mutex_lock();
-	bt_manager_media_set_active_br_handle();
+	btmusic_user_pause_media_active_timer_stop();
+	bt_manager_media_set_active_br_handle(1);
 	bt_manager_volume_set(audio_system_get_stream_volume
 			      (stream_type),BT_VOLUME_TYPE_BR_MUSIC);
 	audio_system_mutex_unlock();
@@ -416,7 +417,8 @@ int btmusic_exit_playback()
 	btmusic->playback_player_run = 0;
 	btmusic->playback_player = NULL;
 
-	btmusic_volume_check();
+	btmusic_user_pause_media_active_timer_stop();
+	bt_manager_media_set_active_br_handle(0);
 
 	SYS_LOG_INF("%p mode %d\n", btmusic->playback_player,btmusic_get_auracast_mode());
 

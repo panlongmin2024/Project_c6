@@ -440,7 +440,24 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 					user_set_auracast_sink_connected(false);
 				}
 				break;
+			case MSG_BLE_ADV_ENABLE:
+				if(msg.cmd == 1){
+					selfapp_set_system_status(SELF_SYS_RUNNING);
+					selfapp_set_allowed_adv_crc(true);
+					selfapp_set_allowed_join_party(true);
+					sys_ble_advertise_deinit();
+					sys_ble_advertise_init();
+				}
+				else if(msg.cmd == 0){
+					selfapp_set_system_status(SELF_SYS_STANDBY);
+					selfapp_set_allowed_adv_crc(false);
+					selfapp_set_allowed_join_party(false);
+					sys_ble_advertise_deinit();
+					sys_ble_advertise_init();
+					selfapp_enter_standby();
+				}
 
+				break;
 
 				default:
 					break;

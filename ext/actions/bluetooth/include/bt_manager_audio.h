@@ -583,6 +583,8 @@ void bt_manager_audio_stream_event(int event, void *data, int size);
 
 enum media_type bt_manager_audio_codec_type(uint8_t coding_format);
 
+int bt_manager_media_set_user_pause_pending(uint16_t hdl);
+
 /*
  * Media Control
  */
@@ -613,11 +615,11 @@ void bt_manager_media_event(int event, void *data, int size);
 
 int bt_manager_media_get_status(void);
 
-int bt_manager_media_get_local_passthrough_status(void);
+int bt_manager_media_get_local_passthrough_status(uint16_t handle);
 
 uint16_t bt_manager_media_get_active_br_handle(void);
 
-uint16_t bt_manager_media_set_active_br_handle(void);
+int bt_manager_media_set_active_br_handle(uint16_t set);
 
 /*
  * Call Control

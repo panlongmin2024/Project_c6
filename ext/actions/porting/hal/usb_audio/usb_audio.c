@@ -390,13 +390,14 @@ static void _usb_audio_sink_vol_changed_notify(u8_t info_type, int chan_num, int
 	}
 }
 
-static void _usb_audio_sink_sample_change_notify(u8_t info_type)
+static void _usb_audio_sink_sample_change_notify(u8_t info_type, int sample_rate)
 {
 	if (!usb_audio) {
 		return;
 	}
 
 	usb_audio->call_back_type = info_type;
+	usb_audio->call_back_param = sample_rate;
 	os_work_submit(&usb_audio->call_back_work);
 	return;
 }

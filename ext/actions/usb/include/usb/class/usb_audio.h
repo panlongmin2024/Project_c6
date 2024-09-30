@@ -674,7 +674,7 @@ typedef struct
 /**
  * Callback function for audio device (start/stop).
  */
-typedef void (*usb_sample_rate_change)(uint8_t info_type);
+typedef void (*usb_sample_rate_change)(uint8_t info_type, int sample_rate);
 
 /**
  * Callback function for PM (suspend/resume).

@@ -661,13 +661,6 @@ void system_app_init(void)
 	ble_test_init();
 #endif
 
-#ifdef CONFIG_BT_ADV_MANAGER
-	if (!bt_manager_config_lea_pts_test())
-	{
-		sys_ble_advertise_init();
-	}
-#endif
-
 #ifdef CONFIG_LOGIC_ANALYZER
 	logic_init();
 #endif
@@ -751,6 +744,9 @@ void system_app_init_bte_ready(void)
 #endif /*CONFIG_BT_LEA_PTS_TEST*/
 	{
 		bt_le_audio_init();
+#ifdef CONFIG_BT_ADV_MANAGER
+		sys_ble_advertise_init();
+#endif
 #ifdef CONFIG_BT_LEATWS
 #if defined(CONFIG_BT_LEATWS_FL)
 		bt_le_audio_exit();

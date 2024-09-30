@@ -240,10 +240,10 @@ static int send_analytics_data(u8_t * buf)
 	return ret;
 }
 
-static int send_play_analytics_data(u8_t * buf)
+static int send_play_analytics_data(u8_t *buf, u16_t buflen)
 {
-	u16_t hl, pl;
-	int count;
+	u16_t hl, pl, paylen, paycount;
+	int datacount;
 	u8_t* payload;
 	play_analytics_upload_t* data = NULL;
 	play_analytics_upload_t* p_analy = NULL;
@@ -255,27 +255,33 @@ static int send_play_analytics_data(u8_t * buf)
 		selfapp_log_wrn("malloc fails.");
 		return -1;
 	}
-	count = data_analy_play_get(data, DATA_ANALY_PLAY_ID_MAX);
-	if(0 > count){
-		selfapp_log_wrn("analy ret=%d", count);
+	datacount = data_analy_play_get(data, DATA_ANALY_PLAY_ID_MAX);
+	if(0 > datacount){
+		selfapp_log_wrn("analy ret=%d", datacount);
 		if (NULL != data) {
 			mem_free(data);
 		}
 		return -1;
 	}
 
-	selfapp_log_inf("got %d*%d play data", count, sizeof(play_analytics_upload_t));
+	selfapp_log_inf("got %d*%d play data", datacount, sizeof(play_analytics_upload_t));
 
 	hl = selfapp_get_header_len(APICMD_RetPlayAnalyticsCmd);
-	payload = buf + hl;
+	paycount = 1;
+	paylen   = 2;
+	buf[hl+0] = datacount;
+	buf[hl+1] = paycount;
 
-	payload[0] = count;
-	payload[1] = 1;
+	if (datacount == 0) {
+		selfapp_pack_header(buf, APICMD_RetPlayAnalyticsCmd, 2);
+		ret = self_send_data(buf, hl + 2);
+		goto Label_exit;
+	}
 
-	for (i = 0; i < count; i++) {
-		pl = 2;
-		//send play record from old to new.
-		p_analy = data + (count - i - 1);
+	for (i = 0; i < datacount; i++) {
+		p_analy = data + (datacount - i - 1);  // send play record from old to new
+		payload = &(buf[hl + paylen]);         // point to the end of packed-data
+		pl = 0;
 
 #ifdef SPEC_ANALYTICS_PLAYDATA_UNUSED_ITEMS
 		payload[pl++] = Play_Number;
@@ -307,22 +313,37 @@ static int send_play_analytics_data(u8_t * buf)
 		payload[pl++] = 0; // play minutes high byte
 		payload[pl++] = p_analy->play_min; // play minutes low byte
 
-		selfapp_pack_header(buf, APICMD_RetPlayAnalyticsCmd, pl);
+		paylen += pl;
 
-		ret = self_send_data(buf, hl + pl);
-		if (0 != ret) {
-			break;
+		// buff full, split into multi-packages
+		if (hl + paylen + pl >= buflen) {
+			selfapp_pack_header(buf, APICMD_RetPlayAnalyticsCmd, paylen);
+			ret = self_send_data(buf, hl + paylen);
+			if (ret != 0) {
+				selfapp_log_err("pack %d_%d(%d/%d) fail(%d)", paycount, paylen, i, datacount, ret);
+				paylen = 2;
+				break;
+			}
+
+			// another splited-package, paycount to distinguish
+			memset(buf, 0, buflen);
+			paycount += 1;  // sub-package index
+			paylen    = 2;
+			buf[hl+0] = datacount;
+			buf[hl+1] = paycount;
+			continue;
 		}
 	}
 
-	if (count == 0) {
-		payload[0] = count;
-		payload[1] = 1;
-		selfapp_pack_header(buf, APICMD_RetPlayAnalyticsCmd, 2);
-
-		ret = self_send_data(buf, hl + 2);
+	if (paylen > 2) {
+		selfapp_pack_header(buf, APICMD_RetPlayAnalyticsCmd, paylen);
+		ret = self_send_data(buf, hl + paylen);
+		if (ret != 0) {
+			selfapp_log_err("pack %d_%d(%d/%d) fail(%d)", paycount, paylen, i, datacount, ret);
+		}
 	}
 
+Label_exit:
 	if (NULL != data) {
 		mem_free(data);
 	}
@@ -345,7 +366,7 @@ int cmdgroup_analytics(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 		break;
 
 	case APICMD_ReqPlayAnalyticsData:
-		ret = send_play_analytics_data(buf);
+		ret = send_play_analytics_data(buf, SELF_SENDBUF_SIZE);
 		break;
 	default:
 		break;

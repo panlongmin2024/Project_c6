@@ -26,6 +26,9 @@
 #define UUID_HASH_DATA_LEN      (32)
 #define UUID_SIGN_MSG_NAME "uuid_msg"
 
+#define ERR_EVB		-1	//evb board
+#define ERR_VERIFY	-2	//uuid verify err
+
 #define	TIMEOUT_UUID_VERIFY_FAIL_POWEROFF		5000
 
 struct uuid_ctx{
@@ -86,21 +89,6 @@ static void timeout_poweroff(struct thread_timer *timer, void* pdata)
 	//sys_pm_poweroff();
 	pd_manager_send_notify(PD_EVENT_POWER_OFF);
 }
-static void enter_verify_fail_func(void)
-{
-	printk("----> %s %d\n",__func__,__LINE__);
-	if (thread_timer_is_running(&uuid_verify_timer)){
-		thread_timer_stop(&uuid_verify_timer);
-	}	
-	thread_timer_init(&uuid_verify_timer, timeout_poweroff, NULL);
-	thread_timer_start(&uuid_verify_timer, TIMEOUT_UUID_VERIFY_FAIL_POWEROFF, TIMEOUT_UUID_VERIFY_FAIL_POWEROFF);
-
-}
-static void enter_verify_ok_func(void)
-{
-	//nothinf to do
-	printk("----> %s %d\n",__func__,__LINE__);
-}
 static uint8_t* sys_get_uuid_hash(struct uuid_ctx *ctx)
 {
 	rom_sha256_init(ctx->hash_ctx);
@@ -134,7 +122,7 @@ static int sys_uuid_verify(void)
 	rlen = nvram_config_get_factory(UUID_SIGN_MSG_NAME, ctx->uuid_sig_data, UUID_MSG_SIGNATURE_LEN);
 	if( rlen != UUID_MSG_SIGNATURE_LEN){
 		printk("uuid nv-r: sign rlen=%d != %d ", rlen, UUID_MSG_SIGNATURE_LEN);
-        mem_free(ctx);
+        //mem_free(ctx);
 		
 		extern uint8_t ReadODM(void);
 		if(ReadODM() == 1){
@@ -147,30 +135,28 @@ static int sys_uuid_verify(void)
 			for(i = 0;i<3;i++){
 				k_sleep(20);
 				gpio_pin_read(gpio_dev, 22, &val);
-				if(val != val_back)
-					return -1;
+				if(val != val_back){
+					ret = ERR_EVB;
+					goto EXIT;
+				}
 			}
 			printk("sys_uuid_verify fail DV?=%d\n",val);
-			//if(val == 1)
-			//	enter_verify_fail_func();
 		}
-		enter_verify_fail_func();
-		return -1;
+		ret = ERR_VERIFY;
+		goto EXIT;
 	}
-
 
     ret = RSA_verify_hash((const unsigned char *)g_pubkey, ctx->uuid_sig_data, UUID_MSG_SIGNATURE_LEN, hash_data, UUID_HASH_DATA_LEN);
 
 	if(ret != 0){
         printk("uuid verify fail %d\n", ret);
-		enter_verify_fail_func();
+		ret = ERR_VERIFY;
 	}else{
 		printk("uuid verify ok\r\n");
-		enter_verify_ok_func();
 	}
-
-    mem_free(ctx);
-
+	
+EXIT:
+	mem_free(ctx);
 	return ret;
 }
 
@@ -228,7 +214,13 @@ int uuid_sign_msg_write(int is_read)
 void user_uuid_init(void)
 {
 	int ret = -1;
+
 	ret = sys_uuid_verify();
+	if(ret == ERR_VERIFY){
+		/* poweron verify err! */
+		thread_timer_init(&uuid_verify_timer, timeout_poweroff, NULL);
+		thread_timer_start(&uuid_verify_timer, TIMEOUT_UUID_VERIFY_FAIL_POWEROFF, TIMEOUT_UUID_VERIFY_FAIL_POWEROFF);
+	}
 	printk("------> user_uuid_init ret %d\r\n",ret);
 }
 

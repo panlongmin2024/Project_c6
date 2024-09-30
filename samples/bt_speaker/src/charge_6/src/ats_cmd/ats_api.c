@@ -90,6 +90,13 @@ int ats_init(void)
 {
     int ret = 0;
 
+
+    if(p_ats_ctx){
+        SYS_LOG_ERR("have init\n");
+        ret = -1;
+        goto err_exit;
+    }
+
     p_ats_ctx = malloc(sizeof(struct _ats_ctx));
     if (p_ats_ctx == NULL)
     {

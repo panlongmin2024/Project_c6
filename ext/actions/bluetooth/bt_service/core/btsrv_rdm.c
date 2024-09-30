@@ -823,7 +823,7 @@ bool btsrv_rdm_is_ios_dev(struct bt_conn *base_conn)
 		return false;
 	}
 
-    SYS_LOG_INF("ios %d",dev->ios_device);
+    SYS_LOG_DBG("ios %d",dev->ios_device);
 
     if(dev->ios_device){
         return true;

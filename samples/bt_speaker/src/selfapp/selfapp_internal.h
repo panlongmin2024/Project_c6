@@ -54,7 +54,9 @@ enum DeviceInfo_Role_e {
 
 #define ROUTINE_INTERVAL   (10)
 #define SELFSTREAM_MAX      (2)
+#define SELFSTREAM_PREOPEN  (1)  // open stream so soon as created, keep the memory donot free
 
+#define SELF_STREAM_SIZE   (0x400)
 #define SELF_SENDBUF_SIZE  (0x100)
 #define SELF_RECVBUF_SIZE  (0x100)
 #define SELF_PACKET_MAX    (0x100)
@@ -134,10 +136,14 @@ enum CustomEQ_c1_Level_Scope_e {
 };
 #define DEFAULT_SCOPE  (Custom_c1_Scope_n6p6 )
 
+#define SFS_NONE    (0)
+#define SFS_OPENED  (1)
+#define SFS_CONCED  (2)
+
 typedef struct {
 	void  *handle;
 	u8_t   connect_type;   // BT_Connect_Type_e
-	u8_t   opened;
+	u8_t   opened;         // SFS_NONE, SFS_OPENED, SFS_CONCED(can use)
 	u8_t   index;
 	u8_t   major;          // 1 mark that connection already exchange dev-info
 } selfstream_t;
@@ -259,5 +265,7 @@ void self_creat_group_handler(struct thread_timer *ttimer, void *expiry_fn_arg);
 void selfapp_cmd_thread_timer_start(struct thread_timer *cur_timer);
 
 int spk_ret_auracast_group(u8_t * Payload, u16_t PayloadLen);
+
+struct bt_conn * selfapp_get_current_device_conn(void);
 
 #endif

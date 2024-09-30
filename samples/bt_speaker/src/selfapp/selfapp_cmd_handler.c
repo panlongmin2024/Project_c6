@@ -218,6 +218,26 @@ static int devinfo_set_forward_token(u8_t id, u8_t *value, u16_t *token_len)
 	return ret;
 }
 
+struct bt_conn * selfapp_get_current_device_conn(void)
+{
+    void * stream_handle = NULL;
+    struct bt_conn * conn = NULL;
+
+    stream_handle = self_get_current_streamhdl();
+    if(stream_handle){
+        conn = sppble_stream_get_conn_by_stream(stream_handle);
+    }
+    return conn;
+}
+
+void selfapp_set_name_change_device(void)
+{
+    struct bt_conn *conn = selfapp_get_current_device_conn();
+    if(conn){
+        bt_manager_set_selfapp_name_update_dev(conn);
+    }
+}
+
 static int devinfo_set_handle_token(u8_t id, u8_t *value, u16_t *token_len)
 {
 	u16_t paylen = 0;
@@ -232,6 +252,9 @@ static int devinfo_set_handle_token(u8_t id, u8_t *value, u16_t *token_len)
 		if(value[0]> 0) {
 			selfapp_log_dump(value + 1, value[0]);
 			ret = bt_manager_bt_name_update(value + 1, value[0]);
+            if(ret == 0){
+			    selfapp_set_name_change_device();
+			}
 		} else {
 			selfapp_log_wrn("NULL name");
 		}

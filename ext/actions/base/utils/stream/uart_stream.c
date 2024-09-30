@@ -13,6 +13,7 @@
 
 #define RAW_BUFFER_SIZE                 256
 #define RINGBUF_STREAM_SIZE             1536
+static int uart_raw_buf[RINGBUF_STREAM_SIZE/4];
 
 struct uart_stream_info {
     struct device *uart_dev;
@@ -68,6 +69,7 @@ int uart_stream_init(io_stream_t handle,void *param)
 {
     struct uart_stream_info* info = NULL;
     struct uart_stream_param *uparam= param;
+    struct acts_ringbuf *buf = NULL;
 
     int err = 0;
 
@@ -94,13 +96,16 @@ int uart_stream_init(io_stream_t handle,void *param)
         goto error;
     }
 
-    info->rbuf = acts_ringbuf_alloc(RINGBUF_STREAM_SIZE);
+    buf = mem_malloc(sizeof(*buf));
+    info->rbuf = buf;
+    //info->rbuf = acts_ringbuf_alloc(RINGBUF_STREAM_SIZE);
+    
     if (!info->rbuf) {
         SYS_LOG_ERR("rbuf NULL");
         err = -ENOSR;
         goto error;
     }
-
+    acts_ringbuf_init(buf, uart_raw_buf, RINGBUF_STREAM_SIZE);
     //info->rbuf_stream = stream_create(TYPE_RINGBUFF_STREAM, info->rbuf);
 
 	info->rbuf_stream = ringbuff_stream_create(info->rbuf);
@@ -118,7 +123,8 @@ int uart_stream_init(io_stream_t handle,void *param)
 
 error:
     if (info->rbuf) {
-        acts_ringbuf_free(info->rbuf);
+        //acts_ringbuf_free(info->rbuf);
+        mem_free(info->rbuf);
     }
 
     if (info->raw_buf) {
@@ -143,7 +149,7 @@ int uart_stream_open(io_stream_t handle, stream_mode mode)
     stream_open(info->rbuf_stream, MODE_IN_OUT);
 
     stream_flush(info->rbuf_stream);
-
+    
     /* uart rx fifo access: dma */
     uart_fifo_switch(info->uart_dev, 0, UART_FIFO_DMA);
     uart_fifo_switch(info->uart_dev, 1, UART_FIFO_CPU);
@@ -153,7 +159,7 @@ int uart_stream_open(io_stream_t handle, stream_mode mode)
     uart_dma_recv_set_timeout_start(info->uart_dev, 500, uart_rx_timeout_handle, (void *)info);
 #endif
     uart_dma_recv_start(info->uart_dev);
-
+    
     info->opened = true;
     handle->mode = mode;
     handle->total_size = info->rbuf_stream->total_size;
@@ -298,7 +304,8 @@ int uart_stream_destroy(io_stream_t handle)
     os_sched_lock();
 
     if (info->rbuf) {
-        acts_ringbuf_free(info->rbuf);
+        //acts_ringbuf_free(info->rbuf);
+        mem_free(info->rbuf);
         info->rbuf = NULL;
     }
 
