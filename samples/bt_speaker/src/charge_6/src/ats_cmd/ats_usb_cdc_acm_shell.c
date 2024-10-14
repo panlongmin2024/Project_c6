@@ -1691,7 +1691,7 @@ static int cdc_shell_ats_enter_debug_mode(struct device *dev, u8_t *buf, int len
 	write_dbg_flag(1);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_CMD_RESP_ENTER_DEBUG_MODE, sizeof(ATS_CMD_RESP_ENTER_DEBUG_MODE)-1, 
+		dev, ATS_CMD_RESP_ENTER_NOLOG_MODE, sizeof(ATS_CMD_RESP_ENTER_NOLOG_MODE)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);	
 	return 0;
 }
@@ -1700,7 +1700,7 @@ static int cdc_shell_ats_exit_debug_mode(struct device *dev, u8_t *buf, int len)
 	write_dbg_flag(0);
 
 	ats_usb_cdc_acm_cmd_response_at_data(
-		dev, ATS_CMD_RESP_EXIT_DEBUG_MODE, sizeof(ATS_CMD_RESP_EXIT_DEBUG_MODE)-1, 
+		dev, ATS_CMD_RESP_EXIT_NOLOG_MODE, sizeof(ATS_CMD_RESP_EXIT_NOLOG_MODE)-1, 
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);	
 	return 0;
 }
@@ -2166,12 +2166,12 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* get auracast connect state */
 		cdc_shell_ats_get_auracast_state(dev, NULL, 0);
 	}
-	else if (!memcmp(&buf[index],ATS_AT_CMD_ENTER_DEBUG_MODE, sizeof(ATS_AT_CMD_ENTER_DEBUG_MODE)-1))
+	else if (!memcmp(&buf[index],ATS_AT_CMD_ENTER_NOLOG_MODE, sizeof(ATS_AT_CMD_ENTER_NOLOG_MODE)-1))
 	{		   
 		/* enter dubug mode */
 		cdc_shell_ats_enter_debug_mode(dev, NULL, 0);
 	}
-	else if (!memcmp(&buf[index],ATS_AT_CMD_EXIT_DEBUG_MODE, sizeof(ATS_AT_CMD_EXIT_DEBUG_MODE)-1))
+	else if (!memcmp(&buf[index],ATS_AT_CMD_EXIT_NOLOG_MODE, sizeof(ATS_AT_CMD_EXIT_NOLOG_MODE)-1))
 	{		   
 		/* exit dubug mode */
 		cdc_shell_ats_exit_debug_mode(dev, NULL, 0);
