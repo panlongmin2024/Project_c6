@@ -96,6 +96,20 @@ int property_set_int(const char *key, int value)
 	return ret;
 }
 
+ int property_set_factory_int(const char *key, int value)
+{
+	int ret = 0;
+	char temp_data[16] = {0};
+
+	snprintf(temp_data, sizeof(temp_data), "%d", value);
+
+	if (0 != property_set_factory(key, temp_data, strlen(temp_data))) {
+		SYS_LOG_ERR("key %s value %d\n", key, value);
+		ret = -EACCES;
+	}
+
+	return ret;
+}
 int property_get_byte_array(const char *key, char *value, int value_len, const char *default_value)
 {
 	char temp_data[16] = {0};

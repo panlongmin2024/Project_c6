@@ -248,49 +248,32 @@ int ats_dbg_open_flag_write(uint8_t *buf, int size)
     {
         SYS_LOG_ERR("nvram set err\n");
     }
+   	property_flush(CFG_DUG_OPEN_OR_CLOSE);
     return ret;
 }
-void write_dbg_flag(int setvalue)
+int write_dbg_flag(int setvalue)
 {
-	char temp_data[4] = {0};
-	char buf_read[4] = {0};
-	snprintf(temp_data, sizeof(temp_data), "%x", setvalue);
-    ats_dbg_open_flag_write(temp_data,sizeof(temp_data));
+	 int ret;
 
+	 SYS_LOG_INF("%d\n", setvalue);
+    ret = property_set_factory_int(CFG_DUG_OPEN_OR_CLOSE, setvalue);
+    if (ret != 0)
+    {
+            
+        SYS_LOG_ERR("property set err\n");
+        return 0;
+    }
+    property_flush(CFG_DUG_OPEN_OR_CLOSE);
 
-	property_get(CFG_DUG_OPEN_OR_CLOSE, buf_read, 4);
-	for(int i = 0;i<4;i++){
-		SYS_LOG_INF("------> buf[%d] = %d\n",i,buf_read[i]);
-	}
+ return 1;
 }
 int ats_dbg_open_flag_read(void)
 {
-    int ret;
-	uint8_t buf[5] ={0};
+ 
 	int result = 0;
-    ret = property_get(CFG_DUG_OPEN_OR_CLOSE, buf, 4);
-	print_buffer(buf, 1, 4, 16, 0);
-	for(int i = 0;i<4;i++){
-		SYS_LOG_INF("------> buf[%d] = %d\n",i,buf[i]);
-	}	
-    if (ret < 0)
-    {
-         SYS_LOG_ERR("err\n");
-         result = 0;		
-    }
-    else 
-    {
-        if (!strcmp(buf, "1"))
-        {
-            result = 1;
-        }
-		else
-		{
-             result = 0;
-		}
-			
-    }	
-    SYS_LOG_INF("result:%d   buf=%s  ret=%d\n", result,buf,ret);
+    result = property_get_int(CFG_DUG_OPEN_OR_CLOSE, 1);
+
+    SYS_LOG_INF("result:%d\n", result);
 
 
     return result;

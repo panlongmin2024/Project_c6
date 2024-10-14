@@ -202,6 +202,7 @@ int property_get_int(const char *key, int default_value);
 
 int property_set_int(const char *key, int value);
 
+int property_set_factory_int(const char *key, int value);
 /**
  * @brief set value of target key
  *
