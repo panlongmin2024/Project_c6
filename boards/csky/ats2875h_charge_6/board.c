@@ -709,6 +709,13 @@ void open_or_close_debug(void)
 	while(1);
 }
 
+void close_debug(void)
+{
+	write_dbg_flag(1);
+	close_tx_func(1);
+	close_rx_func(1);
+}
+
 //void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);
 
 

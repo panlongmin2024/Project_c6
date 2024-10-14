@@ -65,6 +65,7 @@ extern int16_t wlt_get_battery_volt(void);
 extern int16_t wlt_get_battery_cur(void);
 extern bool user_get_auracast_sink_connected(void);
 extern uint8_t system_app_get_auracast_mode(void);
+extern void write_dbg_flag(int setvalue);
 // 
 void hex_to_string_4(u32_t num, u8_t *buf) {
 	buf[0] = '0' + num%10000/1000;
@@ -1685,6 +1686,24 @@ static int cdc_shell_ats_get_all_key(struct device *dev, u8_t *buf, int len)
 
 	return 0;
 }
+static int cdc_shell_ats_enter_debug_mode(struct device *dev, u8_t *buf, int len)
+{	
+	write_dbg_flag(1);
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_ENTER_DEBUG_MODE, sizeof(ATS_CMD_RESP_ENTER_DEBUG_MODE)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);	
+	return 0;
+}
+static int cdc_shell_ats_exit_debug_mode(struct device *dev, u8_t *buf, int len)
+{	
+	write_dbg_flag(0);
+
+	ats_usb_cdc_acm_cmd_response_at_data(
+		dev, ATS_CMD_RESP_EXIT_DEBUG_MODE, sizeof(ATS_CMD_RESP_EXIT_DEBUG_MODE)-1, 
+		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);	
+	return 0;
+}
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -2146,6 +2165,16 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 	{		   
 		/* get auracast connect state */
 		cdc_shell_ats_get_auracast_state(dev, NULL, 0);
+	}
+	else if (!memcmp(&buf[index],ATS_AT_CMD_ENTER_DEBUG_MODE, sizeof(ATS_AT_CMD_ENTER_DEBUG_MODE)-1))
+	{		   
+		/* enter dubug mode */
+		cdc_shell_ats_enter_debug_mode(dev, NULL, 0);
+	}
+	else if (!memcmp(&buf[index],ATS_AT_CMD_EXIT_DEBUG_MODE, sizeof(ATS_AT_CMD_EXIT_DEBUG_MODE)-1))
+	{		   
+		/* exit dubug mode */
+		cdc_shell_ats_exit_debug_mode(dev, NULL, 0);
 	}	
 	else	
 	{
