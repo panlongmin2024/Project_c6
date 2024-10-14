@@ -614,6 +614,82 @@ void check_adfu_gpio_key(void)
 	while(1);
 }
 
+extern void write_dbg_flag(int setvalue);
+extern int ats_dbg_open_flag_read(void);
+
+void close_tx_func(u8_t flag)
+{
+	SYS_LOG_INF("\n");
+	
+	  struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+		if (gpio_dev == NULL)
+		{
+			SYS_LOG_ERR("gpio dev is null\n");
+			return ;
+		}
+  if(flag)
+	 {
+	   gpio_pin_configure(gpio_dev, TX1_PIN, GPIO_DIR_IN);
+  	 }
+  else
+  	{
+      gpio_pin_configure(gpio_dev, TX1_PIN, GPIO_DIR_OUT);
+    }
+     
+}
+
+void open_or_close_debug(void)
+{
+	int cnt = 0;
+	bool key_ac_status;
+	bool key_vol_up;
+	bool dc_power_in_status;
+
+	SYS_LOG_INF("\n");
+	
+	if(ats_dbg_open_flag_read())	
+	{
+	    SYS_LOG_INF("close dbg!!!!\n");
+	    close_tx_func(1);
+	}
+	 
+	do 
+	{
+		key_ac_status = key_broadcast_status_read();
+		key_vol_up = key_vol_up_status_read();
+		dc_power_in_status = dc_power_in_status_read();
+
+		SYS_LOG_INF("key_bt down:%d, key_vol_up down:%d, dc_power_in insert:%d\n",
+			key_ac_status, key_vol_up, dc_power_in_status);
+
+		if (key_ac_status == 0 || key_vol_up == 0)
+		{
+			break;
+		}
+
+		cnt ++;
+
+		if (cnt < 2)
+		{
+			k_busy_wait(20*1000);//20ms
+			continue;
+		}
+	 if(!ats_dbg_open_flag_read())	
+	   {
+	       SYS_LOG_INF("close dbg!!!!\n");
+	       write_dbg_flag(1);
+	       close_tx_func(1);
+		 
+	   }
+	 else
+	 	{	  
+	 	    write_dbg_flag(0);
+            close_tx_func(0);
+		    SYS_LOG_INF("open dbg!!!!\n");
+	    }
+	}
+	while(1);
+}
 
 //void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);
 

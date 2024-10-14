@@ -30,6 +30,8 @@
 #define DC_POWER_IN_PIN		7
 #define GPIO_PIN_PD_RST		4
 
+#define TX1_PIN		3
+#define RX1_PIN		2
 
 #define THREE_L_HW_2
 #endif

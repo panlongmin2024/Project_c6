@@ -26,6 +26,7 @@ extern void main_app(void);
 static bool enter_att_flag = false;
 extern int get_autotest_connect_status(void);
 extern void check_adfu_gpio_key(void);
+extern void open_or_close_debug(void);
 extern int property_get(const char *key, char *value, int value_len);
 bool main_get_enter_att_state(void)
 {
@@ -42,6 +43,7 @@ static void main_is_enter_att(void)
     }	
 
 	check_adfu_gpio_key();
+	open_or_close_debug();
 	printk("\n %s , exit ---",__func__);
 }
 #endif

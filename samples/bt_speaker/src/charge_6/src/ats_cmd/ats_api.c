@@ -236,6 +236,58 @@ int ats_color_write(uint8_t *buf, int size)
     return ret;
 }
 
+int ats_dbg_open_flag_write(uint8_t *buf, int size)
+{
+    int ret;
+
+    SYS_LOG_INF("dump(num:%d)\n", size);
+    print_buffer(buf, 1, size, 16, 0);
+
+    ret = property_set_factory(CFG_DUG_OPEN_OR_CLOSE, buf, size);
+    if (ret != 0)
+    {
+        SYS_LOG_ERR("nvram set err\n");
+    }
+   	property_flush(CFG_DUG_OPEN_OR_CLOSE);
+    return ret;
+}
+void write_dbg_flag(int setvalue)
+{
+	char temp_data[16] = {0};
+	snprintf(temp_data, sizeof(temp_data), "%x", setvalue);
+    ats_dbg_open_flag_write(temp_data,strlen(temp_data));
+}
+int ats_dbg_open_flag_read(void)
+{
+    int ret;
+	uint8_t buf[5] ={0};
+	int result = 0;
+    ret = property_get(CFG_DUG_OPEN_OR_CLOSE, buf, 4);
+	print_buffer(buf, 1, 4, 16, 0);
+	
+    if (ret < 0)
+    {
+         SYS_LOG_ERR("err\n");
+         result = 0;		
+    }
+    else 
+    {
+        if (!strcmp(buf, "0x01"))
+        {
+            result = 1;
+        }
+		else if(!strcmp(buf, "0x00"))
+		{
+             result = 0;
+		}
+			
+    }	
+    SYS_LOG_INF("result:%d\n", result);
+
+
+    return result;
+}
+
 int ats_color_read(uint8_t *buf, int size)
 {
     int ret;

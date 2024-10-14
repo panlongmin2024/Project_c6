@@ -119,6 +119,7 @@
 #define CFG_ATS_SN "ATS_SN"
 
 #define CFG_OTA_MAC	"BT_OTA_MAC"
+#define CFG_DUG_OPEN_OR_CLOSE          "ATS_OPEN_OR_CLOSE"
 
 #define CFG_AUDIO_EFFECT "AUDIO_EFFECT"
 
