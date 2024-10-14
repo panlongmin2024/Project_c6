@@ -201,13 +201,19 @@ static int shell_user_set_mac_name(int argc, char *argv[])
 static int shell_set_dbg_true(int argc, char *argv[])
 {
 	void write_dbg_flag(int setvalue);
+	int ats_dbg_open_flag_read(void);
 	write_dbg_flag(1);
+
+	ats_dbg_open_flag_read();
 	return 0;
 }
 static int shell_set_dbg_false(int argc, char *argv[])
 {
 	void write_dbg_flag(int setvalue);
+	int ats_dbg_open_flag_read(void);
 	write_dbg_flag(0);
+
+	ats_dbg_open_flag_read();
 	return 0;
 }
 

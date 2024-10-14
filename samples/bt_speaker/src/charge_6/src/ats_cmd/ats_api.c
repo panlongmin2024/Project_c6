@@ -278,11 +278,11 @@ int ats_dbg_open_flag_read(void)
     }
     else 
     {
-        if (!strcmp(buf, "0x01"))
+        if (!strcmp(buf, "0001"))
         {
             result = 1;
         }
-		else if(!strcmp(buf, "0x00"))
+		else if(!strcmp(buf, "0000"))
 		{
              result = 0;
 		}
