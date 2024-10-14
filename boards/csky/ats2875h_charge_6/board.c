@@ -637,6 +637,22 @@ void close_tx_func(u8_t flag)
     }
      
 }
+void close_rx_func(u8_t flag)
+{
+	SYS_LOG_INF("\n");
+	
+	  struct device *gpio_dev = device_get_binding(CONFIG_GPIO_ACTS_DEV_NAME);
+		if (gpio_dev == NULL)
+		{
+			SYS_LOG_ERR("gpio dev is null\n");
+			return ;
+		}
+  if(flag)
+	 {
+	   gpio_pin_configure(gpio_dev, RX1_PIN, GPIO_DIR_IN| GPIO_PUD_PULL_DOWN);
+	   gpio_pin_configure(gpio_dev, RX1_PIN, GPIO_DIR_IN| GPIO_PUD_PULL_UP);
+  	 }     
+}
 
 void open_or_close_debug(void)
 {
@@ -651,6 +667,7 @@ void open_or_close_debug(void)
 	{
 	    SYS_LOG_INF("close dbg!!!!\n");
 	    close_tx_func(1);
+		close_rx_func(1);
 	}
 	 
 	do 
@@ -679,12 +696,13 @@ void open_or_close_debug(void)
 	       SYS_LOG_INF("close dbg!!!!\n");
 	       write_dbg_flag(1);
 	       close_tx_func(1);
-		 
+		 	close_rx_func(1);
 	   }
 	 else
 	 	{	  
 	 	    write_dbg_flag(0);
             close_tx_func(0);
+			close_rx_func(0);
 		    SYS_LOG_INF("open dbg!!!!\n");
 	    }
 	}
