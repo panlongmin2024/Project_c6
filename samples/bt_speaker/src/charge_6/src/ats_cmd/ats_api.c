@@ -248,14 +248,20 @@ int ats_dbg_open_flag_write(uint8_t *buf, int size)
     {
         SYS_LOG_ERR("nvram set err\n");
     }
-   	property_flush(CFG_DUG_OPEN_OR_CLOSE);
     return ret;
 }
 void write_dbg_flag(int setvalue)
 {
-	char temp_data[16] = {0};
+	char temp_data[4] = {0};
+	char buf_read[4] = {0};
 	snprintf(temp_data, sizeof(temp_data), "%x", setvalue);
     ats_dbg_open_flag_write(temp_data,strlen(temp_data));
+
+
+	property_get(CFG_DUG_OPEN_OR_CLOSE, buf_read, 4);
+	for(int i = 0;i<4;i++){
+		SYS_LOG_INF("------> buf[%d] = %d\n",i,buf_read[i]);
+	}
 }
 int ats_dbg_open_flag_read(void)
 {

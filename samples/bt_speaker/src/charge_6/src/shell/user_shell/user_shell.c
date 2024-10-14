@@ -198,6 +198,19 @@ static int shell_user_set_mac_name(int argc, char *argv[])
 
 	return 0;
 }
+static int shell_set_dbg_true(int argc, char *argv[])
+{
+	void write_dbg_flag(int setvalue);
+	write_dbg_flag(1);
+	return 0;
+}
+static int shell_set_dbg_false(int argc, char *argv[])
+{
+	void write_dbg_flag(int setvalue);
+	write_dbg_flag(0);
+	return 0;
+}
+
 
 static const struct shell_cmd commands[] = {
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
@@ -221,6 +234,8 @@ static const struct shell_cmd commands[] = {
 	{ "set_mac_name", shell_user_set_mac_name, "user set mac name"},
 	{ "set_smartcontrol", shell_set_smartcontrol_switch_status, "user set smartcontrol switch"},
 	{ "dsp_reset", shell_reset_dsp_test, "dsp reset"},
+	{ "set_dbg1", shell_set_dbg_true, "dsp reset"},
+	{ "set_dbg0", shell_set_dbg_false, "dsp reset"},
 	{ NULL, NULL, NULL }
 };
 
