@@ -288,7 +288,7 @@ int ats_dbg_open_flag_read(void)
 		}
 			
     }	
-    SYS_LOG_INF("result:%d\n", result);
+    SYS_LOG_INF("result:%d   %s\n", result,buf);
 
 
     return result;
