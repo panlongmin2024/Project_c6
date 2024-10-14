@@ -181,7 +181,7 @@ static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 		{
 	      if(!is_authenticated())
 	      {
-	            bat_verify_fail_poweroff();
+	            //bat_verify_fail_poweroff();
 	      }
            
 		}
