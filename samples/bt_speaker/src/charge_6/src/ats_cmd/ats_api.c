@@ -255,7 +255,7 @@ void write_dbg_flag(int setvalue)
 	char temp_data[4] = {0};
 	char buf_read[4] = {0};
 	snprintf(temp_data, sizeof(temp_data), "%x", setvalue);
-    ats_dbg_open_flag_write(temp_data,strlen(temp_data));
+    ats_dbg_open_flag_write(temp_data,sizeof(temp_data));
 
 
 	property_get(CFG_DUG_OPEN_OR_CLOSE, buf_read, 4);
