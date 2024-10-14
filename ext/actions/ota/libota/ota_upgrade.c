@@ -162,7 +162,13 @@ static int ota_partition_erase_part(struct ota_upgrade_info *ota,
 	if(!initial_state){
 		err = ota_storage_erase(ota->storage, align_addr, align_size);
 	}else{
-		err = ota_storage_erase_initial(ota->storage, align_addr, align_size);
+		if(align_size > OTA_ERASE_ALIGN_SIZE){
+			//first not erase first align addr data
+			err = ota_storage_erase_initial(ota->storage, align_addr + OTA_ERASE_ALIGN_SIZE, align_size - OTA_ERASE_ALIGN_SIZE);
+			err |= ota_storage_erase_initial(ota->storage, align_addr, OTA_ERASE_ALIGN_SIZE);
+		}else{
+			err = ota_storage_erase_initial(ota->storage, align_addr, align_size);
+		}
 	}
 	if (err) {
 		return err;
@@ -171,16 +177,114 @@ static int ota_partition_erase_part(struct ota_upgrade_info *ota,
 	return 0;
 }
 
-static int ota_partition_update_prepare(struct ota_upgrade_info *ota, int init_state)
+int ota_partition_check_part_is_clean(struct ota_upgrade_info *ota, const struct partition_entry *part)
+{
+	int is_clean = true;
+	uint8_t check_buff[512];
+	int i;
+
+	if (ota_use_recovery_app(ota)){
+		return false;
+	}
+
+	for(i = 0; i < 4; i++){
+		if(part->size < (i * 0x10000)){
+			SYS_LOG_WRN("storage off %x, size 0x%x\n", (i * 0x10000), part->size);
+			break;
+		}
+
+		is_clean = ota_storage_is_clean(ota->storage, part->offset + (i * 0x10000), OTA_ERASE_ALIGN_SIZE,
+			check_buff, sizeof(check_buff));
+
+		if (is_clean != 1) {
+			SYS_LOG_INF("storage not clean, offs 0x%x size 0x%x\n", part->offset, part->size);
+			return false;
+		}
+	}
+
+	return is_clean;
+}
+
+int ota_partition_update_prepare_init(struct ota_upgrade_info *ota)
+{
+	struct ota_breakpoint *bp = &ota->bp;
+
+	const struct partition_entry *part;
+	int i;
+
+	for (i = 0; i < MAX_PARTITION_COUNT; i++) {
+		part = partition_get_part_by_id(i);
+		if (part == NULL)
+			return -EINVAL;
+
+		if (part->file_id == 0)
+			continue;
+
+		if (!ota_use_recovery(ota)) {
+			/* skip current firmware's partitions */
+			if (!partition_is_mirror_part(part)) {
+				SYS_LOG_INF("part[%d]: skip current partition", i);
+				continue;
+			}
+
+			if (part->file_id == PARTITION_FILE_ID_EVTBUF || part->file_id == PARTITION_FILE_ID_COREDUMP){
+				continue;
+			}
+		} else {
+			if (ota_use_recovery_app(ota)){
+				/* don't erase partition that not in current storage */
+				if (part->storage_id != ota_storage_get_storage_id(ota->storage)) {
+					SYS_LOG_INF("part[%d]: skip not current storage %d", i, part->storage_id);
+					continue;
+				}
+
+				/* only temp partition need be erased when recovery is enabled */
+				if (part->file_id != PARTITION_FILE_ID_SYSTEM &&
+				    part->file_id != PARTITION_FILE_ID_SDFS) {
+					SYS_LOG_INF("part[%d]: skip not recovery app", part->file_id);
+					continue;
+				}
+			}else{
+				/* don't erase partition that not in current storage */
+				if (part->storage_id != ota_storage_get_storage_id(ota->storage)) {
+					SYS_LOG_INF("part[%d]: skip not current storage %d", i, part->storage_id);
+					continue;
+				}
+
+				/* only temp partition need be erased when recovery is enabled */
+				if (part->type != PARTITION_TYPE_TEMP &&
+				    part->file_id != PARTITION_FILE_ID_OTA_TEMP) {
+					SYS_LOG_INF("part[%d]: skip not temp", i);
+					continue;
+				}
+			}
+		}
+
+		if(!ota_partition_check_part_is_clean(ota, part)){
+			ota_partition_erase_part(ota, part, 0, true);
+		}
+
+		ota_breakpoint_set_file_state(bp, part->file_id, OTA_BP_FILE_STATE_CLEAN);
+	}
+
+	bp->state = OTA_BP_STATE_CLEAN;
+	SYS_LOG_INF("bp state is clean");
+
+	ota_breakpoint_save(bp);
+
+	return 0;
+}
+
+
+int ota_partition_update_prepare(struct ota_upgrade_info *ota)
 {
 	struct ota_breakpoint *bp = &ota->bp;
 	const struct partition_entry *part;
 	int i, file_state, erase_offset;
 
-	SYS_LOG_INF("bp->state %d", bp->state);
+	SYS_LOG_INF("bp_state %d", bp->state);
 
 	if (bp->state == OTA_BP_STATE_CLEAN) {
-		/* state is clean, skip erase */
 		SYS_LOG_INF("bp_state clean, skip erase parts");
 		return 0;
 	}
@@ -190,12 +294,6 @@ static int ota_partition_update_prepare(struct ota_upgrade_info *ota, int init_s
 		/* state is clean, skip erase */
 		SYS_LOG_INF("bp_state done, skip erase parts");
 		return 0;
-	}
-
-	if (init_state){
-		if(bp->state == OTA_BP_STATE_UPGRADE_WRITING_OTHER){
-			return 0;
-		}
 	}
 
 	if (ota_use_recovery(ota)) {
@@ -212,6 +310,8 @@ static int ota_partition_update_prepare(struct ota_upgrade_info *ota, int init_s
 			return 0;
 		}
 	}
+
+	ota_update_state(ota, OTA_UPGRADE_PREPARE);
 
 	for (i = 0; i < MAX_PARTITION_COUNT; i++) {
 		part = partition_get_part_by_id(i);
@@ -279,22 +379,28 @@ static int ota_partition_update_prepare(struct ota_upgrade_info *ota, int init_s
 					/* update write offset aligned with erase sector */
 					bp->cur_file_write_offset = part->offset + erase_offset - bp->cur_file.offset;
 
-					ota_partition_erase_part(ota, part, erase_offset, init_state);
+					ota_partition_erase_part(ota, part, erase_offset, false);
 					ota_breakpoint_set_file_state(bp, part->file_id, OTA_BP_FILE_STATE_WRITING_CLEAN);
 					continue;
 				}
 			}
 		}
 
-		ota_partition_erase_part(ota, part, 0, init_state);
+		ota_partition_erase_part(ota, part, 0, false);
 		ota_breakpoint_set_file_state(bp, part->file_id, OTA_BP_FILE_STATE_CLEAN);
+
+		if(bp->state == OTA_BP_STATE_WRITING_IMG_FAIL && part->file_id == PARTITION_FILE_ID_OTA_TEMP){
+			bp->state = OTA_BP_STATE_CLEAN;
+		}
 	}
+
+	ota_update_state(ota, OTA_UPGRADE_PREPARE_DONE);
 
 	//sleep for log message output
 	os_sleep(10);
 
 	if (bp->state != OTA_BP_STATE_UPGRADE_WRITING &&
-	    bp->state != OTA_BP_STATE_WRITING_IMG) {
+	    bp->state != OTA_BP_STATE_WRITING_IMG && bp->state != OTA_BP_STATE_CLEAN) {
 		if (bp->state != OTA_BP_STATE_UNKOWN) {
 			/* clear all old status */
 			SYS_LOG_INF("clear old bp status");
@@ -397,26 +503,13 @@ static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 		return -1;
 	}
 
-	if(ota_use_recovery_app(ota) && (part->flag & PARTITION_FLAG_ENABLE_ENCRYPTION)){
-		return ota_encrypt_data_verify(ota, file);
-	}else if (file->file_id != PARTITION_FILE_ID_OTA_TEMP){
-
-		crc_calc = ota_caculate_storage_file_crc(ota, file);
-		crc_orig = file->checksum;
-
-		SYS_LOG_INF("%s: orig 0x%x, calc 0x%x", file->name, crc_orig, crc_calc);
-		if (crc_calc != crc_orig) {
-			return -1;
-		}
-	}else{
-
+	if(file->file_id == PARTITION_FILE_ID_OTA_TEMP){
 		ota_update_temp_partition_flag(ota, file);
 
 		//校验时间较长，降低优先级给应用层做UI
 		prio = k_thread_priority_get(k_current_get());
 		k_thread_priority_set(k_current_get(), 12);
 
-		ota->temp_image_offset = file->offset;
 		if(ota_use_secure_boot(ota)) {
 			crc_calc = ota_secure_data_verify(ota, file);
 		}else{
@@ -431,6 +524,17 @@ static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 		}
 
 		return crc_calc;
+	}else if(ota_use_recovery_app(ota) && (part->flag & PARTITION_FLAG_ENABLE_ENCRYPTION)){
+		return ota_encrypt_data_verify(ota, file);
+	}else{
+
+		crc_calc = ota_caculate_storage_file_crc(ota, file);
+		crc_orig = file->checksum;
+
+		SYS_LOG_INF("%s: orig 0x%x, calc 0x%x", file->name, crc_orig, crc_calc);
+		if (crc_calc != crc_orig) {
+			return -1;
+		}
 	}
 
 	return 0;
@@ -786,7 +890,7 @@ static int ota_write_file_normal(struct ota_upgrade_info *ota, struct ota_file *
 
 	offs = start_file_offs;
 
-	if (strlen(file->name) == 0) {
+	if (file->file_id == PARTITION_FILE_ID_OTA_TEMP) {
 		img_file_offset = ota_image_get_file_offset(img, NULL);
 		//if (ota_use_recovery(ota) && !ota_use_recovery_app(ota)) {
 		//	if (!start_file_offs)
@@ -1064,6 +1168,79 @@ static int ota_upgrade_verify_along(struct ota_upgrade_info *ota)
 	return 0;
 }
 
+static const char temp_bin_name[] = "TEMP.bin";
+
+static int ota_init_temp_file_data(struct ota_upgrade_info *ota, struct ota_file *file, const struct partition_entry *part)
+{
+	memset(file, 0x0, sizeof(struct ota_file));
+
+	if(ota_use_recovery_app(ota)){
+		file->size = ota_storage_get_image_size(ota->storage, part->offset);
+
+		if(file->size < 0){
+			return -EINVAL;
+		}
+
+		if(ota_use_secure_boot(ota)) {
+			file->size += OTA_SIGNATURE_DATA_LEN;
+		}
+	}else{
+		file->size = ota_upgrade_get_temp_img_size(ota);
+	}
+
+
+	file->file_id = PARTITION_FILE_ID_OTA_TEMP;
+
+	memcpy(file->name, temp_bin_name, strlen(temp_bin_name));
+
+	if (file->size >= part->size) {
+		SYS_LOG_ERR("temp partition size too small 0x%x_0x%x", part->size, file->size);
+		return -EINVAL;
+	}
+
+	file->offset = part->offset;
+
+	return 0;
+}
+
+int ota_upgrade_verify_temp_image(struct ota_upgrade_info *ota)
+{
+	struct ota_file *file;
+	struct ota_file tmp_file;
+	int err;
+
+	file = &tmp_file;
+
+	SYS_LOG_INF();
+
+	const struct partition_entry *part = partition_get_temp_part();
+
+	if (part == NULL) {
+		SYS_LOG_ERR("temp partition err");
+		return -EINVAL;
+	}
+
+	if(ota_init_temp_file_data(ota, file, part) != 0){
+		SYS_LOG_ERR("init file err %s", file->name);
+		return -EINVAL;
+	}
+
+	ota_update_state(ota, OTA_FILE_VERIFY);
+	err = ota_verify_file(ota, file);
+	ota_update_state(ota, OTA_FILE_VERIFY_DONE);
+	if (err) {
+		SYS_LOG_ERR("%s verify failed", file->name);
+		ota_breakpoint_update_file_state(&ota->bp, file, OTA_BP_FILE_STATE_VERIFY_FAIL, 0, 0);
+		return -EIO;
+	}
+
+	SYS_LOG_INF("%s verify pass", file->name);
+	ota_breakpoint_update_file_state(&ota->bp, file, OTA_BP_FILE_STATE_VERIFY_PASS, 0, 0);
+
+	return 0;
+}
+
+
 static int ota_auto_update_version(struct ota_upgrade_info *ota,
 				     const struct partition_entry *part,
 				     struct ota_file *file)
@@ -1274,8 +1451,6 @@ static int ota_write_boot_image(struct ota_upgrade_info *ota)
 	struct ota_file *file, *boot_file = NULL, *param_file = NULL;
 	int i, err;
 
-	print_buffer((const void *)0xc00a0300, 4, 16, 4, -1);
-
 	fw_version_dump((struct fw_version *)fw_version_get_current());
 
 	for (i = 0; i < manifest->file_cnt; i++) {
@@ -1302,6 +1477,10 @@ static int ota_write_boot_image(struct ota_upgrade_info *ota)
 
 	/* write boot file at secondly last */
 	if (boot_file && boot_part) {
+
+		//force erase boot file partition
+		ota_breakpoint_update_file_state(&ota->bp, boot_file, OTA_BP_FILE_STATE_UNKOWN, 0, 0);
+
 		/* write boot file at mirror part */
 		err = ota_write_and_verify_file(ota, boot_part, boot_file, true);
 		if (err) {
@@ -1316,6 +1495,9 @@ static int ota_write_boot_image(struct ota_upgrade_info *ota)
 				return 0;
 			}
 		}
+
+		//force erase param file partition
+		ota_breakpoint_update_file_state(&ota->bp, param_file, OTA_BP_FILE_STATE_UNKOWN, 0, 0);
 
 		/* write param file at mirror part */
 		err = ota_write_and_verify_file(ota, param_part, param_file, true);
@@ -1342,29 +1524,26 @@ static int ota_write_temp_img(struct ota_upgrade_info *ota)
 	struct ota_file *file;
 
 	file = &tmp_file;
-	memset(file, 0x0, sizeof(struct ota_file));
-
-	file->size = ota_upgrade_get_temp_img_size(ota);
-
-	file->file_id = PARTITION_FILE_ID_OTA_TEMP;
 
 	temp_part = partition_get_temp_part();
+
 	if (temp_part == NULL) {
-		SYS_LOG_ERR("no temp partition to store ota fw");
+		SYS_LOG_ERR("temp partition err");
 		return -EINVAL;
 	}
 
-	if (file->size >= temp_part->size) {
-		SYS_LOG_ERR("temp partition size too small 0x%x_0x%x", temp_part->size, file->size);
+	if(ota_init_temp_file_data(ota, file, temp_part) != 0){
+		SYS_LOG_ERR("init file err %s", file->name);
 		return -EINVAL;
 	}
 
-	file->offset = temp_part->offset;
+
+	ota->temp_image_offset = file->offset;
 
 	SYS_LOG_INF("file %s, file_id %d write to nor addr 0x%x",
 		strlen(file->name) ? (const char *)file->name : (const char *)"<NULL>", file->file_id, file->offset);
 
-	err = ota_write_and_verify_file(ota, temp_part, file, true);
+	err = ota_write_and_verify_file(ota, temp_part, file, false);
 	if (err) {
 		SYS_LOG_ERR("failed to write ota image");
 		return err;
@@ -1639,19 +1818,6 @@ int ota_upgrade_check(struct ota_upgrade_info *ota, struct ota_upgrade_check_par
 		SYS_LOG_ERR("backend type error\n");
 		return -EINVAL;
 	}
-	ota_breakpoint_init(&ota->bp);
-
-	ota_partition_update_prepare(ota, false);
-
-	ota_update_state(ota, OTA_INIT_FINISHED);
-
-	err = ota_image_open(ota->img);
-	if (err) {
-		SYS_LOG_INF("ota image open failed");
-		ota_update_state(ota, OTA_CANCEL);
-		ota_image_close(ota->img);
-		return -EIO;
-	}
 
 	if (!param){
 		ota->data_buf = mem_malloc(ota->data_buf_size);
@@ -1664,9 +1830,28 @@ int ota_upgrade_check(struct ota_upgrade_info *ota, struct ota_upgrade_check_par
 
 	if (!ota->data_buf) {
 		SYS_LOG_ERR("faield to allocate %d bytes", ota->data_buf_size);
-		err = -ENOMEM;
-		goto exit;
+		return -ENOMEM;
 	}
+
+	ota_breakpoint_init(&ota->bp);
+
+	ota_partition_update_prepare(ota);
+
+	ota_update_state(ota, OTA_INIT_FINISHED);
+
+	err = ota_image_open(ota->img);
+	if (err) {
+		SYS_LOG_INF("ota image open failed");
+		ota_update_state(ota, OTA_CANCEL);
+		ota_image_close(ota->img);
+		ota_breakpoint_exit(&ota->bp);
+		if (ota->data_buf && ota->data_buf_owner) {
+			mem_free(ota->data_buf);
+			ota->data_buf = NULL;
+		}
+		return -EIO;
+	}
+
 
 	if (ota_use_recovery_app(ota)) {
 		/* only check data in recovery app to save time */
@@ -1695,7 +1880,7 @@ int ota_upgrade_check(struct ota_upgrade_info *ota, struct ota_upgrade_check_par
 	}else if(need_upgrade == 2){
 		SYS_LOG_INF("bp changed");
 		ota_breakpoint_update_state(bp, OTA_BP_STATE_WRITING_IMG_FAIL);
-		ota_partition_update_prepare(ota, false);
+		ota_partition_update_prepare(ota);
 	}
 
 	ota_upgrade_statistics(ota);
@@ -1765,6 +1950,11 @@ int ota_upgrade_check(struct ota_upgrade_info *ota, struct ota_upgrade_check_par
 			goto exit;
 		}
 
+		err = ota_upgrade_verify_temp_image(ota);
+		if (err) {
+			goto exit;
+		}
+
 		err = ota_update_state(ota, OTA_UPLOADING);
 
 		if(err){
@@ -1783,6 +1973,7 @@ int ota_upgrade_check(struct ota_upgrade_info *ota, struct ota_upgrade_check_par
 	ota_upgrade_dump_time_performance(ota);
 
 exit:
+	ota_breakpoint_exit(&ota->bp);
 	ota_rx_exit(ota);
 
 	ota_image_release_fw_head(ota->img);
@@ -1867,7 +2058,7 @@ int ota_upgrade_is_ota_running(void)
 	struct ota_breakpoint bp;
 	int bp_state;
 
-	ota_breakpoint_load(&bp);
+	ota_breakpoint_init(&bp);
 
 	bp_state = ota_breakpoint_get_current_state(&bp);
 	switch (bp_state) {
@@ -1929,15 +2120,20 @@ struct ota_upgrade_info *ota_upgrade_init(struct ota_upgrade_param *param)
 
 	ota_breakpoint_init(&ota->bp);
 
+	ota_upgrade_clear_ota_bp_state(ota);
+
 	if (!param->flag_skip_init_erase){
-		ota_partition_update_prepare(ota, true);
+		ota_partition_update_prepare_init(ota);
 	}
 
 	ota->img = ota_image_init();
 	if (!ota->img) {
 		SYS_LOG_ERR("image init failed");
+		ota_breakpoint_exit(&ota->bp);
 		return NULL;
 	}
+
+	ota_breakpoint_exit(&ota->bp);
 
 	ota->notify = param->notify;
 
@@ -2081,18 +2277,26 @@ int ota_upgrade_set_ota_partition_other_writing(uint8_t file_id)
 	return -EINVAL;
 }
 
-int ota_upgrade_clear_ota_bp_state(void)
+int ota_upgrade_clear_ota_bp_state(struct ota_upgrade_info *ota)
 {
-	struct ota_breakpoint bp;
-
-	ota_breakpoint_load(&bp);
-
-	ota_breakpoint_clear_all_file_state(&bp);
-
-	ota_breakpoint_save(&bp);
+	ota_breakpoint_clear_all_file_state(&ota->bp);
 
 	SYS_LOG_INF("ok\n");
 
 	return 0;
 }
+
+int ota_upgrade_set_ota_buf(struct ota_upgrade_info *ota, uint8_t *buf, uint32_t buf_size)
+{
+	if(ota->data_buf){
+		return -EINVAL;
+	}
+
+	ota->data_buf = buf;
+	ota->data_buf_size = buf_size;
+	ota->data_buf_owner = false;
+
+	return 0;
+}
+
 

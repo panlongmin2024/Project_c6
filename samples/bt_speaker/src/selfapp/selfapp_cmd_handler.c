@@ -352,6 +352,7 @@ static u16_t devinfo_pack_token(u8_t * buf, u8_t tokenid, u8_t device_id)
 		if(!device_id){
 #ifdef CONFIG_PROPERTY
 			property_get(CFG_APP_NAME, name, SELF_BTNAME_LEN);
+			selfapp_log_inf("app name %s\n",name);
 #endif
 		}else{
 			if(selfctx->secondary_device.validate && strlen(selfctx->secondary_device.bt_name)){
@@ -1524,14 +1525,17 @@ int selfapp_cmd_handler(u8_t * buf, u16_t len)
 			break;
 		}
 	default:{
-			selfapp_log_wrn("Unknow Cmd: 0x%x\n", CmdID);
+			u8_t buf[8];
+			selfapp_log_wrn("Unknow Cmd: 0x%x", CmdID);
+			PayloadLen = selfapp_pack_unsupported(buf, CmdID);
+			self_send_data(buf, PayloadLen);
 			break;
 		}
 	}
 
  label_done:
 	if (ret) {
-		selfapp_log_wrn("Command 0x%x fail:\n", CmdID);
+		selfapp_log_wrn("Command 0x%x fail:", CmdID);
 #ifdef SELFAPP_DEBUG
 		selfapp_log_dump(buf, (len > 0x10 ? 0x10 : len));
 #endif

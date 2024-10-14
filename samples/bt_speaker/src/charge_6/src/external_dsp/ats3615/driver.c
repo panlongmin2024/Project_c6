@@ -322,6 +322,8 @@ int external_dsp_ats3615_load(int effect)
 		extern int spkeq_SetCus(void);
 		extern bool selfapp_eq_is_default(void);
 		extern u8_t selfapp_config_get_PB_state(void); 
+		extern int ext_dsp_restore_default(void);
+		ext_dsp_restore_default();
 		if((!selfapp_eq_is_default())&& (selfapp_config_get_PB_state() == 0)){
 			spkeq_SetCus();
 		}

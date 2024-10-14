@@ -430,6 +430,7 @@ static void bt_manager_notify_connected(struct bt_mgr_dev_info *info)
 	info->notify_connected = 1;
 
 	bt_manager_set_status_ext(BT_STATUS_CONNECTED, tmp_flag, &info->addr);
+    bt_manager_check_phone_connected();
 
 	if (info->snoop_role != BTSRV_SNOOP_SLAVE) {
 #ifdef CONFIG_BT_MAP_CLIENT
@@ -452,6 +453,12 @@ static void role_switch_work(struct k_work *work)
 	} else {
 		os_delayed_work_submit(&bt_manager->role_switch_work, 20);
 	}
+}
+
+static void tts_delay_work(struct k_work *work)
+{
+	struct bt_manager_context_t *bt_manager = bt_manager_get_context();
+	bt_manager->ios_tts_delay = 0;
 }
 
 static void bt_manager_check_disconnect_notify(struct bt_mgr_dev_info *info, uint8_t reason)
@@ -552,8 +559,7 @@ static bool bt_manager_on_acl_disconnected(struct bt_mgr_dev_info *dev_info, uin
         return false;
     }
 
-    /* ���沥��״̬���ڳ�ʱ�Ͽ�������ɹ�ʱ�ָ�����
-     */
+    /* ���沥��״̬���ڳ�ʱ�Ͽ�������ɹ�ʱ�ָ�����?     */
     if (bt_manager_is_timeout_disconnected(reason))
     {
         dev_info->timeout_disconnected = 1;
@@ -726,7 +732,7 @@ int bt_manager_link_event(void *param)
 		break;
 	case BT_LINK_EV_SECURITY_CHANGED:
 		bt_manager_audio_conn_event(BT_SECURITY_CHANGED, &in_param->hdl,sizeof(in_param->hdl));
-		bt_manager_check_phone_connected();
+		//bt_manager_check_phone_connected();
 		info->key_miss = 0;
 		SYS_EVENT_INF(EVENT_BT_LINK_SECURITY_CHANGED, info->hdl,
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
@@ -744,25 +750,31 @@ int bt_manager_link_event(void *param)
 		break;
 	case BT_LINK_EV_A2DP_CONNECTED:
 		info->a2dp_connected = 1;
-        if(!bt_manager_audio_is_ios_dev(info->hdl)){
-            bt_manager_notify_connected(info);
-        }
-        bt_manager_control_role_check(info);
-        bt_manager_auto_reconnect_resume_play(in_param->hdl);
-        SYS_EVENT_INF(EVENT_BT_LINK_A2DP_CONNECTED, info->hdl,
-            UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
+		if(!bt_manager_audio_is_ios_dev(info->hdl) ||
+			info->ios_tts_delay) {
+			info->ios_tts_delay = 0;
+			bt_manager_notify_connected(info);
+		}
+		bt_manager_control_role_check(info);
+		bt_manager_auto_reconnect_resume_play(in_param->hdl);
+		SYS_EVENT_INF(EVENT_BT_LINK_A2DP_CONNECTED, info->hdl,
+			UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
 		break;
 	case BT_LINK_EV_A2DP_SINGALING_CONNECTED:
-        info->a2dp_singnaling_connected = 1;
-        os_delayed_work_cancel(&info->profile_disconnected_delay_work);
-        if(bt_manager_audio_is_ios_dev(info->hdl)){
-            bt_manager_notify_connected(info);
-        }
-        break;
+		info->a2dp_singnaling_connected = 1;
+		os_delayed_work_cancel(&info->profile_disconnected_delay_work);
+		if(bt_manager_audio_is_ios_dev(info->hdl)){
+			if (0 == bt_manager->ios_tts_delay)
+				bt_manager_notify_connected(info);
+			else
+				info->ios_tts_delay = 1;
+		}
+		break;
 
 	case BT_LINK_EV_A2DP_DISCONNECTED:
 		info->a2dp_connected = 0;
         info->a2dp_singnaling_connected = 0;
+		info->ios_tts_delay = 0;
 		SYS_EVENT_INF(EVENT_BT_LINK_A2DP_DISCONNECTED, info->hdl,
 						UINT8_ARRAY_TO_INT32(info->addr.val), os_uptime_get_32());
 		if (!info->deemed_disconnected) {
@@ -890,6 +902,13 @@ void bt_manager_auto_reconnect_complete(void)
 	btmgr_reconnect_cfg_t *cfg_reconnect = bt_manager_get_reconnect_config();
 
 	SYS_LOG_INF("startup:%d",bt_manager->auto_reconnect_startup);
+	for(int i = 0; ((i < MAX_MGR_DEV) && bt_manager->dev[i].used); i++){
+		//TODO:clear all info data??
+		//if (bt_manager->dev[i].auto_reconnect && !bt_manager->dev[i].hdl) {
+		bt_manager->dev[i].auto_reconnect = 0;
+		//}
+	}
+	bt_manager->auto_reconnect_timeout = 0;
 
 	if(bt_manager->auto_reconnect_startup){
 		bt_manager->auto_reconnect_startup = 0;
@@ -908,14 +927,6 @@ void bt_manager_auto_reconnect_complete(void)
         bt_manager_enter_pair_mode();
 		#endif
 	}
-
-    for(int i = 0; ((i < MAX_MGR_DEV) && bt_manager->dev[i].used); i++){
-        //TODO:clear all info data??
-        //if (bt_manager->dev[i].auto_reconnect && !bt_manager->dev[i].hdl) {
-        bt_manager->dev[i].auto_reconnect = 0;
-        //}
-    }
-    bt_manager->auto_reconnect_timeout = 0;
 }
 
 static int bt_manager_service_callback(btsrv_event_e event, void *param)
@@ -948,7 +959,7 @@ static int bt_manager_service_callback(btsrv_event_e event, void *param)
 	case BTSRV_REQ_FLUSH_PROPERTY:
 		SYS_LOG_INF("Req flush %s\n", (char *)param);
 #ifdef CONFIG_PROPERTY
-		property_flush_req(param);
+		//property_flush_req(param);
 #endif
 		break;
 	case BTSRV_CHECK_NEW_DEVICE_ROLE:
@@ -983,12 +994,30 @@ void bt_manager_record_halt_phone(void)
 	bt_manager->halt_dev_num = 0;
 	for (i = 0; i < MAX_MGR_DEV; i++) {
 		if (bt_manager->dev[i].used && !bt_manager->dev[i].is_tws && bt_manager->dev[i].hdl
-			&& (bt_manager->dev[i].a2dp_connected || bt_manager->dev[i].hf_connected)) {
+			&& (bt_manager->dev[i].a2dp_connected || bt_manager->dev[i].a2dp_singnaling_connected || bt_manager->dev[i].hf_connected)) {
 			memcpy(&bt_manager->halt_addr[bt_manager->halt_dev_num], &bt_manager->dev[i].addr, sizeof(bd_address_t));
 			bt_manager->dev[i].halt_phone = 1;
 			bt_manager->dev[i].need_resume_play = bt_manager->dev[i].a2dp_status_playing;
 			bt_manager->halt_dev_num++;
 		}
+	}
+}
+
+void bt_manager_ios_tts_delay_set(bool enable)
+{
+	struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
+
+	if (!bt_manager->tts_delay_work.work.handler) {
+		SYS_LOG_ERR("bt manager not init.");
+		return;
+	}
+
+	os_delayed_work_cancel(&bt_manager->tts_delay_work);
+	if (true == enable) {
+		os_delayed_work_submit(&bt_manager->tts_delay_work, 10000); // 10s
+		bt_manager->ios_tts_delay = 1;
+	} else {
+		bt_manager->ios_tts_delay = 0;
 	}
 }
 
@@ -1312,6 +1341,7 @@ int bt_manager_init(bt_manager_event_callback_t event_callback)
 	os_delayed_work_init(&bt_manager->tws_pair_search_work, tws_pair_search_work_callback);
 	os_delayed_work_init(&bt_manager->clear_paired_list_work, clear_paired_list_work);
 	os_delayed_work_init(&bt_manager->role_switch_work, role_switch_work);
+	os_delayed_work_init(&bt_manager->tts_delay_work, tts_delay_work);
 
 #ifdef CONFIG_BT_LETWS
 	os_delayed_work_init(&bt_manager->letws_pair_search_work, letws_pair_search_work_callback);
@@ -1420,6 +1450,7 @@ void bt_manager_deinit(void)
 
 	SYS_LOG_INF("start\n");
 
+	os_delayed_work_cancel(&bt_manager->tts_delay_work);
 	bt_manager->bt_ready = 0;
     bt_manager->pair_status = BT_PAIR_STATUS_NODISC_NOCON;
     btif_br_update_pair_status(bt_manager->pair_status);

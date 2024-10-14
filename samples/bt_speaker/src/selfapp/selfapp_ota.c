@@ -20,7 +20,7 @@
 
 #define OTADFU_FRAME_LEN     (34)
 #define OTADFU_FRAME_DATA_LEN (OTADFU_FRAME_LEN - 2)
-#define OTADFU_DATABUF_SIZE  (74 * 1024)
+#define OTADFU_DATABUF_SIZE  (73 * 1024)
 #define OTADFU_REMAIN_DATABUF_SIZE (1024)
 #define OTADFU_READ_BLOCK    (512)
 
@@ -121,6 +121,9 @@ typedef struct {
 
 	u8_t flag_bp_resumed;
 	u8_t flag_bp_waiting;
+
+	u8_t flag_disable_report;
+	u8_t flag_space_not_enough;
 #ifdef OTADFU_BP_SUGGESTION
 	u8_t flag_bp_droppkg;
 #endif
@@ -146,6 +149,7 @@ typedef struct {
 
 	struct k_thread cmd_thread;
 
+	void *stream_handle;
 } otadfu_handle_t;
 
 static int dfu_data_buf_flush(otadfu_handle_t * otadfu);
@@ -154,6 +158,7 @@ static __ota_bss uint32_t ota_thread_data_buffer[OTADFU_THREAD_DATA_SIZE / 4];
 static __ota_bss uint8_t ota_data_buffer[OTADFU_DATABUF_SIZE] ;
 static __ota_bss uint8_t ota_header_data_buffer[OTADFU_HEADER_DATA_SIZE];
 static __ota_bss uint8_t ota_remain_data_buffer[OTADFU_REMAIN_DATABUF_SIZE];
+static otadfu_handle_t ota_handle;
 
 K_MUTEX_DEFINE(otadfu_mutex);
 
@@ -189,6 +194,30 @@ static int otadfu_set_state(u8_t new_state)
 	otadfu->state = new_state;
 
 	selfapp_log_inf("%d->%d", old_state, new_state);
+
+	return 0;
+}
+
+static void *otadfu_get_streamhdl(void)
+{
+	otadfu_handle_t *otadfu = otadfu_get_handle();
+
+	if (otadfu == NULL) {
+		return NULL;
+	}
+
+	return otadfu->stream_handle;
+}
+
+static int otadfu_set_streamhdl(void *stream_handle)
+{
+	otadfu_handle_t *otadfu = otadfu_get_handle();
+
+	if (otadfu == NULL) {
+		return -EINVAL;
+	}
+
+	otadfu->stream_handle = stream_handle;
 
 	return 0;
 }
@@ -284,7 +313,7 @@ static int dfu_release(otadfu_handle_t * otadfu)
 	//	mem_free(otadfu->data_buf);
 	//}
 
-	mem_free(otadfu);
+	//mem_free(otadfu);
 	otadfu_set_handle(NULL);
 
     bt_manager_set_user_visual(0,0,0,0);
@@ -317,7 +346,8 @@ static int dfu_prepare(dfu_start_t * param)
 		return 1;
 	}
 
-	handle = (otadfu_handle_t *) mem_malloc(sizeof(otadfu_handle_t));
+	//handle = (otadfu_handle_t *) mem_malloc(sizeof(otadfu_handle_t));
+	handle = &ota_handle;
 	if (handle == NULL) {
 		selfapp_log_wrn("dfupre nomem\n");
 		return -1;
@@ -348,6 +378,14 @@ static int dfu_prepare(dfu_start_t * param)
 		ret = -4;
 		goto label_fail;
 	}
+
+	if (self_get_current_streamhdl() != NULL){
+		otadfu_set_streamhdl(self_get_current_streamhdl());
+	}else{
+		ret = -5;
+		goto label_fail;
+	}
+
 	handle->stream_opened = 1;
 #endif
 
@@ -598,6 +636,32 @@ static uint32_t calculate_checksum32(u8_t *data, size_t len)
     return (checksum | crc) ;
 }
 
+int otadfu_check_space_enough(otadfu_handle_t *otadfu, u8_t seq, int len)
+{
+	int stream_space;
+
+	if (otadfu->data_stream && otadfu->stream_opened) {
+		stream_space = stream_get_space(otadfu->data_stream);
+
+		// not space for next package, don't report so that App would not send
+		if(stream_space <= len * 3 || otadfu->flag_space_not_enough) {
+			if(seq > 0){
+				seq--;
+			}else{
+				seq = 0xff;
+			}
+			otadfu->delayed_sequence = seq;  // always report the newest one
+			otadfu->flag_space_not_enough = true;
+			printk("dfu disable_report_seq %d_%d\n", otadfu->flag_disable_report, otadfu->delayed_sequence);
+			return false;
+
+		}else{
+			return true;
+		}
+	}
+
+	return false;
+}
 
 static int dfu_data_buf_read(otadfu_handle_t * otadfu, u8_t * buf, u32_t size,
 			     u8_t update);
@@ -713,7 +777,7 @@ int dfu_process_received_data(otadfu_handle_t * otadfu, u8_t *data, size_t len) 
 static int dfu_data_buf_write(otadfu_handle_t * otadfu, u8_t * seq, u8_t ** ptr,
 			      int len)
 {
-	void *outer_stream = self_get_current_streamhdl();
+	void *outer_stream = otadfu_get_streamhdl();
 	int write_len = 0;
 #ifndef OTADFU_BY_DATA_STREAM
 	u8_t *tmp_buf = NULL;
@@ -736,6 +800,12 @@ static int dfu_data_buf_write(otadfu_handle_t * otadfu, u8_t * seq, u8_t ** ptr,
 			}
 
 			stream_read(outer_stream, otadfu->check_data, len);
+
+			if(otadfu->flag_disable_report) {
+				if(!otadfu_check_space_enough(otadfu, *seq, len)){
+					return -ENOMEM;
+				}
+			}
 
 			frame_checksum = calculate_checksum32(otadfu->check_data, len);
 
@@ -877,10 +947,12 @@ static void ota_app_cmd_thread_start(otadfu_handle_t *otadfu)
 
 	selfapp_stream_handle_suspend(true);
 
-	streamhdl = self_get_current_streamhdl();
+	streamhdl = otadfu_get_streamhdl();
 	if (streamhdl) {
 		sppble_stream_set_rxdata_callback(streamhdl, _selfapp_rx_data_callback);
 	}
+
+	printk("ota app cmd start %p\n", streamhdl);
 
 	otadfu->app_cmd_thread_stack = (char *)ota_thread_data_buffer;
 
@@ -892,10 +964,12 @@ static void ota_app_cmd_thread_start(otadfu_handle_t *otadfu)
 static void ota_app_cmd_thread_stop(otadfu_handle_t *otadfu)
 {
 	uint32_t cur_time;
-	void *streamhdl = self_get_current_streamhdl();
+	void *streamhdl = otadfu_get_streamhdl();
 	if (streamhdl) {
 		sppble_stream_set_rxdata_callback(streamhdl, NULL);
 	}
+
+	printk("ota app cmd stop %p\n", streamhdl);
 
 	otadfu->thread_need_terminated = true;
 
@@ -1186,7 +1260,20 @@ static void otadfu_callback(int event)
 		}
 		otadfu->flag_delay_report = 0;
 		otadfu->delayed_sequence = 0;	// 0 is also a sequence
-	} else if (event == OTA_FILE_VERIFY) {
+	} else if(event == OTA_UPGRADE_PREPARE) {
+        if(!otadfu->flag_disable_report) {
+            printk("do disable report %d\n", otadfu->delayed_sequence);
+        }
+        otadfu->flag_disable_report = true;
+    } else if(event == OTA_UPGRADE_PREPARE_DONE) {
+        if(otadfu->flag_disable_report && otadfu->flag_space_not_enough) {
+            printk("do enable report %d\n", otadfu->delayed_sequence);
+            dfureport_state_sequence(otadfu->state, otadfu->delayed_sequence);
+        }
+        otadfu->flag_disable_report = 0;
+		otadfu->flag_space_not_enough = 0;
+        otadfu->delayed_sequence = 0;  // 0 is also a sequence
+    }else if (event == OTA_FILE_VERIFY) {
 		if (otadfu->flag_delay_report == 0) {
 			otadfu->flag_delay_report = 1;	// ota thread will not read data for a long time
 		}
@@ -1204,11 +1291,12 @@ static void otadfu_callback(int event)
                 break;
             }
         }
-
+#if 0
 		//when flag send complete has set, we must delay 700ms for app
 		os_sleep(700);
 
 		dfureport_image_state(0x0);
+#endif
     } else if(event == OTA_INIT_FINISHED) {
 		otadfu_set_state(DFUSTA_READY);
 		dfureport_start(otadfu, 0);  // send bp_offset = 0, fix App progress-bar error after bp resumed
@@ -1225,6 +1313,8 @@ u8_t otadfu_running(void)
 	return 0;
 }
 
+
+
 int otadfu_SetDfuData(u8_t sequence, u8_t * data, int len)
 {
 	int ret = 0;		// >0 written length, other fail
@@ -1239,7 +1329,9 @@ int otadfu_SetDfuData(u8_t sequence, u8_t * data, int len)
 	ret = dfu_data_buf_write(otadfu, &sequence, &data, len);
 
 	if(ret < 0){
-		dfureport_state_sequence(otadfu->state, otadfu->data_sequence);
+		if(ret != -ENOMEM){
+			dfureport_state_sequence(otadfu->state, otadfu->data_sequence);
+		}
 		return ret;
 	}
 
@@ -1322,6 +1414,9 @@ int otadfu_NotifyDfuCancel(u8_t cancel_reason)
 	ota_app_cmd_thread_stop(otadfu);
 
 	otadfu_set_state(DFUSTA_CANCEL);
+
+	otadfu_set_streamhdl(NULL);
+
 #ifdef CONFIG_OTA_SELF_APP
 	dfu_release(otadfu);
 #endif

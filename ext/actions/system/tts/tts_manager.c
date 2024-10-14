@@ -20,6 +20,10 @@
 #include <input_manager.h>
 #include <bt_manager.h>
 
+#ifdef CONFIG_TASK_WDT
+#include <debug/task_wdt.h>
+#endif
+
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL
 #include <soc_dvfs.h>
 #endif
@@ -734,6 +738,9 @@ void tts_manager_wait_finished(bool clean_all)
 	while (tts_ctx->tts_curr && try_cnt-- > 0) {
 		thread_timer_handle_expired();
 		os_sleep(4);
+		#ifdef CONFIG_TASK_WDT
+		task_wdt_feed_all();
+		#endif
 	}
 
 	if (try_cnt == 0) {

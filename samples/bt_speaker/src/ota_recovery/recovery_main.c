@@ -229,6 +229,8 @@ int ota_app_init_sdcard(void)
 }
 #endif
 
+const unsigned char *ota_get_public_key(void);
+
 int ota_app_init(void)
 {
 	struct ota_upgrade_param param;
@@ -242,13 +244,15 @@ int ota_app_init(void)
 	param.flag_use_recovery = 1;
 	param.flag_use_recovery_app = 1;
 	param.no_version_control = 1;
+#ifdef CONFIG_SOC_SECURE_BOOT
+	param.flag_secure_boot = 1;
+	param.public_key = ota_get_public_key();
+#endif
 
 	struct device *flash_device =
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
 	if (flash_device)
 		flash_write_protection_set(flash_device, false);
-
-	ota_upgrade_clear_ota_bp_state();
 
 	g_ota = ota_upgrade_init(&param);
 	if (!g_ota) {
@@ -287,8 +291,8 @@ void main(void)
 	ota_app_init();
 
 #ifdef CONFIG_OTA_BACKEND_TEMP_PART
-	int need_run = ota_upgrade_is_in_progress(g_ota);
-	if (!need_run) {
+	ota_upgrade_set_ota_buf(g_ota, ota_data_buf, sizeof(ota_data_buf));
+ 	if (ota_upgrade_verify_temp_image(g_ota) != 0) {
 		SYS_LOG_INF("skip ota recovery");
 		ret = -1;
 		goto exit;

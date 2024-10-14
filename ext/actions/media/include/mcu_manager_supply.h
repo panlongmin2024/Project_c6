@@ -116,7 +116,9 @@ enum mcu_manager_supply_property {
     MCU_SUPPLY_PROP_JUST_DOWN_LED_LEVEL,
 
 	/* for factory test! */
-	MCU_SUPPLY_PROP_READ_LOGIC_VER
+	MCU_SUPPLY_PROP_READ_LOGIC_VER,
+	
+	MCU_SUPPLY_PROP_MODIFY_WATER_WAINING_VALUE
 };
 
 typedef union {

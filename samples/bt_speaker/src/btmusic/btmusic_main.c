@@ -372,12 +372,26 @@ void btmusic_player_reset_trigger(void)
 	}
 }
 
+static int btmusic_msg_match(void *msg,k_tid_t target_thread,k_tid_t source_thread){
+	struct app_msg *p_app_msg = (struct app_msg *)msg;
+	if(!p_app_msg || p_app_msg->cmd != MSG_BTMUSIC_MESSAGE_CMD_PLAY_TIME_BOOST || p_app_msg->type != MSG_BTMUSIC_APP_EVENT
+		|| source_thread != os_current_get() || target_thread != app_manager_get_apptid(CONFIG_FRONT_APP_NAME)){
+		return 0;
+	}
+	return 1;
+}
+
 void btmusic_playTimeBoost_trigger(void)
 {
 	struct app_msg msg = { 0 };
 
 	msg.type = MSG_BTMUSIC_APP_EVENT;
 	msg.cmd = MSG_BTMUSIC_MESSAGE_CMD_PLAY_TIME_BOOST;
+	
+	//if(!os_is_free_msg_enough()){
+		int ret = os_msg_delete(btmusic_msg_match);
+		SYS_LOG_INF("%d\n",ret);
+//	}
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }
 
@@ -459,7 +473,7 @@ static int _btmusic_init(void *p1, void *p2, void *p3)
 			}
 		}else if(temp_role == BTSRV_TWS_NONE){
 			system_app_set_auracast_mode(1);
-			btmusic_bms_source_init();
+			thread_timer_start(&p_btmusic_app->broadcast_start_timer, 200, 0);
 		}
 	}
 
@@ -533,7 +547,7 @@ static int _btmusic_exit(void)
 	p_btmusic_app = NULL;
 
 #ifdef CONFIG_PROPERTY
-	property_flush_req(NULL);
+	//property_flush_req(NULL);
 #endif
 
  exit:

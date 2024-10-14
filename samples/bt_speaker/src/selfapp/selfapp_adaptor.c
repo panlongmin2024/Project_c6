@@ -14,6 +14,7 @@
 #endif
 #include <app_defines.h>
 #include <desktop_manager.h>
+#include <app_manager.h>
 #include <app_launch.h>
 #include <media_player.h>
 #include <bt_manager.h>
@@ -682,7 +683,7 @@ void selfapp_resume_player()
 static int selfapp_msg_match(void *msg,k_tid_t target_thread,k_tid_t source_thread){
 	struct app_msg *p_app_msg = (struct app_msg *)msg;
 	if(!p_app_msg || p_app_msg->cmd != MSG_PLAYER_RESET || p_app_msg->type != MSG_INPUT_EVENT
-		|| source_thread != os_current_get()){
+		|| source_thread != os_current_get() || target_thread != app_manager_get_apptid(CONFIG_FRONT_APP_NAME)){
 		return 0;
 	}
 	return 1;

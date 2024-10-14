@@ -22,6 +22,7 @@
 #include "selfapp_api.h"
 #endif
 #include "app_common.h"
+#include "app_manager.h"
 
 extern void *bt_manager_get_halt_phone(uint8_t *halt_cnt);
 
@@ -73,18 +74,25 @@ static void usound_restart_handler(struct thread_timer *ttimer, void *expiry_fn_
 }
 #endif // USOUND_FEATURE_RESTART
 
+#define USOUND_VOL_SYNC_TIMER_INTERAL (30)
+#define USOUND_VOL_HID_TEST_INTERAL (120)
+#define USOUND_VOL_HID_TEST_NUM (4)
+
+#define USOUND_VOL_HID_DELAY_CNT ((USOUND_VOL_HID_TEST_NUM*USOUND_VOL_HID_TEST_INTERAL)/USOUND_VOL_SYNC_TIMER_INTERAL)
+#define USOUND_VOL_HID_PER_DELAY (USOUND_VOL_HID_TEST_INTERAL/USOUND_VOL_SYNC_TIMER_INTERAL)
+
 static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn_arg)
 {
 	if(!p_usound)
 		return;
 
 	u8_t download_stream_status = usb_audio_get_download_streaming_enabled();
-	u8_t download_stream_stable_status = 0;;
+	u8_t download_stream_stable_status = 0;
 
 	if(download_stream_status)
 	{
 		p_usound->download_stream_stable_cnt ++;
-		if(p_usound->download_stream_stable_cnt > 7)
+		if(p_usound->download_stream_stable_cnt > 4)
 		{
 			download_stream_stable_status = 1;
 		}
@@ -100,10 +108,23 @@ static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn
 	if(download_stream_stable_status)
 	{
 		if(p_usound->need_test_hid_later){
-			SYS_LOG_INF("enmu no volume, delay_start hid test %d\n", p_usound->need_test_hid_later);
-			usb_hid_control_volume_dec();
-			usb_hid_control_volume_inc();
 			p_usound->need_test_hid_later --;
+			//delay about 100ms to get host vol via send hid cmd.
+			if((p_usound->need_test_hid_later% USOUND_VOL_HID_PER_DELAY) == 1)
+			{
+				SYS_LOG_INF("enmu no volume, delay_start hid test %d\n", p_usound->need_test_hid_later/USOUND_VOL_HID_PER_DELAY);
+				usb_hid_control_volume_dec();
+				usb_hid_control_volume_inc();
+			}
+
+			if(!p_usound->need_test_hid_later)
+			{
+				SYS_LOG_INF("enmu no volume, test hid no respond, set max\n");
+				if(audio_system_get_stream_volume(AUDIO_STREAM_USOUND) != MAX_AUDIO_VOL_LEVEL)
+				{
+					usound_sync_host_vol(0);
+				}
+			}
 		}
 	}
 
@@ -118,7 +139,7 @@ static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn
 				 (p_usound->host_enmu_db[0] == -163 && p_usound->host_enmu_db[1] == -170)))
 		{
 
-				SYS_LOG_INF("uac_download enable %d, maybe is phone uac\n", download_stream_stable_status);
+			SYS_LOG_INF("uac_download enable %d, maybe is phone uac\n", download_stream_stable_status);
 
 			if(audio_system_get_stream_volume(AUDIO_STREAM_USOUND) != MAX_AUDIO_VOL_LEVEL)
 			{
@@ -128,13 +149,21 @@ static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn
 			p_usound->host_enmu_num = 0;
 
 		}else if(p_usound->host_enmu_num){
-
+			int enmu_num = p_usound->host_enmu_num;
 			int last_emnu_db = p_usound->host_enmu_db[(p_usound->host_enmu_num -1)%2];
 
+			if(enmu_num == 1)
+			{
 				SYS_LOG_INF("enmu volume %d, set\n", last_emnu_db);
+				usound_sync_host_vol(last_emnu_db);
+				p_usound->host_enmu_num = 0;
+			}else{
+				SYS_LOG_INF("enmu %d times vol, maybe phone,  hid test later\n", enmu_num);
+				usound_sync_host_vol(-601);
+				p_usound->need_test_hid_later = USOUND_VOL_HID_DELAY_CNT;
 
-			usound_sync_host_vol(last_emnu_db);
-			p_usound->host_enmu_num = 0;
+			}
+
 
 #if 0
 			if(last_emnu_db >= 0)
@@ -156,7 +185,7 @@ static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn
 		}else{
 			SYS_LOG_INF("enmu no volume, hid test later\n");
 			usound_sync_host_vol(-601);
-			p_usound->need_test_hid_later = 3;
+			p_usound->need_test_hid_later = USOUND_VOL_HID_DELAY_CNT;
 		}
 
 		p_usound->need_test_hid = 0;
@@ -273,6 +302,41 @@ static void usound_sync_host_vol(int vol_db)
 	}
 }
 
+static int usoudn_stream_start_msg_match(void *msg,k_tid_t target_thread,k_tid_t source_thread){
+	struct app_msg *p_app_msg = (struct app_msg *)msg;
+
+	if(!p_app_msg || source_thread != os_current_get()
+		|| target_thread != (k_tid_t)app_manager_get_apptid(CONFIG_FRONT_APP_NAME)){
+		return 0;
+	}
+
+	if(p_app_msg->type == MSG_USOUND_APP_EVENT){
+		if(p_app_msg->cmd == MSG_USOUND_STREAM_START){
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static int usoudn_stream_stop_msg_match(void *msg,k_tid_t target_thread,k_tid_t source_thread){
+	struct app_msg *p_app_msg = (struct app_msg *)msg;
+
+	if(!p_app_msg || source_thread != os_current_get()
+		|| target_thread != (k_tid_t)app_manager_get_apptid(CONFIG_FRONT_APP_NAME)){
+		return 0;
+	}
+
+	if(p_app_msg->type == MSG_USOUND_APP_EVENT){
+		if(p_app_msg->cmd == MSG_USOUND_STREAM_STOP){
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
 static void usound_usb_audio_event_callback(u8_t info_type, int pstore_info)
 {
 	struct app_msg msg = { 0 };
@@ -321,12 +385,24 @@ static void usound_usb_audio_event_callback(u8_t info_type, int pstore_info)
 	}
 
 	case USOUND_STREAM_STOP: {   // 5
+		if(!os_is_free_msg_enough()){
+			int ret = os_msg_delete(usoudn_stream_stop_msg_match);
+			SYS_LOG_INF("stream_stop_delete:%d", ret);
+		}
+
 		msg.type = MSG_USOUND_APP_EVENT;
 		msg.cmd = MSG_USOUND_STREAM_STOP;
 		send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
+
+
 		break;
 	}
 	case USOUND_STREAM_START: {  // 4
+		if(!os_is_free_msg_enough()){
+			int ret = os_msg_delete(usoudn_stream_start_msg_match);
+			SYS_LOG_INF("stream_start_delete:%d", ret);
+		}
+
 		msg.type = MSG_USOUND_APP_EVENT;
 		msg.cmd = MSG_USOUND_STREAM_START;
 		send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
@@ -378,18 +454,13 @@ static int usound_init(void *p1, void *p2, void *p3)
 	}
 	memset(p_usound, 0, sizeof(struct usound_app_t));
 
-	u8_t usound_start_vol = CONFIG_USOUND_START_DEFAULT_VOLUME;
-	if(CONFIG_USOUND_START_DEFAULT_VOLUME > USOUND_VOLUME_LEVEL)
-	{
-		usound_start_vol = USOUND_VOLUME_LEVEL>>1;
-	}
 
 	p_usound->need_test_hid = 1;
 	p_usound->host_enmu_db[0] = 1;
 	p_usound->host_enmu_db[1] = 1;
 	p_usound->host_last_db = 1;
 
-	audio_system_set_stream_volume(AUDIO_STREAM_USOUND, usound_start_vol);
+	audio_system_set_stream_volume(AUDIO_STREAM_USOUND, 0);
 
 #ifdef USOUND_FEATURE_DISABLE_BLUETOOTH
 	// not-discoverable, not connnectable, disconnect phone/tws
@@ -418,7 +489,7 @@ static int usound_init(void *p1, void *p2, void *p3)
 #endif
 
 	thread_timer_init(&p_usound->vol_sync_timer, usound_vol_sync_handler, NULL);
-	thread_timer_start(&p_usound->vol_sync_timer, 30, 30);
+	thread_timer_start(&p_usound->vol_sync_timer, USOUND_VOL_SYNC_TIMER_INTERAL, USOUND_VOL_SYNC_TIMER_INTERAL);
 
 
 #ifdef CONFIG_USOUND_BROADCAST_SUPPROT
@@ -489,13 +560,16 @@ static int usound_exit(void)
 	p_usound = NULL;
 
 #ifdef CONFIG_PROPERTY
-	property_flush_req(NULL);
+	//property_flush_req(NULL);
 #endif
 	SYS_LOG_INF("exit ok");
 
 #ifdef USOUND_FEATURE_DISABLE_BLUETOOTH
 	u8_t  retval = 0;
 	bt_manager_get_halt_phone(&retval);
+	if (retval) {
+		bt_manager_ios_tts_delay_set(true);
+	}
 	bt_manager_resume_phone();  // try re-connect halted phone, do nothing if retval=0
 
 	// retval=0: abort re-connect before phone conc succ, because entering usound. But there are phones to re-connect

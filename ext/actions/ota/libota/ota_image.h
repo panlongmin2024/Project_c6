@@ -47,5 +47,6 @@ void ota_image_read_cancel(struct ota_image *img);
 uint32_t ota_image_get_checksum(struct ota_image *img);
 
 int ota_storage_image_check(struct ota_storage *storage, uint32_t file_offset, uint8_t *buf, int buf_size);
+int ota_storage_get_image_size(struct ota_storage *storage, uint32_t file_offset);
 
 #endif /* __OTA_IMAGE_H__ */

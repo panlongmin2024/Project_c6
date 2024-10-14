@@ -519,6 +519,9 @@ int usb_audio_init(usb_audio_event_callback cb)
 	audio_cur_dat = (usb_audio_sink_pa_table[audio_cur_level]/1000) * 256 + 65536;
 	SYS_LOG_INF("audio_cur_level:%d, audio_cur_dat:0x%x", audio_cur_level, audio_cur_dat);
 
+	audio_cur_dat = 65536;
+	SYS_LOG_INF("uac sink cur defualt %d", audio_cur_dat);
+
 	usb_audio_device_sink_register_start_cb(_usb_audio_sink_start_stop);
 	usb_audio_device_register_inter_out_ep_cb(_usb_audio_out_ep_complete);
 	usb_audio_device_sink_register_volume_sync_cb(_usb_audio_sink_vol_changed_notify);

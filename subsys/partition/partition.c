@@ -39,8 +39,8 @@ void partition_dump(void)
         part_name[7] = '\0';
 
 		if (part->type != 0) {
-		printk("part[%d]: %s type %d, file_id %d, mirror_id %d, offset 0x%x, flag 0x%x\n", i, \
-			part_name, part->type, part->file_id, part->mirror_id, part->offset, part->flag);
+		printk("part[%d]: %s type %d, file_id %d, mirror_id %d, offset 0x%x, size 0x%x flag 0x%x\n", i, \
+			part_name, part->type, part->file_id, part->mirror_id, part->offset, part->size, part->flag);
 		}
 	}
 }

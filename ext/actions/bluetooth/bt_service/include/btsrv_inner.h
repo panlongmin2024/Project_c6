@@ -677,7 +677,7 @@ int btsrv_property_get(const char *key, char *value, int value_len);
 #define BTSTAK_READY 0
 
 enum {
-	MSG_BTSRV_BASE = MSG_APP_MESSAGE_START,
+	MSG_BTSRV_BASE = MSG_BTSRV_MESSAGE_START,
 	MSG_BTSRV_CONNECT,
 	MSG_BTSRV_A2DP,
 	MSG_BTSRV_AVRCP,

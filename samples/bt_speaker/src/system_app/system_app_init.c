@@ -147,7 +147,8 @@ bool main_system_tts_get_play_warning_tone_flag(void)
 
 extern int btdrv_get_bqb_mode(void);
 extern void hm_ext_pa_deinit(void);
-
+extern unsigned char is_authenticated(void);
+extern void bat_verify_fail_poweroff(void);
 static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 {
 	switch (event) {
@@ -175,6 +176,14 @@ static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 				external_dsp_ats3615_deinit();
 			}
 
+		}
+		else if(memcmp(tts_id,"poweron.mp3",11))
+		{
+	      if(!is_authenticated())
+	      {
+	            bat_verify_fail_poweroff();
+	      }
+           
 		}
 		if(!memcmp(tts_id,"c_err.mp3",9)){
 			main_system_tts_set_play_warning_tone_flag(false);
@@ -571,12 +580,16 @@ void system_app_init(void)
 	
 	if(run_mode_is_demo()&&(!dc_power_in_status_read())){
 		
-		SYS_LOG_INF("[%d] run_mode_is_demo, but No dc_power_in \n", __LINE__);
-		system_power_off();
-		k_sleep(2000);
-		return;
+		k_sleep(500);
+		if(!dc_power_in_status_read())
+		{
+			SYS_LOG_INF("[%d] run_mode_is_demo, but No dc_power_in \n", __LINE__);
+			
+			system_power_off();
+			k_sleep(2000);
+			return;
+		}
 	}
-
 	pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_ON_10S);		
 	
 

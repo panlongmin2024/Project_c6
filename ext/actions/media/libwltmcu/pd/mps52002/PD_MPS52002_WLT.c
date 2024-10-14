@@ -61,7 +61,7 @@
  * @}
  */
 
-#define mps_pd_current_version 0x53
+#define mps_pd_current_version 0x0256
 #define I2C_DEV_ADDR        0x48                    //TODO
 
 // #define INDIA_APP_TEST			0x01
@@ -131,7 +131,7 @@ struct wlt_pd_mps52002_info {
 	int16   src_volt_value;
 	int16   src_cur_value;
 	u8_t   	SRC_5OMA_FLAG;
-	u8_t   	pd_version;
+	u16_t   pd_version;
 	u8_t	pd_sink_debounce_time;
 	u8_t    pd_source_disc_debunce_cnt;
 	u8_t   	pd_test_sink_charge_step;//for factory test
@@ -1311,12 +1311,14 @@ static void pd_mps52002_status_value(void)
 
 	if(!pd_tps52002_read_reg_value(PD_FIRMWARE_ID, buf, 2))
 	{
-	   	printf("live debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
+	   	// printf("live debug PD version:0x%x 0x%x \n",buf[0], buf[1]);
 
-	   	pd_mps52002->pd_version = buf[0];
-		if(pd_mps52002->pd_version < mps_pd_current_version)
+	   	pd_mps52002->pd_version = buf[0] | (buf[1]<<8);
+		
+		printf("live debug PD version:0x%x 0x%x; 0x%x \n",buf[0], buf[1], pd_mps52002->pd_version);
+		if(pd_mps52002->pd_version != mps_pd_current_version)
 		{
-		  pd_ota_complete_flag = WLT_OTA_PD(0);
+		  	pd_ota_complete_flag = WLT_OTA_PD(0);
 	    }else{
 			if(ota_flag != 0x88)
 			{
@@ -2212,6 +2214,7 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 		   				set_fisrt_flag =1;
 					}
 				}
+				break;
 
 			// case (MCU_ONE_SECOND_PERIOD-37):
 			//     if(ReadODM() == HW_GUOGUANG_BOARD)
@@ -2221,6 +2224,7 @@ static void mcu_pd_iic_time_hander_mps(struct thread_timer *ttimer, void *expiry
 			// 	break;
 
 			case (MCU_ONE_SECOND_PERIOD-47):
+				// SYS_LOG_INF("[%d], mcu_one_secound_count = %d", __LINE__, mcu_one_secound_count);
 				pd_read_volt_current_process1();
 				break;
 
@@ -2319,7 +2323,7 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			val->intval = logic_mcu_ls8a10049t_get_water_warning_status();	
 			break;	
 		case PD_SUPPLY_PROP_TYPEC_WATER_WARNING_TRIGGER_CNT:
-		/*********return 0:none�?：rerady�?2：triggered	*///////////		
+		/*********return 0:none�?：rerady�?2：triggered	*///////////		
 			val->intval = mcu_get_water_charge_warnning_status();
 			break;
         default:

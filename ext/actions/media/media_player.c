@@ -163,6 +163,7 @@ static int _media_player_check_audio_effect(media_player_t *handle, int stream_t
 
 	switch (stream_type) {
 	case AUDIO_STREAM_VOICE:
+	case AUDIO_STREAM_TTS:
 	#ifndef CONFIG_VOICE_EFFECT
 		effect_enable = false;
 	#endif
@@ -176,21 +177,22 @@ static int _media_player_check_audio_effect(media_player_t *handle, int stream_t
 	case AUDIO_STREAM_MIC_IN:
 	case AUDIO_STREAM_FM:
 	case AUDIO_STREAM_USOUND:
-	case AUDIO_STREAM_TTS:
 	case AUDIO_STREAM_SOUNDBAR:
 	case AUDIO_STREAM_LE_AUDIO:
 	#ifndef CONFIG_MUSIC_EFFECT
 		effect_enable = false;
 	#else
-	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-		//effect_enable = self_music_effect_ctrl_get_enable();
-		effect_enable = false;
-	#endif
 	#endif
 		break;
 	default:
 		break;
 	}
+	
+	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
+	extern	int ext_dsp_restore_eq(int eq_enable);
+	ext_dsp_restore_eq(effect_enable);
+	effect_enable = false;
+	#endif
 
 #ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	if (!effect_enable) {
@@ -233,7 +235,7 @@ media_player_t *media_player_open(media_init_param_t *init_param)
 #endif
 
 #ifdef CONFIG_PROPERTY
-	property_flush_req_deal();
+	//property_flush_req_deal();
 #endif
 
 	media_player_t *handle = mem_malloc(sizeof(media_player_t));
@@ -375,9 +377,9 @@ media_player_t *media_player_open(media_init_param_t *init_param)
 	_notify_player_lifecycle_changed(handle, PLAYER_EVENT_OPEN, init_param, sizeof(*init_param));
 
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-	if(init_param->stream_type == AUDIO_STREAM_TTS){
+/* 	if(init_param->stream_type == AUDIO_STREAM_TTS){
 		ext_dsp_set_bypass(1);
-	}
+	} */
 	#endif
 	return handle;
 error_exit:
@@ -458,9 +460,9 @@ int media_player_stop(media_player_t *handle)
 	SYS_EVENT_INF(EVENT_PLAYER_STOP, handle->type, (((int)handle)), media_player_lock_cnt, ret);
 
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-	if((self_music_effect_ctrl_get_enable() == true)){
+/* 	if((self_music_effect_ctrl_get_enable() == true)){
 		ext_dsp_set_bypass(0);
-	}
+	} */
 	#endif
 	return !ret;
 }

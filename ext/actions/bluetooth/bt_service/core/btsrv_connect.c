@@ -2498,8 +2498,14 @@ static void btsrv_auto_connect_proc(struct bt_set_autoconn *param)
 {
 	int i, idle_pos = BTSRV_SAVE_AUTOCONN_NUM, need_start_timer = 0;
 	struct autoconn_info * tws_info;
+	struct bt_conn *base_conn;
 
-	if (btsrv_rdm_find_conn_by_addr(&param->addr)) {
+	base_conn = btsrv_rdm_find_conn_by_addr(&param->addr);
+	if (base_conn) {
+		if(btsrv_rdm_is_a2dp_signal_connected(base_conn) &&
+			!btsrv_rdm_is_a2dp_connected(base_conn)) {
+			btsrv_rdm_set_wait_to_diconnect(base_conn, false);
+		}
 		SYS_LOG_INF("Already connected");
 		return;
 	}

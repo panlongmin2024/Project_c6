@@ -192,6 +192,11 @@ static void sh_backtrace_get_stack(uint32_t *sp, uint32_t *sp_len)
 	}
 
 	*sp_len = (stack_start + stack_sz - *sp) / sizeof(uint32_t);
+
+	//fix sp len maybe invalid
+	if(*sp_len > 0x2000){
+		*sp_len = 0x100;
+	}
 }
 
 void sh_backtrace_get_funcs(uint32_t *func, uint32_t num, uint32_t skip_func_addr)

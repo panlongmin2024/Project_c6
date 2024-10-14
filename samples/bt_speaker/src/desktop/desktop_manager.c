@@ -311,7 +311,7 @@ void desktop_manager_exit(void)
 	ctx->start = 0;
 
 #ifdef CONFIG_PROPERTY
-	property_flush_req(NULL);
+	//property_flush_req(NULL);
 #endif
 
 	SYS_LOG_INF("exit ok\n");

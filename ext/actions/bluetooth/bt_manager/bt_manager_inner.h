@@ -185,6 +185,7 @@ typedef struct bt_mgr_dev_info {
 	uint16_t dev_role:1;
 	uint16_t a2dp_singnaling_connected:1;
 	uint16_t deemed_disconnected:1;
+	uint16_t ios_tts_delay:1;
 
     uint8_t  a2dp_codec_type;
     uint8_t  a2dp_sample_khz;
@@ -252,6 +253,7 @@ typedef struct bt_manager_context_t {
 	uint16_t auto_reconnect_timeout:1;
 	uint16_t update_local_name:1;
 	uint16_t personalized_name_update:1;
+	uint16_t ios_tts_delay:1;
 	int16_t  bt_comp_last_temp;
 	uint8_t bt_state;
 	uint8_t pair_mode_state;
@@ -280,6 +282,7 @@ typedef struct bt_manager_context_t {
 	os_delayed_work bt_temp_comp_timer;
 	os_delayed_work role_switch_work;
 	os_delayed_work letws_pair_search_work;
+	os_delayed_work tts_delay_work;
 
 	/* For process power off */
 	uint8_t poweroff_state:4;

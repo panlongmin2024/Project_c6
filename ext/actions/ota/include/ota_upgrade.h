@@ -34,7 +34,8 @@ enum ota_state
 
 	OTA_UPLOADING,
 	OTA_INIT_FINISHED,
-
+	OTA_UPGRADE_PREPARE,
+	OTA_UPGRADE_PREPARE_DONE,
 };
 
 typedef int (*ota_notify_t)(int state, int old_state);
@@ -70,6 +71,10 @@ int ota_upgrade_get_temp_img_size(struct ota_upgrade_info *ota);
 
 int ota_upgrade_set_ota_partition_other_writing(uint8_t file_id);
 
-int ota_upgrade_clear_ota_bp_state(void);
+int ota_upgrade_clear_ota_bp_state(struct ota_upgrade_info *ota);
+
+int ota_upgrade_verify_temp_image(struct ota_upgrade_info *ota);
+
+int ota_upgrade_set_ota_buf(struct ota_upgrade_info *ota, uint8_t *buf, uint32_t buf_size);
 
 #endif /* __OTA_UPGRADE_H__ */

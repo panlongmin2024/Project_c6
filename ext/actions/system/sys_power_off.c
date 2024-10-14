@@ -76,9 +76,6 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 
 		sys_monitor_stop();
 
-#ifdef CONFIG_PROPERTY
-		property_flush(NULL);
-#endif
 		system_deinit();
 
 		k_sleep(100);//wait DSP output complete
@@ -87,6 +84,10 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 
 #ifdef CONFIG_AUDIO
 		hal_aout_close_pa(true);
+#endif
+
+#ifdef CONFIG_PROPERTY
+		property_flush(NULL);
 #endif
 
 #ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
@@ -105,7 +106,7 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 		board_power_lock_enable(false);
 		#endif
 
-		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE //vcc VBATͬʱ����
+		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE //vcc VBAT
 		soc_dvfs_set_level(SOC_DVFS_LEVEL_FULL_PERFORMANCE, "poweroff");
 		#ifdef CONFIG_LOGIC_MCU_LS8A10023T
 		printk("[%s,%d] logic_mcu_ls8a10023t start\n", __FUNCTION__, __LINE__);
@@ -148,9 +149,6 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 
 		sys_monitor_stop();
 
-#ifdef CONFIG_PROPERTY
-		property_flush(NULL);
-#endif
 		system_deinit();
 
 		k_sleep(100);//wait DSP output complete
@@ -166,6 +164,10 @@ static void _system_power_callback(struct app_msg *msg, int result, void *reply)
 #endif
         pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,REBOOT_LED_STATUS);
 		k_sleep(200);
+#ifdef CONFIG_PROPERTY
+		property_flush(NULL);
+#endif
+
 		sys_pm_reboot(REBOOT_TYPE_NORMAL | reason);
 	}
 }

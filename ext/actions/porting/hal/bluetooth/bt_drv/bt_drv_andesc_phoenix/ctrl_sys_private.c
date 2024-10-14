@@ -25,10 +25,14 @@
 #include "ctrl_interface.h"
 #include <hex_str.h>
 #include <property_manager.h>
+#include <debug/task_wdt.h>
 
 #define SYS_LOG_DOMAIN                  "BTC"
 
 #include <logging/sys_log.h>
+#ifdef CONFIG_TASK_WDT
+#include <debug/task_wdt.h>
+#endif
 
 /*******************************
  * macro definitions
@@ -1204,6 +1208,10 @@ void BT_DutTest(int bqb_mode)
     
     extern int task_wdt_delet_all(void);
     task_wdt_delet_all();
+#ifdef CONFIG_TASK_WDT
+	task_wdt_exit();
+#endif
+
     while (1)
     {
 	/* for bqb rx sensitivity */

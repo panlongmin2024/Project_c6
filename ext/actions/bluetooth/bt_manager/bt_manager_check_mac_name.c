@@ -280,6 +280,7 @@ int bt_manager_bt_name_update_fatcory_reset(uint8_t *name, uint8_t len)
 	property_set(CFG_BT_NAME, bt_name, BT_NAME_LEN);
 	property_set(CFG_BLE_NAME, bt_name, BT_NAME_LEN);
 	property_set(CFG_BT_LOCAL_NAME, bt_name, BT_NAME_LEN);
+	property_set(CFG_APP_NAME, bt_name, BT_NAME_LEN);
 	//property_set(CFG_BT_BROADCAST_NAME, bt_name, BT_NAME_LEN);
 #endif
 

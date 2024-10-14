@@ -707,7 +707,7 @@ static int  _lemusic_exit(void)
 	p_lemusic = NULL;
 
 #ifdef CONFIG_PROPERTY
-	property_flush_req(NULL);
+	//property_flush_req(NULL);
 #endif
 
 exit:

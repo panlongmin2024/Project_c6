@@ -403,6 +403,7 @@ static void connected_dev_cb_check_wait_disconnect(struct bt_conn *base_conn, ui
 				(btsrv_rdm_get_profile_disconnect_timestamp(base_conn) == 0)) {
 
 				SYS_LOG_DBG("%p, %d", base_conn, os_uptime_get_32());
+				hostif_bt_gatt_over_br_disconnect(base_conn);
 				btsrv_a2dp_disconnect(base_conn);
 				btsrv_avrcp_disconnect(base_conn);
 				btsrv_rdm_set_profile_disconnect_timestamp(base_conn, os_uptime_get_32());

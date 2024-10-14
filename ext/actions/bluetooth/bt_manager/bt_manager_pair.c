@@ -867,6 +867,11 @@ void bt_manager_enter_pair_mode_ex(void)
 				bt_manager->bt_state = BT_STATUS_PAIR_MODE;
                 //if(media_player_get_current_music_player() == NULL)
                     //bt_manager_sys_event_notify(SYS_EVENT_ENTER_PAIR_MODE);
+
+                if(bt_manager->personalized_name_update){
+                    bt_manager->personalized_name_update = 0;
+                    btif_br_update_devie_name();
+                }
 				break;
 
 			default:

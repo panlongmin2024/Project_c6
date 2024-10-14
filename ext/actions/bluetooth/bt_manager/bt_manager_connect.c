@@ -251,38 +251,34 @@ bool bt_manager_startup_reconnect(void)
 			}
 		}
 
-        for (i = 0; i < BT_MAX_AUTOCONN_DEV; i++) {
+		if (!phone_cnt) {
+			for (i = 0; i < BT_MAX_AUTOCONN_DEV; i++) {
+				if (phone_cnt == phone_num){
+					break;
+				}
 
-			if (phone_cnt == phone_num){
-				break;
-			}
-		#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
-            if ((phone_num > 1) &&
-				((cfg_reconnect->always_reconnect_last_device) || ((cfg_reconnect->always_reconnect_last_device) || (bt_manager_ota_reboot))) &&
-				 (phone_cnt == 1))
-		#else
-			if ((phone_num > 1) && ((cfg_reconnect->always_reconnect_last_device) || (cfg_reconnect->always_reconnect_last_device)) && (phone_cnt == 1))
-		#endif
-			{
-				break;
-			}
-			if (info[i].addr_valid){
-                profile_valid = (info[i].a2dp || info[i].avrcp || info[i].hfp);
-                if(profile_valid) {
-                    bt_manager_connect_phone(info[i].addr.val);
-                    bt_manager->auto_reconnect_startup = true;
+				if (phone_cnt == phone_num){
+					break;
+				}
 
-                    if (info[i].tws_role == BTSRV_TWS_NONE) {
-                        phone_cnt++;
-                    }
-                    cnt--;
-                    if (cnt == 0) {
-                        break;
-                    }
-                }
-            }
-        }
-    }
+				if (info[i].addr_valid){
+					profile_valid = (info[i].a2dp || info[i].avrcp || info[i].hfp);
+					if(profile_valid) {
+						bt_manager_connect_phone(info[i].addr.val);
+						bt_manager->auto_reconnect_startup = true;
+
+						if (info[i].tws_role == BTSRV_TWS_NONE) {
+							phone_cnt++;
+						}
+						cnt--;
+						if (cnt == 0) {
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
 
 
 	if((phone_cnt == 0) && (cfg_pair->enter_pair_mode_when_paired_list_empty)){

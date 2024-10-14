@@ -179,6 +179,13 @@ void battery_remaincap_low_poweroff(void)
     */   
 }
 
+void modify_water_warning_valve_value(u8_t value)
+{
+    SYS_LOG_INF("[%d] \n", __LINE__);
+
+    mcu_ui_send_led_code(MCU_SUPPLY_PROP_MODIFY_WATER_WAINING_VALUE,value);
+  
+}
 void battery_discharge_remaincap_low_5(void)
 {
     SYS_LOG_INF("[%d] \n", __LINE__);

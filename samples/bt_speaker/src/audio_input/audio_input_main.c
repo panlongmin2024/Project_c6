@@ -670,7 +670,7 @@ static int _audio_input_exit(void)
 	p_audio_input = NULL;
 
 #ifdef CONFIG_PROPERTY
-	property_flush_req(NULL);
+	//property_flush_req(NULL);
 #endif
 
  exit:

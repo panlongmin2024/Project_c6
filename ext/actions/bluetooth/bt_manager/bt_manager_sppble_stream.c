@@ -363,11 +363,12 @@ static ssize_t stream_ble_rx_set_notifyind(struct bt_conn *conn, uint8_t conn_ty
     uint8_t conn_type_index = conn_type;
 
 	connect_type = (conn_type == BT_CONN_TYPE_BR) ? GATT_OVER_BR_CONNECT_TYPE : BLE_CONNECT_TYPE;
-	if(stream_connect_filter_check(conn, connect_type) >=0) {
+
+	stream = find_stream_by_attr_and_conn(attr, conn);
+	if((!stream) && (stream_connect_filter_check(conn, connect_type) >=0)) {
 		SYS_LOG_INF("connect_filter\n");
 		return sizeof(uint16_t);
 	}else {
-		stream = find_stream_by_attr_and_conn(attr, conn);
 		if(!stream){
 			stream = bond_stream_by_attr_and_conn(attr, conn);
 			if(!stream){

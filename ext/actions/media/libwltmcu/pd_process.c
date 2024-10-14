@@ -84,6 +84,15 @@
 
 #define PD_BUS_POWER_9V_VOLT                        8500
 
+#define PD_BUS_POWER_5V_VALVE_DOWN                  4000
+#define PD_BUS_POWER_5V_VALVE_UP                  6000
+#define PD_BUS_POWER_9V_VALVE_DOWN                  8000
+#define PD_BUS_POWER_9V_VALVE_UP                  10000
+#define PD_BUS_POWER_12V_VALVE_DOWN                  11000
+#define PD_BUS_POWER_12V_VALVE_UP                  13000
+#define PD_BUS_POWER_20V_VALVE_DOWN                  19000
+#define PD_BUS_POWER_20V_VALVE_UP                  21000
+
 
 int pd_manager_send_cmd_code(uint8_t type, int code);
 int pd_manager_deinit(int value);
@@ -525,6 +534,12 @@ static void bt_warning_poweroff_handle_fn(void)
 
 }
 
+void bat_verify_fail_poweroff(void)
+{
+	SYS_LOG_INF("");
+    pd_manager_send_notify(PD_EVENT_SOURCE_BAT_VERIFY_FAIL_POWEROFF);
+
+}
 
 
 static  void battery_power_supply_enable(void)
@@ -1051,6 +1066,44 @@ int pd_manager_get_volt_info(void)
     return val.intval;
 }
 
+extern void modify_water_warning_valve_value(u8_t value);
+void pd_manager_warning_valve_process(void)
+{
+ static u8_t warning_valve_level = 0;
+  if(pd_manager_get_volt_info() <= PD_BUS_POWER_5V_VALVE_UP)
+  	{
+  	   if(warning_valve_level != 0 )
+       {
+         warning_valve_level = 0;
+         modify_water_warning_valve_value(PD_5V_VALVE);
+  	   }	 
+    }
+  else if(pd_manager_get_volt_info() <= PD_BUS_POWER_9V_VALVE_UP)
+  	{
+  	   if(warning_valve_level != 1 )
+       {
+         warning_valve_level = 1;
+         modify_water_warning_valve_value(PD_9V_VALVE);
+  	   }
+    }
+  else if(pd_manager_get_volt_info() <= PD_BUS_POWER_12V_VALVE_UP)
+  	{
+  	  if(warning_valve_level != 2 )
+       {
+         warning_valve_level = 2;
+         modify_water_warning_valve_value(PD_12V_VALVE);
+  	  	}
+    }
+  else if(pd_manager_get_volt_info() <= PD_BUS_POWER_20V_VALVE_UP)
+  	{
+  	 if(warning_valve_level != 3 )
+       {
+         warning_valve_level = 3;
+         modify_water_warning_valve_value(PD_20V_VALVE);
+  	 }
+    }
+}
+
 void pd_manager_G1_G2_debounce_process(bool flag)
 {
     static int debounce_count = 0;
@@ -1062,18 +1115,20 @@ void pd_manager_G1_G2_debounce_process(bool flag)
         {
             
             if(debounce_count++ >= MAX_G1_G2_DECOUNCE_TIME)
-            {
+            {           
                 debounce_count = MAX_G1_G2_DECOUNCE_TIME + 1;
                 pd_manager_v_sys_g1_g2(PD_V_BUS_G1_LOW_G2_HIGH);
             }
             
         }else{
+            
             pd_manager_v_sys_g1_g2(PD_V_BUS_G1_HIGH_G2_LOW);
             debounce_count = 0x00;
         }   
 
 
     }else{
+        
         pd_manager_v_sys_g1_g2(PD_V_BUS_G1_HIGH_G2_LOW);
         debounce_count = 0x00;
     }
@@ -1107,7 +1162,10 @@ void pd_manager_source_change_debunce_process(void)
                 }
 				else
 				{
-                  wlt_pd_manager->source_change_debunce_count = 1;
+				  if(!sys_pm_get_power_5v_status())
+                   {
+                     wlt_pd_manager->source_change_debunce_count = 1;
+				   }
 				}
             }
         }
@@ -1629,7 +1687,8 @@ static void pd_manager_time_hander(struct thread_timer *ttimer, void *expiry_fn_
         wlt_pd_manager->dc_sink_charge_count = 0;
        
     }
-
+    pd_manager_warning_valve_process();
+	
     pd_manager_over_temp_protect();
 
     pd_manager_source_change_debunce_process();

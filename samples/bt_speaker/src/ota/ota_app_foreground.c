@@ -158,7 +158,7 @@ static bool check_sd_ota_restart(void)
 	property_get("SD_OTA_FLAG", sd_ota_flag, 4);
 	if (!memcmp(sd_ota_flag, "yes", strlen("yes"))) {
 		property_set("SD_OTA_FLAG", "no", 4);
-		property_flush(NULL);
+		//property_flush("SD_OTA_FLAG");
 		return true;
 	}
 #endif
@@ -437,7 +437,7 @@ int ota_app_notify(int state, int old_state)
 		if (is_sd_ota) {
 #ifdef CONFIG_PROPERTY
 			property_set("SD_OTA_FLAG", "yes", 4);
-			property_flush(NULL);
+			//property_flush("SD_OTA_FLAG");
 #endif
 		}
 		os_sleep(1000);
@@ -522,8 +522,6 @@ int ota_app_init(void)
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
 	if (flash_device)
 		flash_write_protection_set(flash_device, false);
-
-	ota_upgrade_clear_ota_bp_state();
 
 	g_ota = ota_upgrade_init(&param);
 	if (!g_ota) {

@@ -569,10 +569,9 @@ int k_mbox_delete_msg(struct k_mbox *mbox,mbox_msg_match msg_match)
 		rx_msg.info =  tx_msg->size;
 		rx_msg.size =  tx_msg->size;
 
-		rx_msg.rx_source_thread = (k_tid_t)K_ANY;
-		tx_msg->tx_target_thread = (k_tid_t)K_ANY;
-
 		if(msg_match(tx_msg)){
+			rx_msg.rx_source_thread = (k_tid_t)K_ANY;
+			tx_msg->tx_target_thread = (k_tid_t)K_ANY;
 			if (_mbox_message_match(tx_msg, &rx_msg) == 0) {
 				/* take sender out of mailbox's tx queue */
 				_unpend_thread(sending_thread);

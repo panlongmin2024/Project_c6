@@ -22,7 +22,6 @@ LOG_MODULE_DECLARE(main, CONFIG_ACT_EVENT_APP_COMPILE_LEVEL);
 #define INVALID_VOL 0xFF
 static u8_t synced_vol = INVALID_VOL;
 
-#ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 static int bmr_sync_padv_volume(u8_t sync_vol)
 {
 	//Sync remote volume only one time to avoid shielding local volume change.
@@ -75,63 +74,7 @@ static int bmr_sync_padv_volume(u8_t sync_vol)
 
 	return 0;
 }
-#else
-static int bmr_sync_padv_volume(u8_t sync_vol)
-{
-	//Sync remote volume only one time to avoid shielding local volume change.
-	if (synced_vol != sync_vol) {
-		SYS_LOG_INF("sync %d, prev=%d", sync_vol, synced_vol);
-		if (get_pawr_enable()){
-			if(sync_vol != system_volume_get(AUDIO_STREAM_LE_AUDIO)) {
-				SYS_LOG_INF("pawr sync to %d", sync_vol);
-				system_volume_set(AUDIO_STREAM_LE_AUDIO, sync_vol, false);
-			}
-		} else {
-			if (synced_vol == INVALID_VOL) {
-				//First time, sync to exact volume level.
-				SYS_LOG_INF("sync to %d firstly", sync_vol);
-				if(sync_vol > 17)
-					system_volume_set(AUDIO_STREAM_LE_AUDIO, 17, false);
-				else
-					system_volume_set(AUDIO_STREAM_LE_AUDIO, sync_vol, false);
-			} 
-#if 0 // if sync_vol is 0 or max, force sync vol ?
-			else if (sync_vol == 0 || sync_vol == audio_policy_get_volume_level() || synced_vol == 0) {
-				SYS_LOG_INF("force sync to %d", sync_vol);
-				system_volume_set(AUDIO_STREAM_LE_AUDIO, sync_vol, false);
-			}
-#endif
-			else {
-				//Sync diff volume instead of exact volume level.
-				int vol;
-				vol = system_volume_get(AUDIO_STREAM_LE_AUDIO);
-				if (vol >= 0) {
-					if (sync_vol > synced_vol) {
-						vol += (sync_vol - synced_vol);
-						if (vol > audio_policy_get_volume_level()) {
-							vol = audio_policy_get_volume_level();
-						}
-					} else {
-						vol -= (synced_vol - sync_vol);
-						if(vol < 0) {
-							vol = 0;
-						}
-					}
-					SYS_LOG_INF("sync to %d, diff=%d", vol, sync_vol - synced_vol);
-					system_volume_set(AUDIO_STREAM_LE_AUDIO, vol, false);
-				} else {
-					SYS_LOG_ERR("vol get err\n");
-					return 0;
-				}
-			}
 
-		}
-		synced_vol = sync_vol;
-	}
-
-	return 0;  
-}
-#endif
 
 #ifndef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 static int padv_rx_data(uint32_t handle, const uint8_t *buf, uint16_t len)
@@ -709,10 +652,10 @@ static int bmr_handle_volume(bool up)
 		stream_type = AUDIO_STREAM_MUSIC;
 	}
 	// playing, don't adjust secondary volume when primary muted(phone might send muted music)
-	else if (synced_vol == 0) {
+/* 	else if (synced_vol == 0) {
 		SYS_LOG_INF("Abort: primary muted\n");
 		return 0;
-	}
+	} */
 	ret = system_volume_get(stream_type);
 	if (ret < 0) {
 		SYS_LOG_ERR("%d\n", ret);

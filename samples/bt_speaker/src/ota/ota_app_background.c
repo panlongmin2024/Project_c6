@@ -99,7 +99,7 @@ static bool check_sd_ota_restart(void)
 	property_get("SD_OTA_FLAG", sd_ota_flag, 4);
 	if (!memcmp(sd_ota_flag, "yes", strlen("yes"))) {
 		property_set("SD_OTA_FLAG", "no", 4);
-		property_flush(NULL);
+		//property_flush("SD_OTA_FLAG");
 		return true;
 	}
 #endif

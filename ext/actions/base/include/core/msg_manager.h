@@ -104,6 +104,8 @@ typedef enum
 	/* service defined message */
 	MSG_SRV_MESSAGE_START           = 128,
 
+	MSG_BTSRV_MESSAGE_START         = 160,
+
 	/* application defined message */
 	MSG_APP_MESSAGE_START           = 200,
 

@@ -120,6 +120,7 @@
 
 #define CFG_OTA_MAC	"BT_OTA_MAC"
 
+#define CFG_AUDIO_EFFECT "AUDIO_EFFECT"
 
 /**
  * @defgroup property_manager_apis App property Manager APIs

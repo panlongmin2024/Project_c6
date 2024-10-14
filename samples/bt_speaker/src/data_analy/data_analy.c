@@ -34,6 +34,10 @@ static void data_analy_dump_play_record(play_analytics_upload_t * play);
 
 u32_t data_analy_update_power_on_sec(void)
 {
+	if (!analy_upload_data_p || !analy_data_p) {
+		return 0;
+	}
+	
 	//如果产品需要进入s3bt的话，开机计时，建议将uptime改成 rtc
 	if(g_data_analy.power_on){
 		s64_t delta_ms = k_uptime_delta(&analy_data_p->pwr_on_stamp);
@@ -48,11 +52,19 @@ u32_t data_analy_update_power_on_sec(void)
 
 void data_analy_data_clear(void)
 {
+	if (!analy_upload_data_p) {
+		return;
+	}
+
 	memset(analy_upload_data_p, 0, sizeof(data_analytics_upload_t));
 }
 
 void data_analy_play_clear(void)
 {
+	if (!analy_play_index_p) {
+		return;
+	}
+
 	//only clear nvram save id, current recording data need keep counting
 	memset(analy_play_index_p, 0, sizeof(play_index_info_t));
 }
@@ -76,7 +88,7 @@ void poweron_playing_clear(void)
 
 int data_analy_data_get(data_analytics_upload_t* buf, u16_t len)
 {
-	if(!buf || len < sizeof(data_analytics_upload_t))
+	if(!buf || len < sizeof(data_analytics_upload_t) || !analy_upload_data_p)
 	{
 		return -1;
 	}
@@ -87,7 +99,7 @@ int data_analy_data_get(data_analytics_upload_t* buf, u16_t len)
 
 int data_analy_play_get(play_analytics_upload_t* arr, u16_t arr_num)
 {
-	if(!arr || arr_num < DATA_ANALY_PLAY_ID_MAX)
+	if(!arr || arr_num < DATA_ANALY_PLAY_ID_MAX || !analy_play_index_p)
 	{
 		return -1;
 	}
@@ -391,7 +403,7 @@ static int data_analy_play_get_pre(play_analytics_upload_t* prev, u8_t* id)
 	u8_t prev_id = 0;
 	int ret = 0;
 
-	if(!prev)
+	if(!prev || !analy_play_index_p)
 	{
 		SYS_LOG_ERR("param null");
 		return -1;
@@ -422,7 +434,7 @@ static int data_analy_play_get_pre(play_analytics_upload_t* prev, u8_t* id)
 
 static int data_analy_play_write(play_analytics_upload_t* play)
 {
-	if(!play)
+	if(!play || !analy_play_index_p)
 	{
 		SYS_LOG_ERR("param null");
 		return -1;
@@ -687,7 +699,7 @@ void data_analy_dump_play_all_record(void)
 
 void data_analy_dump_play(void)
 {
-	if(!analy_upload_play_p || !analy_play_p)
+	if(!analy_upload_play_p || !analy_play_p || !analy_play_index_p)
 	{
 		SYS_LOG_ERR(" data_analy not working!!");
 		return ;
@@ -905,6 +917,7 @@ int data_analy_exit(void)
 
 	thread_timer_stop(&g_data_analy.play_time_thread_timer);
 
+	g_data_analy.power_on = 0;
 	analy_data_p = NULL;
 	analy_play_p = NULL;
 

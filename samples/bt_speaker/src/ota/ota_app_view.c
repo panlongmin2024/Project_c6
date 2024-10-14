@@ -93,7 +93,7 @@ void ota_view_deinit(void)
 	seg_led_manager_clear_screen(LED_CLEAR_ALL);
 #endif
 #ifdef CONFIG_PROPERTY
-	property_flush(NULL);
+	//property_flush(NULL);
 #endif
 	SYS_LOG_INF("ok\n");
 }

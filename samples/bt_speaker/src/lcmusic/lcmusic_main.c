@@ -413,7 +413,7 @@ static int _lcmusic_exit(void)
 	p_local_music = NULL;
 
 #ifdef CONFIG_PROPERTY
-	property_flush_req(NULL);
+	//property_flush_req(NULL);
 #endif
 
 exit:

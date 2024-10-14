@@ -281,18 +281,18 @@ static u16_t gpiokey_acts_get_keycode(const struct acts_adckey_config *cfg,
 	}	
 	
 	//
-	// else if (key_broadcast_status_read() && key_vol_up_status_read())
+	// else if (key_vol_down_status_read() && key_vol_up_status_read())
 	// {
 	// 	ret = KEY_FW_UPDATE;
 	// }
 	
 	if(ret == KEY_RESERVED){
 		*com_key = 0;
-		if (key_vol_down_status_read())
+		if (key_vol_down_status_read() && !key_vol_up_status_read())
 		{
 			ret = KEY_VOLUMEDOWN;
 		}
-		else if (key_vol_up_status_read())
+		else if (key_vol_up_status_read() && !key_vol_down_status_read())
 		{
 			ret = KEY_VOLUMEUP;
 		}

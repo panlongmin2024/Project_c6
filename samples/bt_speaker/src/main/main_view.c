@@ -224,7 +224,7 @@ static void main_app_view_deal(u32_t ui_event)
 		led_manager_set_display(0, LED_ON, OS_FOREVER, NULL);
 #endif
 #ifdef CONFIG_PROPERTY
-		property_flush_req_deal();
+		//property_flush_req_deal();
 #endif
 		break;
 	case UI_EVENT_BT_DISCONNECT:
@@ -233,7 +233,7 @@ static void main_app_view_deal(u32_t ui_event)
 		led_manager_set_blink(0, 2000, 200, OS_FOREVER, LED_START_STATE_OFF, NULL);
 #endif
 #ifdef CONFIG_PROPERTY
-		property_flush_req_deal();
+		//property_flush_req_deal();
 #endif
 		break;
 	case UI_EVENT_TWS_TEAM_SUCCESS:
@@ -241,7 +241,7 @@ static void main_app_view_deal(u32_t ui_event)
 	case UI_EVENT_CLEAR_PAIRED_LIST:
 	case UI_EVENT_SECOND_DEVICE_CONNECT_SUCCESS:
 #ifdef CONFIG_PROPERTY
-		property_flush_req_deal();
+		//property_flush_req_deal();
 #endif
 		break;
 

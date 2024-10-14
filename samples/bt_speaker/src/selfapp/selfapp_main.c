@@ -132,6 +132,7 @@ u8_t *self_get_sendbuf(void)
 
 int self_send_data_by_handle(void *stream_hdl, u8_t *buf, u16_t len)
 {
+	int ret = 0;
 	if (stream_hdl == NULL || buf == NULL || len == 0) {
 		return -1;
 	}
@@ -141,7 +142,7 @@ int self_send_data_by_handle(void *stream_hdl, u8_t *buf, u16_t len)
 		len = SELF_SENDBUF_SIZE;
 	}
 
-	stream_write(stream_hdl, buf, len);
+	ret = stream_write(stream_hdl, buf, len);
 
 #ifdef SELFAPP_DEBUG
 	if (buf[1] != 0x45) {
@@ -149,6 +150,11 @@ int self_send_data_by_handle(void *stream_hdl, u8_t *buf, u16_t len)
 		selfapp_log_dump(buf, len > 0x20 ? 0x20 : len);
 	}
 #endif
+
+	if (ret != (int)len) {
+		printk("[Self] send error! %d_%d\n", ret, len);
+		return -1;
+	}
 	return 0;
 }
 

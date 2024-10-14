@@ -52,6 +52,11 @@
 #define LS8A10049T_REG_7B			0x7B
 #define LS8A10049T_REG_VERSION		0xD4
 
+#define LS8A10049T_REG_8F		  0x8F
+#define LS8A10049T_REG_90		  0x90
+#define LS8A10049T_REG_91		  0x91
+#define LS8A10049T_REG_92		  0x92
+#define LS8A10049T_REG_2C		  0x2C
 
 static u8_t LS8A10049T_VERSION;
 typedef struct {
@@ -462,6 +467,48 @@ static void _ls8a10049t_read_Version(struct logic_mcu_ls8a10049t_device_data_t *
 	SYS_LOG_INF("LS8A10049T_VERSION1 = %x\n", LS8A10049T_VERSION);
 }
 
+static void _ls8a10049t_modify_water_warning_valve_value(struct logic_mcu_ls8a10049t_device_data_t *dev,u8_t level)
+{
+    union dev_config config = {0};
+    config.bits.speed = I2C_SPEED_STANDARD;
+    i2c_configure(dev->i2c_dev, config.raw);
+	u8_t channel0,channel1,stopbit,startbit;
+	stopbit = 0x00;
+	startbit = 0x6c;
+	switch(level)
+	{
+	 case 0: // 4.5v
+		  channel0 = 0x1D;
+		  channel1 = 0x1B;
+		  break;
+	 case 1: // 9v
+		   channel0 = 0x3a;
+		   channel1 = 0x38;
+		  break;
+	 case 2: //12v
+		  channel0 = 0x4D;
+		  channel1 = 0x4B;
+		  break;
+	 case 3: //20 v
+		  channel0 = 0x81;
+		  channel1 = 0x7f;
+		  break;
+	 default:
+	 	   channel0 = 0x1D;
+		   channel1 = 0x1B;
+	 	break;
+	  	  
+	}
+	SYS_LOG_INF("channel0 = %x channel1 = %x\n",channel0,channel1);
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_8F, (u8_t *)&channel0, 1);
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_90, (u8_t *)&channel1, 1);
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_91, (u8_t *)&channel0, 1);
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_92, (u8_t *)&channel1, 1);
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_2C, (u8_t *)&stopbit, 1);
+	k_sleep(15);
+	i2c_burst_write(dev->i2c_dev, LS8A10049T_I2C_ADDR, LS8A10049T_REG_2C, (u8_t *)&startbit, 1);
+	
+}
 static int _ls8a10049t_check_timer_out_10s(struct logic_mcu_ls8a10049t_device_data_t *dev)
 {
     u8_t buffer[4];
@@ -1149,7 +1196,9 @@ static void mcu_ls8a10049t_wlt_set_property(struct device *dev,enum mcu_manager_
         case MCU_SUPPLY_PROP_FACTORY_TEST_KEY:
             _ls8a10049t_watchdog_clear(ls8a10049t);
             break;
-
+        case MCU_SUPPLY_PROP_MODIFY_WATER_WAINING_VALUE:
+			_ls8a10049t_modify_water_warning_valve_value(ls8a10049t,value);
+			break;
 		case MCU_SUPPLY_PROP_JUST_UP_LED_LEVEL:			
 			if(level <= 0xff)
 			{

@@ -220,7 +220,8 @@ void main_msg_proc(void *parama1, void *parama2, void *parama3)
 						 logic_mcu_ls8a10023t_otg_mobile_det();
 						 sys_event_notify(SYS_EVENT_AUTO_POWER_OFF);
 				      }
-					  else if(msg.value == PD_EVENT_SOURCE_EXIT_ATS)
+					  else if(msg.value == PD_EVENT_SOURCE_EXIT_ATS || 
+					  	msg.value == PD_EVENT_SOURCE_BAT_VERIFY_FAIL_POWEROFF)
 					  {
                            sys_event_notify(SYS_EVENT_POWER_OFF);	
 					   }

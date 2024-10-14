@@ -99,10 +99,21 @@ int sys_wakelocks_check(void)
 
 uint32_t sys_wakelocks_get_free_time(void)
 {
-	if (wakelocks_bitmaps || !wakelocks_free_timestamp)
-		return 0;
+	u32_t free_time = 0;
+#ifdef CONFIG_SYS_IRQ_LOCK
+	SYS_IRQ_FLAGS flags;
+	sys_irq_lock(&flags);
+#endif
 
-	return os_uptime_get_32() - wakelocks_free_timestamp;
+	if (wakelocks_bitmaps || !wakelocks_free_timestamp)
+		free_time = 0;
+	else
+		free_time = os_uptime_get_32() - wakelocks_free_timestamp;
+
+#if CONFIG_SYS_IRQ_LOCK
+	sys_irq_unlock(&flags);
+#endif
+	return free_time;
 }
 
 int sys_wakelocks_free_time_reset(void)

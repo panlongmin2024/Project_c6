@@ -180,6 +180,10 @@ int task_wdt_feed(uint32_t channel_id)
 		return -EINVAL;
 	}
 
+	if(wdt_channels[channel_id].reload_period == 0){
+		return -EIO;
+	}
+
 	/*
 	 * We need a critical section instead of a mutex while updating the
 	 * wdt_channels array in order to prevent priority inversion. Otherwise,

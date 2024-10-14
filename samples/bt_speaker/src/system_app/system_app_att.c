@@ -17,6 +17,7 @@
 #include "app_defines.h"
 #include "system_app_att.h"
 #include "system_app.h"
+#include <debug/task_wdt.h>
 
 static struct device *stub_dev;
 extern int trace_dma_print_set(unsigned int dma_enable);
@@ -655,6 +656,7 @@ void enter_BQB_mode(void)
 {
 #ifdef CONFIG_BT_CONTROLER_BQB
 	extern void BT_DutTest(int bqb_mode);
+
 	k_thread_priority_set(k_current_get(), 0);
 	BT_DutTest(1);		/*1-classic bqb, 2-ble bqb */
 #else
@@ -994,6 +996,10 @@ void autotest_start(void)
 
 #ifdef CONFIG_DSP_EJTAG_ENABLE
 	soc_debug_disable_jtag(SOC_JTAG_DSP);
+#endif
+
+#ifdef CONFIG_TASK_WDT
+	task_wdt_exit();
 #endif
 
 	att_stack = malloc(ATT_STACK_SIZE);

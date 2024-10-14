@@ -185,6 +185,27 @@ int ext_dsp_send_battery_volt(float battery_volt)
     return ret;
 }
 
+// Todo
+/* Signature */
+static dolphin_eq_band_t _eq_bands_stored[NUM_EQ_BANDS+2] = {
+    { 100,    0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 1000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 2000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 7000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 10000,  0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 10000,  0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 10000,  0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+};
+static int _eq_bands_count_stored = NUM_EQ_BANDS;
+
+const static dolphin_eq_band_t _eq_bands_default[NUM_EQ_BANDS] = {
+    { 100,    0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 1000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 2000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 7000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+    { 10000,  0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+};
+
 int ext_dsp_set_eq_param(dolphin_eq_band_t * eq_bands, int bands_count)
 {
     int i;
@@ -195,8 +216,39 @@ int ext_dsp_set_eq_param(dolphin_eq_band_t * eq_bands, int bands_count)
         printk("bands[%d].q_value   = %d.%01d \n", i, (int)eq_bands[i].q, ((int)(eq_bands[i].q * 10)) % 10);
         printk("bands[%d].type      = %d \n", i, eq_bands[i].type);
     }
+
+    memset(_eq_bands_stored, 0, sizeof(_eq_bands_stored));
+    memcpy(_eq_bands_stored, eq_bands, sizeof(dolphin_eq_band_t) * bands_count);
+    _eq_bands_count_stored = bands_count;
+
     int ret = ats3615_comm_send_user_eq(eq_bands, bands_count);
     return ret;
 }
 
+int ext_dsp_restore_eq(int eq_enable)
+{
+    printk("ext_dsp_restore_eq  %d \n", eq_enable);
 
+    if (eq_enable) {
+        ats3615_comm_send_user_eq(_eq_bands_stored, _eq_bands_count_stored);
+    } else {
+        // Todo
+        /* for Tone */
+        dolphin_eq_band_t tts_eq_presets[NUM_EQ_BANDS] = {
+            { 250,    -6, 0.707, DOLPHIN_EQ_TYPE_LS2 },
+            { 1000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+            { 2000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+            { 7000,   0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+            { 10000,  0, 1, DOLPHIN_EQ_TYPE_EQ2 },
+        };
+        ats3615_comm_send_user_eq(&(tts_eq_presets[0]), NUM_EQ_BANDS);
+    }
+    return 0;
+}
+
+int ext_dsp_restore_default(void)
+{
+    _eq_bands_count_stored = NUM_EQ_BANDS;
+    memcpy(_eq_bands_stored, _eq_bands_default, sizeof(_eq_bands_default));
+    return 0;
+}

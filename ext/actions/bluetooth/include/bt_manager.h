@@ -1505,6 +1505,7 @@ void bt_manager_tws_send_event_sync(uint8_t event, uint32_t event_param);
 int bt_manager_allow_sco_connect(bool allowed);
 void bt_manager_halt_phone(void);
 void bt_manager_resume_phone(void);
+void bt_manager_ios_tts_delay_set(bool enable);
 void bt_manager_set_user_visual(bool enable,bool discoverable, bool connectable, uint8_t scan_mode);
 bool bt_manager_is_poweron_auto_reconnect_running(void);
 bool bt_manager_is_auto_reconnect_runing(void);

@@ -459,15 +459,49 @@ static struct bt_audio_conn *find_active_slave(void);
 
 static void lea_on_off_work_callback(struct k_work *work);
 
+static int bt_manager_madia_is_multi_stream_started(void)
+{
+	uint8_t cnt = 0;
+	struct bt_audio_channel *chan;
+	struct bt_audio_conn *audio_conn = NULL;
+
+	os_sched_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.conn_list, audio_conn, node) {
+		if (audio_conn->role == BT_ROLE_SLAVE && audio_conn->is_phone_dev) {
+
+			SYS_SLIST_FOR_EACH_CONTAINER(&audio_conn->chan_list, chan, node) {
+				SYS_LOG_DBG("%x, %x", chan->audio_contexts, chan->state);
+				if ((chan->audio_contexts & BT_AUDIO_CONTEXT_MEDIA) &&
+					(chan->state == BT_AUDIO_STREAM_ENABLED ||
+					 chan->state == BT_AUDIO_STREAM_STARTED)) {
+					cnt++;
+				}
+			}
+		}
+	}
+
+	os_sched_unlock();
+
+	return (cnt > 1)? 1 : 0;
+}
+
 static int bt_manager_audio_event_notify(struct bt_audio_conn* audio_conn, int event_id, void *event_data, int event_data_size)
 {
 	if (!audio_conn){
 		return bt_manager_event_notify(event_id, event_data, event_data_size);
-
 	}
-	if (audio_conn == find_active_slave()) {
+
+	if (bt_manager_madia_is_multi_stream_started()) {
+		if (audio_conn == find_active_slave()) {
+			SYS_LOG_INF("multi stream");
+			return bt_manager_event_notify(event_id, event_data, event_data_size);
+		}
+	}else {
+		SYS_LOG_INF("single stream");
 		return bt_manager_event_notify(event_id, event_data, event_data_size);
 	}
+
 	return 0;
 }
 
@@ -4598,16 +4632,16 @@ int bt_manager_media_playpause(void)
 		if (dev_info == NULL)
 			return -EINVAL;
 
-        if (dev_info->avrcp_ext_status & BT_MANAGER_AVRCP_EXT_STATUS_PASSTHROUGH_PLAY){
-            if(dev_info->a2dp_stream_started){
-                bt_manager_media_pause();
-            }
-            else{
-                bt_manager_media_play();
-            }
-        } else {
-            bt_manager_media_play();
-        }
+		if ((dev_info->avrcp_ext_status & BT_MANAGER_AVRCP_EXT_STATUS_PASSTHROUGH_PLAY) ||
+			(dev_info->avrcp_ext_status & BT_MANAGER_AVRCP_EXT_STATUS_PLAYING)) {
+			if(dev_info->a2dp_stream_started){
+				bt_manager_media_pause();
+			} else {
+				bt_manager_media_play();
+			}
+		} else {
+			bt_manager_media_play();
+		}
 
 		SYS_LOG_INF("hdl: 0x%x play_status: 0x%x\n",dev_info->hdl, dev_info->avrcp_ext_status);
 	} else if (audio_conn->type == BT_TYPE_LE
@@ -6149,6 +6183,24 @@ __ramfunc static struct bt_broadcast_conn *find_broadcast(uint32_t handle)
 	return NULL;
 }
 
+static struct bt_broadcast_conn *find_broadcast2(uint32_t handle, uint8_t role)
+{
+	struct bt_broadcast_conn *broadcast;
+
+	os_sched_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_audio.broadcast_list, broadcast, node) {
+		if (broadcast->handle == handle && broadcast->role == role) {
+			os_sched_unlock();
+			return broadcast;
+		}
+	}
+
+	os_sched_unlock();
+
+	return NULL;
+}
+
 static struct bt_broadcast_conn *new_broadcast(uint32_t handle, uint8_t role)
 {
 	struct bt_broadcast_conn *broadcast;
@@ -6171,12 +6223,12 @@ static struct bt_broadcast_conn *new_broadcast(uint32_t handle, uint8_t role)
 	return broadcast;
 }
 
-static int delete_broadcast(uint32_t handle)
+static int delete_broadcast(uint32_t handle, uint8_t role)
 {
 	struct bt_broadcast_channel *channel, *ch;
 	struct bt_broadcast_conn *broadcast;
 
-	broadcast = find_broadcast(handle);
+	broadcast = find_broadcast2(handle,role);
 	if (!broadcast) {
 		SYS_LOG_ERR("not found (0x%x)", handle);
 		return -ENODEV;
@@ -6545,12 +6597,8 @@ int bt_manager_broadcast_stream_tws_sync_cb_register(struct bt_broadcast_chan *c
 		return -EINVAL;
 	}
 
-	broadcast = find_broadcast(chan->handle);
+	broadcast = find_broadcast2(chan->handle,BT_ROLE_BROADCASTER);
 	if (!broadcast) {
-		return -EINVAL;
-	}
-
-	if (broadcast->role != BT_ROLE_BROADCASTER) {
 		return -EINVAL;
 	}
 
@@ -6578,12 +6626,8 @@ int bt_manager_broadcast_stream_tws_sync_cb_register_1(struct bt_broadcast_chan 
 		return -EINVAL;
 	}
 
-	broadcast = find_broadcast(chan->handle);
+	broadcast = find_broadcast2(chan->handle,BT_ROLE_BROADCASTER);
 	if (!broadcast) {
-		return -EINVAL;
-	}
-
-	if (broadcast->role != BT_ROLE_BROADCASTER) {
 		return -EINVAL;
 	}
 
@@ -6638,7 +6682,7 @@ int bt_manager_broadcast_source_create(struct bt_broadcast_source_create_param *
 		return -EINVAL;
 	}
 
-	struct bt_broadcast_conn *broadcast = find_broadcast(param->broadcast_id);
+	struct bt_broadcast_conn *broadcast = find_broadcast2(param->broadcast_id,BT_ROLE_BROADCASTER);
 	if(broadcast){
 		if(broadcast->is_stopping)
 			SYS_LOG_ERR("wait last broadcast releasing\n");
@@ -6669,7 +6713,7 @@ int bt_manager_broadcast_source_disable(uint32_t handle)
 {
 	struct bt_broadcast_conn *broadcast;
 	os_sched_lock();
-	broadcast = find_broadcast(handle);
+	broadcast = find_broadcast2(handle,BT_ROLE_BROADCASTER);
 	if (!broadcast) {
 		os_sched_unlock();
 		SYS_LOG_ERR("no conn (0x%x)", handle);
@@ -6685,7 +6729,7 @@ int bt_manager_broadcast_source_release(uint32_t handle)
 {
 	struct bt_broadcast_conn *broadcast;
 	os_sched_lock();
-	broadcast = find_broadcast(handle);
+	broadcast = find_broadcast2(handle,BT_ROLE_BROADCASTER);
 	if (!broadcast) {
 		os_sched_unlock();
 		SYS_LOG_ERR("no conn (0x%x)", handle);
@@ -6881,14 +6925,14 @@ static int broadcast_config(bool source, void *data, int size)
 		return 0;
 	}
 
-	broadcast = find_broadcast(rep->handle);
-	if (!broadcast) {
-		if (source) {
-			role = BT_ROLE_BROADCASTER;
-		} else {
-			role = BT_ROLE_RECEIVER;
-		}
+	if (source) {
+		role = BT_ROLE_BROADCASTER;
+	} else {
+		role = BT_ROLE_RECEIVER;
+	}
 
+	broadcast = find_broadcast2(rep->handle,role);
+	if (!broadcast) {
 		broadcast = new_broadcast(rep->handle, role);
 		if (!broadcast) {
 			SYS_LOG_ERR("no conn");
@@ -6956,7 +7000,7 @@ static int broadcast_source_enable(void *data, int size)
 
 	rep = (struct bt_broadcast_report *)data;
 
-	broadcast = find_broadcast(rep->handle);
+	broadcast = find_broadcast2(rep->handle,BT_ROLE_BROADCASTER);
 	if (!broadcast) {
 		SYS_LOG_ERR("no conn (0x%x)", rep->handle);
 		return -ENODEV;
@@ -6982,7 +7026,7 @@ static int broadcast_source_update(void *data, int size)
 
 	rep = (struct bt_broadcast_report *)data;
 
-	broadcast = find_broadcast(rep->handle);
+	broadcast = find_broadcast2(rep->handle,BT_ROLE_BROADCASTER);
 	if (!broadcast) {
 		SYS_LOG_ERR("no conn (0x%x)", rep->handle);
 		return -ENODEV;
@@ -7007,7 +7051,7 @@ static int broadcast_source_disable(void *data, int size)
 
 	rep = (struct bt_broadcast_report *)data;
 
-	broadcast = find_broadcast(rep->handle);
+	broadcast = find_broadcast2(rep->handle,BT_ROLE_BROADCASTER);
 	if (!broadcast) {
 		SYS_LOG_ERR("no conn (0x%x)", rep->handle);
 		return -ENODEV;
@@ -7030,7 +7074,7 @@ static int broadcast_source_release(void *data, int size)
 
 	rep = (struct bt_broadcast_report *)data;
 
-	delete_broadcast(rep->handle);
+	delete_broadcast(rep->handle,BT_ROLE_BROADCASTER);
 
 	return bt_manager_event_notify(BT_BROADCAST_SOURCE_RELEASE, data, size);
 }
@@ -7097,7 +7141,7 @@ static int broadcast_sink_disable(void *data, int size)
 
 	channel->state = BT_BROADCAST_STREAM_CONFIGURED;
 #else
-	ret = delete_broadcast(rep->handle);
+	ret = delete_broadcast(rep->handle,BT_ROLE_RECEIVER);
     SYS_EVENT_INF(EVENT_BTMGR_BROAD_SINK_DISABLE,0,ret);	
 #endif
 
@@ -7133,7 +7177,7 @@ static int broadcast_sink_release(void *data, int size)
 
 	rep = (struct bt_broadcast_report *)data;
 
-	ret = delete_broadcast(rep->handle);
+	ret = delete_broadcast(rep->handle,BT_ROLE_RECEIVER);
 
 	if ((!ret) && bt_manager->per_synced_count) {
 	   bt_manager->per_synced_count--;
@@ -7450,8 +7494,10 @@ char *bt_manager_audio_get_last_connected_dev_name(void)
 			}else if(p_audio_conn->type == BT_TYPE_BR){
 				struct bt_mgr_dev_info * info = bt_mgr_find_dev_info_by_hdl(p_audio_conn->handle);
 				if(info && info->a2dp_connected && info->a2dp_connect_time > connect_time){
-					connect_time = info->a2dp_connect_time;
-					p_phone_dev = p_audio_conn;
+					if(bt_manager_audio_is_ios_dev(p_audio_conn->handle) || (k_uptime_get_32() - info->a2dp_connect_time > 2000)){
+						connect_time = info->a2dp_connect_time;
+						p_phone_dev = p_audio_conn;
+					}
 				}
 			}
 		}
@@ -7459,11 +7505,7 @@ char *bt_manager_audio_get_last_connected_dev_name(void)
 	os_sched_unlock();
 
 	if (p_phone_dev) {
-		if(bt_manager_audio_is_ios_dev(p_phone_dev->handle) || k_uptime_get_32() - connect_time > 2000){
-			return p_phone_dev->dev_name;
-		}else{
-			return NULL;
-		}
+		return p_phone_dev->dev_name;
 	}else{
 		return NULL;
 	}

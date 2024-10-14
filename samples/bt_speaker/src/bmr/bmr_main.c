@@ -235,7 +235,7 @@ static int _bmr_exit(void)
 	p_bmr = NULL;
 
 #ifdef CONFIG_PROPERTY
-	property_flush_req(NULL);
+	//property_flush_req(NULL);
 #endif
 
 #ifdef CONFIG_SOC_DVFS_DYNAMIC_LEVEL

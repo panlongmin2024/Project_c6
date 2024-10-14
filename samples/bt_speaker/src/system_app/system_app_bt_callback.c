@@ -153,10 +153,11 @@ int bt_stream_switch(struct bt_manager_stream_report* rep)
     return ret;
 }
 
+static int start_count = 0;
 static int system_bt_msg_match(void *msg,k_tid_t target_thread,k_tid_t source_thread){
 	struct app_msg *p_app_msg = (struct app_msg *)msg;
-	static int count = 0;
-	if(!p_app_msg || source_thread != os_current_get()){
+	if(!p_app_msg || source_thread != os_current_get() 
+		|| target_thread != app_manager_get_apptid(CONFIG_FRONT_APP_NAME)){
 		return 0;
 	}
 	if(p_app_msg->type == MSG_BT_EVENT){
@@ -165,9 +166,9 @@ static int system_bt_msg_match(void *msg,k_tid_t target_thread,k_tid_t source_th
 				p_app_msg->callback(p_app_msg, 0, NULL);
 			}
 			return 1;
-		}else if(!count){
+		}else if(!start_count){
 			if(p_app_msg->cmd == BT_AUDIO_STREAM_RELEASE){
-				count++;
+				start_count++;
 				return 0;
 			}
 		}else if(p_app_msg->cmd == BT_AUDIO_STREAM_STOP || p_app_msg->cmd == BT_AUDIO_STREAM_RELEASE){
@@ -239,6 +240,7 @@ int system_bt_event_callback(uint8_t event, uint8_t* extra, uint32_t extra_len)
 		{
 			if(event == BT_AUDIO_STREAM_ENABLE  && !os_is_free_msg_enough()){
 				ret = os_msg_delete(system_bt_msg_match);
+				start_count = 0;
 				SYS_LOG_INF("delete:%d", ret);
 			}
 			send_message_to_foregroup(MSG_BT_EVENT, event, extra, extra_len);
