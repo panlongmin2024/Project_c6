@@ -5,7 +5,7 @@
 
 	<firmware_version>
 		<version_code>0x000177</version_code>
-		<version_name>JBL_CHARGE6_v1.7.7.1_$(build_time)</version_name>
+		<version_name>JBL_CHARGE6_v1.8.6.1_$(build_time)</version_name>
 	</firmware_version>
 	<partitions>
 		<partition>
