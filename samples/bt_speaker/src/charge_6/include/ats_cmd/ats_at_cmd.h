@@ -141,5 +141,6 @@
 #define ATS_AT_CMD_ENTER_NOLOG_MODE        	"TL_ENTER_NOLOG_MODE"
 #define ATS_AT_CMD_EXIT_NOLOG_MODE	        "TL_EXIT_NOLOG_MODE"
 
+#define ATS_AT_CMD_SET_PDCV            		"TL_SET_PDCV="
 
 #endif

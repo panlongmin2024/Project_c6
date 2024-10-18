@@ -1704,6 +1704,23 @@ static int cdc_shell_ats_exit_debug_mode(struct device *dev, u8_t *buf, int len)
 		ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);	
 	return 0;
 }
+static int cdc_shell_ats_set_pd_charge_voltage(struct device *dev, u8_t *buf, int len)
+{	
+	static u8_t step;
+	
+	string_to_hex_u8(buf,&step);
+	
+	if(pd_mps52002_ats_switch_volt(step)){
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_SET_PDCV, sizeof(ATS_CMD_RESP_SET_PDCV)-1, 
+			ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
+	}
+	else{
+		ats_usb_cdc_acm_cmd_response_at_data(
+			dev, ATS_CMD_RESP_SET_PDCV, sizeof(ATS_CMD_RESP_SET_PDCV)-1, 
+			ATS_CMD_RESP_FAIL, sizeof(ATS_CMD_RESP_FAIL)-1);		
+	}
+}
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
 {
@@ -2176,6 +2193,14 @@ int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int siz
 		/* exit dubug mode */
 		cdc_shell_ats_exit_debug_mode(dev, NULL, 0);
 	}	
+	else if (!memcmp(&buf[index],ATS_AT_CMD_SET_PDCV, sizeof(ATS_AT_CMD_SET_PDCV)-1))
+	{		   
+		/* set charge voltage */
+
+	    index += sizeof(ATS_AT_CMD_SET_PDCV)-1;
+		target_index = index;
+		cdc_shell_ats_set_pd_charge_voltage(dev, &buf[target_index], 2);		
+	}		
 	else	
 	{
 		//ats_usb_cdc_acm_write_data("live ats_usb_cdc_acm_shell_command_handler exit",sizeof("live ats_usb_cdc_acm_shell_command_handler exit")-1);
