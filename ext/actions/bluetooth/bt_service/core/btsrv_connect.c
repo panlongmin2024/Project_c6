@@ -560,9 +560,12 @@ void btsrv_connect_auto_connection_stop(int mode)
 	}
 
     if((mode & BTSRV_STOP_AUTO_RECONNECT_ALL) == BTSRV_STOP_AUTO_RECONNECT_ALL){
-        thread_timer_stop(&p_connect->auto_conn_timer);
-        p_connect->reconnect_req_high_performance = 0;
-        p_connect->reconnect_ramdon_delay = 0;
+		if (thread_timer_is_running(&p_connect->auto_conn_timer)) {
+			btsrv_event_notify(MSG_BTSRV_BASE, MSG_BTSRV_AUTO_RECONNECT_COMPLETE, (void *)1);
+		}
+		thread_timer_stop(&p_connect->auto_conn_timer);
+		p_connect->reconnect_req_high_performance = 0;
+		p_connect->reconnect_ramdon_delay = 0;
 		p_connect->curr_conn = NULL;
 		btsrv_adapter_set_reconnect_state(false);
         btsrv_update_performance_req();

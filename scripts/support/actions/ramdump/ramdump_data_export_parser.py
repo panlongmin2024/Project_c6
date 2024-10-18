@@ -10,7 +10,7 @@ import sys
 import zlib
 import re
 
-RAMDUMP_PREFIX_STR = "#CD:"
+RAMDUMP_PREFIX_STR = "#DA:"
 
 RAMDUMP_BEGIN_STR = RAMDUMP_PREFIX_STR + "BEGIN#"
 RAMDUMP_CRC32_STR = RAMDUMP_PREFIX_STR + "CRC32#"
@@ -24,7 +24,7 @@ def parse_args():
 
     parser.add_argument("infile", help="Serial Log File")
     parser.add_argument("outfile", help="Output file for use with ramdump")
-    parser.add_argument("outfile_backup", help="Output backup file for use with compare with output file")
+    #parser.add_argument("outfile_backup", help="Output backup file for use with compare with output file")
 
     return parser.parse_args()
 
@@ -96,8 +96,10 @@ def save_file(infile_path, outfile, line_number=0):
             continue
 
         if RAMDUMP_BLOCK_STR in line:
-            pattern = r"#CD:BLOCK#(\d+)#0x([\dA-Fa-f]+)"
+            pattern = r"#DA:BLOCK#(\d+)#0x([\dA-Fa-f]+)"
             match = re.search(pattern, line)
+            #print(line)
+            #print(match.group(1))
             block_number = int(match.group(1))
             crc32_str = match.group(2)
             log_block_crc32 = int(crc32_str, 16)
@@ -167,24 +169,19 @@ def main():
     try:
         tmpfile_path = preprocess_file(infile_path)
 
-        with open(args.outfile, "wb") as outfile, \
-             open(args.outfile_backup, "wb") as outfile_backup:
+        with open(args.outfile, "wb") as outfile:
 
 
             print(f"Input file {infile_path}")
             print(f"Output file {args.outfile}")
-            print(f"Output backup file {args.outfile_backup}")
 
             line_number = 0
 
             save_len, line_number = save_file(tmpfile_path, outfile, line_number)
             if save_len > 0:
-                #print(f"parse file linenum {line_number}")
-                save_backup_len, line_number = save_file(tmpfile_path, outfile_backup, line_number)
-                if save_backup_len == save_len:
-                    print("ramdump serial log convert ok!")
-                else:
-                    print(f"ERROR first Bytes written {save_len}, second Bytes written {save_backup_len}")
+                print("ramdump serial log convert ok!")
+            else:
+                print(f"ERROR first Bytes written {save_len}")
     except IOError as e:
         print(f"I/O error({e.errno}): {e.strerror}")
 

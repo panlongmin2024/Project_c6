@@ -318,7 +318,7 @@ static int _sys_standby_enter_s1(void)
 	selfapp_set_allowed_join_party(false);
 	sys_ble_advertise_deinit();
 	sys_ble_advertise_init();
-	selfapp_enter_standby();
+	selfapp_sendmsg_disconnectApp();
 	disable_ble = 0;
 #endif
 

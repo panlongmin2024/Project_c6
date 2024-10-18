@@ -464,19 +464,15 @@ static int ota_encrypt_data_verify(struct ota_upgrade_info *ota, struct ota_file
 	return 0;
 }
 
-static int ota_update_temp_partition_flag(struct ota_upgrade_info *ota, struct ota_file *file)
+static int ota_update_temp_partition_flag(struct ota_upgrade_info *ota)
 {
 	uint8_t *data_ptr = (uint8_t *)ota_rx_in_buf;
 
 	const struct partition_entry * part;
 
-	if(file->file_id != PARTITION_FILE_ID_OTA_TEMP){
-		return 0;
-	}
+	part = partition_get_part(PARTITION_FILE_ID_OTA_TEMP);
 
-	part = partition_get_part(file->file_id);
-
-	ota_storage_read(ota->storage, file->offset, data_ptr, OTA_ERASE_ALIGN_SIZE);
+	ota_storage_read(ota->storage, part->offset, data_ptr, OTA_ERASE_ALIGN_SIZE);
 
 	if(data_ptr[0] != 0x41 && data_ptr[1] != 0x4F \
 		&& data_ptr[2] != 0x54 && data_ptr[3] != 0x41){
@@ -486,7 +482,7 @@ static int ota_update_temp_partition_flag(struct ota_upgrade_info *ota, struct o
 		data_ptr[2] = 0x54;
 		data_ptr[3] = 0x41;
 
-		ota_storage_write(ota->storage, file->offset, data_ptr, 4);
+		ota_storage_write(ota->storage, part->offset, data_ptr, 4);
 	}
 
 
@@ -504,8 +500,6 @@ static int ota_verify_file(struct ota_upgrade_info *ota, struct ota_file *file)
 	}
 
 	if(file->file_id == PARTITION_FILE_ID_OTA_TEMP){
-		ota_update_temp_partition_flag(ota, file);
-
 		//校验时间较长，降低优先级给应用层做UI
 		prio = k_thread_priority_get(k_current_get());
 		k_thread_priority_set(k_current_get(), 12);
@@ -822,6 +816,8 @@ static int ota_write_file_partition(struct ota_upgrade_info *ota, struct ota_fil
 	uint32_t addr = file->offset + offs;
 	struct ota_storage *storage = ota->storage;
 	const struct partition_entry * part = partition_get_part(file->file_id);
+
+	SYS_LOG_INF("file id %d offs 0x%x, size %d ", file->file_id, offs, size);
 
 	if(!part){
 		return -EINVAL;
@@ -1941,6 +1937,11 @@ int ota_upgrade_check(struct ota_upgrade_info *ota, struct ota_upgrade_check_par
 			goto exit;
 		}
 
+		err = ota_upgrade_verify_temp_image(ota);
+		if (err) {
+			goto exit;
+		}
+
 		err = ota_write_boot_image(ota);
 		if (err) {
 			SYS_LOG_INF("upgrade failed, err %d", err);
@@ -1950,16 +1951,13 @@ int ota_upgrade_check(struct ota_upgrade_info *ota, struct ota_upgrade_check_par
 			goto exit;
 		}
 
-		err = ota_upgrade_verify_temp_image(ota);
-		if (err) {
-			goto exit;
-		}
-
 		err = ota_update_state(ota, OTA_UPLOADING);
 
 		if(err){
 			goto exit;
 		}
+
+		ota_update_temp_partition_flag(ota);
 
 		ota_breakpoint_update_state(bp, OTA_BP_STATE_UPGRADE_PENDING);
 	}

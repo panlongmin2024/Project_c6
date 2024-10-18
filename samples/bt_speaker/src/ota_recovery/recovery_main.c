@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define SYS_LOG_NO_NEWLINE
 #ifdef SYS_LOG_DOMAIN
 #undef SYS_LOG_DOMAIN
 #endif
@@ -123,22 +122,28 @@ void _ota_mcu_int_timer_hander(void)
 	}
 }
 #endif
-static void ota_app_start(void)
+void ota_app_start(void)
 {
+	os_sleep(10);
+
 	SYS_LOG_INF("ota app start");
 	struct device *flash_device =
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
-	if (flash_device)
-		flash_write_protection_set(flash_device, false);
+	if (flash_device){
+		//flash_write_protection_set(flash_device, false);
+		flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_BOOT);
+	}
 }
 
-static void ota_app_stop(void)
+void ota_app_stop(void)
 {
 	SYS_LOG_INF("ota app stop");
 	struct device *flash_device =
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
-	if (flash_device)
-		flash_write_protection_set(flash_device, true);
+	if (flash_device){
+		//flash_write_protection_set(flash_device, true);
+		flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_ALL_EXCLUDE_NVRAM);
+	}
 }
 
 static int ota_app_notify(int state, int old_state)
@@ -170,11 +175,8 @@ static void ota_app_backend_callback(struct ota_backend *backend, int cmd,
 				SYS_LOG_INF("unable attach backend");
 				return;
 			}
-			ota_app_start();
 		} else {
 			ota_upgrade_detach_backend(g_ota, backend);
-			ota_app_stop();
-
 		}
 	}
 }
@@ -251,19 +253,21 @@ int ota_app_init(void)
 
 	struct device *flash_device =
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
-	if (flash_device)
-		flash_write_protection_set(flash_device, false);
+
+	if (flash_device){
+		//flash_write_protection_set(flash_device, false);
+		flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_BOOT);
+	}
 
 	g_ota = ota_upgrade_init(&param);
 	if (!g_ota) {
 		SYS_LOG_INF("ota app init error");
-		if (flash_device)
-			flash_write_protection_set(flash_device, true);
+		if (flash_device){
+			//flash_write_protection_set(flash_device, true);
+			flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_ALL_EXCLUDE_NVRAM);
+		}
 		return -1;
 	}
-
-	if (flash_device)
-		flash_write_protection_set(flash_device, true);
 
 	return 0;
 }
@@ -275,6 +279,8 @@ static uint8_t __ota_bss ota_data_buf[0x1000];
 void main(void)
 {
 	struct ota_upgrade_check_param param;
+	int reboot_type = REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_OTA_FAILED;
+
 	int ret = 0;
 	soc_watchdog_stop();
 
@@ -298,7 +304,7 @@ void main(void)
 		goto exit;
 	}
 
-	SYS_LOG_INF("do ota recovery");
+	//SYS_LOG_INF("do ota recovery");
 
 #ifdef CONFIG_OTA_BACKEND_TEMP_PART
 	ota_app_init_spinor();
@@ -320,13 +326,20 @@ void main(void)
 	param.data_buf = ota_data_buf;
 	param.data_buf_size = sizeof(ota_data_buf);
 
+	ota_app_start();
+
 	if (ota_upgrade_check(g_ota, &param)) {
+		ota_app_stop();
 		while (true) {
 			SYS_LOG_INF
 			    ("ota upgrade failed, wait check ota file \n");
 			k_sleep(1000);
 		}
+	}else{
+		ota_app_stop();
 	}
+
+	reboot_type = REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_OTA_FINISHED;
 
  exit:
 	SYS_LOG_INF("REBOOT_TYPE_GOTO_SYSTEM");
@@ -336,9 +349,5 @@ void main(void)
 	#ifdef CONFIG_BUILD_PROJECT_HM_DEMAND_CODE
 	_ota_mcu_int_timer_hander();
 	#endif
-	if(ret == 0)
-		sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_OTA_FINISHED);
-	else
-		sys_pm_reboot(REBOOT_TYPE_GOTO_SYSTEM | REBOOT_REASON_NORMAL);
-
+	sys_pm_reboot(reboot_type);
 }

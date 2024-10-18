@@ -263,7 +263,7 @@ def ramd_dec_seg(ramd_file, output, json_file):
         if ramd_magic != RAMD_MAGIC:
             print('error file magic 0x%x expected 0x%x\n' %(ramd_magic, RAMD_MAGIC))
             return (0, 0)
-        print("[ramdump] org_sz=0x%x, img_sz=0x%x" %(ramd_org_sz,ramd_img_sz))
+        print("[ramdump] org_sz=0x%x, img_sz=0x%x esf_addr=0x%x" %(ramd_org_sz,ramd_img_sz, esf_addr))
 
         while ramd_img_sz > 0:
             # read region header
@@ -313,7 +313,7 @@ def ramd_dec_seg(ramd_file, output, json_file):
         with open(json_file, 'w') as f:
             json.dump(binaries_dict, f)
             f.write('\n')
-            f.write(str(esf_addr))
+            f.write(hex(esf_addr))
 
         return (f1.tell(), out_sz)
 

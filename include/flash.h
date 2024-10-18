@@ -28,6 +28,14 @@
 extern "C" {
 #endif
 
+typedef enum
+{
+	FLASH_PROTECT_REGION_NONE,
+	FLASH_PROTECT_REGION_BOOT,
+	FLASH_PROTECT_REGION_BOOT_AND_SYS,
+	FLASH_PROTECT_REGION_ALL_EXCLUDE_NVRAM,
+}flash_protect_region_id_e;
+
 typedef int (*flash_api_init)(struct device *dev);
 typedef int (*flash_api_read)(struct device *dev, off_t offset, void *data,
 			      size_t len);
@@ -36,6 +44,7 @@ typedef int (*flash_api_write)(struct device *dev, off_t offset,
 typedef int  (*flash_api_ioctl)(struct device *dev, uint8_t cmd, void *buff);
 typedef int (*flash_api_erase)(struct device *dev, off_t offset, size_t size);
 typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
+typedef int (*flash_api_write_protection_region)(struct device *dev, int region_id);
 
 struct flash_driver_api {
 	flash_api_init init;
@@ -44,6 +53,7 @@ struct flash_driver_api {
 	flash_api_ioctl ioctl;
 	flash_api_erase erase;
 	flash_api_write_protection write_protection;
+	flash_api_write_protection_region write_protection_region;
 };
 
 /**
@@ -160,6 +170,32 @@ static inline int flash_write_protection_set(struct device *dev, bool enable)
 
 	return api->write_protection(dev, enable);
 }
+
+
+
+/**
+ *	@brief	Set write protection region for a flash memory
+ *
+ *	This API is required to be called before the invocation of write or erase
+ *	API. Please note that on some flash components, the write protection is
+ *	automatically turned on again by the device after the completion of each
+ *	write or erase calls. Therefore, on those flash parts, write protection needs
+ *	to be disabled before each invocation of the write or erase API. Please refer
+ *	to the sub-driver API or the data sheet of the flash component to get details
+ *	on the write protection behavior.
+ *
+ *	@param	dev 			: flash device
+ *	@param	region_id		: region id for flash write protection
+ *
+ *	@return  0 on success, negative errno code on fail.
+ */
+static inline int flash_write_protection_region_set(struct device *dev, int region_id)
+{
+	const struct flash_driver_api *api = dev->driver_api;
+
+	return api->write_protection_region(dev, region_id);
+}
+
 
 #ifdef __cplusplus
 }

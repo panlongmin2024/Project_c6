@@ -1181,6 +1181,8 @@ class firmware(object):
     def generate_ota_image_check_data(self, file_dir, file_name, block_size = 32):
         ota_file = os.path.join(file_dir, file_name)
         ota_temp_file = ota_file + '.tmp'
+        ota_orig_file = ota_file + '.orig'
+
         with open(ota_file, 'rb') as f_in:
             with open(ota_temp_file, 'wb') as f_out:
                 data_block = f_in.read(block_size)
@@ -1197,6 +1199,7 @@ class firmware(object):
                     crc = self.calculate_checksum(data_block)
                     f_out.write(data_block)
                     f_out.write(struct.pack('<H', crc))
+        os.rename(ota_file, ota_orig_file)
         os.replace(ota_temp_file, ota_file)
 
 def main(argv):

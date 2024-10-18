@@ -1149,10 +1149,10 @@ static void mcu_power_key_deal_fn(mcu_manager_charge_event_para_t *para)
                     pd_srv_event_notify(PD_EVENT_SOURCE_BATTERY_DISPLAY,BATT_LED_NORMAL_OFF);
                 }                        
             }
+			pd_manager_set_poweron_filte_battery_led(WLT_FILTER_CHARGINE_POWERON);
+		    printk("POWER KEY exit charge app\n");
         }
-        bt_mcu_send_pw_cmd_poweron();
-        pd_manager_set_poweron_filte_battery_led(WLT_FILTER_CHARGINE_POWERON);
-        printk("POWER KEY exit charge app\n");
+        bt_mcu_send_pw_cmd_poweron();     
     }else{
         if(charge_warnning.bt_is_charge_warnning_flag)
         {

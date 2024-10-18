@@ -52,17 +52,16 @@ u32_t data_analy_update_power_on_sec(void)
 
 void data_analy_data_clear(void)
 {
-	if (!analy_upload_data_p) {
-		return;
+	if (g_data_analy.power_on == 0) {
+		return ;
 	}
-
 	memset(analy_upload_data_p, 0, sizeof(data_analytics_upload_t));
 }
 
 void data_analy_play_clear(void)
 {
-	if (!analy_play_index_p) {
-		return;
+	if (g_data_analy.power_on == 0) {
+		return ;
 	}
 
 	//only clear nvram save id, current recording data need keep counting
@@ -92,6 +91,10 @@ int data_analy_data_get(data_analytics_upload_t* buf, u16_t len)
 	{
 		return -1;
 	}
+	if (g_data_analy.power_on == 0) {
+		return -2;  // data_analy exited
+	}
+
 	data_analy_update_power_on_sec();
 	memcpy(buf, analy_upload_data_p, sizeof(data_analytics_upload_t));
 	return 0;
@@ -102,6 +105,9 @@ int data_analy_play_get(play_analytics_upload_t* arr, u16_t arr_num)
 	if(!arr || arr_num < DATA_ANALY_PLAY_ID_MAX || !analy_play_index_p)
 	{
 		return -1;
+	}
+	if (g_data_analy.power_on == 0) {
+		return -2;
 	}
 
 	s8_t id = analy_play_index_p->next_write_id;
@@ -800,6 +806,9 @@ static void product_info_scan(void)
 
 static void play_time_thread_timer_cb(struct thread_timer *timer, void* pdata)
 {
+	if (g_data_analy.power_on == 0) {
+		return ;
+	}
 
 	if(analy_play_index_p || analy_data_p || analy_play_p
 			|| analy_upload_play_p || analy_upload_data_p)
@@ -915,9 +924,9 @@ int data_analy_exit(void)
 		nvram_config_set(id_info, &play_data_store[i], sizeof(play_analytics_upload_t));
 	}
 
+	g_data_analy.power_on = 0;  // forbidden all data_analy operation
 	thread_timer_stop(&g_data_analy.play_time_thread_timer);
 
-	g_data_analy.power_on = 0;
 	analy_data_p = NULL;
 	analy_play_p = NULL;
 

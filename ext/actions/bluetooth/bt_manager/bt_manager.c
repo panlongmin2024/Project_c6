@@ -929,6 +929,18 @@ void bt_manager_auto_reconnect_complete(void)
 	}
 }
 
+static void bt_manager_reconnect_active_halt(void)
+{
+	struct bt_manager_context_t*  bt_manager = bt_manager_get_context();
+
+	SYS_LOG_INF("halt reconnect :%d",bt_manager->auto_reconnect_timeout);
+	for(int i = 0; ((i < MAX_MGR_DEV) && bt_manager->dev[i].used); i++){
+		bt_manager->dev[i].auto_reconnect = 0;
+	}
+	bt_manager->auto_reconnect_timeout = 0;
+	
+}
+
 static int bt_manager_service_callback(btsrv_event_e event, void *param)
 {
 	int ret = 0;
@@ -966,8 +978,12 @@ static int bt_manager_service_callback(btsrv_event_e event, void *param)
 		ret = bt_manager_check_new_device_role(param);
 		break;
     case BTSRV_AUTO_RECONNECT_COMPLETE:
-        bt_manager_auto_reconnect_complete();
-        break;
+		if (1 == (int)param) {
+			bt_manager_reconnect_active_halt();
+		} else {
+			bt_manager_auto_reconnect_complete();
+		}
+		break;
     case BTSRV_SYNC_AOTO_RECONNECT_STATUS:
         bt_manager_sync_auto_reconnect_status(param);
         break;

@@ -597,7 +597,7 @@ static bool selfapp_connect_filter_cb(void *conn, uint8_t connect_type)
 #ifdef CONFIG_OTA_SELF_APP
 	int err = -1;
 
-	if (selfapp_otadfu_is_working()) {
+	if (otadfu_running()) {
 		err = hostif_bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		if (err) {
 			SYS_LOG_INF("conn_disconnect failed (err %d)", err);
@@ -790,11 +790,10 @@ int selfapp_stream_handle_suspend(uint8_t suspend_enable)
 	}
 }
 
-int selfapp_enter_standby(void)
+int selfapp_sendmsg_disconnectApp(void)
 {
 	selfapp_log_inf();
 	selfapp_send_msg(MSG_SELFAPP_APP_EVENT, SELFAPP_CMD_DISCONNECT, 0, 0);
-	selfapp_log_inf("done");
 	return 0;
 }
 

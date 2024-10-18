@@ -144,11 +144,10 @@ bool main_system_tts_get_play_warning_tone_flag(void)
 
 	return tts_is_play_warning_tone;
 }
+extern bool pd_manager_bat_verify(void);
 
 extern int btdrv_get_bqb_mode(void);
 extern void hm_ext_pa_deinit(void);
-extern unsigned char is_authenticated(void);
-extern void bat_verify_fail_poweroff(void);
 static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 {
 	switch (event) {
@@ -179,10 +178,11 @@ static void main_system_tts_event_nodify(u8_t * tts_id, u32_t event)
 		}
 		else if(memcmp(tts_id,"poweron.mp3",11))
 		{
-	      if(!is_authenticated())
-	      {
-	            //bat_verify_fail_poweroff();
-	      }
+	     // if(!is_authenticated())
+	     // {
+	         //   bat_verify_fail_poweroff();
+	     // }
+	        pd_manager_bat_verify();
            
 		}
 		if(!memcmp(tts_id,"c_err.mp3",9)){
@@ -466,7 +466,7 @@ void system_app_init(void)
 		pd_srv_sync_init();
 	}
 
-	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED && reason != REBOOT_REASON_REBOOT_AND_POWERON) {
+	if (!att_enter_bqb_flag && reason != REBOOT_REASON_OTA_FINISHED && reason != REBOOT_REASON_REBOOT_AND_POWERON && reason != REBOOT_REASON_OTA_FAILED) {
 		bool enter_stub_tool = false;
 
 #if (defined CONFIG_TOOL && defined CONFIG_ACTIONS_ATT)
@@ -813,13 +813,21 @@ CRASH_DUMP_REGISTER(dump_ctrl_mem_info, 40) =
 
 #include <debug/ramdump.h>
 #include <debug/data_export.h>
- #include <soc.h>
+#include <soc.h>
+#include <flash.h>
 #ifdef CONFIG_TASK_WDT
 #include <debug/task_wdt.h>
 #endif
 
 static void crash_dump_ramdump(void)
 {
+	struct device *flash_device = device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
+
+	if (flash_device){
+		//flash_write_protection_set(flash_device, false);
+		flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_BOOT_AND_SYS);
+	}
+
 #ifdef CONFIG_TASK_WDT
 	task_wdt_exit();
 #endif

@@ -16,13 +16,15 @@
 #include "broadcast.h"
 #include "app_common.h"
 
+#define DEFAULT_BROADCAST_ID 0x999999
+
 int8_t broadcast_sq_mode = 0;
 
 int broadcast_get_broadcast_id(void)
 {
 	int v;
 
-	v = property_get_int("BROADCAST_ID", INVALID_BROADCAST_ID);
+	v = property_get_int("BROADCAST_ID", DEFAULT_BROADCAST_ID);
 
 	SYS_LOG_INF("0x%x\n", v);
 	return v;

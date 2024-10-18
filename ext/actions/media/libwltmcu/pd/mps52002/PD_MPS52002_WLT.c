@@ -124,7 +124,6 @@ struct wlt_pd_mps52002_info {
 	u32_t   pd_65992_unload_flag:1;
 	u32_t   sink_disable_charge_flag:1;
 	u32_t   pd_enter_idle_flag:1;
-	
    // u32_t   otg_debounce_cnt;
 	int16   volt_value;
     int16   cur_value;
@@ -2323,7 +2322,7 @@ static int pd_mps52002_wlt_get_property(struct device *dev,enum pd_manager_suppl
 			val->intval = logic_mcu_ls8a10049t_get_water_warning_status();	
 			break;	
 		case PD_SUPPLY_PROP_TYPEC_WATER_WARNING_TRIGGER_CNT:
-		/*********return 0:none�?：rerady�?2：triggered	*///////////		
+		/*********return 0:none�?：rerady�?2：triggered	*///////////		
 			val->intval = mcu_get_water_charge_warnning_status();
 			break;
         default:
@@ -2442,6 +2441,8 @@ void pd_mps52002_sink_charging_disable(bool flag)
     }
     
 }
+extern unsigned char is_authenticated(void);
+extern void bat_verify_fail_poweroff(void);
 
 extern void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);
 
@@ -2556,7 +2557,12 @@ void pd_mps52002_iic_send_data()
 				pd_mps52002->pd_enter_idle_flag = false;
 				wake_up_pd();
 				break;
-
+            case PD_IIC_TYPE_PROP_BAT_VERIFY:
+				 if(!is_authenticated())
+					{
+                       bat_verify_fail_poweroff();
+				    }			
+				break;
 			default:
 				break; 
 		}      
@@ -2666,7 +2672,9 @@ static void pd_mps52002_wlt_set_property(struct device *dev,enum pd_manager_supp
 		case PD_SUPPLY_PROP_WAKEUP:
 			pd_iic_push_queue(PD_IIC_TYPE_PROP_WAKEUP, (u8_t)val->intval);
 			break;	
-
+        case PD_SUPPLY_PROP_BAT_VERIFY:
+			pd_iic_push_queue(PD_IIC_TYPE_PROP_BAT_VERIFY, (u8_t)val->intval);
+			break;
         default:
             break;               
     }

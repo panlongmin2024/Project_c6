@@ -1164,7 +1164,7 @@ int btsrv_adapter_process(struct app_msg *msg)
 	    btsrv_adapter_update_qos(msg->ptr);
 	    break;
 	case MSG_BTSRV_AUTO_RECONNECT_COMPLETE:
-		btsrv_adapter_callback(BTSRV_AUTO_RECONNECT_COMPLETE, NULL);
+		btsrv_adapter_callback(BTSRV_AUTO_RECONNECT_COMPLETE, msg->ptr);
 		break;
 	case MSG_BTSRV_SET_LEAUDIO_CONNECTED:
 		btsrv_adapter_set_leaudio_connected(_btsrv_get_msg_param_ptr(msg));

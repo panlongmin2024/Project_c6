@@ -429,8 +429,7 @@ struct wlt_pd_manager_info {
     u32_t   app_music_flag:1;
     u32_t   pd_sink_only_mode:1;
     u32_t   pd_sink_full_state:1;
-    u32_t   otg_off_flag:1;
-	u32_t   battery_security_flag:1;
+    u32_t   otg_off_flag:1;	
 	u32_t   pd_manager_finish_flag:1;
     u32_t   pd_manager_low_cur_flag:1;
     u32_t   pd_sink_dischg_flag:1;
@@ -1860,6 +1859,21 @@ bool pd_manager_check_mobile(void)
 
     const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
     api->get_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_OTG_MOBILE, &val);
+
+    return val.intval;
+
+}
+
+bool pd_manager_bat_verify(void)
+{
+    
+    union pd_manager_supply_propval val;
+
+    if(wlt_pd_manager == NULL)
+        return -1;
+
+    const struct pd_manager_supply_driver_api *api = wlt_pd_manager->dev->driver_api;
+    api->set_property(wlt_pd_manager->dev, PD_SUPPLY_PROP_BAT_VERIFY, &val);
 
     return val.intval;
 

@@ -29,7 +29,7 @@ extern void *bt_manager_get_halt_phone(uint8_t *halt_cnt);
 static struct usound_app_t *p_usound = NULL;
 
 extern bool usb_audio_get_download_streaming_enabled(void);
-static void usound_sync_host_vol(int vol_db);
+static void usound_set_vol_by_db(int vol_db);
 
 struct usound_app_t *usound_get_app(void)
 {
@@ -54,6 +54,9 @@ int usound_get_status(void)
 void usound_restart_player_trigger(void)
 {
 	if (p_usound) {
+
+		p_usound->restart_total++;
+
 		p_usound->restart_count++;
 		SYS_LOG_INF("trigger %d", p_usound->restart_count);
 	}
@@ -71,12 +74,34 @@ static void usound_restart_handler(struct thread_timer *ttimer, void *expiry_fn_
 		//p_usound->restart_count = 0;
 	}
 
+	if(p_usound)
+	{
+		if(p_usound->restart_total)
+		{
+			p_usound->reenum_count ++;
+			if((p_usound->reenum_count * ttimer->period) > 10*1000)
+			{
+				if(p_usound->restart_total >= 10)
+				{
+					SYS_LOG_INF("reenum_count %d, restart_total %d", p_usound->reenum_count, p_usound->restart_total);
+					msg.type = MSG_USOUND_APP_EVENT;
+					msg.cmd = MSG_USOUND_RE_ENUME;
+					send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
+				}
+
+				p_usound->restart_total = 0;
+				p_usound->reenum_count = 0;
+			}
+		}
+	}
+
+
 }
 #endif // USOUND_FEATURE_RESTART
 
 #define USOUND_VOL_SYNC_TIMER_INTERAL (30)
-#define USOUND_VOL_HID_TEST_INTERAL (120)
-#define USOUND_VOL_HID_TEST_NUM (4)
+#define USOUND_VOL_HID_TEST_INTERAL (300)
+#define USOUND_VOL_HID_TEST_NUM (15)
 
 #define USOUND_VOL_HID_DELAY_CNT ((USOUND_VOL_HID_TEST_NUM*USOUND_VOL_HID_TEST_INTERAL)/USOUND_VOL_SYNC_TIMER_INTERAL)
 #define USOUND_VOL_HID_PER_DELAY (USOUND_VOL_HID_TEST_INTERAL/USOUND_VOL_SYNC_TIMER_INTERAL)
@@ -122,7 +147,7 @@ static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn
 				SYS_LOG_INF("enmu no volume, test hid no respond, set max\n");
 				if(audio_system_get_stream_volume(AUDIO_STREAM_USOUND) != MAX_AUDIO_VOL_LEVEL)
 				{
-					usound_sync_host_vol(0);
+					usound_set_vol_by_db(0);
 				}
 			}
 		}
@@ -143,7 +168,7 @@ static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn
 
 			if(audio_system_get_stream_volume(AUDIO_STREAM_USOUND) != MAX_AUDIO_VOL_LEVEL)
 			{
-				usound_sync_host_vol(0);
+				usound_set_vol_by_db(0);
 			}
 
 			p_usound->host_enmu_num = 0;
@@ -155,11 +180,11 @@ static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn
 			if(enmu_num == 1)
 			{
 				SYS_LOG_INF("enmu volume %d, set\n", last_emnu_db);
-				usound_sync_host_vol(last_emnu_db);
+				usound_set_vol_by_db(last_emnu_db);
 				p_usound->host_enmu_num = 0;
 			}else{
 				SYS_LOG_INF("enmu %d times vol, maybe phone,  hid test later\n", enmu_num);
-				usound_sync_host_vol(-601);
+				usound_set_vol_by_db(-601);
 				p_usound->need_test_hid_later = USOUND_VOL_HID_DELAY_CNT;
 
 			}
@@ -184,7 +209,7 @@ static void usound_vol_sync_handler(struct thread_timer *ttimer, void *expiry_fn
 
 		}else{
 			SYS_LOG_INF("enmu no volume, hid test later\n");
-			usound_sync_host_vol(-601);
+			usound_set_vol_by_db(-601);
 			p_usound->need_test_hid_later = USOUND_VOL_HID_DELAY_CNT;
 		}
 
@@ -236,6 +261,22 @@ void usound_sync_tws_vol(u8_t level)
 	send_async_msg(CONFIG_FRONT_APP_NAME, &msg);
 }
 #endif
+
+
+static void usound_set_vol_by_db(int vol_db)
+{
+	u8_t level = (u8_t) audio_policy_get_volume_level_by_db(AUDIO_STREAM_USOUND, vol_db);
+
+	SYS_LOG_INF("db %d, level %d\n", vol_db, level);
+
+	system_volume_set(AUDIO_STREAM_USOUND, level, false);
+
+#ifdef CONFIG_USOUND_BROADCAST_SUPPROT
+#if ENABLE_PADV_APP
+		padv_tx_data(padv_volume_map(level, 1));
+#endif
+#endif
+}
 
 static void usound_sync_host_vol(int vol_db)
 {
@@ -439,6 +480,15 @@ static void usound_usb_audio_event_callback(u8_t info_type, int pstore_info)
 	default:
 		break;
 	}
+}
+
+void usound_usb_audio_re_enum(void)
+{
+	SYS_LOG_INF("start");
+
+	usb_audio_deinit();
+	k_sleep(300);
+	usb_audio_init(usound_usb_audio_event_callback);
 }
 
 static int usound_init(void *p1, void *p2, void *p3)

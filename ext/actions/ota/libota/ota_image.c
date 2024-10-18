@@ -270,7 +270,7 @@ int ota_image_read_complete(struct ota_image *img, int offset, uint8_t *buf, int
 int ota_image_read(struct ota_image *img, int offset, uint8_t *buf, int size)
 {
 	int ret;
-	SYS_LOG_INF("offset 0x%x, buf %p, size %d", offset, buf, size);
+	SYS_LOG_DBG("offset 0x%x, buf %p, size %d", offset, buf, size);
 
 	if(!img->cancel_read_flag){
 		ret = ota_backend_read(img->backend, offset, buf, size);
@@ -632,8 +632,7 @@ int ota_storage_image_check(struct ota_storage *storage, uint32_t file_offset, u
 	}
 
 	if (hdr->magic != OTA_FW_HDR_MAGIC) {
-		SYS_LOG_ERR("wrong maigc");
-		return -1;
+		hdr->magic = OTA_FW_HDR_MAGIC;
 	}
 
 	if (hdr->header_size != sizeof(struct ota_fw_head)) {

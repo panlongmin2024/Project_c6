@@ -726,7 +726,7 @@ int selfapp_logsrv_init(void *data_stream)
 
 	os_mutex_init(&ctx->mutex);
 
-    sppble_stream_modify_write_timeout(ctx->sppble_stream,OS_FOREVER);
+    sppble_stream_modify_write_timeout(ctx->sppble_stream, OS_SECONDS(2));
 
     _svc_prot_send_ack(ctx->sppble_stream);
     ctx->prepared = 1;

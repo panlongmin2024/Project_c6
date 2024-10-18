@@ -80,13 +80,11 @@ static int pack_universal_package(u8_t * buf)
 		selfapp_log_wrn("malloc fails.");
 		return len;
 	}
+	memset(data, 0, sizeof(data_analytics_upload_t));
+
 	ret = data_analy_data_get(data, sizeof(data_analytics_upload_t));
 	if(0 != ret){
 		selfapp_log_wrn("analy ret=%d", ret);
-		if (NULL != data) {
-			mem_free(data);
-		}
-		return len;
 	}
 
 	buf[0] = ANACategory_Universal;
@@ -255,13 +253,12 @@ static int send_play_analytics_data(u8_t *buf, u16_t buflen)
 		selfapp_log_wrn("malloc fails.");
 		return -1;
 	}
+	memset(data, 0, DATA_ANALY_PLAY_ID_MAX * sizeof(play_analytics_upload_t));
+
 	datacount = data_analy_play_get(data, DATA_ANALY_PLAY_ID_MAX);
 	if(0 > datacount){
 		selfapp_log_wrn("analy ret=%d", datacount);
-		if (NULL != data) {
-			mem_free(data);
-		}
-		return -1;
+		datacount = 0;  // return None data to App
 	}
 
 	selfapp_log_inf("got %d*%d play data", datacount, sizeof(play_analytics_upload_t));

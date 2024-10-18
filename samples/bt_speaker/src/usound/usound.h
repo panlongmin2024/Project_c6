@@ -74,6 +74,7 @@ enum {
 	MSG_USOUND_MIC_OPEN,
 	MSG_USOUND_MIC_CLOSE,
 	MSG_USOUND_VOL_UPDATE,
+	MSG_USOUND_RE_ENUME,
 };
 
 enum USOUND_PLAY_STATUS {
@@ -108,6 +109,8 @@ struct usound_app_t {
 	u8_t  set_dvfs_level;
 
 #ifdef USOUND_FEATURE_RESTART
+	u32_t reenum_count;
+	u32_t restart_total;
 	u32_t restart_count;
 	struct thread_timer  restart_timer;
 #endif
@@ -157,6 +160,7 @@ void usound_playback_start(void);
 void usound_playback_stop(void);
 void usound_play_pause(void);
 void usound_play_resume(void);
+void usound_usb_audio_re_enum(void);
 
 void usound_input_event_proc(struct app_msg *msg);
 void usound_tts_event_proc(struct app_msg *msg);

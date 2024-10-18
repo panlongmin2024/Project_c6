@@ -167,6 +167,7 @@ const unsigned char* ota_storage_get_image_hash(struct ota_storage *storage, uin
 {
 	int rlen;
 	uint32_t start_time;
+	uint32_t read_addr = addr;
 
 	storage->hash_ctx = (void *)ota_erase_check_buf;
 
@@ -177,14 +178,24 @@ const unsigned char* ota_storage_get_image_hash(struct ota_storage *storage, uin
 		if (size < rlen)
 			rlen = size;
 
-		ota_storage_read(storage, addr, buf, rlen);
+		ota_storage_read(storage, read_addr, buf, rlen);
+
+		if(read_addr == addr){
+			if(buf[0] != 0x41 && buf[1] != 0x4F \
+				&& buf[2] != 0x54 && buf[3] != 0x41){
+				buf[0] = 0x41;
+				buf[1] = 0x4F;
+				buf[2] = 0x54;
+				buf[3] = 0x41;
+			}
+		}
 
 		start_time = k_uptime_get_32();
 		rom_sha256_update(storage->hash_ctx, buf, rlen);
 		storage->crc_calc_time += (k_uptime_get_32() - start_time);
 
 		size -= rlen;
-		addr += rlen;
+		read_addr += rlen;
 	}
 
 	return rom_sha256_final(storage->hash_ctx);

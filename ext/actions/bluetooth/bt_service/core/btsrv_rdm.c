@@ -72,6 +72,7 @@ struct rdm_device {
     uint8_t avrcp_connecting_pending:1;
     uint8_t avrcp_playing_pending:1;
     uint8_t avrcp_playing_pended:1;
+    uint8_t avrcp_connecting_pended:1;
 
 	uint8_t absolute_volume_filtr_cnt;
 	uint32_t avrcp_set_absolute_volume;
@@ -1249,6 +1250,7 @@ int btsrv_rdm_set_avrcp_connected(struct bt_conn *base_conn, bool connected)
 	}
 
 	dev->absolute_volume_filtr_cnt = 0;
+    dev->avrcp_connecting_pended = 0;
 
 	if (connected) {
 		dev->avrcp_connected = 1;
@@ -1398,6 +1400,7 @@ void btsrv_rdm_avrcp_connecting_pending_delay_proc(os_work *work)
 
     SYS_LOG_WRN("timeout!\n");
     dev->avrcp_connecting_pending = 0;
+    dev->avrcp_connecting_pended = 1;
 }
 
 void btsrv_rdm_avrcp_playing_pending_delay_proc(os_work *work)
@@ -1426,7 +1429,7 @@ void btsrv_rdm_set_avrcp_connecting_pending(struct bt_conn *base_conn)
 		return;
 	}
 
-    if(dev->avrcp_connecting_pending){
+    if(dev->avrcp_connecting_pending || dev->avrcp_connecting_pended){
         return;
     }
 

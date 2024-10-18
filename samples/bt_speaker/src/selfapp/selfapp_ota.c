@@ -222,16 +222,18 @@ static int otadfu_set_streamhdl(void *stream_handle)
 	return 0;
 }
 
+static u8_t  Global_OTAStatus = 0;  // 0 normal, 1 running, 2 finished
+
+static void otadfu_set_global_status(u8_t status)
+{
+	Global_OTAStatus = status;
+	printk("[Self] global otastatus %d\n", Global_OTAStatus);
+}
+
 bool selfapp_otadfu_is_working(void)
 {
-	otadfu_handle_t *otadfu = otadfu_get_handle();
-	if (otadfu) {
-		if((otadfu->state == DFUSTA_DOWNLOADING) || (otadfu->state == DFUSTA_UPLOADING)){
-		    return true;
-		}
-		else{
-		    return false;
-		}
+	if (Global_OTAStatus != 0) {
+		return true;
 	}
 	return false;
 }
@@ -1247,6 +1249,7 @@ static void otadfu_callback(int event)
 		if (otadfu->state != DFUSTA_ERROR) {
 			dfureport_state_error();
 		}
+		otadfu_set_global_status(0);    // normal
 		otadfu_NotifyDfuCancel(0xFA);	// release otadfu handle
 		if (event == OTA_CANCEL) {	// fix OTA_CANCEL won't run ota_image_close()
 			dfu_api_close(NULL);
@@ -1280,6 +1283,7 @@ static void otadfu_callback(int event)
 	} else if (event == OTA_BREAKPOINT_REPORT) {
 		otadfu->flag_bp_waiting = 1;
     } else if(event == OTA_UPLOADING) {
+		otadfu_set_global_status(2);  // finished
 		dfureport_image_state(0x01);
         otadfu_set_state(DFUSTA_UPLOADING);
         dfureport_state(otadfu->state);
@@ -1454,6 +1458,7 @@ int otadfu_ReqDfuStart(dfu_start_t * param)
 			dfu_release(otadfu);
 			selfapp_backend_otadfu_stop();
 		} else {
+			otadfu_set_global_status(1);  //running
 		    otadfu_check_connected_dev();
 			//otadfu_set_state(DFUSTA_INITED);
 		}
@@ -1509,6 +1514,8 @@ int otadfu_AppTriggerUpgrade(void)
     }
 
 	os_mutex_unlock(&otadfu_mutex);
+
+	selfapp_sendmsg_disconnectApp();  // disconnect App
 
 	return 0;
 #else
@@ -1573,17 +1580,18 @@ int cmdgroup_otadfu(u8_t CmdID, u8_t * Payload, u16_t PayloadLen)
 				       PayloadLen);
 				break;
 			}
-            bt_manager_set_user_visual(1,0,0,0);
 
 			memcpy(&dfu_start, Payload, sizeof(dfu_start_t));
 			dfu_start.dfu_size = (Payload[5] << 16) | (Payload[6] << 8) | Payload[7];	//big endian
 			result = otadfu_ReqDfuStart(&dfu_start);
 			result = result == 0 ? 0 : 1;
 
-			sendlen +=
-			    selfapp_pack_devack(buf, DFUCMD_ReqDfuStart,
-					    (u8_t) result);
+			sendlen += selfapp_pack_devack(buf, DFUCMD_ReqDfuStart, (u8_t) result);
 			ret = self_send_data(buf, sendlen);
+
+			if (result == 0) {
+				bt_manager_set_user_visual(1,0,0,0);  // not-connectable, not-discoverable
+			}
 			break;
 		}
 

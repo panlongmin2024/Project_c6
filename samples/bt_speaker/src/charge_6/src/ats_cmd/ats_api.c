@@ -271,7 +271,7 @@ int ats_dbg_open_flag_read(void)
 {
  
 	int result = 0;
-    result = property_get_int(CFG_DUG_OPEN_OR_CLOSE, 1);
+    result = property_get_int(CFG_DUG_OPEN_OR_CLOSE, 0);
 
     SYS_LOG_INF("result:%d\n", result);
 

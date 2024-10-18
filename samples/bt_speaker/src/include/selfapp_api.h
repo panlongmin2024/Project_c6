@@ -176,7 +176,7 @@ int selfapp_report_leaudio_status(void);
 
 void selfapp_thread_timer_start(int value);
 
-int selfapp_enter_standby(void);
+int selfapp_sendmsg_disconnectApp(void);
 
 int selfapp_disconnect_all_App(void);
 

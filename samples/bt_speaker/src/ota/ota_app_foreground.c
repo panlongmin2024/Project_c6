@@ -110,8 +110,10 @@ static void ota_app_start(void)
 
 	struct device *flash_device =
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
-	if (flash_device)
-		flash_write_protection_set(flash_device, false);
+	if (flash_device){
+		//flash_write_protection_re(flash_device, false);
+		flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_BOOT_AND_SYS);
+	}
  	
 	bt_manager_media_pause();
 	
@@ -139,8 +141,10 @@ static void ota_app_stop(u8_t switch_app)
 
 	struct device *flash_device =
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
-	if (flash_device)
-		flash_write_protection_set(flash_device, true);
+	if (flash_device){
+		//flash_write_protection_set(flash_device, true);
+		flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_ALL_EXCLUDE_NVRAM);
+	}
 
 	if (switch_app) {
 		system_app_launch_del(DESKTOP_PLUGIN_ID_OTA);
@@ -477,6 +481,12 @@ int ota_app_notify(int state, int old_state)
 			}
 		}
 #endif
+	} else if(state == OTA_FILE_WRITE_DONE){
+		struct device *flash_device = device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
+		if (flash_device){
+			//flash_write_protection_set(flash_device, true);
+			flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_BOOT);
+		}
 	}
 
 	return ret_val;
@@ -520,19 +530,25 @@ int ota_app_init(void)
 
 	struct device *flash_device =
 	    device_get_binding(CONFIG_XSPI_NOR_ACTS_DEV_NAME);
-	if (flash_device)
-		flash_write_protection_set(flash_device, false);
+	if (flash_device){
+		//flash_write_protection_set(flash_device, false);
+		flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_BOOT_AND_SYS);
+	}
 
 	g_ota = ota_upgrade_init(&param);
 	if (!g_ota) {
 		SYS_LOG_INF("init failed");
-		if (flash_device)
-			flash_write_protection_set(flash_device, true);
+		if (flash_device){
+			//flash_write_protection_set(flash_device, true);
+			flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_ALL_EXCLUDE_NVRAM);
+		}
 		return -1;
 	}
 
-	if (flash_device)
-		flash_write_protection_set(flash_device, true);
+	if (flash_device){
+		//flash_write_protection_set(flash_device, true);
+		flash_write_protection_region_set(flash_device, FLASH_PROTECT_REGION_ALL_EXCLUDE_NVRAM);
+	}
 	return 0;
 }
 

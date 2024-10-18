@@ -69,7 +69,7 @@ static int temp_part_read_flash(struct ota_backend_temp_part *ob_tp, int offset,
 	uint8_t *buffer = NULL;
 	uint8_t *src_addr = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS;
 
-	SYS_LOG_INF("dev %s: offset 0x%x, size 0x%x, buf %p",
+	SYS_LOG_DBG("dev %s: offset 0x%x, size 0x%x, buf %p",
 		ob_tp->dev_name, offset, size, buf);
 
 	if ((offset + size) > ob_tp->size) {
@@ -224,7 +224,7 @@ static int temp_part_read_lzma(struct ota_backend_temp_part *ob_tp, int offset, 
 		}
 
 		lzma_outoff = out_off;
-		SYS_LOG_INF("XzDecode 0x%x ok! 0x%x -> 0x%x", out_off, plzma_h->ih_img_size, plzma_h->ih_org_size);
+		//SYS_LOG_INF("XzDecode 0x%x ok! 0x%x -> 0x%x", out_off, plzma_h->ih_img_size, plzma_h->ih_org_size);
 	}
 
 	// read last part from lzma buffer
@@ -253,7 +253,7 @@ static int ota_backend_temp_part_prepare(struct ota_backend_temp_part *ob_tp)
 	if ((pimg_h->magic0 == IMAGE_MAGIC0) && (pimg_h->magic1 == IMAGE_MAGIC1)) {
 		inner_offset = pimg_h->header_size + pimg_h->body_size;
 		inner_offset = (inner_offset + OTA_BACKEND_SD_SECTOR_SIZE - 1) & ~(OTA_BACKEND_SD_SECTOR_SIZE - 1);
-		SYS_LOG_INF("found app! temp inner offset: 0x%x", inner_offset);
+		SYS_LOG_DBG("found app! temp inner offset: 0x%x", inner_offset);
 	}
 
 	// update temp offset and size
@@ -272,7 +272,7 @@ static int ota_backend_temp_part_prepare(struct ota_backend_temp_part *ob_tp)
 	if (plzma_h->ih_magic == LZMA_MAGIC) {
 		// set lzma flag
 		ob_tp->lzma = 1;
-		SYS_LOG_INF("found lzma!");
+		SYS_LOG_DBG("found lzma!");
 	}
 
 	return 0;
@@ -296,20 +296,25 @@ int ota_backend_temp_part_read(struct ota_backend *backend, int offset, void *bu
 
 int ota_backend_temp_part_open(struct ota_backend *backend)
 {
+#if 0
 	struct ota_backend_temp_part *backend_temp_part = CONTAINER_OF(backend,
 		struct ota_backend_temp_part, backend);
 
-	SYS_LOG_INF("dev %s: open: type %d", backend_temp_part->dev_name, backend->type);
-
+	SYS_LOG_DBG("dev %s: open: type %d", backend_temp_part->dev_name, backend->type);
+#endif
 	return 0;
 }
 
 int ota_backend_temp_part_close(struct ota_backend *backend)
 {
+#if 0
 	struct ota_backend_temp_part *backend_temp_part = CONTAINER_OF(backend,
 		struct ota_backend_temp_part, backend);
 
-	SYS_LOG_INF("dev %s: close: type %d", backend_temp_part->dev_name, backend->type);
+	SYS_LOG_DBG("dev %s: close: type %d", backend_temp_part->dev_name, backend->type);
+#endif
+
+	backend->cb(backend, OTA_BACKEND_UPGRADE_STATE, 0);
 
 	return 0;
 }
@@ -339,7 +344,7 @@ struct ota_backend *ota_backend_temp_part_init(ota_backend_notify_cb_t cb,
 	const struct partition_entry *temp_part;
 	struct device *temp_part_dev;
 
-	SYS_LOG_INF("init backend %s\n", param->dev_name);
+	SYS_LOG_DBG("init backend %s\n", param->dev_name);
 
 	temp_part_dev = device_get_binding(param->dev_name);
 	if (!temp_part_dev) {

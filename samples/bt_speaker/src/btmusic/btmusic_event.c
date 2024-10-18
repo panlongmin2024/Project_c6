@@ -271,6 +271,7 @@ static void btmusic_handle_playback_status(struct bt_media_play_status *status)
 				}
 #endif
 			}
+			tts_manager_disable_filter();
 		}
 		btmusic->media_state = 0;
 	} else if (status->status == BT_STATUS_PLAYING) {

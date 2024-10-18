@@ -60,6 +60,8 @@ __ramfunc void system_nor_prepare_hook(void)
 
 #ifdef CONFIG_NOR_ACTS_DATA_PROTECTION_ENABLE
 extern int nor_write_protection(const struct device *dev, bool enable);
+extern int nor_write_protection_region(const struct device *dev, int region_id);
+
 #endif
 static int xspi_nor_write_protection(struct device *dev, bool enable)
 {
@@ -72,6 +74,19 @@ static int xspi_nor_write_protection(struct device *dev, bool enable)
 
 	return 0;
 }
+
+static int xspi_nor_write_protection_region(struct device *dev, int region_id)
+{
+#ifdef CONFIG_NOR_ACTS_DATA_PROTECTION_ENABLE
+	nor_write_protection_region(dev, region_id);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(region_id);
+#endif
+
+	return 0;
+}
+
 
 void spinor_resume_finished(struct xspi_nor_info *sni);
 
@@ -167,6 +182,7 @@ static const struct flash_driver_api xspi_nor_api = {
 	.write = xspi_nor_write,
 	.erase = xspi_nor_erase,
 	.write_protection = xspi_nor_write_protection,
+	.write_protection_region = xspi_nor_write_protection_region,
 };
 
 void acts_xspi_nor_init_internal(struct xspi_nor_info *sni)
@@ -261,7 +277,9 @@ int acts_xspi_nor_init(struct device *dev)
 
 	sni->chipid = xspi_nor_read_chipid(sni);
 
-	xspi_nor_write_protection(dev, true);
+	//xspi_nor_write_protection(dev, true);
+	xspi_nor_write_protection_region(dev, FLASH_PROTECT_REGION_ALL_EXCLUDE_NVRAM);
+
 	xspi_nor_dump_info(sni);
 
 	acts_xspi_nor_init_internal(sni);

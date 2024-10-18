@@ -454,7 +454,7 @@ static void _system_app_loop(void *parama1, void *parama2, void *parama3)
 					selfapp_set_allowed_join_party(false);
 					sys_ble_advertise_deinit();
 					sys_ble_advertise_init();
-					selfapp_enter_standby();
+					selfapp_sendmsg_disconnectApp();
 				}
 
 				break;

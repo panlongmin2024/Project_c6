@@ -110,7 +110,7 @@ MEMORY
 	/* DSP, 32K+128K */
 	ram_dsp1              (wx) : ORIGIN = 0x00042a00, LENGTH = 0x9600
 #ifdef CONFIG_SOC_SERIES_ANDESC_P2
-	ram_bt                (wx) : ORIGIN = 0x0004DC00, LENGTH = 0x11000
+	ram_bt                (wx) : ORIGIN = 0x0004DB00, LENGTH = 0x11100
 	ram_bt_bss            (wx) : ORIGIN = 0x0005ec00, LENGTH = 0x1400
 #else
 	ram_bt                (wx) : ORIGIN = 0x00048000, LENGTH = 96k

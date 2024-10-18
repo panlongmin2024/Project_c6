@@ -251,6 +251,11 @@ void usound_app_event_proc(struct app_msg *msg)
 		usound_vol_update(msg->value);
 		break;
 	}
+
+	case MSG_USOUND_RE_ENUME: {
+		usound_usb_audio_re_enum();
+	}
+
 	default:
 		break;
 	}

@@ -44,6 +44,12 @@ static const struct acts_pin_config board_pin_psram_config[] =
 #endif
 };
 #endif
+static const struct acts_pin_config board_pin_config_open[] = {
+	/* uart0 */
+	{2, 7 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(0) | GPIO_CTL_PULLUP},	/* UART0_RX */
+	{3, 7 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(0) | GPIO_CTL_PULLUP},	/* UART0_TX */
+};
+
 static const struct acts_pin_config board_pin_config[] = {
 	/* uart0 */
 	{2, 7 | GPIO_CTL_SMIT | GPIO_CTL_PADDRV_LEVEL(0) | GPIO_CTL_PULLUP},	/* UART0_RX */
@@ -629,13 +635,12 @@ void close_tx_func(u8_t flag)
 		}
   if(flag)
 	 {
-	   gpio_pin_configure(gpio_dev, TX1_PIN, GPIO_DIR_IN);
-	   gpio_pin_configure(gpio_dev, RX1_PIN, GPIO_DIR_IN);
+	    acts_pinmux_set(TX1_PIN, 0);
+     	acts_pinmux_set(RX1_PIN, 0);	
   	 }
   else
   	{
-      gpio_pin_configure(gpio_dev, TX1_PIN, GPIO_DIR_OUT);
-	  gpio_pin_configure(gpio_dev, RX1_PIN, GPIO_DIR_OUT);
+       acts_pinmux_setup_pins(board_pin_config_open, ARRAY_SIZE(board_pin_config_open));
     }
      
 }
@@ -681,6 +686,7 @@ void open_or_close_debug(void)
 	       SYS_LOG_INF("close dbg!!!!\n");
 	       write_dbg_flag(1);
 	       close_tx_func(1);
+		   break;
 		 
 	   }
 	 else
@@ -688,16 +694,10 @@ void open_or_close_debug(void)
 	 	    write_dbg_flag(0);
             close_tx_func(0);
 		    SYS_LOG_INF("open dbg!!!!\n");
+			break;
 	    }
 	}
-	while(1);
-}
-
-void close_debug(void)
-{
-	write_dbg_flag(1);
-	close_tx_func(1);
-	close_rx_func(1);
+  while(1);
 }
 
 //void io_expend_aw9523b_ctl_20v5_set(uint8_t onoff);

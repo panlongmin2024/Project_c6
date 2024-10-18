@@ -352,15 +352,20 @@ static void _audio_system_get_volume_config(const char *name, uint8_t *volume)
 {
 #ifdef CONFIG_PROPERTY
 	char temp[8];
+	char* endptr;
+	long volume_long;
 
 	memset(temp, 0, sizeof(temp));
 
 	int ret = property_get(name, temp, sizeof(temp));
 
-	if (ret >= 0)
-		*volume = atoi(temp);
-	else
+	volume_long = strtol(temp, &endptr, 10);
+
+	if (ret >= 0 && endptr != temp && *endptr == '\0') {
+		*volume = (int)volume_long;
+	} else {
 		*volume = DEFAULT_VOLUME;
+	}
 
 	SYS_LOG_INF(" %s  %d\n", name, *volume);
 #endif
