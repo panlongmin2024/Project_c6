@@ -1720,6 +1720,7 @@ static int cdc_shell_ats_set_pd_charge_voltage(struct device *dev, u8_t *buf, in
 			dev, ATS_CMD_RESP_SET_PDCV, sizeof(ATS_CMD_RESP_SET_PDCV)-1, 
 			ATS_CMD_RESP_FAIL, sizeof(ATS_CMD_RESP_FAIL)-1);		
 	}
+	return 0;
 }
 
 int ats_usb_cdc_acm_shell_command_handler(struct device *dev, u8_t *buf, int size)
