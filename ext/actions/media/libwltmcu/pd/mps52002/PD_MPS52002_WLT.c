@@ -2560,7 +2560,7 @@ void pd_mps52002_iic_send_data()
             case PD_IIC_TYPE_PROP_BAT_VERIFY:
 				 if(!is_authenticated())
 					{
-                       bat_verify_fail_poweroff();
+                       //bat_verify_fail_poweroff();
 				    }			
 				break;
 			default:
