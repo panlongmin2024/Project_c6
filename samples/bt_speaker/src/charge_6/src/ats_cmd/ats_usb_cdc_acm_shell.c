@@ -1707,20 +1707,18 @@ static int cdc_shell_ats_exit_debug_mode(struct device *dev, u8_t *buf, int len)
 static int cdc_shell_ats_set_pd_charge_voltage(struct device *dev, u8_t *buf, int len)
 {	
 	static u8_t step;
-	uint8_t buffer[2+1] = "00";
 	
 	string_to_hex_u8(buf,&step);
-	hex_to_string_2(step,buffer);
 	
 	if(pd_mps52002_ats_switch_volt(step)){
 		ats_usb_cdc_acm_cmd_response_at_data(
 			dev, ATS_CMD_RESP_SET_PDCV, sizeof(ATS_CMD_RESP_SET_PDCV)-1, 
-			buffer, sizeof(buffer)-1);
+			ATS_CMD_RESP_OK, sizeof(ATS_CMD_RESP_OK)-1);
 	}
 	else{
 		ats_usb_cdc_acm_cmd_response_at_data(
 			dev, ATS_CMD_RESP_SET_PDCV, sizeof(ATS_CMD_RESP_SET_PDCV)-1, 
-			buffer, sizeof(buffer)-1);		
+			ATS_CMD_RESP_FAIL, sizeof(ATS_CMD_RESP_FAIL)-1);		
 	}
 	return 0;
 }
